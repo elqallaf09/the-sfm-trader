@@ -58,9 +58,17 @@ const sessionCountdown = document.querySelector("#session-countdown");
 const sessionNextEvent = document.querySelector("#session-next-event");
 const sessionMarketName = document.querySelector("#session-market-name");
 const marketHoursGrid = document.querySelector("#market-hours-grid");
+const sfmLiveFloor = document.querySelector("#sfm-live-floor");
+const sfmFloorBrief = document.querySelector("#sfm-floor-brief");
+const floorAgentMood = document.querySelector("#floor-agent-mood");
 const tradingMood = document.querySelector("#trading-mood");
 const flowLeader = document.querySelector("#flow-leader");
 const flowPressure = document.querySelector("#flow-pressure");
+const floorNextMove = document.querySelector("#floor-next-move");
+const floorReadiness = document.querySelector("#floor-readiness");
+const floorHeatmap = document.querySelector("#floor-heatmap");
+const floorHeatmapTitle = document.querySelector("#floor-heatmap-title");
+const floorJumpButtons = document.querySelectorAll("[data-floor-jump]");
 const marketBoard = document.querySelector("#market-board");
 const searchInput = document.querySelector("#search-input");
 const sortSelect = document.querySelector("#sort-select");
@@ -141,6 +149,22 @@ const UI_TEXT_TRANSLATIONS = {
   "الأسواق": "Markets",
   "اختر السوق، وسيعرض الوكيل فرص الشراء والبيع مع الثقة والسعر المتوقع والمدة.": "Choose a market and the agent will show buy and sell opportunities with confidence, expected price, and duration.",
   "نبض السوق": "Market pulse",
+  "لوحة التداول الحية": "Live trading floor",
+  "لوحة النبض الحية": "Live market pulse",
+  "SFM يقرأ السوق الآن ويحوّل الإشارات إلى قرارات واضحة.": "SFM is reading the market now and turning signals into clear decisions.",
+  "حالة المساعد": "Assistant status",
+  "جاهز يراقب السوق": "Ready and watching the market",
+  "قائد الحركة": "Move leader",
+  "ضغط السوق": "Market pressure",
+  "الحركة القادمة": "Next move",
+  "جاهزية القرار": "Decision readiness",
+  "خريطة حرارة الفرص": "Opportunity heatmap",
+  "غرفة القيادة": "Command center",
+  "المضاربة السريعة": "Fast scalping",
+  "رادار الفرص": "Opportunity radar",
+  "متابعة الصفقات": "Trade tracking",
+  "جاهز للتنفيذ": "Ready to act",
+  "انتظر تأكيد أقوى": "Wait for stronger confirmation",
   "غرفة قيادة التحليل": "Analysis command center",
   "غرفة قيادة السوق": "Market command center",
   "ملخص سريع لأقوى الفرص، المخاطر، والتنبيهات قبل الدخول على التفاصيل.": "A quick summary of strongest opportunities, risks, and alerts before opening details.",
@@ -620,6 +644,7 @@ function registerPwaServiceWorker() {
 async function init() {
   initSettingsPanel();
   initInterfaceTranslator();
+  initLiveFloor();
   watchlist = normalizeWatchlist(watchlist);
   voiceMonitors = normalizeWatchlist(voiceMonitors);
   saveStored("the-sfm-trader-watchlist", watchlist);
@@ -691,6 +716,15 @@ async function init() {
       activeShariaFilter = button.dataset.shariaFilter;
       setActiveShariaFilterButton();
       renderRecommendations(lastData);
+    });
+  }
+}
+
+function initLiveFloor() {
+  for (const button of floorJumpButtons) {
+    button.addEventListener("click", () => {
+      const target = document.querySelector(button.dataset.floorJump);
+      target?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
 }
@@ -1128,6 +1162,7 @@ function renderRecommendations(data) {
   setInsight(bestSell, getTopItem(sells, "confidence"), "لا توجد إشارة بيع");
   setInsight(largestMove, getTopItem(all, "move"), "لا توجد بيانات");
   updateTicker(all);
+  renderTradingAtmosphere(data);
   renderCommandCenter(data, recommendations);
   renderOpportunityRadar(data);
   renderSmartAlerts(data);
@@ -1850,8 +1885,39 @@ function renderTradingAtmosphere(data) {
   const sell = items.filter((item) => item.action === "sell").length;
   const hold = items.length - buy - sell;
   const leader = getTopItem(items, "move");
+  const highestScore = items.length
+    ? [...items].sort((a, b) => calculateFinalScore(b).score - calculateFinalScore(a).score)[0]
+    : null;
+  const avgConfidenceValue = items.length
+    ? Math.round(items.reduce((sum, item) => sum + Number(item.confidence || 0), 0) / items.length)
+    : 0;
+  const pulse = getMarketPulse(items);
+  const marketLabel = data.market?.label || marketTitle?.textContent || "السوق";
+  const readiness = avgConfidenceValue >= 70 && (buy || sell)
+    ? "جاهز للتنفيذ"
+    : "انتظر تأكيد أقوى";
 
-  if (tradingMood) tradingMood.textContent = `${getMarketPulse(items)} · ${formatNumber(items.length)} رمز`;
+  if (sfmLiveFloor) {
+    sfmLiveFloor.classList.toggle("is-bullish", buy > sell);
+    sfmLiveFloor.classList.toggle("is-bearish", sell > buy);
+    sfmLiveFloor.classList.toggle("is-neutral", buy === sell);
+  }
+
+  if (sfmFloorBrief) {
+    sfmFloorBrief.textContent = items.length
+      ? `${marketLabel}: النبض ${pulse}. SFM يراقب ${formatNumber(items.length)} رمز، متوسط الثقة ${formatNumber(avgConfidenceValue)}%، وأقوى تركيز الآن على ${leader?.symbol || highestScore?.symbol || "--"}.`
+      : "SFM ينتظر وصول بيانات السوق حتى يبني قراءة كاملة.";
+  }
+
+  if (floorAgentMood) {
+    floorAgentMood.textContent = buy > sell
+      ? "المساعد يرى زخم شراء"
+      : sell > buy
+        ? "المساعد يرى ضغط بيع"
+        : "المساعد ينتظر كسر التوازن";
+  }
+
+  if (tradingMood) tradingMood.textContent = `${pulse} · ${formatNumber(items.length)} رمز · ${formatNumber(avgConfidenceValue)}% ثقة`;
   if (flowLeader) {
     flowLeader.textContent = leader
       ? `${leader.symbol} · ${formatPercent(leader.expectedMovePct)}`
@@ -1861,6 +1927,25 @@ function renderTradingAtmosphere(data) {
     flowPressure.textContent = items.length
       ? `شراء ${formatNumber(buy)} · بيع ${formatNumber(sell)} · انتظار ${formatNumber(hold)}`
       : "--";
+  }
+  if (floorNextMove) {
+    floorNextMove.textContent = leader
+      ? `${leader.symbol} إلى ${formatMoney(leader.target1 || leader.expectedPrice, leader.currency)} خلال ${leader.duration || "الفترة القادمة"}`
+      : "--";
+  }
+  if (floorReadiness) floorReadiness.textContent = readiness;
+  if (floorHeatmapTitle) floorHeatmapTitle.textContent = highestScore ? `${highestScore.symbol} · Score ${calculateFinalScore(highestScore).score}%` : "TOP SIGNALS";
+
+  if (floorHeatmap) {
+    const heatItems = [...items]
+      .map((item) => ({ item, score: calculateFinalScore(item).score }))
+      .sort((a, b) => b.score - a.score || b.item.confidence - a.item.confidence)
+      .slice(0, 12);
+
+    floorHeatmap.innerHTML = heatItems.length
+      ? heatItems.map(({ item, score }, index) => renderFloorHeatCell(item, score, index)).join("")
+      : "<div class=\"empty\">لا توجد بيانات كافية لخريطة الحرارة حالياً.</div>";
+    attachDetailOpeners(floorHeatmap);
   }
 
   if (!marketBoard) return;
@@ -1873,11 +1958,27 @@ function renderTradingAtmosphere(data) {
   marketBoard.innerHTML = boardItems.length
     ? boardItems.map(renderMarketBoardCard).join("")
     : "<div class=\"empty\">لا توجد بيانات للوحة التداول حالياً.</div>";
+  attachDetailOpeners(marketBoard);
+  queueTranslateInterface();
+}
+
+function renderFloorHeatCell(item, score, index) {
+  const tone = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : "hold";
+  const width = clamp(score, 12, 100);
+  return `
+    <article class="floor-heat-cell ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" style="--heat-width: ${width}%; --heat-delay: ${index * 0.06}s">
+      <div>
+        <strong>${escapeHtml(item.symbol)}</strong>
+        <span>${escapeHtml(item.actionLabel)} · ${formatNumber(item.confidence)}%</span>
+      </div>
+      <b>${score}%</b>
+    </article>
+  `;
 }
 
 function renderMarketBoardCard(item) {
   return `
-    <article class="market-board-card ${escapeHtml(item.action)}">
+    <article class="market-board-card ${escapeHtml(item.action)}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0">
       <span>${escapeHtml(item.exchangeName || "MARKET")}</span>
       <strong>${escapeHtml(item.symbol)}</strong>
       <b>${formatMoney(item.currentPrice, item.currency)} · ${formatPercent(item.expectedMovePct)}</b>

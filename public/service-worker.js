@@ -1,11 +1,11 @@
-const CACHE_NAME = "the-sfm-trader-ios-shell-v20260620-full-i18n";
+const CACHE_NAME = "the-sfm-trader-ios-shell-v20260620-live-floor-2";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/detail.html",
-  "/styles.css?v=20260620-full-i18n",
-  "/app.js?v=20260620-full-i18n",
-  "/detail.js?v=20260620-full-i18n",
+  "/styles.css?v=20260620-live-floor-2",
+  "/app.js?v=20260620-live-floor-2",
+  "/detail.js?v=20260620-live-floor-2",
   "/manifest.webmanifest",
   "/the-sfm-trader-icon-256.png",
   "/the-sfm-trader-icon-512.png"

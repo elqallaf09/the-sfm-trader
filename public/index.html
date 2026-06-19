@@ -11,7 +11,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
     <link rel="icon" type="image/png" sizes="256x256" href="/the-sfm-trader-icon-256.png" />
-    <link rel="stylesheet" href="/styles.css?v=20260620-full-i18n" />
+    <link rel="stylesheet" href="/styles.css?v=20260620-live-floor-2" />
   </head>
   <body>
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
@@ -131,6 +131,74 @@
       </section>
 
       <main>
+        <section id="sfm-live-floor" class="sfm-live-floor" aria-label="لوحة التداول الحية">
+          <div class="floor-aurora" aria-hidden="true"></div>
+          <div class="floor-head">
+            <div>
+              <p class="eyebrow">SFM LIVE FLOOR</p>
+              <h2>لوحة النبض الحية</h2>
+              <p id="sfm-floor-brief">SFM يقرأ السوق الآن ويحوّل الإشارات إلى قرارات واضحة.</p>
+            </div>
+            <div class="floor-agent" aria-live="polite">
+              <span class="floor-agent-core" aria-hidden="true"></span>
+              <div>
+                <span>حالة المساعد</span>
+                <strong id="floor-agent-mood">جاهز يراقب السوق</strong>
+                <em id="trading-mood">--</em>
+              </div>
+            </div>
+          </div>
+
+          <div class="floor-stage">
+            <div class="floor-radar" aria-hidden="true">
+              <span class="floor-radar-ring ring-one"></span>
+              <span class="floor-radar-ring ring-two"></span>
+              <span class="floor-radar-ring ring-three"></span>
+              <span class="floor-radar-sweep"></span>
+              <i></i>
+              <i></i>
+              <i></i>
+              <i></i>
+            </div>
+
+            <div class="floor-metrics">
+              <div>
+                <span>قائد الحركة</span>
+                <strong id="flow-leader">--</strong>
+              </div>
+              <div>
+                <span>ضغط السوق</span>
+                <strong id="flow-pressure">--</strong>
+              </div>
+              <div>
+                <span>الحركة القادمة</span>
+                <strong id="floor-next-move">--</strong>
+              </div>
+              <div>
+                <span>جاهزية القرار</span>
+                <strong id="floor-readiness">--</strong>
+              </div>
+            </div>
+
+            <div class="floor-heatmap-wrap">
+              <div class="floor-mini-head">
+                <span>خريطة حرارة الفرص</span>
+                <strong id="floor-heatmap-title">TOP SIGNALS</strong>
+              </div>
+              <div id="floor-heatmap" class="floor-heatmap"></div>
+            </div>
+          </div>
+
+          <div class="floor-action-row">
+            <button class="floor-action-button" type="button" data-floor-jump="#command-center-section">غرفة القيادة</button>
+            <button class="floor-action-button" type="button" data-floor-jump="#scalping-section">المضاربة السريعة</button>
+            <button class="floor-action-button" type="button" data-floor-jump="#radar-section">رادار الفرص</button>
+            <button class="floor-action-button" type="button" data-floor-jump="#history-section">متابعة الصفقات</button>
+          </div>
+
+          <div id="market-board" class="market-board floor-board"></div>
+        </section>
+
         <section class="market-band" aria-label="اختيار السوق">
           <div class="section-head">
             <div>
@@ -575,6 +643,6 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260620-full-i18n" type="module"></script>
+    <script src="/app.js?v=20260620-live-floor-2" type="module"></script>
   </body>
 </html>
