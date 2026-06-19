@@ -115,6 +115,268 @@ const INTRO_DURATION_MS = 8_000;
 const DEFAULT_USER_DISPLAY_NAME = "محمد";
 const DEFAULT_APP_LANGUAGE = "ar";
 const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
+const UI_TEXT_TRANSLATIONS = {
+  "أهلاً سيدي محمد": "Welcome Sir Mohammed",
+  "مساعدك SFM جاهز للتحليل ومتابعة الأسهم.": "Your SFM assistant is ready for analysis and stock monitoring.",
+  "جاري فتح منصة التحليل": "Opening the analysis platform",
+  "دخول سريع": "Quick entry",
+  "وكيل تحليل الأسواق": "Market Analysis Agent",
+  "جاري الاتصال": "Connecting",
+  "الإشعارات": "Notifications",
+  "الإعدادات": "Settings",
+  "تحديث الآن": "Refresh now",
+  "إغلاق الإعدادات": "Close settings",
+  "اللغة": "Language",
+  "العربية": "Arabic",
+  "الاسم في الصفحة الترحيبية": "Welcome name",
+  "المعاينة": "Preview",
+  "مساء الخير سيدي محمد": "Good evening Sir Mohammed",
+  "صباح الخير سيدي محمد": "Good morning Sir Mohammed",
+  "حفظ الإعدادات": "Save settings",
+  "مركز الإشعارات": "Notification Center",
+  "مسح الكل": "Clear all",
+  "إغلاق الإشعارات": "Close notifications",
+  "شريط السوق": "Market ticker",
+  "اختيار السوق": "Market selection",
+  "الأسواق": "Markets",
+  "اختر السوق، وسيعرض الوكيل فرص الشراء والبيع مع الثقة والسعر المتوقع والمدة.": "Choose a market and the agent will show buy and sell opportunities with confidence, expected price, and duration.",
+  "نبض السوق": "Market pulse",
+  "غرفة قيادة التحليل": "Analysis command center",
+  "غرفة قيادة السوق": "Market command center",
+  "ملخص سريع لأقوى الفرص، المخاطر، والتنبيهات قبل الدخول على التفاصيل.": "A quick summary of strongest opportunities, risks, and alerts before opening details.",
+  "وضع التحليل": "Analysis mode",
+  "قيادة السوق": "Market command",
+  "أوضاع التحليل": "Analysis modes",
+  "مضاربة 5-15 دقيقة": "Scalping 5-15 min",
+  "استثمار شهري": "Monthly investing",
+  "شرعي فقط": "Sharia only",
+  "مخاطرة منخفضة": "Low risk",
+  "أوقات الأسواق ونبض السوق": "Market hours and pulse",
+  "تابع حالة السوق الحالي، متى يفتح أو يصكر، وأوقات أهم الأسواق حسب توقيتها المحلي.": "Track the current market status, open and close countdowns, and key markets in their local time.",
+  "ساعة الجلسة": "Session clock",
+  "السوق الحالي": "Current market",
+  "الحالة": "Status",
+  "العد التنازلي": "Countdown",
+  "محادثة SFM الصوتية": "SFM voice chat",
+  "المحادثة الصوتية": "Voice chat",
+  "جاهز للتشغيل": "Ready to start",
+  "حالة المحادثة الصوتية": "Voice chat status",
+  "جاهز": "Ready",
+  "ابدأ المحادثة الصوتية": "Start voice chat",
+  "إيقاف المحادثة الصوتية": "Stop voice chat",
+  "سمعت": "Heard",
+  "رد SFM": "SFM reply",
+  "المراقبة الصوتية": "Voice monitoring",
+  "لا توجد أسهم مراقبة": "No monitored stocks",
+  "لم تضف رمزاً للمراقبة الصوتية بعد.": "No symbol has been added to voice monitoring yet.",
+  "راقب أفضل فرصة": "Monitor best opportunity",
+  "العقل المحلي": "Local brain",
+  "فحص Ollama": "Checking Ollama",
+  "إذا ظهر خطأ network اكتب الأمر هنا: شنو أشتري اليوم؟": "If a network error appears, type the command here: what should I buy today?",
+  "إرسال الأمر": "Send command",
+  "المضاربة": "Scalping",
+  "اختر سهم أو اكتب رمزه، وسيعطيك SFM قرار مضاربة سريع بين 5 إلى 15 دقيقة.": "Choose a stock or type its symbol, and SFM will give you a fast 5 to 15 minute scalp decision.",
+  "حالة المضاربة": "Scalping status",
+  "مثال: AAPL أو MSFT أو TSLA": "Example: AAPL, MSFT, or TSLA",
+  "حلل المضاربة": "Analyze scalp",
+  "اختيارات سريعة للمضاربة": "Quick scalp picks",
+  "اختر سهم لعرض توصية مضاربة فورية.": "Choose a stock to show an instant scalp recommendation.",
+  "السوق الأمريكي": "US market",
+  "آخر تحديث": "Last update",
+  "عدد الفرص": "Opportunities",
+  "شراء": "Buy",
+  "بيع": "Sell",
+  "انتظار": "Wait",
+  "متوسط الثقة": "Average confidence",
+  "مزود البيانات": "Data provider",
+  "ملخص الوكيل": "Agent summary",
+  "أفضل فرصة شراء": "Best buy opportunity",
+  "أقوى إشارة بيع": "Strongest sell signal",
+  "أعلى حركة متوقعة": "Highest expected move",
+  "رادار الفرص والقرارات": "Opportunity and decision radar",
+  "يرتب أقوى الفرص حسب جودة التحليل، توافق الفريمات، المخاطرة، حجم التداول، والهدف.": "Ranks the strongest opportunities by analysis quality, timeframe agreement, risk, volume, and target.",
+  "جودة السوق": "Market quality",
+  "تنبيهات ذكية": "Smart alerts",
+  "شراء + مطابق للشريعة + ثقة عالية": "Buy + Sharia compliant + high confidence",
+  "تظهر هنا الإشارات التي تجمع بين إشارة شراء، تصنيف شرعي، وثقة 70% أو أكثر.": "Signals that combine a buy signal, Sharia rating, and 70%+ confidence appear here.",
+  "تنبيهات": "Alerts",
+  "فلتر الفرص الذهبية": "Golden opportunity filter",
+  "أقوى فرص شراء شرعية منخفضة المخاطر": "Strongest low-risk Sharia buy opportunities",
+  "يرشح النظام الأسهم التي تجمع شراء، مطابقة للشريعة، مخاطرة مقبولة، ونتيجة اختبار خلفي جيدة.": "The system highlights stocks with buy signals, Sharia compliance, acceptable risk, and a good backtest score.",
+  "فرص ذهبية": "Golden opportunities",
+  "مراقبة خاصة": "Private watch",
+  "قائمة مراقبة الأسهم": "Stock watchlist",
+  "أضف رموزك المفضلة وخل الوكيل يركز عليها فقط وقت الحاجة.": "Add your favorite symbols and let the agent focus on them when needed.",
+  "راقب قائمتي فقط": "Watch my list only",
+  "مثال: AMD أو NVDA": "Example: AMD or NVDA",
+  "إضافة": "Add",
+  "محفظتي": "My portfolio",
+  "متابعة الربح والخسارة": "Profit and loss tracking",
+  "أدخل رمز السهم والكمية وسعر الشراء، والواجهة تحسب لك الأداء حسب السعر الحالي.": "Enter the symbol, quantity, and buy price, and the interface calculates performance against the current price.",
+  "رمز السهم": "Stock symbol",
+  "الكمية": "Quantity",
+  "سعر الشراء": "Buy price",
+  "إضافة للمحفظة": "Add to portfolio",
+  "لوحة أمريكية متقدمة": "Advanced US dashboard",
+  "ملخص القرار للسوق الأمريكي": "US market decision summary",
+  "تجمع توصيات اليوم، الأسهم الشرعية فقط، أعلى مخاطرة، وأفضل نتيجة اختبار خلفي.": "Combines today's recommendations, Sharia-only stocks, highest risk, and best backtest result.",
+  "خاص بالسوق الأمريكي": "US market only",
+  "أسهم مرشحة للصعود خلال 1 إلى 3 أشهر": "Stocks expected to rise in 1 to 3 months",
+  "كل خانة تعرض هدف السعر المتوقع والمدة: شهر، شهرين، أو 3 شهور.": "Each column shows the expected target price and duration: 1, 2, or 3 months.",
+  "فرص الصعود": "Upside opportunities",
+  "التوصيات": "Recommendations",
+  "هذه تحليلات آلية تعليمية وليست نصيحة مالية.": "These are educational automated analyses, not financial advice.",
+  "فتح وغلق كروت الأسهم": "Open and close stock cards",
+  "غلق الكل": "Close all",
+  "فتح الكل": "Open all",
+  "تحميل": "Loading",
+  "أوضاع عرض التوصيات": "Recommendation display modes",
+  "مضاربة": "Scalping",
+  "أدوات التوصيات": "Recommendation tools",
+  "فلترة الإشارات": "Signal filter",
+  "الكل": "All",
+  "فلترة شرعية": "Sharia filter",
+  "كل التصنيفات": "All ratings",
+  "مطابق": "Compliant",
+  "غير مطابق": "Not compliant",
+  "مختلف عليه": "Doubtful",
+  "بحث": "Search",
+  "رمز أو اسم السهم": "Symbol or stock name",
+  "فرز": "Sort",
+  "الأولوية": "Priority",
+  "الثقة": "Confidence",
+  "السكور": "Score",
+  "الحركة المتوقعة": "Expected move",
+  "السعر": "Price",
+  "سجل التوصيات": "Recommendation history",
+  "آخر إشارات الوكيل": "Latest agent signals",
+  "يحفظ آخر التوصيات مع متابعة هل وصل السعر إلى الهدف لاحقاً.": "Stores the latest recommendations and tracks whether price later reached the target.",
+  "مسح السجل": "Clear history",
+  "تقييم دقة التوصيات": "Recommendation accuracy rating",
+  "فتح التفاصيل": "Open details",
+  "غلق التفاصيل": "Close details",
+  "السعر الحالي": "Current price",
+  "السعر المتوقع": "Expected price",
+  "هدف 1": "Target 1",
+  "هدف 2": "Target 2",
+  "وقف الخسارة": "Stop loss",
+  "نسبة الثقة": "Confidence",
+  "زخم": "Momentum",
+  "تذبذب": "Volatility",
+  "المخاطرة": "Risk",
+  "صحة البيانات": "Data health",
+  "تحليل الفريمات": "Timeframe analysis",
+  "لا توجد إشعارات محفوظة حالياً.": "No saved notifications yet.",
+  "لا توجد نتائج مطابقة للبحث أو الفلتر الحالي.": "No results match the current search or filter.",
+  "لا توجد بيانات": "No data",
+  "لا توجد إشارة شراء": "No buy signal",
+  "لا توجد إشارة بيع": "No sell signal",
+  "السوق مفتوح": "Market open",
+  "السوق مغلق": "Market closed",
+  "السوق": "Market",
+  "رمز": "symbols",
+  "متصل - بيانات مخزنة لحظيا": "Connected - live cached data",
+  "متصل - بيانات جديدة": "Connected - fresh data",
+  "تعذر الاتصال": "Connection failed",
+  "اتصال متقطع - آخر بيانات محفوظة": "Unstable connection - latest saved data",
+  "تعذر": "Failed",
+  "يحلل": "Analyzing",
+  "جاري تحليل": "Analyzing",
+  "اشتر الآن": "Buy now",
+  "بيع الآن": "Sell now",
+  "شراء سريع": "Fast buy",
+  "بيع سريع": "Fast sell",
+  "قرار المضاربة": "Scalp decision",
+  "هدف سريع": "Fast target",
+  "وقف سريع": "Fast stop",
+  "الحركة": "Move",
+  "فرصة": "Opportunity",
+  "مدة": "Duration",
+  "الهدف": "Target",
+  "الفريمات": "Timeframes",
+  "دقة السجل": "Track record accuracy",
+  "رابحة": "wins",
+  "خاسرة": "losses",
+  "تنبيهات محفوظة": "Saved alerts",
+  "صفقات مختارة للمتابعة": "followed trades",
+  "تحت المتابعة": "Tracking",
+  "وصل الهدف": "Target reached",
+  "صفقة خاسرة": "Losing trade",
+  "قائمة المتابعة": "Followed list",
+  "إيقاف المتابعة": "Stop following",
+  "المتابعة": "Follow",
+  "آخر سعر": "Last price",
+  "سعر الإشارة": "Signal price",
+  "العائد الحالي": "Current return",
+  "وقف الخسارة": "Stop loss",
+  "أعلى مخاطرة": "Highest risk",
+  "إزالة": "Remove",
+  "حذف": "Delete",
+  "محفظتك فارغة. أضف سهم والكمية وسعر الشراء.": "Your portfolio is empty. Add a stock, quantity, and buy price.",
+  "السجل فارغ حالياً. يبدأ الحفظ بعد أول تحديث للتوصيات.": "History is empty. Saving starts after the first recommendation update.",
+  "لا توجد حالياً إشارة تجمع شراء + مطابق للشريعة + ثقة فوق 70%.": "No signal currently combines buy + Sharia compliant + confidence above 70%.",
+  "لا توجد فرصة ذهبية مكتملة الشروط حالياً. راقب التحديثات أو وسع السوق المختار.": "No fully qualified golden opportunity right now. Watch updates or widen the selected market."
+};
+const UI_TEXT_TRANSLATION_ENTRIES = Object.entries(UI_TEXT_TRANSLATIONS).sort((a, b) => b[0].length - a[0].length);
+const COMMON_UI_TERM_TRANSLATIONS = [
+  ["بورصة الكويت", "Kuwait Exchange"],
+  ["بورصة السعودية", "Saudi Exchange"],
+  ["أسواق الإمارات", "UAE markets"],
+  ["بورصة قطر", "Qatar Exchange"],
+  ["بورصة البحرين", "Bahrain Bourse"],
+  ["بورصة عمان", "Oman Exchange"],
+  ["الفوركس", "Forex"],
+  ["العملات الرقمية", "Crypto"],
+  ["الذهب والفضة والنفط", "Gold, silver, and oil"],
+  ["أسهم الذكاء الاصطناعي", "AI stocks"],
+  ["أسهم التقنية", "Technology stocks"],
+  ["أسهم توزيعات الأرباح", "Dividend stocks"],
+  ["أسهم الرعاية الصحية والطب", "Healthcare and medical stocks"],
+  ["اسهم سلع غذائية", "Food commodity stocks"],
+  ["مطابق للشريعة", "Sharia compliant"],
+  ["غير مطابق في السوق الحالي", "Unavailable in current market"],
+  ["شغل راقب قائمتي فقط", "Enable watch my list only"],
+  ["السعر الحالي", "Current price"],
+  ["السعر المتوقع", "Expected price"],
+  ["وقف الخسارة", "Stop loss"],
+  ["نسبة الثقة", "Confidence"],
+  ["صحة البيانات", "Data health"],
+  ["تحليل الفريمات", "Timeframe analysis"],
+  ["الحالي", "Current"],
+  ["الهدف", "Target"],
+  ["المدة", "Duration"],
+  ["ثقة", "confidence"],
+  ["بيانات", "data"],
+  ["تداول", "Volume"],
+  ["فريم", "Timeframe"],
+  ["الدقيقة", "1 minute"],
+  ["ساعة", "hour"],
+  ["يوم", "day"],
+  ["أسبوع", "week"],
+  ["شهر", "month"],
+  ["السعر", "price"],
+  ["مفتوح", "open"],
+  ["مغلق", "closed"],
+  ["يفتح", "opens"],
+  ["يصكر", "closes"],
+  ["يغلق", "closes"],
+  ["بتوقيت", "time"],
+  ["من", "from"],
+  ["إلى", "to"],
+  ["لا توجد", "No"],
+  ["جاري", "Loading"],
+  ["تعذر", "Failed"],
+  ["أضف", "Add"],
+  ["حذف", "Delete"],
+  ["إزالة", "Remove"],
+  ["فتح", "Open"],
+  ["غلق", "Close"]
+].sort((a, b) => b[0].length - a[0].length);
+const UI_TRANSLATABLE_ATTRS = ["placeholder", "title", "aria-label"];
+const originalTextByNode = new WeakMap();
+let uiTranslationObserver = null;
+let isTranslatingInterface = false;
+let queuedInterfaceTranslation = false;
 const SHARED_TRADE_SYNC_DEBOUNCE_MS = 800;
 const SHARED_TRADE_POLL_MS = 10_000;
 const NOTIFICATION_SAVE_DEBOUNCE_MS = 800;
@@ -357,6 +619,7 @@ function registerPwaServiceWorker() {
 
 async function init() {
   initSettingsPanel();
+  initInterfaceTranslator();
   watchlist = normalizeWatchlist(watchlist);
   voiceMonitors = normalizeWatchlist(voiceMonitors);
   saveStored("the-sfm-trader-watchlist", watchlist);
@@ -580,8 +843,10 @@ function updateSettingsPanelLanguage() {
 function applyAppSettings(options = {}) {
   const english = isEnglishLanguage();
   document.documentElement.lang = english ? "en" : "ar";
+  document.documentElement.dir = english ? "ltr" : "rtl";
   document.body?.classList.toggle("language-en", english);
   updateSettingsPanelLanguage();
+  queueTranslateInterface();
 
   if (options.updateIntro !== false && introOverlay && !introOverlay.classList.contains("is-closing")) {
     const greeting = getIntroGreeting();
@@ -605,6 +870,162 @@ function normalizeAppSettings(value) {
 function sanitizeDisplayName(value) {
   const name = String(value || "").replace(/\s+/g, " ").trim();
   return name.slice(0, 32) || DEFAULT_USER_DISPLAY_NAME;
+}
+
+function initInterfaceTranslator() {
+  if (uiTranslationObserver || !document.body) return;
+
+  uiTranslationObserver = new MutationObserver(() => {
+    if (!isTranslatingInterface) queueTranslateInterface();
+  });
+  uiTranslationObserver.observe(document.body, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: UI_TRANSLATABLE_ATTRS
+  });
+
+  queueTranslateInterface();
+}
+
+function queueTranslateInterface() {
+  if (queuedInterfaceTranslation) return;
+
+  queuedInterfaceTranslation = true;
+  window.requestAnimationFrame(() => {
+    queuedInterfaceTranslation = false;
+    translateInterface();
+  });
+}
+
+function translateInterface(root = document.body) {
+  if (!root || isTranslatingInterface) return;
+
+  isTranslatingInterface = true;
+  try {
+    translateElementAttributes(root);
+
+    if (root.nodeType === Node.TEXT_NODE) {
+      translateTextNode(root);
+      return;
+    }
+
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        if (!parent || shouldSkipTranslation(parent)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+
+    while (walker.nextNode()) translateTextNode(walker.currentNode);
+
+    if (root.querySelectorAll) {
+      for (const element of root.querySelectorAll("*")) {
+        translateElementAttributes(element);
+      }
+    }
+  } finally {
+    isTranslatingInterface = false;
+  }
+}
+
+function shouldSkipTranslation(element) {
+  return ["SCRIPT", "STYLE", "NOSCRIPT", "CANVAS", "CODE"].includes(element.tagName);
+}
+
+function translateTextNode(node) {
+  const current = node.nodeValue || "";
+  if (!current.trim()) return;
+
+  if (isEnglishLanguage()) {
+    if (hasArabicText(current)) {
+      originalTextByNode.set(node, current);
+    }
+
+    const source = originalTextByNode.get(node) || current;
+    const translated = translateArabicTextToEnglish(source);
+    if (translated !== current) node.nodeValue = translated;
+    return;
+  }
+
+  if (originalTextByNode.has(node)) {
+    node.nodeValue = originalTextByNode.get(node);
+  }
+}
+
+function translateElementAttributes(element) {
+  if (!element || element.nodeType !== Node.ELEMENT_NODE || shouldSkipTranslation(element)) return;
+
+  for (const attr of UI_TRANSLATABLE_ATTRS) {
+    if (!element.hasAttribute(attr)) continue;
+
+    const dataKey = `i18nOriginal${toDatasetSuffix(attr)}`;
+    const current = element.getAttribute(attr) || "";
+
+    if (isEnglishLanguage()) {
+      if (hasArabicText(current)) {
+        element.dataset[dataKey] = current;
+      }
+
+      const source = element.dataset[dataKey] || current;
+      const translated = translateArabicTextToEnglish(source);
+      if (translated !== current) element.setAttribute(attr, translated);
+      continue;
+    }
+
+    if (element.dataset[dataKey]) {
+      element.setAttribute(attr, element.dataset[dataKey]);
+    }
+  }
+}
+
+function toDatasetSuffix(attr) {
+  return attr
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("");
+}
+
+function hasArabicText(text) {
+  return /[\u0600-\u06FF]/.test(String(text || ""));
+}
+
+function translateArabicTextToEnglish(text) {
+  if (!hasArabicText(text)) return text;
+
+  const value = String(text);
+  const leading = value.match(/^\s*/)?.[0] || "";
+  const trailing = value.match(/\s*$/)?.[0] || "";
+  const trimmed = value.trim();
+  const exact = UI_TEXT_TRANSLATIONS[trimmed];
+  if (exact) return `${leading}${exact}${trailing}`;
+
+  let translated = trimmed;
+  for (const [arabic, english] of UI_TEXT_TRANSLATION_ENTRIES) {
+    translated = translated.replaceAll(arabic, english);
+  }
+
+  translated = translated
+    .replace(/(\d+(?:\.\d+)?)\s*رمز/g, "$1 symbols")
+    .replace(/(\d+(?:\.\d+)?)\s*سهم/g, "$1 stocks")
+    .replace(/(\d+(?:\.\d+)?)\s*صفقات/g, "$1 trades")
+    .replace(/(\d+(?:\.\d+)?)\s*فرصة/g, "$1 opportunities")
+    .replace(/(\d+(?:\.\d+)?)\s*دقيقة/g, "$1 min")
+    .replace(/(\d+(?:\.\d+)?)\s*شهور/g, "$1 months")
+    .replace(/(\d+(?:\.\d+)?)\s*شهر/g, "$1 month")
+    .replace(/٪/g, "%")
+    .replace(/،/g, ",")
+    .replace(/؛/g, ";")
+    .replace(/؟/g, "?")
+    .replace(/ · /g, " · ");
+
+  for (const [arabic, english] of COMMON_UI_TERM_TRANSLATIONS) {
+    translated = translated.replaceAll(arabic, english);
+  }
+
+  return `${leading}${translated}${trailing}`;
 }
 
 function closeIntroCeremony() {

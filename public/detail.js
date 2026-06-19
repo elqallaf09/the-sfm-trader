@@ -2,6 +2,130 @@ const params = new URLSearchParams(window.location.search);
 const symbol = params.get("symbol") || "";
 const NUMBER_LOCALE = "ar-KW-u-nu-latn";
 const NUMBER_OPTIONS = { numberingSystem: "latn" };
+const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
+const DETAIL_TEXT_TRANSLATIONS = {
+  "تفاصيل السهم - the-sfm trader": "Stock details - the-sfm trader",
+  "صفحة تحليل السهم": "Stock analysis page",
+  "رجوع للأسواق": "Back to markets",
+  "تحميل التحليل": "Loading analysis",
+  "تنبيه لحظي": "Live alert",
+  "يتم تجهيز التوصية.": "Preparing the recommendation.",
+  "السعر الحالي": "Current price",
+  "السعر المتوقع": "Expected price",
+  "هدف 1": "Target 1",
+  "هدف 2": "Target 2",
+  "وقف الخسارة": "Stop loss",
+  "الدعم": "Support",
+  "المقاومة": "Resistance",
+  "الحركة المتوقعة": "Expected move",
+  "المدة": "Duration",
+  "السكور": "Score",
+  "المخاطرة": "Risk",
+  "جودة التحليل": "Analysis quality",
+  "صحة البيانات": "Data health",
+  "معلومات عامة": "General information",
+  "ما هو السهم؟": "What is this stock?",
+  "الشرعية": "Sharia",
+  "التوافق الشرعي": "Sharia compliance",
+  "من دقيقة إلى شهر": "From 1 minute to 1 month",
+  "تحليل الفريمات": "Timeframe analysis",
+  "تجميع سريع يوضح هل الفريمات القصيرة والطويلة متفقة أو متضاربة.": "A quick summary showing whether short and long timeframes agree or conflict.",
+  "التوقعات": "Outlook",
+  "الأهداف القادمة": "Upcoming targets",
+  "الأسباب": "Reasons",
+  "لماذا هذه التوصية؟": "Why this recommendation?",
+  "الرسم المختصر": "Mini chart",
+  "حركة السعر الأخيرة": "Recent price action",
+  "رسم حركة السعر": "Price movement chart",
+  "اختبار خلفي": "Backtest",
+  "جودة الإشارة": "Signal quality",
+  "لم يتم تحديد رمز السهم.": "No stock symbol was selected.",
+  "جاري تحليل السهم": "Analyzing the stock",
+  "تعذر تحميل تفاصيل السهم": "Could not load stock details",
+  "بيانات مخزنة لحظياً": "Live cached data",
+  "تحليل جديد": "Fresh analysis",
+  "لا تتوفر معلومات وصفية كافية لهذا الرمز.": "Not enough descriptive information is available for this symbol.",
+  "ثقة": "confidence",
+  "توافق الفريمات": "Timeframe agreement",
+  "تغطية": "coverage",
+  "الاختصاص": "Specialty",
+  "السوق": "Market",
+  "المنطقة": "Region",
+  "البورصة": "Exchange",
+  "العملة": "Currency",
+  "حالة السوق": "Market status",
+  "ملاحظة المزود": "Provider note",
+  "حجم التداول النسبي": "Relative volume",
+  "غير معروف": "Unknown",
+  "لا يوجد تصنيف شرعي مؤكد.": "No confirmed Sharia rating is available.",
+  "المصدر": "Source",
+  "تصنيف داخلي قابل للتحديث": "Internal rating, subject to updates",
+  "آخر مراجعة": "Last review",
+  "الفريمات غير مكتملة لهذا الرمز حالياً.": "Timeframes are currently incomplete for this symbol.",
+  "الثقة": "Confidence",
+  "الزخم": "Momentum",
+  "الاتجاه": "Trend",
+  "لا توجد أهداف شهرية متاحة لهذا الرمز.": "No monthly targets are available for this symbol.",
+  "لا توجد أسباب كافية لهذا الرمز حالياً.": "No sufficient reasons are available for this symbol right now.",
+  "معدل النجاح": "Win rate",
+  "عدد العينات": "Samples",
+  "أفق الاختبار": "Test horizon",
+  "يوم": "days",
+  "متوسط العائد": "Average return",
+  "خطة التنفيذ": "Execution plan",
+  "ملاحظات المخاطرة": "Risk notes",
+  "اشتر الآن": "Buy now",
+  "إشارة شراء قوية": "Strong buy signal",
+  "الفريمات متوافقة بنسبة": "Timeframes agree by",
+  "والثقة": "and confidence",
+  "راقب السعر والهدف قبل التنفيذ.": "Watch price and target before execution.",
+  "بيع الآن": "Sell now",
+  "إشارة بيع واضحة": "Clear sell signal",
+  "الاتجاه يميل للبيع بثقة": "The trend leans sell with confidence",
+  "تجنب الدخول الشرائي حتى تتغير الفريمات.": "Avoid long entry until the timeframes change.",
+  "انتظر": "Wait",
+  "لا تتداول هذا السهم الآن": "Do not trade this stock now",
+  "الإشارات غير كافية أو متضاربة. الأفضل الانتظار حتى تتوافق فريمات الدخول مع اليومي.": "Signals are insufficient or conflicting. It is better to wait until entry timeframes align with the daily.",
+  "تعذر التحميل": "Loading failed",
+  "قوي جداً": "Very strong",
+  "قوي": "Strong",
+  "متوسط": "Medium",
+  "ضعيف": "Weak"
+};
+const detailOriginalTextByNode = new WeakMap();
+const DETAIL_TRANSLATABLE_ATTRS = ["placeholder", "title", "aria-label"];
+const DETAIL_TEXT_TRANSLATION_ENTRIES = Object.entries(DETAIL_TEXT_TRANSLATIONS)
+  .sort((a, b) => b[0].length - a[0].length);
+const DETAIL_COMMON_TERM_TRANSLATIONS = [
+  ["غير مطابق", "Not compliant"],
+  ["مختلف عليه", "Doubtful"],
+  ["مطابق", "Compliant"],
+  ["شراء", "Buy"],
+  ["بيع", "Sell"],
+  ["انتظار", "Wait"],
+  ["اشتر الآن", "Buy now"],
+  ["بيع الآن", "Sell now"],
+  ["ثقة", "confidence"],
+  ["تغطية", "coverage"],
+  ["الفريمات", "timeframes"],
+  ["الأهداف", "targets"],
+  ["الهدف", "target"],
+  ["السعر", "price"],
+  ["السوق", "market"],
+  ["التحليل", "analysis"],
+  ["المخاطرة", "risk"],
+  ["منخفضة", "low"],
+  ["متوسطة", "medium"],
+  ["عالية", "high"],
+  ["قوي جداً", "very strong"],
+  ["قوي", "strong"],
+  ["متوسط", "medium"],
+  ["ضعيف", "weak"],
+  ["يوم", "days"],
+  ["شهر", "month"],
+  ["شهرين", "2 months"],
+  ["3 شهور", "3 months"]
+].sort((a, b) => b[0].length - a[0].length);
 
 const elements = {
   status: document.querySelector("#detail-status"),
@@ -40,6 +164,7 @@ const elements = {
   backtest: document.querySelector("#backtest-detail")
 };
 
+applyDetailLanguage();
 initMarketBackground();
 registerPwaServiceWorker();
 loadDetail();
@@ -60,6 +185,7 @@ async function loadDetail() {
 
   try {
     elements.status.textContent = "جاري تحليل السهم";
+    applyDetailLanguage();
     const response = await fetch(`/api/asset?symbol=${encodeURIComponent(symbol)}`);
     const data = await response.json();
 
@@ -69,6 +195,7 @@ async function loadDetail() {
 
     renderDetail(data);
     elements.status.textContent = data.cached ? "بيانات مخزنة لحظياً" : "تحليل جديد";
+    applyDetailLanguage();
   } catch (error) {
     showError(error.message);
   }
@@ -121,6 +248,7 @@ function renderDetail(data) {
   renderReasons(item.reasons || []);
   renderBacktest(item);
   drawSparkline(elements.sparkline, item.sparkline || [], item.action);
+  applyDetailLanguage();
 }
 
 function renderGeneralInfo(profile, market, item) {
@@ -264,6 +392,7 @@ function renderInfoRow(label, value) {
 function showError(message) {
   elements.status.textContent = "تعذر التحميل";
   document.querySelector("#detail-content").innerHTML = `<div class="empty">${escapeHtml(message)}</div>`;
+  applyDetailLanguage();
 }
 
 function calculateFinalScore(item) {
@@ -333,6 +462,132 @@ function drawSparkline(canvas, values = [], action) {
   });
   context.stroke();
 }
+
+function getDetailSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(APP_SETTINGS_STORAGE_KEY) || "{}");
+    return {
+      language: saved?.language === "en" ? "en" : "ar"
+    };
+  } catch {
+    return { language: "ar" };
+  }
+}
+
+function isDetailEnglishLanguage() {
+  return getDetailSettings().language === "en";
+}
+
+function applyDetailLanguage() {
+  const english = isDetailEnglishLanguage();
+  document.documentElement.lang = english ? "en" : "ar";
+  document.documentElement.dir = english ? "ltr" : "rtl";
+  document.body?.classList.toggle("language-en", english);
+  translateDetailInterface();
+}
+
+function translateDetailInterface(root = document.body) {
+  if (!root) return;
+
+  const textWalker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.nodeValue?.trim()) return NodeFilter.FILTER_REJECT;
+      const parent = node.parentElement;
+      if (!parent || shouldSkipDetailTranslation(parent)) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+
+  const textNodes = [];
+  while (textWalker.nextNode()) textNodes.push(textWalker.currentNode);
+  textNodes.forEach(translateDetailTextNode);
+
+  const elementsToTranslate = root.nodeType === Node.ELEMENT_NODE
+    ? [root, ...root.querySelectorAll("*")]
+    : Array.from(root.querySelectorAll?.("*") || []);
+  elementsToTranslate.forEach(translateDetailElementAttributes);
+}
+
+function translateDetailTextNode(node) {
+  const english = isDetailEnglishLanguage();
+  const currentText = node.nodeValue || "";
+
+  if (english) {
+    if (detailHasArabicText(currentText)) detailOriginalTextByNode.set(node, currentText);
+    const originalText = detailOriginalTextByNode.get(node) || currentText;
+    node.nodeValue = detailHasArabicText(originalText)
+      ? translateDetailArabicToEnglish(originalText)
+      : originalText;
+    return;
+  }
+
+  if (detailOriginalTextByNode.has(node)) {
+    node.nodeValue = detailOriginalTextByNode.get(node);
+  }
+}
+
+function translateDetailElementAttributes(element) {
+  if (shouldSkipDetailTranslation(element)) return;
+
+  const english = isDetailEnglishLanguage();
+  for (const attr of DETAIL_TRANSLATABLE_ATTRS) {
+    if (!element.hasAttribute(attr)) continue;
+
+    const datasetKey = `original${toDetailDatasetSuffix(attr)}`;
+    const currentValue = element.getAttribute(attr) || "";
+
+    if (english) {
+      if (detailHasArabicText(currentValue)) element.dataset[datasetKey] = currentValue;
+      const originalValue = element.dataset[datasetKey] || currentValue;
+      if (detailHasArabicText(originalValue)) {
+        element.setAttribute(attr, translateDetailArabicToEnglish(originalValue));
+      }
+      continue;
+    }
+
+    if (element.dataset[datasetKey]) element.setAttribute(attr, element.dataset[datasetKey]);
+  }
+}
+
+function shouldSkipDetailTranslation(element) {
+  return ["SCRIPT", "STYLE", "CANVAS", "SVG", "PATH"].includes(element.tagName);
+}
+
+function translateDetailArabicToEnglish(text) {
+  if (!detailHasArabicText(text)) return text;
+
+  const leading = text.match(/^\s*/)?.[0] || "";
+  const trailing = text.match(/\s*$/)?.[0] || "";
+  const coreText = text.trim();
+  let translated = DETAIL_TEXT_TRANSLATIONS[coreText] || coreText;
+
+  if (translated === coreText) {
+    for (const [arabic, english] of DETAIL_TEXT_TRANSLATION_ENTRIES) {
+      if (translated.includes(arabic)) translated = translated.replaceAll(arabic, english);
+    }
+  }
+
+  for (const [arabic, english] of DETAIL_COMMON_TERM_TRANSLATIONS) {
+    if (translated.includes(arabic)) translated = translated.replaceAll(arabic, english);
+  }
+
+  return `${leading}${translated}${trailing}`;
+}
+
+function detailHasArabicText(text) {
+  return /[\u0600-\u06ff]/.test(String(text || ""));
+}
+
+function toDetailDatasetSuffix(attr) {
+  return attr
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join("");
+}
+
+window.addEventListener("storage", (event) => {
+  if (event.key === APP_SETTINGS_STORAGE_KEY) applyDetailLanguage();
+});
 
 function initMarketBackground() {
   const canvas = document.querySelector("#market-bg");
