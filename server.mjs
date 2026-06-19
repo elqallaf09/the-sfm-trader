@@ -631,12 +631,14 @@ async function handleVoiceCommand(response, payload) {
   if (!transcript) {
     return sendJson(response, { error: "النص الصوتي مطلوب" }, 400);
   }
+  const language = payload?.language === "en" ? "en" : "ar";
 
   const sessionReply = getVoiceMarketSessionReply(transcript);
   if (sessionReply) {
     return sendJson(response, {
       ...sessionReply,
       aiEngine: "local",
+      language,
       transcript,
       generatedAt: new Date().toISOString()
     });
@@ -649,6 +651,7 @@ async function handleVoiceCommand(response, payload) {
 
   const voicePayload = {
     transcript,
+    language,
     activeMarket: requestedMarket,
     recommendations
   };
@@ -660,6 +663,7 @@ async function handleVoiceCommand(response, payload) {
   const result = {
     ...agentResult,
     aiEngine: agentResult.aiEngine || "python",
+    language,
     marketId: requestedMarket,
     transcript,
     generatedAt: new Date().toISOString()
@@ -1025,8 +1029,10 @@ async function getOllamaStatus() {
 async function runOllamaVoiceAgent(payload) {
   if (!OLLAMA_ENABLED || Date.now() < ollamaUnavailableUntil) return null;
 
+  const english = payload.language === "en";
   const userContent = JSON.stringify({
     transcript: payload.transcript,
+    language: payload.language || "ar",
     activeMarket: payload.activeMarket,
     recommendations: payload.recommendations.slice(0, 25)
   });
@@ -1038,13 +1044,14 @@ async function runOllamaVoiceAgent(payload) {
         "You are the-sfm trader local voice brain. Return ONLY valid JSON. " +
         "Understand Arabic Kuwaiti and English trading commands. " +
         "Use only provided market recommendations; never invent prices or symbols. " +
-        "JSON schema: {\"intent\":\"greeting|asset_lookup|best_buy|best_sell|best_sharia|monthly_upside|most_traded|unknown\",\"symbol\":\"\",\"monitor\":false,\"openDetail\":false,\"reply\":\"Arabic concise reply\"}. " +
+        `Reply language must be ${english ? "English" : "Arabic"}. ` +
+        `JSON schema: {"intent":"greeting|asset_lookup|best_buy|best_sell|best_sharia|monthly_upside|most_traded|unknown","symbol":"","monitor":false,"openDetail":false,"reply":"${english ? "English" : "Arabic"} concise reply"}. ` +
         "For asset lookup set symbol if mentioned. For monitor requests set monitor true. " +
         "For buy/sell/monthly choose the best item from recommendations and mention confidence, current price, target, and duration. " +
         "For phrases mentioning شرعي, الشريعة, مطابق للشريعة, حلال, or halal choose the best recommendation where shariaStatus is compliant and state that clearly. " +
         "Arabic phrases like أفضل سهم اليوم, ماهو أفضل سهم, أقوى سهم, شنو ترشح, or سهم اشتريه اليوم mean intent best_buy. " +
         "For most_traded choose highest latestVolume and mention volume and current recommendation. " +
-        "Always include a short risk reminder in Arabic for trading recommendations."
+        `Always include a short risk reminder in ${english ? "English" : "Arabic"} for trading recommendations.`
     },
     {
       role: "user",

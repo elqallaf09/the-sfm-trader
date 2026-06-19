@@ -149,11 +149,39 @@ const UI_TEXT_TRANSLATIONS = {
   "الأسواق": "Markets",
   "اختر السوق، وسيعرض الوكيل فرص الشراء والبيع مع الثقة والسعر المتوقع والمدة.": "Choose a market and the agent will show buy and sell opportunities with confidence, expected price, and duration.",
   "نبض السوق": "Market pulse",
+  "بورصة الكويت": "Kuwait Exchange",
+  "بورصة السعودية": "Saudi Exchange",
+  "أسواق الإمارات": "UAE markets",
+  "الإمارات": "UAE",
+  "بورصة قطر": "Qatar Exchange",
+  "قطر": "Qatar",
+  "بورصة البحرين": "Bahrain Bourse",
+  "البحرين": "Bahrain",
+  "بورصة عمان": "Oman Exchange",
+  "عمان": "Oman",
+  "كل بورصات الخليج": "All GCC exchanges",
+  "جميع الأسواق": "All markets",
+  "سوق الفوركس": "Forex market",
+  "سوق العملات الرقمية": "Crypto market",
+  "أسهم الرعاية الصحية والطب": "Healthcare and medical stocks",
+  "اسهم سلع غذائية": "Food commodity stocks",
+  "هولندا، ألمانيا، فرنسا، سويسرا، بريطانيا": "Netherlands, Germany, France, Switzerland, United Kingdom",
+  "اليابان، هونغ كونغ، الصين، كوريا، الهند": "Japan, Hong Kong, China, Korea, India",
+  "اليابان، هونغ كونغ، الصين، كوريا": "Japan, Hong Kong, China, Korea",
   "لوحة التداول الحية": "Live trading floor",
   "لوحة النبض الحية": "Live market pulse",
   "SFM يقرأ السوق الآن ويحوّل الإشارات إلى قرارات واضحة.": "SFM is reading the market now and turning signals into clear decisions.",
   "حالة المساعد": "Assistant status",
   "جاهز يراقب السوق": "Ready and watching the market",
+  "المساعد يرى زخم شراء": "Assistant sees buying momentum",
+  "المساعد يرى ضغط بيع": "Assistant sees selling pressure",
+  "المساعد ينتظر كسر التوازن": "Assistant is waiting for balance break",
+  "النبض هابط": "pulse bearish",
+  "النبض صاعد": "pulse bullish",
+  "النبض متوازن": "pulse balanced",
+  "SFM يراقب": "SFM watches",
+  "متوسط الثقة": "Average confidence",
+  "وأقوى تركيز الآن على": "and strongest focus is on",
   "قائد الحركة": "Move leader",
   "ضغط السوق": "Market pressure",
   "الحركة القادمة": "Next move",
@@ -206,6 +234,25 @@ const UI_TEXT_TRANSLATIONS = {
   "اختيارات سريعة للمضاربة": "Quick scalp picks",
   "اختر سهم لعرض توصية مضاربة فورية.": "Choose a stock to show an instant scalp recommendation.",
   "السوق الأمريكي": "US market",
+  "يرتب الفرص حسب الثقة، جودة البيانات، الفريمات، والمخاطر.": "Ranks opportunities by confidence, data quality, timeframes, and risk.",
+  "إشارة سريعة": "Fast signal",
+  "أقل مخاطرة": "Lowest risk",
+  "قرار الوضع الحالي": "Current mode decision",
+  "أفضل فرصة شرعية": "Best Sharia opportunity",
+  "السلع والعقود الآجلة": "Commodities and futures",
+  "حسب أيام التداول المعتادة": "according to regular trading days",
+  "أسهم أمريكية عالية السيولة.": "High-liquidity US stocks.",
+  "أفضل عائد": "Best return",
+  "لا تتداول": "Do not trade",
+  "ليست نصيحة مالية. النموذج يعتمد على مؤشرات فنية بسيطة وبيانات مجانية قد تكون متأخرة أو ناقصة.": "Not financial advice. The model uses simple technical indicators and free data that may be delayed or incomplete.",
+  "إجمالي الإشارات": "Total signals",
+  "نسبة الوصول للهدف": "Target hit rate",
+  "متوسط العائد": "Average return",
+  "المختارة للمتابعة": "Selected for tracking",
+  "تنبيهات هدف ووقف وتغير توصية": "Target, stop, and signal-change alerts",
+  "الصفقات اللي اخترتها وتوصل لك تنبيهات عنها.": "Trades you selected and receive alerts for.",
+  "وقت الإشارة": "Signal time",
+  "صفقات نشطة لم تصل للهدف أو وقف الخسارة.": "Active trades that have not reached target or stop loss.",
   "آخر تحديث": "Last update",
   "عدد الفرص": "Opportunities",
   "شراء": "Buy",
@@ -293,6 +340,7 @@ const UI_TEXT_TRANSLATIONS = {
   "لا توجد إشعارات محفوظة حالياً.": "No saved notifications yet.",
   "لا توجد نتائج مطابقة للبحث أو الفلتر الحالي.": "No results match the current search or filter.",
   "لا توجد بيانات": "No data",
+  "لا توجد بيانات حالية": "No current data",
   "لا توجد إشارة شراء": "No buy signal",
   "لا توجد إشارة بيع": "No sell signal",
   "السوق مفتوح": "Market open",
@@ -333,6 +381,27 @@ const UI_TEXT_TRANSLATIONS = {
   "سعر الإشارة": "Signal price",
   "العائد الحالي": "Current return",
   "وقف الخسارة": "Stop loss",
+  "تابع الصفقة": "Follow trade",
+  "تمت متابعة": "Followed",
+  "تم إيقاف متابعة": "Stopped following",
+  "توصيات اليوم": "Today's recommendations",
+  "الأسهم الشرعية فقط": "Sharia-only stocks",
+  "أفضل Backtest": "Best backtest",
+  "أقوى حركة متوقعة": "Strongest expected move",
+  "نجاح": "win rate",
+  "أضف أول رمز لقائمة المراقبة.": "Add the first symbol to the watchlist.",
+  "تعذر جلب البيانات الآن": "Could not fetch data now",
+  "تعذر الرد": "Could not reply",
+  "تعذر جلب البيانات": "Could not fetch data",
+  "جلب البيانات": "fetch data",
+  "كل المزودين": "all providers",
+  "الرد": "reply",
+  "المزود مشغول مؤقتاً": "Provider is temporarily busy",
+  "جاري تحليل الرمز": "Analyzing symbol",
+  "بانتظار تحديث قائمة المراقبة": "Waiting for watchlist update",
+  "تحميل مستقل": "Independent loading",
+  "سيتم التحليل تلقائياً": "Will be analyzed automatically",
+  "القائمة تحلل رموزها الآن حتى لو كانت من سوق آخر غير السوق المعروض.": "The list analyzes its symbols now even if they belong to a different market.",
   "أعلى مخاطرة": "Highest risk",
   "إزالة": "Remove",
   "حذف": "Delete",
@@ -346,9 +415,14 @@ const COMMON_UI_TERM_TRANSLATIONS = [
   ["بورصة الكويت", "Kuwait Exchange"],
   ["بورصة السعودية", "Saudi Exchange"],
   ["أسواق الإمارات", "UAE markets"],
+  ["الإمارات", "UAE"],
   ["بورصة قطر", "Qatar Exchange"],
+  ["قطر", "Qatar"],
   ["بورصة البحرين", "Bahrain Bourse"],
+  ["البحرين", "Bahrain"],
   ["بورصة عمان", "Oman Exchange"],
+  ["عمان", "Oman"],
+  ["اليابان، هونغ كونغ، الصين، كوريا", "Japan, Hong Kong, China, Korea"],
   ["الفوركس", "Forex"],
   ["العملات الرقمية", "Crypto"],
   ["الذهب والفضة والنفط", "Gold, silver, and oil"],
@@ -360,12 +434,38 @@ const COMMON_UI_TERM_TRANSLATIONS = [
   ["مطابق للشريعة", "Sharia compliant"],
   ["غير مطابق في السوق الحالي", "Unavailable in current market"],
   ["شغل راقب قائمتي فقط", "Enable watch my list only"],
+  ["المساعد يرى زخم شراء", "Assistant sees buying momentum"],
+  ["المساعد يرى ضغط بيع", "Assistant sees selling pressure"],
+  ["المساعد ينتظر كسر التوازن", "Assistant is waiting for balance break"],
+  ["قرار الوضع الحالي", "Current mode decision"],
+  ["أفضل فرصة شرعية", "Best Sharia opportunity"],
+  ["السلع والعقود الآجلة", "Commodities and futures"],
+  ["حسب أيام التداول المعتادة", "according to regular trading days"],
+  ["أسهم أمريكية عالية السيولة.", "High-liquidity US stocks."],
+  ["ليست نصيحة مالية. النموذج يعتمد على مؤشرات فنية بسيطة وبيانات مجانية قد تكون متأخرة أو ناقصة.", "Not financial advice. The model uses simple technical indicators and free data that may be delayed or incomplete."],
+  ["إشارات حققت", "signals reached"],
+  ["إشارات وصلت", "signals reached"],
+  ["إجمالي الإشارات", "Total signals"],
+  ["نسبة الوصول للهدف", "Target hit rate"],
+  ["متوسط العائد", "Average return"],
+  ["المختارة للمتابعة", "Selected for tracking"],
+  ["تنبيهات هدف ووقف وتغير توصية", "Target, stop, and signal-change alerts"],
+  ["الصفقات اللي اخترتها وتوصل لك تنبيهات عنها.", "Trades you selected and receive alerts for."],
+  ["وقت الإشارة", "Signal time"],
+  ["صفقات نشطة لم تصل للهدف أو وقف الخسارة.", "Active trades that have not reached target or stop loss."],
+  ["النبض هابط", "pulse bearish"],
+  ["النبض صاعد", "pulse bullish"],
+  ["النبض متوازن", "pulse balanced"],
+  ["SFM يراقب", "SFM watches"],
+  ["متوسط الثقة", "Average confidence"],
+  ["وأقوى تركيز الآن على", "and strongest focus is on"],
   ["السعر الحالي", "Current price"],
   ["السعر المتوقع", "Expected price"],
   ["وقف الخسارة", "Stop loss"],
   ["نسبة الثقة", "Confidence"],
   ["صحة البيانات", "Data health"],
   ["تحليل الفريمات", "Timeframe analysis"],
+  ["الفريمات", "Timeframes"],
   ["الحالي", "Current"],
   ["الهدف", "Target"],
   ["المدة", "Duration"],
@@ -377,7 +477,50 @@ const COMMON_UI_TERM_TRANSLATIONS = [
   ["ساعة", "hour"],
   ["يوم", "day"],
   ["أسبوع", "week"],
+  ["أسابيع", "weeks"],
+  ["شهرين", "two months"],
   ["شهر", "month"],
+  ["شراء", "Buy"],
+  ["بيع", "Sell"],
+  ["انتظار", "Wait"],
+  ["صاعد", "bullish"],
+  ["هابط", "bearish"],
+  ["متوازن", "balanced"],
+  ["خلال", "within"],
+  ["وقف", "Stop"],
+  ["مخاطرة", "Risk"],
+  ["الصعود", "Upside"],
+  ["أقوى", "Strongest"],
+  ["أكثر", "Most"],
+  ["رابحة", "wins"],
+  ["خاسرة", "losses"],
+  ["مساء", "Evening"],
+  ["دائماً", "always"],
+  ["لا تتداول", "Do not trade"],
+  ["أفضل عائد", "Best return"],
+  ["عالية", "High"],
+  ["متوسطة", "Medium"],
+  ["منخفضة", "Low"],
+  ["ضعيفة", "Weak"],
+  ["نجاح", "Win rate"],
+  ["مغلقة", "Closed"],
+  ["السهم", "Symbol"],
+  ["التنبيه", "Alert"],
+  ["تحديث", "Update"],
+  ["صفقات", "Trades"],
+  ["المسجل", "recorded"],
+  ["حالياً", "currently"],
+  ["بعد", "in"],
+  ["الآن", "now"],
+  ["الأحد", "Sunday"],
+  ["الاثنين", "Monday"],
+  ["الثلاثاء", "Tuesday"],
+  ["الأربعاء", "Wednesday"],
+  ["الخميس", "Thursday"],
+  ["الجمعة", "Friday"],
+  ["السبت", "Saturday"],
+  ["ص", "AM"],
+  ["م", "PM"],
   ["السعر", "price"],
   ["مفتوح", "open"],
   ["مغلق", "closed"],
@@ -789,13 +932,12 @@ function speakIntroGreeting(text) {
   if (!text || !("speechSynthesis" in window)) return;
 
   try {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = isEnglishLanguage() ? "en-US" : "ar-SA";
+    const utterance = new SpeechSynthesisUtterance(localizeVoiceText(text));
+    utterance.lang = getVoiceSpeechLocale();
     utterance.rate = 0.95;
     utterance.pitch = 1;
-    const voices = window.speechSynthesis.getVoices();
-    const arabicVoice = voices.find((voice) => voice.lang?.toLowerCase().startsWith("ar"));
-    if (arabicVoice) utterance.voice = arabicVoice;
+    const preferredVoice = getPreferredSpeechVoice();
+    if (preferredVoice) utterance.voice = preferredVoice;
     window.speechSynthesis.speak(utterance);
   } catch {
     // بعض المتصفحات تمنع النطق التلقائي قبل أول تفاعل من المستخدم.
@@ -1029,6 +1171,19 @@ function hasArabicText(text) {
   return /[\u0600-\u06FF]/.test(String(text || ""));
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function shouldUseArabicWordBoundary(term) {
+  return !/\s/.test(term);
+}
+
+function replaceStandaloneArabicTerm(text, arabic, english) {
+  const pattern = new RegExp(`(^|[^\\u0600-\\u06FF])${escapeRegExp(arabic)}(?=$|[^\\u0600-\\u06FF])`, "g");
+  return text.replace(pattern, `$1${english}`);
+}
+
 function translateArabicTextToEnglish(text) {
   if (!hasArabicText(text)) return text;
 
@@ -1041,6 +1196,7 @@ function translateArabicTextToEnglish(text) {
 
   let translated = trimmed;
   for (const [arabic, english] of UI_TEXT_TRANSLATION_ENTRIES) {
+    if (shouldUseArabicWordBoundary(arabic)) continue;
     translated = translated.replaceAll(arabic, english);
   }
 
@@ -1059,10 +1215,16 @@ function translateArabicTextToEnglish(text) {
     .replace(/ · /g, " · ");
 
   for (const [arabic, english] of COMMON_UI_TERM_TRANSLATIONS) {
-    translated = translated.replaceAll(arabic, english);
+    translated = shouldUseArabicWordBoundary(arabic)
+      ? replaceStandaloneArabicTerm(translated, arabic, english)
+      : translated.replaceAll(arabic, english);
   }
 
   return `${leading}${translated}${trailing}`;
+}
+
+function localizeUiText(text) {
+  return isEnglishLanguage() ? translateArabicTextToEnglish(text) : text;
 }
 
 function closeIntroCeremony() {
@@ -1091,7 +1253,7 @@ async function loadMarkets() {
     button.className = "market-button";
     button.type = "button";
     button.dataset.market = market.id;
-    button.innerHTML = `<strong>${market.label}</strong><span>${market.count} رمز</span>`;
+    button.innerHTML = `<strong>${localizeUiText(market.label)}</strong><span>${localizeUiText(`${market.count} رمز`)}</span>`;
     button.addEventListener("click", () => {
       activeMarket = market.id;
       activeShariaFilter = "all";
@@ -1108,7 +1270,7 @@ async function loadMarkets() {
 async function loadRecommendations() {
   if (isLoading) return;
   isLoading = true;
-  loadingIndicator.textContent = "تحديث";
+  loadingIndicator.textContent = localizeUiText("تحديث");
 
   try {
     const endpoint =
@@ -1125,18 +1287,18 @@ async function loadRecommendations() {
     updateRecommendationHistory(data.recommendations || []);
     triggerSmartAlertPopup(data.smartAlerts || []);
     renderRecommendations(data);
-    connectionStatus.textContent = data.cached ? "متصل - بيانات مخزنة لحظيا" : "متصل - بيانات جديدة";
+    connectionStatus.textContent = localizeUiText(data.cached ? "متصل - بيانات مخزنة لحظيا" : "متصل - بيانات جديدة");
   } catch (error) {
     const message = getFriendlyFetchError(error, "تعذر الاتصال بالسيرفر. اضغط تحديث أو أعد فتح الصفحة.");
-    connectionStatus.textContent = lastData?.recommendations?.length ? "اتصال متقطع - آخر بيانات محفوظة" : "تعذر الاتصال";
+    connectionStatus.textContent = localizeUiText(lastData?.recommendations?.length ? "اتصال متقطع - آخر بيانات محفوظة" : "تعذر الاتصال");
 
     if (lastData?.recommendations?.length) {
       renderRecommendations(lastData);
     } else {
-      cards.innerHTML = `<div class="empty">${escapeHtml(message)}</div>`;
+      cards.innerHTML = `<div class="empty">${escapeHtml(localizeUiText(message))}</div>`;
     }
   } finally {
-    loadingIndicator.textContent = "جاهز";
+    loadingIndicator.textContent = localizeUiText("جاهز");
     isLoading = false;
   }
 }
@@ -1150,16 +1312,16 @@ function renderRecommendations(data) {
   const sells = all.filter((item) => item.action === "sell");
   const avg = all.length ? Math.round(all.reduce((sum, item) => sum + item.confidence, 0) / all.length) : 0;
 
-  marketTitle.textContent = data.market.label;
-  marketNote.textContent = data.market.note;
+  marketTitle.textContent = localizeUiText(data.market.label);
+  marketNote.textContent = localizeUiText(data.market.note);
   updatedAt.textContent = formatDateTime(data.generatedAt);
   opportunityCount.textContent = `${all.length} / ${data.market.totalSymbols}`;
   buyCount.textContent = buys.length;
   sellCount.textContent = sells.length;
   avgConfidence.textContent = all.length ? `${avg}%` : "--";
   dataProvider.textContent = data.dataProvider?.active || all[0]?.dataProvider || "--";
-  disclaimer.textContent = data.disclaimer;
-  marketPulse.textContent = getMarketPulse(all);
+  disclaimer.textContent = localizeUiText(data.disclaimer);
+  marketPulse.textContent = localizeUiText(getMarketPulse(all));
 
   setInsight(bestBuy, getTopItem(buys, "confidence"), "لا توجد إشارة شراء");
   setInsight(bestSell, getTopItem(sells, "confidence"), "لا توجد إشارة بيع");
@@ -1462,7 +1624,7 @@ function renderCommandCenter(data, filteredRecommendations = []) {
 
   if (commandCenterMode) commandCenterMode.textContent = modeLabel;
   if (commandCenterBrief) {
-    commandCenterBrief.textContent = `${data.market?.label || "السوق"} · ${formatNumber(all.length)} رمز · ${modeNote}`;
+    commandCenterBrief.textContent = localizeUiText(`${data.market?.label || "السوق"} · ${formatNumber(all.length)} رمز · ${modeNote}`);
   }
 
   commandCenterGrid.innerHTML = [
@@ -1692,7 +1854,7 @@ function updateSessionClock() {
     }).format(now);
   }
   if (sessionZone) sessionZone.textContent = label;
-  if (sessionMarketName) sessionMarketName.textContent = getMarketSessionName(marketId);
+  if (sessionMarketName) sessionMarketName.textContent = localizeUiText(getMarketSessionName(marketId));
   renderSessionCountdown(marketId, now);
   renderMarketHoursGrid(now);
 }
@@ -1701,11 +1863,11 @@ function renderSessionCountdown(marketId, now = new Date()) {
   const state = getMarketSessionState(marketId, now);
   if (!state || !sessionCountdown || !sessionStateLabel || !sessionNextEvent) return;
 
-  sessionStateLabel.textContent = state.isOpen ? "السوق مفتوح" : "السوق مغلق";
+  sessionStateLabel.textContent = localizeUiText(state.isOpen ? "السوق مفتوح" : "السوق مغلق");
   sessionStateLabel.classList.toggle("is-open", state.isOpen);
   sessionStateLabel.classList.toggle("is-closed", !state.isOpen);
-  sessionCountdown.textContent = state.countdownLabel;
-  sessionNextEvent.textContent = state.eventLabel;
+  sessionCountdown.textContent = localizeUiText(state.countdownLabel);
+  sessionNextEvent.textContent = localizeUiText(state.eventLabel);
 }
 
 function renderMarketHoursGrid(now = new Date()) {
@@ -1727,12 +1889,12 @@ function renderMarketHoursGrid(now = new Date()) {
       return `
         <article class="market-hours-card ${state.isOpen ? "is-open" : "is-closed"}">
           <div>
-            <span>${escapeHtml(entry.name)}</span>
-            <strong>${escapeHtml(stateLabel)}</strong>
+            <span>${escapeHtml(localizeUiText(entry.name))}</span>
+            <strong>${escapeHtml(localizeUiText(stateLabel))}</strong>
           </div>
-          <p>${escapeHtml(hoursLabel)}</p>
-          <small>${escapeHtml(daysLabel)}</small>
-          <b>${escapeHtml(state.eventLabel)} ${escapeHtml(state.countdownLabel)}</b>
+          <p>${escapeHtml(localizeUiText(hoursLabel))}</p>
+          <small>${escapeHtml(localizeUiText(daysLabel))}</small>
+          <b>${escapeHtml(localizeUiText(`${state.eventLabel} ${state.countdownLabel}`))}</b>
         </article>
       `;
     })
@@ -1895,7 +2057,7 @@ function renderTradingAtmosphere(data) {
     ? Math.round(items.reduce((sum, item) => sum + Number(item.confidence || 0), 0) / items.length)
     : 0;
   const pulse = getMarketPulse(items);
-  const marketLabel = data.market?.label || marketTitle?.textContent || "السوق";
+  const marketLabel = localizeUiText(data.market?.label || marketTitle?.textContent || "السوق");
   const readiness = avgConfidenceValue >= 70 && (buy || sell)
     ? "جاهز للتنفيذ"
     : "انتظر تأكيد أقوى";
@@ -1907,36 +2069,40 @@ function renderTradingAtmosphere(data) {
   }
 
   if (sfmFloorBrief) {
-    sfmFloorBrief.textContent = items.length
+    const briefText = items.length
       ? `${marketLabel}: النبض ${pulse}. SFM يراقب ${formatNumber(items.length)} رمز، متوسط الثقة ${formatNumber(avgConfidenceValue)}%، وأقوى تركيز الآن على ${leader?.symbol || highestScore?.symbol || "--"}.`
       : "SFM ينتظر وصول بيانات السوق حتى يبني قراءة كاملة.";
+    sfmFloorBrief.textContent = localizeUiText(briefText);
   }
 
   if (floorAgentMood) {
-    floorAgentMood.textContent = buy > sell
+    const moodText = buy > sell
       ? "المساعد يرى زخم شراء"
       : sell > buy
         ? "المساعد يرى ضغط بيع"
         : "المساعد ينتظر كسر التوازن";
+    floorAgentMood.textContent = localizeUiText(moodText);
   }
 
-  if (tradingMood) tradingMood.textContent = `${pulse} · ${formatNumber(items.length)} رمز · ${formatNumber(avgConfidenceValue)}% ثقة`;
+  if (tradingMood) tradingMood.textContent = localizeUiText(`${pulse} · ${formatNumber(items.length)} رمز · ${formatNumber(avgConfidenceValue)}% ثقة`);
   if (flowLeader) {
     flowLeader.textContent = leader
       ? `${leader.symbol} · ${formatPercent(leader.expectedMovePct)}`
       : "--";
   }
   if (flowPressure) {
-    flowPressure.textContent = items.length
+    const pressureText = items.length
       ? `شراء ${formatNumber(buy)} · بيع ${formatNumber(sell)} · انتظار ${formatNumber(hold)}`
       : "--";
+    flowPressure.textContent = localizeUiText(pressureText);
   }
   if (floorNextMove) {
-    floorNextMove.textContent = leader
+    const nextMoveText = leader
       ? `${leader.symbol} إلى ${formatMoney(leader.target1 || leader.expectedPrice, leader.currency)} خلال ${leader.duration || "الفترة القادمة"}`
       : "--";
+    floorNextMove.textContent = localizeUiText(nextMoveText);
   }
-  if (floorReadiness) floorReadiness.textContent = readiness;
+  if (floorReadiness) floorReadiness.textContent = localizeUiText(readiness);
   if (floorHeatmapTitle) floorHeatmapTitle.textContent = highestScore ? `${highestScore.symbol} · Score ${calculateFinalScore(highestScore).score}%` : "TOP SIGNALS";
 
   if (floorHeatmap) {
@@ -1950,7 +2116,7 @@ function renderTradingAtmosphere(data) {
       floorHeatmapSignature = nextHeatmapSignature;
       floorHeatmap.innerHTML = heatItems.length
         ? heatItems.map(({ item, score }, index) => renderFloorHeatCell(item, score, index)).join("")
-        : "<div class=\"empty\">لا توجد بيانات كافية لخريطة الحرارة حالياً.</div>";
+        : `<div class="empty">${escapeHtml(localizeUiText("لا توجد بيانات كافية لخريطة الحرارة حالياً."))}</div>`;
       attachDetailOpeners(floorHeatmap);
       markLiveFloorRendered();
       queueTranslateInterface();
@@ -2805,9 +2971,8 @@ function notifyFollowedTrade(entry, current, eventType) {
 
   if (voiceActive) {
     const spoken = `${titles[eventType]}. ${messages[eventType]}`;
-    voiceReply.textContent = spoken;
-    voiceStatus.textContent = "تنبيه صفقة متابعة";
-    speakVoice(spoken);
+    setVoiceReplyText(spoken, { speak: true });
+    setVoiceStatusText("تنبيه صفقة متابعة");
   }
 }
 
@@ -3348,7 +3513,7 @@ function initVoiceAssistant() {
   voiceMonitorBestButton?.addEventListener("click", monitorBestVoiceOpportunity);
 
   if (!("mediaDevices" in navigator) || !navigator.mediaDevices?.getUserMedia) {
-    voiceStatus.textContent = "المتصفح لا يدعم المايك";
+    setVoiceStatusText("المتصفح لا يدعم المايك");
     voiceStartButton.disabled = true;
   }
 }
@@ -3362,38 +3527,201 @@ async function loadOllamaStatus() {
     if (!response.ok) throw new Error(data.error || "تعذر فحص Ollama");
 
     if (!data.enabled) {
-      ollamaStatus.textContent = "Ollama معطل";
+      ollamaStatus.textContent = localizeVoiceText("Ollama معطل");
       return;
     }
 
     if (!data.connected) {
-      ollamaStatus.textContent = "Ollama غير مثبت أو غير شغال";
+      ollamaStatus.textContent = localizeVoiceText("Ollama غير مثبت أو غير شغال");
       return;
     }
 
-    ollamaStatus.textContent = data.hasConfiguredModel ? `Ollama جاهز: ${data.model}` : `Ollama يحتاج موديل: ${data.model}`;
+    ollamaStatus.textContent = data.hasConfiguredModel
+      ? localizeVoiceText(`Ollama جاهز: ${data.model}`)
+      : localizeVoiceText(`Ollama يحتاج موديل: ${data.model}`);
   } catch {
-    ollamaStatus.textContent = "تعذر فحص Ollama";
+    ollamaStatus.textContent = localizeVoiceText("تعذر فحص Ollama");
   }
+}
+
+function getVoiceSpeechLocale() {
+  return isEnglishLanguage() ? "en-US" : "ar-SA";
+}
+
+function getPreferredSpeechVoice() {
+  if (!("speechSynthesis" in window)) return null;
+
+  const voices = window.speechSynthesis.getVoices?.() || [];
+  const primaryPrefix = isEnglishLanguage() ? "en" : "ar";
+  const fallbackPrefix = isEnglishLanguage() ? "ar" : "en";
+  return (
+    voices.find((voice) => voice.lang?.toLowerCase().startsWith(primaryPrefix)) ||
+    voices.find((voice) => voice.lang?.toLowerCase().startsWith(fallbackPrefix)) ||
+    voices[0] ||
+    null
+  );
+}
+
+function localizeVoiceText(text) {
+  if (!isEnglishLanguage()) return text;
+
+  let translated = translateArabicTextToEnglish(text);
+  const replacements = [
+    ["يا سيدي", "Sir"],
+    ["سمعت التصفيق", "I heard the clap"],
+    ["SFM حاضر", "SFM is ready"],
+    ["شنو تبي اليوم", "what would you like today"],
+    ["تم تنبيه SFM بالتصفيق", "SFM was alerted by clap"],
+    ["يفهم الأمر", "Understanding the command"],
+    ["رد محلي عن جلسة السوق", "Local market session reply"],
+    ["رد محلي عن الأصل المطلوب", "Local asset reply"],
+    ["رد محلي حسب السوق المطلوب", "Local market reply"],
+    ["تم الرد بواسطة Ollama", "Answered by Ollama"],
+    ["تم الرد بواسطة Python", "Answered by Python"],
+    ["Ollama معطل", "Ollama disabled"],
+    ["Ollama غير مثبت أو غير شغال", "Ollama is not installed or not running"],
+    ["Ollama يحتاج موديل", "Ollama needs a model"],
+    ["Ollama جاهز", "Ollama ready"],
+    ["تعذر فحص Ollama", "Could not check Ollama"],
+    ["تعذر الرد", "Could not reply"],
+    ["تعذر تنفيذ الأمر الصوتي حالياً.", "Could not run the voice command right now."],
+    ["المتصفح لا يدعم المايك", "This browser does not support the microphone"],
+    ["جاري طلب إذن المايك", "Requesting microphone permission"],
+    ["طلب إذن المايك", "Requesting microphone permission"],
+    ["تعذر تشغيل المايك", "Could not start the microphone"],
+    ["تأكد من سماح المتصفح باستخدام المايك.", "Allow microphone access in the browser."],
+    ["التعرف الصوتي غير مدعوم في هذا المتصفح", "Speech recognition is not supported in this browser"],
+    ["المراقبة الصوتية مفعلة", "Voice monitoring is active"],
+    ["شغل المحادثة الصوتية لسماع التنبيه", "Start voice chat to hear alerts"],
+    ["لا توجد فرصة شراء واضحة حالياً للمراقبة الصوتية.", "No clear buy opportunity is available for voice monitoring right now."],
+    ["انتظر تحديث السوق أو اختر سوقاً آخر.", "Wait for a market update or choose another market."],
+    ["أفضل فرصة حالياً لا تزال", "The current best opportunity is still"],
+    ["لذلك بقيت تحت المراقبة الصوتية.", "so it remains under voice monitoring."],
+    ["تم تبديل المراقبة إلى", "Monitoring switched to"],
+    ["إذا ظهرت فرصة قوية راح أنبهك صوتياً.", "I will notify you by voice if a strong opportunity appears."],
+    ["لا توجد أسهم مراقبة", "No monitored stocks"],
+    ["لم تضف رمزاً للمراقبة الصوتية بعد.", "No symbol has been added to voice monitoring yet."],
+    ["اضغط × لإزالة أي سهم", "Press x to remove any stock"],
+    ["أو راقب أفضل فرصة لتبديل الاختيار.", "or monitor the best opportunity to switch selection."],
+    ["شغل المحادثة الصوتية لسماع التنبيه.", "Start voice chat to hear the alert."],
+    ["تنبيه صوتي", "Voice alert"],
+    ["ظهرت عليه فرصة", "has an opportunity"],
+    ["بثقة", "with confidence"],
+    ["السعر الحالي", "current price"],
+    ["والهدف", "and target"],
+    ["التوصية", "recommendation"],
+    ["الهدف", "target"],
+    ["خلال", "within"],
+    ["الفترة القادمة", "the coming period"],
+    ["راجع المخاطر قبل أي قرار.", "Review risk before any decision."],
+    ["تذكير:", "Reminder:"],
+    ["تنبيه صفقة متابعة", "Followed trade alert"],
+    ["السوق", "market"],
+    ["مفتوح الآن", "is open now"],
+    ["مغلق الآن", "is closed now"],
+    ["ويفتح بعد", "and opens in"],
+    ["ويصكر بعد", "and closes in"],
+    ["ويغلق", "and closes"],
+    ["بتوقيت", "time"],
+    ["من الأحد إلى الخميس", "Sunday to Thursday"],
+    ["من الاثنين إلى الجمعة", "Monday to Friday"],
+    ["من مساء الأحد إلى مساء الجمعة", "Sunday evening to Friday evening"],
+    ["حسب أيام التداول المعتادة", "according to regular trading days"],
+    ["أعرف أوقات الأسواق الرئيسية", "I know the main market hours"],
+    ["هذه أوقات اعتيادية ولا تشمل العطل الرسمية أو المزادات الخاصة.", "These are regular hours and do not include official holidays or special auctions."],
+    ["ما وصلت بيانات كافية حالياً عشان أحدد فرصة دقيقة.", "I do not have enough data right now to identify a precise opportunity."],
+    ["جرّب تحديث السوق بعد ثواني.", "Try refreshing the market in a few seconds."],
+    ["اتجاه السوق حالياً", "The current market trend is"],
+    ["صاعد", "bullish"],
+    ["هابط", "bearish"],
+    ["متوازن", "balanced"],
+    ["إشارات الشراء", "buy signals"],
+    ["البيع", "sell signals"],
+    ["والانتظار", "and wait signals"],
+    ["أقوى رمز للمتابعة", "strongest symbol to watch"],
+    ["أكثر سهم تداولاً حالياً هو", "The most traded stock right now is"],
+    ["حجم التداول تقريباً", "approximate volume"],
+    ["والتوصية", "and recommendation"],
+    ["أقوى صعود", "strongest upside"],
+    ["هو", "is"],
+    ["الثقة", "confidence"],
+    ["أفضل سهم مطابق للشريعة", "best Sharia compliant stock"],
+    ["أقوى فرصة بيع", "strongest sell opportunity"],
+    ["أفضل سهم", "best stock"],
+    ["ومذكور أنه مطابق للشريعة.", "and it is marked Sharia compliant."],
+    ["ومذكور أنه غير مطابق للشريعة.", "and it is marked not Sharia compliant."],
+    ["والتصنيف الشرعي يحتاج تحقق.", "and the Sharia rating needs verification."],
+  ["ما قدرت أحمل بيانات", "I could not load data for"],
+  ["تعذر جلب البيانات", "Could not fetch data"],
+  ["جلب البيانات", "fetch data"],
+  ["كل المزودين", "all providers"],
+  ["الرد", "reply"],
+  ["ما قدرت أحمل", "I could not load"],
+    ["حالياً", "right now"],
+    ["السبب:", "Reason:"],
+    ["راقب المخاطر لأن السلع والعقود الآجلة تتحرك بسرعة.", "Watch risk because commodities and futures move quickly."],
+    ["يستمع الآن", "Listening now"],
+    ["بانتظار صوتك", "Waiting for your voice"],
+    ["خطأ صوتي", "Voice error"],
+    ["أجرب لغة ثانية", "Trying another language"],
+    ["اللغة غير مدعومة في المتصفح، أجرب لغة ثانية", "Language is not supported in the browser, trying another language"],
+    ["الاستماع يعمل بالفعل", "Listening is already active"],
+    ["خطأ في المايك", "Microphone error"],
+    ["خدمة التعرف الصوتي في المتصفح تعذرت بسبب الشبكة", "Browser speech recognition failed because of the network"],
+    ["التعرف الصوتي متوقف بسبب network. استخدم خانة الأمر النصي مؤقتاً.", "Speech recognition stopped because of network. Use the text command box for now."],
+    ["التصفيق والرد الصوتي ما زالوا يعملون، لكن تحويل الكلام إلى نص من المتصفح يحتاج اتصالاً بخدمة التعرف الصوتي.", "Clap detection and voice replies still work, but browser speech-to-text needs a connection to the recognition service."],
+    ["متوقف", "Stopped"],
+    ["الصوت جاهز", "Voice ready"],
+    ["يستقبل صوتك", "Listening"],
+    ["يفكر", "Thinking"],
+    ["SFM يتكلم", "SFM speaking"],
+    ["جاهز", "Ready"]
+  ];
+
+  for (const [arabic, english] of replacements) {
+    translated = translated.replaceAll(arabic, english);
+  }
+
+  return translated;
+}
+
+function setVoiceStatusText(text) {
+  if (!voiceStatus) return;
+  voiceStatus.textContent = localizeVoiceText(text);
+}
+
+function setVoiceReplyText(text, options = {}) {
+  const localized = localizeVoiceText(text);
+  if (voiceReply) voiceReply.textContent = localized;
+  if (options.speak) speakVoice(localized, { alreadyLocalized: true });
+  return localized;
 }
 
 function setVoiceActivityState(state = "idle", label = "") {
   if (!voiceActivity) return;
 
-  const labels = {
-    idle: "جاهز",
-    listening: "يستقبل صوتك",
-    thinking: "يفكر",
-    speaking: "SFM يتكلم",
-    error: "تنبيه صوتي"
-  };
+  const labels = isEnglishLanguage()
+    ? {
+        idle: "Ready",
+        listening: "Listening",
+        thinking: "Thinking",
+        speaking: "SFM speaking",
+        error: "Voice alert"
+      }
+    : {
+        idle: "جاهز",
+        listening: "يستقبل صوتك",
+        thinking: "يفكر",
+        speaking: "SFM يتكلم",
+        error: "تنبيه صوتي"
+      };
   const states = ["idle", "listening", "thinking", "speaking", "error"];
   const safeState = states.includes(state) ? state : "idle";
 
   voiceActivity.classList.remove(...states.map((item) => `is-${item}`));
   voiceActivity.classList.add(`is-${safeState}`);
   voiceActivity.dataset.state = safeState;
-  if (voiceActivityText) voiceActivityText.textContent = label || labels[safeState];
+  if (voiceActivityText) voiceActivityText.textContent = label ? localizeVoiceText(label) : labels[safeState];
 
   if (voiceBand) {
     voiceBand.classList.toggle("voice-is-listening", safeState === "listening");
@@ -3418,8 +3746,8 @@ async function startVoiceAssistant() {
   voiceRecognitionSuspended = false;
   setVoiceActivityState("thinking", "طلب إذن المايك");
   voiceStartButton.classList.add("is-listening");
-  voiceStartButton.textContent = "إيقاف المحادثة الصوتية";
-  voiceStatus.textContent = "جاري طلب إذن المايك";
+  voiceStartButton.textContent = isEnglishLanguage() ? "Stop voice chat" : "إيقاف المحادثة الصوتية";
+  setVoiceStatusText("جاري طلب إذن المايك");
   renderVoiceMonitor();
 
   try {
@@ -3427,15 +3755,15 @@ async function startVoiceAssistant() {
     startClapDetector(voiceStream);
     const recognitionStarted = startSpeechRecognition();
     const reply = getLocalGreeting();
-    voiceReply.textContent = reply;
+    setVoiceReplyText(reply);
     if (recognitionStarted) {
-      voiceStatus.textContent = `يستمع الآن (${getVoiceRecognitionLanguages()[voiceRecognitionLanguageIndex]})`;
+      setVoiceStatusText(`يستمع الآن (${getVoiceRecognitionLanguages()[voiceRecognitionLanguageIndex]})`);
       setVoiceActivityState("listening", "يستقبل صوتك");
     }
     speakVoice(reply);
   } catch (error) {
-    voiceStatus.textContent = "تعذر تشغيل المايك";
-    voiceReply.textContent = error.message || "تأكد من سماح المتصفح باستخدام المايك.";
+    setVoiceStatusText("تعذر تشغيل المايك");
+    setVoiceReplyText(error.message || "تأكد من سماح المتصفح باستخدام المايك.");
     stopVoiceAssistant();
     setVoiceActivityState("error", "خطأ في المايك");
   }
@@ -3445,8 +3773,8 @@ function stopVoiceAssistant() {
   voiceActive = false;
   voiceRecognitionSuspended = true;
   voiceStartButton.classList.remove("is-listening");
-  voiceStartButton.textContent = "ابدأ المحادثة الصوتية";
-  voiceStatus.textContent = "متوقف";
+  voiceStartButton.textContent = isEnglishLanguage() ? "Start voice chat" : "ابدأ المحادثة الصوتية";
+  setVoiceStatusText("متوقف");
   setVoiceActivityState("idle", "متوقف");
   renderVoiceMonitor();
 
@@ -3479,7 +3807,7 @@ function stopVoiceAssistant() {
 function startSpeechRecognition() {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    voiceStatus.textContent = "التعرف الصوتي غير مدعوم في هذا المتصفح";
+    setVoiceStatusText("التعرف الصوتي غير مدعوم في هذا المتصفح");
     return false;
   }
 
@@ -3532,7 +3860,7 @@ function startSpeechRecognition() {
       return;
     }
 
-    voiceStatus.textContent = event.error === "no-speech" ? "بانتظار صوتك" : `خطأ صوتي: ${event.error}`;
+    setVoiceStatusText(event.error === "no-speech" ? "بانتظار صوتك" : `خطأ صوتي: ${event.error}`);
     setVoiceActivityState(event.error === "no-speech" ? "listening" : "error", event.error === "no-speech" ? "بانتظار صوتك" : "خطأ صوتي");
   };
 
@@ -3549,11 +3877,11 @@ function startSpeechRecognition() {
 
   try {
     voiceRecognition.start();
-    voiceStatus.textContent = `يستمع الآن (${voiceRecognition.lang})`;
+    setVoiceStatusText(`يستمع الآن (${voiceRecognition.lang})`);
     setVoiceActivityState("listening", "يستقبل صوتك");
     return true;
   } catch {
-    voiceStatus.textContent = "الاستماع يعمل بالفعل";
+    setVoiceStatusText("الاستماع يعمل بالفعل");
     setVoiceActivityState("listening", "يستقبل صوتك");
     return false;
   }
@@ -3573,7 +3901,7 @@ function handleSpeechNetworkError(message = "خدمة التعرف الصوتي 
   if (voiceRecognitionLanguageIndex < languages.length - 1) {
     voiceRecognitionLanguageIndex += 1;
     const nextLanguage = languages[voiceRecognitionLanguageIndex];
-    voiceStatus.textContent = `${message}. أجرب ${nextLanguage}`;
+    setVoiceStatusText(`${message}. أجرب ${nextLanguage}`);
     setVoiceActivityState("thinking", "أجرب لغة ثانية");
     window.setTimeout(() => {
       if (voiceActive) startSpeechRecognition();
@@ -3582,8 +3910,8 @@ function handleSpeechNetworkError(message = "خدمة التعرف الصوتي 
   }
 
   voiceRecognitionSuspended = true;
-  voiceStatus.textContent = "التعرف الصوتي متوقف بسبب network. استخدم خانة الأمر النصي مؤقتاً.";
-  voiceReply.textContent = "التصفيق والرد الصوتي ما زالوا يعملون، لكن تحويل الكلام إلى نص من المتصفح يحتاج اتصالاً بخدمة التعرف الصوتي.";
+  setVoiceStatusText("التعرف الصوتي متوقف بسبب network. استخدم خانة الأمر النصي مؤقتاً.");
+  setVoiceReplyText("التصفيق والرد الصوتي ما زالوا يعملون، لكن تحويل الكلام إلى نص من المتصفح يحتاج اتصالاً بخدمة التعرف الصوتي.");
   setVoiceActivityState("error", "network");
 }
 
@@ -3619,9 +3947,8 @@ function startClapDetector(stream) {
       const reply = isEnglishLanguage()
         ? `I heard the clap, Sir ${getUserDisplayName()}. SFM is ready. What would you like today?`
         : `سمعت التصفيق يا سيدي ${getUserDisplayName()}. SFM حاضر، شنو تبي اليوم؟`;
-      voiceReply.textContent = reply;
-      voiceStatus.textContent = "تم تنبيه SFM بالتصفيق";
-      speakVoice(reply);
+      setVoiceReplyText(reply, { speak: true });
+      setVoiceStatusText("تم تنبيه SFM بالتصفيق");
     }
 
     if (voiceActive) voiceClapFrame = window.requestAnimationFrame(tick);
@@ -3632,14 +3959,13 @@ function startClapDetector(stream) {
 
 async function handleVoiceTranscript(text) {
   voiceTranscript.textContent = text;
-  voiceStatus.textContent = "يفهم الأمر";
+  setVoiceStatusText("يفهم الأمر");
   setVoiceActivityState("thinking", "يفهم الأمر");
 
   const localSessionReply = getLocalMarketSessionReply(text);
   if (localSessionReply) {
-    voiceReply.textContent = localSessionReply.reply;
-    voiceStatus.textContent = "رد محلي عن جلسة السوق";
-    speakVoice(localSessionReply.reply);
+    setVoiceReplyText(localSessionReply.reply, { speak: true });
+    setVoiceStatusText("رد محلي عن جلسة السوق");
 
     if (localSessionReply.marketId && localSessionReply.marketId !== activeMarket) {
       activeMarket = localSessionReply.marketId;
@@ -3652,9 +3978,8 @@ async function handleVoiceTranscript(text) {
 
   const localAssetReply = await getLocalAssetQueryReply(text);
   if (localAssetReply) {
-    voiceReply.textContent = localAssetReply.reply;
-    voiceStatus.textContent = "رد محلي عن الأصل المطلوب";
-    speakVoice(localAssetReply.reply);
+    setVoiceReplyText(localAssetReply.reply, { speak: true });
+    setVoiceStatusText("رد محلي عن الأصل المطلوب");
 
     if (localAssetReply.marketId && localAssetReply.marketId !== activeMarket) {
       activeMarket = localAssetReply.marketId;
@@ -3669,9 +3994,8 @@ async function handleVoiceTranscript(text) {
 
   const localRecommendationReply = await getLocalMarketRecommendationReply(text);
   if (localRecommendationReply) {
-    voiceReply.textContent = localRecommendationReply.reply;
-    voiceStatus.textContent = "رد محلي حسب السوق المطلوب";
-    speakVoice(localRecommendationReply.reply);
+    setVoiceReplyText(localRecommendationReply.reply, { speak: true });
+    setVoiceStatusText("رد محلي حسب السوق المطلوب");
     return;
   }
 
@@ -3681,6 +4005,7 @@ async function handleVoiceTranscript(text) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         transcript: text,
+        language: isEnglishLanguage() ? "en" : "ar",
         activeMarket,
         recommendations: summarizeRecommendationsForVoice(lastData?.recommendations || [])
       })
@@ -3691,9 +4016,8 @@ async function handleVoiceTranscript(text) {
       throw new Error(result.error || "تعذر تنفيذ الأمر الصوتي");
     }
 
-    voiceReply.textContent = result.reply || "--";
-    voiceStatus.textContent = result.aiEngine === "ollama" ? "تم الرد بواسطة Ollama" : "تم الرد بواسطة Python";
-    speakVoice(result.reply || "تم.");
+    setVoiceReplyText(result.reply || "--", { speak: true });
+    setVoiceStatusText(result.aiEngine === "ollama" ? "تم الرد بواسطة Ollama" : "تم الرد بواسطة Python");
 
     if (result.marketId && result.marketId !== activeMarket) {
       activeMarket = result.marketId;
@@ -3712,8 +4036,8 @@ async function handleVoiceTranscript(text) {
       window.open(result.detailUrl, "_blank", "noopener");
     }
   } catch (error) {
-    voiceStatus.textContent = "تعذر الرد";
-    voiceReply.textContent = error.message;
+    setVoiceStatusText("تعذر الرد");
+    setVoiceReplyText(error.message);
     speakVoice("تعذر تنفيذ الأمر الصوتي حالياً.");
   }
 }
@@ -4066,9 +4390,8 @@ function monitorBestVoiceOpportunity() {
 
   if (!best) {
     const reply = "لا توجد فرصة شراء واضحة حالياً للمراقبة الصوتية.";
-    voiceReply.textContent = reply;
-    if (voiceMonitorNote) voiceMonitorNote.textContent = "انتظر تحديث السوق أو اختر سوقاً آخر.";
-    speakVoice(reply);
+    setVoiceReplyText(reply, { speak: true });
+    if (voiceMonitorNote) voiceMonitorNote.textContent = localizeVoiceText("انتظر تحديث السوق أو اختر سوقاً آخر.");
     return;
   }
 
@@ -4081,9 +4404,8 @@ function monitorBestVoiceOpportunity() {
   const reply = isSame
     ? `أفضل فرصة حالياً لا تزال ${best.symbol}. لذلك بقيت تحت المراقبة الصوتية.`
     : `تم تبديل المراقبة إلى ${best.symbol}. إذا ظهرت فرصة قوية راح أنبهك صوتياً.`;
-  voiceReply.textContent = reply;
-  if (voiceStatus) voiceStatus.textContent = voiceActive ? "المراقبة الصوتية مفعلة" : "شغل المحادثة الصوتية لسماع التنبيه";
-  speakVoice(reply);
+  setVoiceReplyText(reply, { speak: true });
+  setVoiceStatusText(voiceActive ? "المراقبة الصوتية مفعلة" : "شغل المحادثة الصوتية لسماع التنبيه");
 }
 
 function addVoiceMonitor(symbol) {
@@ -4121,15 +4443,15 @@ function renderVoiceMonitor() {
       button.addEventListener("click", () => removeVoiceMonitor(button.dataset.removeVoiceMonitor));
     }
     if (voiceMonitorNote) {
-      voiceMonitorNote.textContent = voiceActive
+      voiceMonitorNote.textContent = localizeVoiceText(voiceActive
         ? "اضغط × لإزالة أي سهم، أو راقب أفضل فرصة لتبديل الاختيار."
-        : "اضغط × لإزالة أي سهم. شغل المحادثة الصوتية لسماع التنبيه.";
+        : "اضغط × لإزالة أي سهم. شغل المحادثة الصوتية لسماع التنبيه.");
     }
     return;
   }
 
-  voiceMonitor.textContent = "لا توجد أسهم مراقبة";
-  if (voiceMonitorNote) voiceMonitorNote.textContent = "لم تضف رمزاً للمراقبة الصوتية بعد.";
+  voiceMonitor.textContent = localizeVoiceText("لا توجد أسهم مراقبة");
+  if (voiceMonitorNote) voiceMonitorNote.textContent = localizeVoiceText("لم تضف رمزاً للمراقبة الصوتية بعد.");
 }
 
 function checkVoiceMonitors(items) {
@@ -4145,10 +4467,10 @@ function checkVoiceMonitors(items) {
     if (!isStrongBuy && !isStrongSell) continue;
 
     const reply = `${item.symbol} ظهرت عليه فرصة ${item.actionLabel} بثقة ${item.confidence}%. السعر الحالي ${formatMoney(item.currentPrice, item.currency)} والهدف ${formatMoney(item.expectedPrice, item.currency)}.`;
-    voiceReply.textContent = reply;
-    voiceStatus.textContent = "تنبيه صوتي";
-    showToast(`تنبيه صوتي: ${item.symbol}`, reply, { type: "voice" });
-    speakVoice(reply);
+    const localizedReply = setVoiceReplyText(reply);
+    setVoiceStatusText("تنبيه صوتي");
+    showToast(localizeVoiceText(`تنبيه صوتي: ${item.symbol}`), localizedReply, { type: "voice" });
+    speakVoice(localizedReply, { alreadyLocalized: true });
     voiceMonitors = voiceMonitors.filter((value) => value !== symbol);
     saveStored("the-sfm-trader-voice-monitors", voiceMonitors);
     renderVoiceMonitor();
@@ -4156,18 +4478,18 @@ function checkVoiceMonitors(items) {
   }
 }
 
-function speakVoice(text) {
+function speakVoice(text, options = {}) {
   if (!text || !("speechSynthesis" in window)) {
     restoreVoiceActivityState();
     return;
   }
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "ar-SA";
+  const spokenText = options.alreadyLocalized ? text : localizeVoiceText(text);
+  const utterance = new SpeechSynthesisUtterance(spokenText);
+  utterance.lang = getVoiceSpeechLocale();
   utterance.rate = 0.95;
   utterance.pitch = 1;
-  const voices = window.speechSynthesis.getVoices();
-  const arabicVoice = voices.find((voice) => voice.lang?.toLowerCase().startsWith("ar"));
-  if (arabicVoice) utterance.voice = arabicVoice;
+  const preferredVoice = getPreferredSpeechVoice();
+  if (preferredVoice) utterance.voice = preferredVoice;
   utterance.onstart = () => setVoiceActivityState("speaking", "SFM يتكلم");
   utterance.onend = () => restoreVoiceActivityState();
   utterance.onerror = () => restoreVoiceActivityState();
