@@ -11,7 +11,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
     <link rel="icon" type="image/png" sizes="256x256" href="/the-sfm-trader-icon-256.png" />
-    <link rel="stylesheet" href="/styles.css?v=20260618-command-center" />
+    <link rel="stylesheet" href="/styles.css?v=20260620-settings" />
   </head>
   <body>
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
@@ -71,9 +71,40 @@
             <span>الإشعارات</span>
             <strong id="notification-count">0</strong>
           </button>
+          <button id="settings-button" class="settings-button" type="button" aria-expanded="false" aria-controls="settings-panel">
+            <span>الإعدادات</span>
+          </button>
           <button id="refresh-button" class="icon-button" title="تحديث الآن" aria-label="تحديث الآن">↻</button>
         </div>
       </header>
+
+      <aside id="settings-panel" class="settings-panel" hidden>
+        <div class="settings-panel-head">
+          <div>
+            <p class="eyebrow" id="settings-eyebrow">SFM SETTINGS</p>
+            <h2 id="settings-title">الإعدادات</h2>
+          </div>
+          <button id="settings-close-button" class="icon-button" type="button" aria-label="إغلاق الإعدادات">×</button>
+        </div>
+        <form id="settings-form" class="settings-form">
+          <label>
+            <span id="settings-language-label">اللغة</span>
+            <select id="settings-language">
+              <option value="ar">العربية</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+          <label>
+            <span id="settings-name-label">الاسم في الصفحة الترحيبية</span>
+            <input id="settings-display-name" type="text" maxlength="32" autocomplete="name" placeholder="محمد" />
+          </label>
+          <div class="settings-preview">
+            <span id="settings-preview-label">المعاينة</span>
+            <strong id="settings-preview">مساء الخير سيدي محمد</strong>
+          </div>
+          <button id="settings-save-button" class="primary-button" type="submit">حفظ الإعدادات</button>
+        </form>
+      </aside>
 
       <aside id="notification-panel" class="notification-panel" hidden>
         <div class="notification-panel-head">
@@ -544,6 +575,6 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260620-arabic-fix" type="module"></script>
+    <script src="/app.js?v=20260620-settings" type="module"></script>
   </body>
 </html>

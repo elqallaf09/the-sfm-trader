@@ -1,10 +1,10 @@
-const CACHE_NAME = "the-sfm-trader-ios-shell-v20260620-arabic-fix";
+const CACHE_NAME = "the-sfm-trader-ios-shell-v20260620-settings";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/detail.html",
-  "/styles.css?v=20260618-command-center",
-  "/app.js?v=20260620-arabic-fix",
+  "/styles.css?v=20260620-settings",
+  "/app.js?v=20260620-settings",
   "/detail.js?v=20260618-command-center",
   "/manifest.webmanifest",
   "/the-sfm-trader-icon-256.png",

@@ -33,6 +33,19 @@ const notificationPanel = document.querySelector("#notification-panel");
 const notificationList = document.querySelector("#notification-list");
 const notificationClearButton = document.querySelector("#notification-clear-button");
 const notificationCloseButton = document.querySelector("#notification-close-button");
+const settingsButton = document.querySelector("#settings-button");
+const settingsPanel = document.querySelector("#settings-panel");
+const settingsCloseButton = document.querySelector("#settings-close-button");
+const settingsForm = document.querySelector("#settings-form");
+const settingsLanguage = document.querySelector("#settings-language");
+const settingsDisplayName = document.querySelector("#settings-display-name");
+const settingsPreview = document.querySelector("#settings-preview");
+const settingsEyebrow = document.querySelector("#settings-eyebrow");
+const settingsTitle = document.querySelector("#settings-title");
+const settingsLanguageLabel = document.querySelector("#settings-language-label");
+const settingsNameLabel = document.querySelector("#settings-name-label");
+const settingsPreviewLabel = document.querySelector("#settings-preview-label");
+const settingsSaveButton = document.querySelector("#settings-save-button");
 const disclaimer = document.querySelector("#disclaimer");
 const template = document.querySelector("#card-template");
 const expandAllCardsButton = document.querySelector("#expand-all-cards");
@@ -99,7 +112,9 @@ const NUMBER_OPTIONS = { numberingSystem: "latn" };
 const VOICE_RECOGNITION_LANGUAGES = ["ar-SA", "ar-KW", "ar", "en-US"];
 const WATCHLIST_REFRESH_MS = 15_000;
 const INTRO_DURATION_MS = 8_000;
-const USER_DISPLAY_NAME = "محمد";
+const DEFAULT_USER_DISPLAY_NAME = "محمد";
+const DEFAULT_APP_LANGUAGE = "ar";
+const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
 const SHARED_TRADE_SYNC_DEBOUNCE_MS = 800;
 const SHARED_TRADE_POLL_MS = 10_000;
 const NOTIFICATION_SAVE_DEBOUNCE_MS = 800;
@@ -308,6 +323,7 @@ let expandedSignalCards = new Set(loadStored("the-sfm-trader-expanded-cards", []
 let alertedKeys = new Set(loadStored("the-sfm-trader-alerted", []));
 let recommendationSignalState = loadStored("the-sfm-trader-signal-state", {});
 let watchlistOnly = loadStored("the-sfm-trader-watchlist-only", false);
+let appSettings = normalizeAppSettings(loadStored(APP_SETTINGS_STORAGE_KEY, {}));
 let watchlistData = null;
 let watchlistLoading = false;
 let watchlistLastLoadedAt = 0;
@@ -323,6 +339,7 @@ let voiceRecognitionLanguageIndex = 0;
 let voiceRecognitionSuspended = false;
 let introTimer = null;
 
+applyAppSettings({ updateIntro: false });
 initMarketBackground();
 initIntroCeremony();
 registerPwaServiceWorker();
@@ -339,6 +356,7 @@ function registerPwaServiceWorker() {
 }
 
 async function init() {
+  initSettingsPanel();
   watchlist = normalizeWatchlist(watchlist);
   voiceMonitors = normalizeWatchlist(voiceMonitors);
   saveStored("the-sfm-trader-watchlist", watchlist);
@@ -418,11 +436,14 @@ function initIntroCeremony() {
   if (!introOverlay) return;
 
   const greeting = getIntroGreeting();
-  const message = "مساعدك SFM جاهز للتحليل ومتابعة الأسهم.";
-  const honorificName = `سيدي ${USER_DISPLAY_NAME}`;
+  const message = getIntroMessage();
+  const honorificName = getIntroHonorificName();
   document.body.classList.add("intro-running");
   introGreeting.textContent = `${greeting} ${honorificName}`;
   introMessage.textContent = message;
+  const statusText = introOverlay.querySelector(".intro-status strong");
+  if (statusText) statusText.textContent = getIntroStatusText();
+  if (introSkip) introSkip.textContent = getIntroSkipText();
   introSkip?.addEventListener("click", closeIntroCeremony);
 
   window.setTimeout(() => {
@@ -434,7 +455,34 @@ function initIntroCeremony() {
 
 function getIntroGreeting() {
   const hour = new Date().getHours();
+  if (isEnglishLanguage()) return hour >= 5 && hour < 12 ? "Good morning" : "Good evening";
   return hour >= 5 && hour < 12 ? "صباح الخير" : "مساء الخير";
+}
+
+function getIntroMessage() {
+  return isEnglishLanguage()
+    ? "Your SFM assistant is ready for analysis and stock monitoring."
+    : "مساعدك SFM جاهز للتحليل ومتابعة الأسهم.";
+}
+
+function getIntroStatusText() {
+  return isEnglishLanguage() ? "Opening the analysis platform" : "جاري فتح منصة التحليل";
+}
+
+function getIntroSkipText() {
+  return isEnglishLanguage() ? "Quick entry" : "دخول سريع";
+}
+
+function getIntroHonorificName() {
+  return isEnglishLanguage() ? `Sir ${getUserDisplayName()}` : `سيدي ${getUserDisplayName()}`;
+}
+
+function getUserDisplayName() {
+  return appSettings.displayName || DEFAULT_USER_DISPLAY_NAME;
+}
+
+function isEnglishLanguage() {
+  return appSettings.language === "en";
 }
 
 function speakIntroGreeting(text) {
@@ -442,7 +490,7 @@ function speakIntroGreeting(text) {
 
   try {
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "ar-SA";
+    utterance.lang = isEnglishLanguage() ? "en-US" : "ar-SA";
     utterance.rate = 0.95;
     utterance.pitch = 1;
     const voices = window.speechSynthesis.getVoices();
@@ -452,6 +500,111 @@ function speakIntroGreeting(text) {
   } catch {
     // بعض المتصفحات تمنع النطق التلقائي قبل أول تفاعل من المستخدم.
   }
+}
+
+function initSettingsPanel() {
+  if (!settingsButton || !settingsPanel || !settingsForm) return;
+
+  settingsButton.addEventListener("click", () => setSettingsPanelOpen(settingsPanel.hidden));
+  settingsCloseButton?.addEventListener("click", () => setSettingsPanelOpen(false));
+  settingsLanguage?.addEventListener("change", updateSettingsPreview);
+  settingsDisplayName?.addEventListener("input", updateSettingsPreview);
+  settingsForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    appSettings = normalizeAppSettings({
+      language: settingsLanguage?.value,
+      displayName: settingsDisplayName?.value
+    });
+    saveStored(APP_SETTINGS_STORAGE_KEY, appSettings);
+    applyAppSettings();
+    setSettingsPanelOpen(false);
+    showToast(
+      isEnglishLanguage() ? "Settings saved" : "تم حفظ الإعدادات",
+      isEnglishLanguage() ? "The welcome page will use your updated name and language." : "الصفحة الترحيبية ستستخدم الاسم واللغة الجديدة.",
+      { type: "settings" }
+    );
+  });
+
+  syncSettingsForm();
+  updateSettingsPanelLanguage();
+}
+
+function setSettingsPanelOpen(open) {
+  if (!settingsButton || !settingsPanel) return;
+
+  const isOpen = Boolean(open);
+  settingsPanel.hidden = !isOpen;
+  settingsButton.setAttribute("aria-expanded", String(isOpen));
+  settingsButton.classList.toggle("is-open", isOpen);
+  if (isOpen) {
+    setNotificationPanelOpen(false);
+    syncSettingsForm();
+    window.setTimeout(() => settingsDisplayName?.focus(), 30);
+  }
+}
+
+function syncSettingsForm() {
+  if (settingsLanguage) settingsLanguage.value = appSettings.language;
+  if (settingsDisplayName) settingsDisplayName.value = getUserDisplayName();
+  updateSettingsPreview();
+}
+
+function updateSettingsPreview() {
+  if (!settingsPreview) return;
+
+  const language = settingsLanguage?.value === "en" ? "en" : "ar";
+  const name = sanitizeDisplayName(settingsDisplayName?.value || getUserDisplayName());
+  const hour = new Date().getHours();
+  const greeting = language === "en"
+    ? hour >= 5 && hour < 12 ? "Good morning" : "Good evening"
+    : hour >= 5 && hour < 12 ? "صباح الخير" : "مساء الخير";
+  const honorific = language === "en" ? `Sir ${name}` : `سيدي ${name}`;
+  settingsPreview.textContent = `${greeting} ${honorific}`;
+}
+
+function updateSettingsPanelLanguage() {
+  const english = isEnglishLanguage();
+  const settingsButtonText = settingsButton?.querySelector("span");
+  if (settingsButtonText) settingsButtonText.textContent = english ? "Settings" : "الإعدادات";
+  if (settingsEyebrow) settingsEyebrow.textContent = "SFM SETTINGS";
+  if (settingsTitle) settingsTitle.textContent = english ? "Settings" : "الإعدادات";
+  if (settingsLanguageLabel) settingsLanguageLabel.textContent = english ? "Language" : "اللغة";
+  if (settingsNameLabel) settingsNameLabel.textContent = english ? "Welcome name" : "الاسم في الصفحة الترحيبية";
+  if (settingsPreviewLabel) settingsPreviewLabel.textContent = english ? "Preview" : "المعاينة";
+  if (settingsSaveButton) settingsSaveButton.textContent = english ? "Save settings" : "حفظ الإعدادات";
+  if (settingsCloseButton) settingsCloseButton.setAttribute("aria-label", english ? "Close settings" : "إغلاق الإعدادات");
+  if (settingsDisplayName) settingsDisplayName.placeholder = english ? "Mohammed" : "محمد";
+  updateSettingsPreview();
+}
+
+function applyAppSettings(options = {}) {
+  const english = isEnglishLanguage();
+  document.documentElement.lang = english ? "en" : "ar";
+  document.body?.classList.toggle("language-en", english);
+  updateSettingsPanelLanguage();
+
+  if (options.updateIntro !== false && introOverlay && !introOverlay.classList.contains("is-closing")) {
+    const greeting = getIntroGreeting();
+    const message = getIntroMessage();
+    introGreeting.textContent = `${greeting} ${getIntroHonorificName()}`;
+    introMessage.textContent = message;
+    const statusText = introOverlay.querySelector(".intro-status strong");
+    if (statusText) statusText.textContent = getIntroStatusText();
+    if (introSkip) introSkip.textContent = getIntroSkipText();
+  }
+}
+
+function normalizeAppSettings(value) {
+  const settings = value && typeof value === "object" ? value : {};
+  return {
+    language: settings.language === "en" ? "en" : DEFAULT_APP_LANGUAGE,
+    displayName: sanitizeDisplayName(settings.displayName || DEFAULT_USER_DISPLAY_NAME)
+  };
+}
+
+function sanitizeDisplayName(value) {
+  const name = String(value || "").replace(/\s+/g, " ").trim();
+  return name.slice(0, 32) || DEFAULT_USER_DISPLAY_NAME;
 }
 
 function closeIntroCeremony() {
@@ -2238,6 +2391,7 @@ function setNotificationPanelOpen(open) {
   notificationPanel.hidden = !notificationPanelOpen;
   notificationButton.setAttribute("aria-expanded", String(notificationPanelOpen));
   notificationButton.classList.toggle("is-open", notificationPanelOpen);
+  if (notificationPanelOpen) setSettingsPanelOpen(false);
 }
 
 function checkSmartMarketNotifications(items = []) {
@@ -2718,7 +2872,7 @@ async function startVoiceAssistant() {
     const reply = getLocalGreeting();
     voiceReply.textContent = reply;
     if (recognitionStarted) {
-      voiceStatus.textContent = `يستمع الآن (${VOICE_RECOGNITION_LANGUAGES[voiceRecognitionLanguageIndex]})`;
+      voiceStatus.textContent = `يستمع الآن (${getVoiceRecognitionLanguages()[voiceRecognitionLanguageIndex]})`;
       setVoiceActivityState("listening", "يستقبل صوتك");
     }
     speakVoice(reply);
@@ -2784,7 +2938,7 @@ function startSpeechRecognition() {
   }
 
   voiceRecognition = new SpeechRecognition();
-  voiceRecognition.lang = VOICE_RECOGNITION_LANGUAGES[voiceRecognitionLanguageIndex] || "ar-SA";
+  voiceRecognition.lang = getVoiceRecognitionLanguages()[voiceRecognitionLanguageIndex] || "ar-SA";
   voiceRecognition.continuous = true;
   voiceRecognition.interimResults = true;
   voiceRecognition.maxAlternatives = 1;
@@ -2858,9 +3012,10 @@ function handleSpeechNetworkError(message = "خدمة التعرف الصوتي 
     }
   }
 
-  if (voiceRecognitionLanguageIndex < VOICE_RECOGNITION_LANGUAGES.length - 1) {
+  const languages = getVoiceRecognitionLanguages();
+  if (voiceRecognitionLanguageIndex < languages.length - 1) {
     voiceRecognitionLanguageIndex += 1;
-    const nextLanguage = VOICE_RECOGNITION_LANGUAGES[voiceRecognitionLanguageIndex];
+    const nextLanguage = languages[voiceRecognitionLanguageIndex];
     voiceStatus.textContent = `${message}. أجرب ${nextLanguage}`;
     setVoiceActivityState("thinking", "أجرب لغة ثانية");
     window.setTimeout(() => {
@@ -2873,6 +3028,12 @@ function handleSpeechNetworkError(message = "خدمة التعرف الصوتي 
   voiceStatus.textContent = "التعرف الصوتي متوقف بسبب network. استخدم خانة الأمر النصي مؤقتاً.";
   voiceReply.textContent = "التصفيق والرد الصوتي ما زالوا يعملون، لكن تحويل الكلام إلى نص من المتصفح يحتاج اتصالاً بخدمة التعرف الصوتي.";
   setVoiceActivityState("error", "network");
+}
+
+function getVoiceRecognitionLanguages() {
+  return isEnglishLanguage()
+    ? ["en-US", "ar-SA", "ar-KW", "ar"]
+    : VOICE_RECOGNITION_LANGUAGES;
 }
 
 function startClapDetector(stream) {
@@ -2898,7 +3059,9 @@ function startClapDetector(stream) {
     const now = Date.now();
     if (peak > 0.92 && rms > 0.19 && now > voiceClapCooldownUntil) {
       voiceClapCooldownUntil = now + 3000;
-      const reply = `سمعت التصفيق يا سيدي ${USER_DISPLAY_NAME}. SFM حاضر، شنو تبي اليوم؟`;
+      const reply = isEnglishLanguage()
+        ? `I heard the clap, Sir ${getUserDisplayName()}. SFM is ready. What would you like today?`
+        : `سمعت التصفيق يا سيدي ${getUserDisplayName()}. SFM حاضر، شنو تبي اليوم؟`;
       voiceReply.textContent = reply;
       voiceStatus.textContent = "تم تنبيه SFM بالتصفيق";
       speakVoice(reply);
@@ -3458,7 +3621,14 @@ function speakVoice(text) {
 
 function getLocalGreeting() {
   const hour = new Date().getHours();
-  const honorificName = `يا سيدي ${USER_DISPLAY_NAME}`;
+  if (isEnglishLanguage()) {
+    const honorificName = `Sir ${getUserDisplayName()}`;
+    if (hour >= 5 && hour < 12) return `Good morning ${honorificName}. SFM is at your service. What shall we analyze today?`;
+    if (hour >= 18 || hour < 5) return `Good evening ${honorificName}. SFM is at your service. What shall we do today?`;
+    return `What would you like today, ${honorificName}? SFM is ready for analysis.`;
+  }
+
+  const honorificName = `يا سيدي ${getUserDisplayName()}`;
   if (hour >= 5 && hour < 12) return `صباح الخير ${honorificName}، SFM مساعدك تحت أمرك. شنو تبي نسوي اليوم؟`;
   if (hour >= 18 || hour < 5) return `مساء الخير ${honorificName}، SFM مساعدك تحت أمرك. شنو تبي نسوي اليوم؟`;
   return `ماذا تريد اليوم ${honorificName}؟ SFM جاهز للتحليل.`;

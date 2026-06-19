@@ -145,6 +145,12 @@ body.intro-running .app-shell {
   z-index: 2;
 }
 
+body.language-en .intro-copy,
+body.language-en .settings-panel {
+  direction: ltr;
+  text-align: left;
+}
+
 .intro-copy h2 {
   margin-bottom: 12px;
   font-size: clamp(32px, 5vw, 58px);
@@ -604,7 +610,8 @@ h2 {
   white-space: nowrap;
 }
 
-.notification-button {
+.notification-button,
+.settings-button {
   display: inline-flex;
   align-items: center;
   gap: 9px;
@@ -620,7 +627,9 @@ h2 {
 }
 
 .notification-button:hover,
-.notification-button.is-open {
+.notification-button.is-open,
+.settings-button:hover,
+.settings-button.is-open {
   border-color: rgba(101, 217, 141, 0.72);
   background: rgba(53, 194, 164, 0.14);
 }
@@ -640,6 +649,99 @@ h2 {
 .notification-button.has-notifications strong {
   background: rgba(255, 209, 102, 0.18);
   color: var(--warn);
+}
+
+.settings-panel {
+  position: fixed;
+  top: 86px;
+  left: 24px;
+  z-index: 26;
+  width: min(430px, calc(100vw - 32px));
+  padding: 16px;
+  border: 1px solid rgba(53, 194, 164, 0.34);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, rgba(90, 167, 255, 0.12), transparent 42%),
+    rgba(10, 16, 22, 0.97);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(20px);
+}
+
+.settings-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.settings-panel-head h2 {
+  margin-bottom: 0;
+}
+
+.settings-form {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-form label {
+  display: grid;
+  gap: 7px;
+}
+
+.settings-form label > span,
+.settings-preview span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.settings-form input,
+.settings-form select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(8, 13, 18, 0.78);
+  color: var(--text);
+  outline: 0;
+}
+
+.settings-form input:focus,
+.settings-form select:focus {
+  border-color: rgba(101, 217, 141, 0.76);
+  box-shadow: 0 0 0 3px rgba(53, 194, 164, 0.12);
+}
+
+.settings-preview {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(101, 217, 141, 0.24);
+  border-radius: 8px;
+  background: rgba(53, 194, 164, 0.08);
+}
+
+.settings-preview strong {
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+.primary-button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(53, 194, 164, 0.48);
+  border-radius: 8px;
+  background: rgba(53, 194, 164, 0.16);
+  color: var(--text);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.primary-button:hover {
+  border-color: rgba(101, 217, 141, 0.82);
+  background: rgba(53, 194, 164, 0.23);
 }
 
 .notification-panel {
@@ -3938,7 +4040,8 @@ main > section {
     margin-top: 14px;
   }
 
-  .notification-panel {
+  .notification-panel,
+  .settings-panel {
     top: 76px;
     right: 16px;
     left: 16px;
