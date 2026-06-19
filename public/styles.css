@@ -3617,6 +3617,10 @@ main > section {
   animation-delay: var(--heat-delay);
 }
 
+.sfm-live-floor.live-floor-ready .floor-heat-cell {
+  animation: none;
+}
+
 .floor-heat-cell::before {
   content: "";
   position: absolute;

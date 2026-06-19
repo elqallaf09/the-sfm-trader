@@ -624,6 +624,9 @@ let voiceMonitors = loadStored("the-sfm-trader-voice-monitors", []);
 let voiceRecognitionLanguageIndex = 0;
 let voiceRecognitionSuspended = false;
 let introTimer = null;
+let liveFloorHasRendered = false;
+let floorHeatmapSignature = "";
+let floorBoardSignature = "";
 
 applyAppSettings({ updateIntro: false });
 initMarketBackground();
@@ -1941,11 +1944,17 @@ function renderTradingAtmosphere(data) {
       .map((item) => ({ item, score: calculateFinalScore(item).score }))
       .sort((a, b) => b.score - a.score || b.item.confidence - a.item.confidence)
       .slice(0, 12);
+    const nextHeatmapSignature = buildFloorHeatmapSignature(heatItems);
 
-    floorHeatmap.innerHTML = heatItems.length
-      ? heatItems.map(({ item, score }, index) => renderFloorHeatCell(item, score, index)).join("")
-      : "<div class=\"empty\">لا توجد بيانات كافية لخريطة الحرارة حالياً.</div>";
-    attachDetailOpeners(floorHeatmap);
+    if (nextHeatmapSignature !== floorHeatmapSignature) {
+      floorHeatmapSignature = nextHeatmapSignature;
+      floorHeatmap.innerHTML = heatItems.length
+        ? heatItems.map(({ item, score }, index) => renderFloorHeatCell(item, score, index)).join("")
+        : "<div class=\"empty\">لا توجد بيانات كافية لخريطة الحرارة حالياً.</div>";
+      attachDetailOpeners(floorHeatmap);
+      markLiveFloorRendered();
+      queueTranslateInterface();
+    }
   }
 
   if (!marketBoard) return;
@@ -1954,12 +1963,38 @@ function renderTradingAtmosphere(data) {
     .sort((a, b) => b.score - a.score || b.item.confidence - a.item.confidence)
     .slice(0, 6)
     .map(({ item }) => item);
+  const nextBoardSignature = buildFloorBoardSignature(boardItems);
 
-  marketBoard.innerHTML = boardItems.length
-    ? boardItems.map(renderMarketBoardCard).join("")
-    : "<div class=\"empty\">لا توجد بيانات للوحة التداول حالياً.</div>";
-  attachDetailOpeners(marketBoard);
-  queueTranslateInterface();
+  if (nextBoardSignature !== floorBoardSignature) {
+    floorBoardSignature = nextBoardSignature;
+    marketBoard.innerHTML = boardItems.length
+      ? boardItems.map(renderMarketBoardCard).join("")
+      : "<div class=\"empty\">لا توجد بيانات للوحة التداول حالياً.</div>";
+    attachDetailOpeners(marketBoard);
+    markLiveFloorRendered();
+    queueTranslateInterface();
+  }
+}
+
+function buildFloorHeatmapSignature(heatItems) {
+  return heatItems
+    .map(({ item, score }) => `${item.symbol}:${item.action}:${Math.round(score / 2) * 2}:${Math.round(Number(item.confidence || 0) / 2) * 2}`)
+    .join("|");
+}
+
+function buildFloorBoardSignature(items) {
+  return items
+    .map((item) => `${item.symbol}:${item.action}:${Math.round(Number(item.confidence || 0) / 2) * 2}`)
+    .join("|");
+}
+
+function markLiveFloorRendered() {
+  if (liveFloorHasRendered || !sfmLiveFloor) return;
+
+  liveFloorHasRendered = true;
+  window.setTimeout(() => {
+    sfmLiveFloor.classList.add("live-floor-ready");
+  }, 900);
 }
 
 function renderFloorHeatCell(item, score, index) {
