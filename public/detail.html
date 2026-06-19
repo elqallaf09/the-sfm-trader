@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>تفاصيل السهم - the-sfm trader</title>
+    <meta name="theme-color" content="#05090d" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="the-sfm trader" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/the-sfm-trader-icon-256.png" />
+    <link rel="stylesheet" href="/styles.css?v=20260618-command-center" />
+  </head>
+  <body>
+    <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
+
+    <div class="app-shell detail-shell">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <p class="eyebrow">صفحة تحليل السهم</p>
+          <h1 id="detail-symbol">--</h1>
+          <p id="detail-name" class="brand-subtitle">the-sfm trader · powered by M.ALQ</p>
+        </div>
+        <div class="top-actions">
+          <a class="text-button detail-back" href="/">رجوع للأسواق</a>
+          <div class="status-pill" aria-live="polite">
+            <span class="pulse"></span>
+            <span id="detail-status">تحميل التحليل</span>
+          </div>
+        </div>
+      </header>
+
+      <main id="detail-content" class="detail-content">
+        <section id="decision-panel" class="decision-panel">
+          <div>
+            <p class="eyebrow">تنبيه لحظي</p>
+            <h2 id="decision-title">--</h2>
+            <p id="decision-message">يتم تجهيز التوصية.</p>
+          </div>
+          <div id="decision-badge" class="decision-badge">--</div>
+        </section>
+
+        <section class="detail-hero">
+          <div class="detail-title-block">
+            <p id="detail-market" class="eyebrow">--</p>
+            <h2 id="detail-heading">--</h2>
+            <p id="detail-summary">--</p>
+          </div>
+          <div class="detail-action-card">
+            <span id="detail-action" class="action-badge">--</span>
+            <strong id="detail-confidence">--</strong>
+            <p id="detail-agreement">--</p>
+          </div>
+        </section>
+
+        <section class="detail-metrics">
+          <div>
+            <span>السعر الحالي</span>
+            <strong id="detail-current-price">--</strong>
+          </div>
+          <div>
+            <span>السعر المتوقع</span>
+            <strong id="detail-expected-price">--</strong>
+          </div>
+          <div>
+            <span>هدف 1</span>
+            <strong id="detail-target-one">--</strong>
+          </div>
+          <div>
+            <span>هدف 2</span>
+            <strong id="detail-target-two">--</strong>
+          </div>
+          <div>
+            <span>وقف الخسارة</span>
+            <strong id="detail-stop-loss">--</strong>
+          </div>
+          <div>
+            <span>الدعم</span>
+            <strong id="detail-support">--</strong>
+          </div>
+          <div>
+            <span>المقاومة</span>
+            <strong id="detail-resistance">--</strong>
+          </div>
+          <div>
+            <span>R/R</span>
+            <strong id="detail-risk-reward">--</strong>
+          </div>
+          <div>
+            <span>الحركة المتوقعة</span>
+            <strong id="detail-expected-move">--</strong>
+          </div>
+          <div>
+            <span>المدة</span>
+            <strong id="detail-duration">--</strong>
+          </div>
+          <div>
+            <span>السكور</span>
+            <strong id="detail-score">--</strong>
+          </div>
+          <div>
+            <span>المخاطرة</span>
+            <strong id="detail-risk">--</strong>
+          </div>
+          <div>
+            <span>جودة التحليل</span>
+            <strong id="detail-quality">--</strong>
+          </div>
+          <div>
+            <span>صحة البيانات</span>
+            <strong id="detail-data-health">--</strong>
+          </div>
+        </section>
+
+        <section class="detail-layout">
+          <article class="detail-panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">معلومات عامة</p>
+                <h2>ما هو السهم؟</h2>
+              </div>
+            </div>
+            <div id="general-info" class="info-list"></div>
+          </article>
+
+          <article class="detail-panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">الشرعية</p>
+                <h2>التوافق الشرعي</h2>
+              </div>
+            </div>
+            <div id="sharia-box" class="sharia-detail-box"></div>
+          </article>
+        </section>
+
+        <section class="detail-panel">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">من دقيقة إلى شهر</p>
+              <h2>تحليل الفريمات</h2>
+              <p>تجميع سريع يوضح هل الفريمات القصيرة والطويلة متفقة أو متضاربة.</p>
+            </div>
+          </div>
+          <div id="detail-timeframes" class="detail-timeframes"></div>
+        </section>
+
+        <section class="detail-layout">
+          <article class="detail-panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">التوقعات</p>
+                <h2>الأهداف القادمة</h2>
+              </div>
+            </div>
+            <div id="outlook-detail-list" class="outlook-detail-list"></div>
+          </article>
+
+          <article class="detail-panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">الأسباب</p>
+                <h2>لماذا هذه التوصية؟</h2>
+              </div>
+            </div>
+            <ul id="detail-reasons" class="reasons detail-reasons"></ul>
+          </article>
+        </section>
+
+        <section class="detail-layout">
+          <article class="detail-panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">الرسم المختصر</p>
+                <h2>حركة السعر الأخيرة</h2>
+              </div>
+            </div>
+            <canvas id="detail-sparkline" class="detail-sparkline" aria-label="رسم حركة السعر"></canvas>
+          </article>
+
+          <article class="detail-panel">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">اختبار خلفي</p>
+                <h2>جودة الإشارة</h2>
+              </div>
+            </div>
+            <div id="backtest-detail" class="info-list"></div>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script src="/detail.js?v=20260618-command-center" type="module"></script>
+  </body>
+</html>

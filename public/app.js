@@ -1,0 +1,3895 @@
+const marketTabs = document.querySelector("#market-tabs");
+const introOverlay = document.querySelector("#intro-overlay");
+const introGreeting = document.querySelector("#intro-greeting");
+const introMessage = document.querySelector("#intro-message");
+const introSkip = document.querySelector("#intro-skip");
+const cards = document.querySelector("#cards");
+const unavailable = document.querySelector("#unavailable");
+const marketTitle = document.querySelector("#market-title");
+const marketNote = document.querySelector("#market-note");
+const updatedAt = document.querySelector("#updated-at");
+const opportunityCount = document.querySelector("#opportunity-count");
+const buyCount = document.querySelector("#buy-count");
+const sellCount = document.querySelector("#sell-count");
+const avgConfidence = document.querySelector("#avg-confidence");
+const dataProvider = document.querySelector("#data-provider");
+const bestBuy = document.querySelector("#best-buy");
+const bestSell = document.querySelector("#best-sell");
+const largestMove = document.querySelector("#largest-move");
+const marketPulse = document.querySelector("#market-pulse");
+const commandCenterBrief = document.querySelector("#command-center-brief");
+const commandCenterMode = document.querySelector("#command-center-mode");
+const commandCenterGrid = document.querySelector("#command-center-grid");
+const analysisModeButtons = document.querySelectorAll("[data-analysis-mode]");
+const radarGrid = document.querySelector("#radar-grid");
+const radarMonthlyGrid = document.querySelector("#radar-monthly-grid");
+const radarQuality = document.querySelector("#radar-quality");
+const loadingIndicator = document.querySelector("#loading-indicator");
+const connectionStatus = document.querySelector("#connection-status");
+const refreshButton = document.querySelector("#refresh-button");
+const notificationButton = document.querySelector("#notification-button");
+const notificationCount = document.querySelector("#notification-count");
+const notificationPanel = document.querySelector("#notification-panel");
+const notificationList = document.querySelector("#notification-list");
+const notificationClearButton = document.querySelector("#notification-clear-button");
+const notificationCloseButton = document.querySelector("#notification-close-button");
+const disclaimer = document.querySelector("#disclaimer");
+const template = document.querySelector("#card-template");
+const expandAllCardsButton = document.querySelector("#expand-all-cards");
+const collapseAllCardsButton = document.querySelector("#collapse-all-cards");
+const tickerTape = document.querySelector("#ticker-tape");
+const sessionClock = document.querySelector("#session-clock");
+const sessionZone = document.querySelector("#session-zone");
+const sessionStateLabel = document.querySelector("#session-state-label");
+const sessionCountdown = document.querySelector("#session-countdown");
+const sessionNextEvent = document.querySelector("#session-next-event");
+const sessionMarketName = document.querySelector("#session-market-name");
+const marketHoursGrid = document.querySelector("#market-hours-grid");
+const tradingMood = document.querySelector("#trading-mood");
+const flowLeader = document.querySelector("#flow-leader");
+const flowPressure = document.querySelector("#flow-pressure");
+const marketBoard = document.querySelector("#market-board");
+const searchInput = document.querySelector("#search-input");
+const sortSelect = document.querySelector("#sort-select");
+const usOutlookSection = document.querySelector("#us-outlook-section");
+const usOutlookGrid = document.querySelector("#us-outlook-grid");
+const usOutlookCount = document.querySelector("#us-outlook-count");
+const smartAlertsList = document.querySelector("#smart-alerts-list");
+const smartAlertCount = document.querySelector("#smart-alert-count");
+const usDashboardSection = document.querySelector("#us-dashboard-section");
+const usDashboardGrid = document.querySelector("#us-dashboard-grid");
+const usBacktestScore = document.querySelector("#us-backtest-score");
+const goldenGrid = document.querySelector("#golden-grid");
+const goldenCount = document.querySelector("#golden-count");
+const watchlistForm = document.querySelector("#watchlist-form");
+const watchlistSymbol = document.querySelector("#watchlist-symbol");
+const watchlistChips = document.querySelector("#watchlist-chips");
+const watchlistCards = document.querySelector("#watchlist-cards");
+const watchlistOnlyToggle = document.querySelector("#watchlist-only-toggle");
+const portfolioForm = document.querySelector("#portfolio-form");
+const portfolioSymbol = document.querySelector("#portfolio-symbol");
+const portfolioQty = document.querySelector("#portfolio-qty");
+const portfolioPrice = document.querySelector("#portfolio-price");
+const portfolioList = document.querySelector("#portfolio-list");
+const accuracyGrid = document.querySelector("#accuracy-grid");
+const historyList = document.querySelector("#history-list");
+const clearHistoryButton = document.querySelector("#clear-history-button");
+const voiceStartButton = document.querySelector("#voice-start-button");
+const voiceStatus = document.querySelector("#voice-status");
+const voiceBand = document.querySelector(".voice-band");
+const voiceActivity = document.querySelector("#voice-activity");
+const voiceActivityText = document.querySelector("#voice-activity-text");
+const voiceTranscript = document.querySelector("#voice-transcript");
+const voiceReply = document.querySelector("#voice-reply");
+const voiceMonitor = document.querySelector("#voice-monitor");
+const voiceMonitorNote = document.querySelector("#voice-monitor-note");
+const voiceMonitorBestButton = document.querySelector("#voice-monitor-best-button");
+const ollamaStatus = document.querySelector("#ollama-status");
+const voiceTextForm = document.querySelector("#voice-text-form");
+const voiceTextCommand = document.querySelector("#voice-text-command");
+const scalpForm = document.querySelector("#scalp-form");
+const scalpSymbol = document.querySelector("#scalp-symbol");
+const scalpSubmit = document.querySelector("#scalp-submit");
+const scalpStatus = document.querySelector("#scalp-status");
+const scalpQuickList = document.querySelector("#scalp-quick-list");
+const scalpResult = document.querySelector("#scalp-result");
+
+const NUMBER_LOCALE = "ar-KW-u-nu-latn";
+const NUMBER_OPTIONS = { numberingSystem: "latn" };
+const VOICE_RECOGNITION_LANGUAGES = ["ar-SA", "ar-KW", "ar", "en-US"];
+const WATCHLIST_REFRESH_MS = 15_000;
+const INTRO_DURATION_MS = 8_000;
+const USER_DISPLAY_NAME = "محمد";
+const SHARED_TRADE_SYNC_DEBOUNCE_MS = 800;
+const SHARED_TRADE_POLL_MS = 10_000;
+const NOTIFICATION_SAVE_DEBOUNCE_MS = 800;
+const NOTIFICATION_LIMIT = 200;
+const MARKET_TIME_ZONES = {
+  forex: ["Europe/London", "London FX"],
+  crypto: ["UTC", "UTC 24/7"],
+  kuwait: ["Asia/Kuwait", "Kuwait"],
+  saudi: ["Asia/Riyadh", "Riyadh"],
+  uae: ["Asia/Dubai", "Dubai"],
+  qatar: ["Asia/Qatar", "Doha"],
+  bahrain: ["Asia/Bahrain", "Bahrain"],
+  oman: ["Asia/Muscat", "Muscat"],
+  gcc: ["Asia/Kuwait", "GCC"],
+  us: ["America/New_York", "New York"],
+  europe: ["Europe/London", "London"],
+  asia: ["Asia/Tokyo", "Tokyo"],
+  world: ["UTC", "Global UTC"],
+  ai: ["America/New_York", "AI Stocks"],
+  tech: ["America/New_York", "Technology"],
+  dividends: ["America/New_York", "Dividend Stocks"],
+  healthcare: ["America/New_York", "Healthcare"],
+  commodities: ["America/New_York", "Commodities"],
+  food: ["America/New_York", "Food & Agriculture"],
+  watchlist: ["Asia/Kuwait", "Kuwait"]
+};
+const WEEKDAYS = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6
+};
+const MARKET_SESSIONS = {
+  forex: { type: "weekly", timeZone: "America/New_York", label: "New York FX", openDay: 0, open: "17:00", closeDay: 5, close: "17:00" },
+  crypto: { type: "always", timeZone: "UTC", label: "UTC 24/7" },
+  kuwait: { type: "regular", timeZone: "Asia/Kuwait", label: "Kuwait", days: [0, 1, 2, 3, 4], open: "09:00", close: "13:15" },
+  saudi: { type: "regular", timeZone: "Asia/Riyadh", label: "Riyadh", days: [0, 1, 2, 3, 4], open: "10:00", close: "15:00" },
+  uae: { type: "regular", timeZone: "Asia/Dubai", label: "Dubai", days: [1, 2, 3, 4, 5], open: "10:00", close: "15:00" },
+  qatar: { type: "regular", timeZone: "Asia/Qatar", label: "Doha", days: [0, 1, 2, 3, 4], open: "09:30", close: "13:15" },
+  bahrain: { type: "regular", timeZone: "Asia/Bahrain", label: "Bahrain", days: [0, 1, 2, 3, 4], open: "09:30", close: "13:00" },
+  oman: { type: "regular", timeZone: "Asia/Muscat", label: "Muscat", days: [0, 1, 2, 3, 4], open: "10:00", close: "14:00" },
+  gcc: { type: "regular", timeZone: "Asia/Kuwait", label: "GCC", days: [0, 1, 2, 3, 4], open: "09:00", close: "15:00" },
+  us: { type: "regular", timeZone: "America/New_York", label: "New York", days: [1, 2, 3, 4, 5], open: "09:30", close: "16:00" },
+  europe: { type: "regular", timeZone: "Europe/London", label: "London", days: [1, 2, 3, 4, 5], open: "08:00", close: "16:30" },
+  asia: { type: "regular", timeZone: "Asia/Tokyo", label: "Tokyo", days: [1, 2, 3, 4, 5], open: "09:00", close: "15:00" },
+  world: { type: "always", timeZone: "UTC", label: "Global UTC" },
+  ai: { type: "regular", timeZone: "America/New_York", label: "New York", days: [1, 2, 3, 4, 5], open: "09:30", close: "16:00" },
+  tech: { type: "regular", timeZone: "America/New_York", label: "New York", days: [1, 2, 3, 4, 5], open: "09:30", close: "16:00" },
+  dividends: { type: "regular", timeZone: "America/New_York", label: "New York", days: [1, 2, 3, 4, 5], open: "09:30", close: "16:00" },
+  healthcare: { type: "regular", timeZone: "America/New_York", label: "New York", days: [1, 2, 3, 4, 5], open: "09:30", close: "16:00" },
+  commodities: { type: "weekly", timeZone: "America/New_York", label: "Commodity Futures", openDay: 0, open: "18:00", closeDay: 5, close: "17:00" },
+  food: { type: "weekly", timeZone: "America/New_York", label: "Commodity/Food", openDay: 0, open: "18:00", closeDay: 5, close: "17:00" },
+  watchlist: { type: "regular", timeZone: "Asia/Kuwait", label: "Kuwait", days: [0, 1, 2, 3, 4], open: "09:00", close: "15:00" }
+};
+const EXCHANGE_SESSION_KNOWLEDGE = {
+  kuwait: { name: "بورصة الكويت", session: MARKET_SESSIONS.kuwait },
+  saudi: { name: "بورصة السعودية", session: MARKET_SESSIONS.saudi },
+  uae: { name: "أسواق الإمارات", session: MARKET_SESSIONS.uae },
+  qatar: { name: "بورصة قطر", session: MARKET_SESSIONS.qatar },
+  bahrain: { name: "بورصة البحرين", session: MARKET_SESSIONS.bahrain },
+  oman: { name: "بورصة عمان", session: MARKET_SESSIONS.oman },
+  us: { name: "السوق الأمريكي", session: MARKET_SESSIONS.us },
+  healthcare: { name: "أسهم الرعاية الصحية والطب", session: MARKET_SESSIONS.healthcare },
+  canada: { name: "كندا", session: { type: "regular", timeZone: "America/Toronto", label: "Toronto", days: [1, 2, 3, 4, 5], open: "09:30", close: "16:00" } },
+  brazil: { name: "البرازيل", session: { type: "regular", timeZone: "America/Sao_Paulo", label: "Sao Paulo", days: [1, 2, 3, 4, 5], open: "10:00", close: "17:00" } },
+  uk: { name: "بريطانيا", session: { type: "regular", timeZone: "Europe/London", label: "London", days: [1, 2, 3, 4, 5], open: "08:00", close: "16:30" } },
+  germany: { name: "ألمانيا", session: { type: "regular", timeZone: "Europe/Berlin", label: "Frankfurt", days: [1, 2, 3, 4, 5], open: "09:00", close: "17:30" } },
+  france: { name: "فرنسا", session: { type: "regular", timeZone: "Europe/Paris", label: "Paris", days: [1, 2, 3, 4, 5], open: "09:00", close: "17:30" } },
+  netherlands: { name: "هولندا", session: { type: "regular", timeZone: "Europe/Amsterdam", label: "Amsterdam", days: [1, 2, 3, 4, 5], open: "09:00", close: "17:30" } },
+  switzerland: { name: "سويسرا", session: { type: "regular", timeZone: "Europe/Zurich", label: "Zurich", days: [1, 2, 3, 4, 5], open: "09:00", close: "17:30" } },
+  japan: { name: "اليابان", session: MARKET_SESSIONS.asia },
+  hongkong: { name: "هونغ كونغ", session: { type: "regular", timeZone: "Asia/Hong_Kong", label: "Hong Kong", days: [1, 2, 3, 4, 5], open: "09:30", close: "16:00" } },
+  china: { name: "الصين", session: { type: "regular", timeZone: "Asia/Shanghai", label: "Shanghai", days: [1, 2, 3, 4, 5], open: "09:30", close: "15:00" } },
+  korea: { name: "كوريا الجنوبية", session: { type: "regular", timeZone: "Asia/Seoul", label: "Seoul", days: [1, 2, 3, 4, 5], open: "09:00", close: "15:30" } },
+  india: { name: "الهند", session: { type: "regular", timeZone: "Asia/Kolkata", label: "Mumbai", days: [1, 2, 3, 4, 5], open: "09:15", close: "15:30" } },
+  australia: { name: "أستراليا", session: { type: "regular", timeZone: "Australia/Sydney", label: "Sydney", days: [1, 2, 3, 4, 5], open: "10:00", close: "16:00" } },
+  singapore: { name: "سنغافورة", session: { type: "regular", timeZone: "Asia/Singapore", label: "Singapore", days: [1, 2, 3, 4, 5], open: "09:00", close: "17:00" } },
+  forex: { name: "الفوركس", session: MARKET_SESSIONS.forex },
+  commodities: { name: "السلع والعقود الآجلة", session: MARKET_SESSIONS.commodities },
+  crypto: { name: "العملات الرقمية", session: MARKET_SESSIONS.crypto }
+};
+const MARKET_HOURS_IDS = [
+  "kuwait",
+  "saudi",
+  "uae",
+  "qatar",
+  "bahrain",
+  "oman",
+  "us",
+  "healthcare",
+  "forex",
+  "commodities",
+  "crypto"
+];
+const ASSET_QUERY_ALIASES = [
+  { pattern: /(ذهب|gold)/, symbol: "GC=F", name: "الذهب" },
+  { pattern: /(فضه|فضة|silver)/, symbol: "SI=F", name: "الفضة" },
+  { pattern: /(نفط|خام|wti|oil)/, symbol: "CL=F", name: "نفط WTI" },
+  { pattern: /(برنت|brent)/, symbol: "BZ=F", name: "نفط برنت" },
+  { pattern: /(غاز|gas)/, symbol: "NG=F", name: "الغاز الطبيعي" },
+  { pattern: /(نحاس|copper)/, symbol: "HG=F", name: "النحاس" },
+  { pattern: /(قهوه|قهوة|coffee)/, symbol: "KC=F", name: "القهوة" },
+  { pattern: /(كاكاو|ككاو|cocoa)/, symbol: "CC=F", name: "الكاكاو" }
+];
+const MARKET_TOPIC_ALIASES = [
+  { id: "ai", pattern: /(ذكاء اصطناعي|الذكاء|ai|artificial intelligence)/, label: "أسهم الذكاء الاصطناعي" },
+  { id: "tech", pattern: /(تقنيه|تقنية|تكنولوجيا|tech|technology)/, label: "أسهم التقنية" },
+  { id: "dividends", pattern: /(توزيع|توزيعات|ارباح|أرباح|dividend|dividends)/, label: "أسهم توزيعات الأرباح" },
+  { id: "healthcare", pattern: /(طبي|طبيه|طبية|الطب|رعايه صحيه|رعاية صحية|صحيه|صحية|ادويه|أدوية|دواء|مستشفى|مستشفيات|بيوتك|بايوتك|healthcare|health care|medical|pharma|biotech|hospital)/, label: "أسهم الرعاية الصحية والطب" },
+  { id: "food", pattern: /(طعام|اغذيه|أغذية|قهوه|قهوة|كاكاو|ككاو|coffee|cocoa|food)/, label: "اسهم سلع غذائية" },
+  { id: "commodities", pattern: /(ذهب|فضه|فضة|نفط|برنت|غاز|نحاس|سلع|commodities|gold|silver|oil)/, label: "الذهب والفضة والنفط" }
+];
+
+const SYMBOL_ALIASES = {
+  APPLE: "AAPL",
+  APPL: "AAPL",
+  MICROSOFT: "MSFT",
+  MS: "MSFT",
+  NVD: "NVDA",
+  NVIDIA: "NVDA",
+  TESLA: "TSLA",
+  GOOGLE: "GOOGL",
+  ALPHABET: "GOOGL",
+  AMAZON: "AMZN",
+  META: "META",
+  FACEBOOK: "META",
+  KFH: "KFH.KW",
+  NBK: "NBK.KW",
+  ZAIN: "ZAIN.KW",
+  USDJPY: "USDJPY=X",
+  EURUSD: "EURUSD=X",
+  GBPUSD: "GBPUSD=X",
+  USDCHF: "USDCHF=X",
+  AUDUSD: "AUDUSD=X",
+  USDCAD: "USDCAD=X",
+  NZDUSD: "NZDUSD=X",
+  EURGBP: "EURGBP=X",
+  US100: "^NDX",
+  NAS100: "^NDX",
+  NASDAQ100: "^NDX",
+  NDX: "^NDX",
+  US500: "^GSPC",
+  SPX500: "^GSPC",
+  SP500: "^GSPC",
+  SPX: "^GSPC",
+  US30: "^DJI",
+  DJ30: "^DJI",
+  DOW: "^DJI",
+  DJI: "^DJI",
+  US2000: "^RUT",
+  RUSSELL2000: "^RUT",
+  RUT: "^RUT",
+  VIX: "^VIX",
+  GER40: "^GDAXI",
+  DAX40: "^GDAXI",
+  DAX: "^GDAXI",
+  UK100: "^FTSE",
+  FTSE: "^FTSE",
+  JP225: "^N225",
+  NIKKEI: "^N225",
+  HK50: "^HSI",
+  HSI: "^HSI",
+  BTC: "BTC-USD",
+  BITCOIN: "BTC-USD",
+  ETH: "ETH-USD",
+  ETHEREUM: "ETH-USD",
+  BNB: "BNB-USD",
+  SOL: "SOL-USD",
+  SOLANA: "SOL-USD",
+  XRP: "XRP-USD",
+  ADA: "ADA-USD",
+  CARDANO: "ADA-USD",
+  DOGE: "DOGE-USD",
+  AVAX: "AVAX-USD",
+  LINK: "LINK-USD",
+  DOT: "DOT-USD"
+};
+
+const STORAGE_PREFIX = "the-sfm-trader-";
+const LEGACY_STORAGE_PREFIX = "the-sfm-";
+
+let activeMarket = "us";
+let timer = null;
+let sessionClockTimer = null;
+let isLoading = false;
+let lastData = null;
+let activeFilter = "all";
+let activeShariaFilter = "all";
+let activeAnalysisMode = loadStored("the-sfm-trader-analysis-mode", "balanced");
+let watchlist = loadStored("the-sfm-trader-watchlist", ["AMD", "NVDA", "GOOGL"]);
+let portfolio = loadStored("the-sfm-trader-portfolio", []);
+let recommendationHistory = loadStored("the-sfm-trader-history", []);
+let followedTradeKeys = new Set(loadStored("the-sfm-trader-followed-trades", []));
+let followedTradeAlerts = new Set(loadStored("the-sfm-trader-followed-alerts", []));
+let sharedTradeSaveTimer = null;
+let sharedTradePollTimer = null;
+let sharedTradeStateLoaded = false;
+let notificationLog = normalizeNotificationLog(loadStored("the-sfm-trader-notifications", []));
+let notificationSaveTimer = null;
+let notificationPanelOpen = false;
+let scalpLoading = false;
+let expandedSignalCards = new Set(loadStored("the-sfm-trader-expanded-cards", []));
+let alertedKeys = new Set(loadStored("the-sfm-trader-alerted", []));
+let recommendationSignalState = loadStored("the-sfm-trader-signal-state", {});
+let watchlistOnly = loadStored("the-sfm-trader-watchlist-only", false);
+let watchlistData = null;
+let watchlistLoading = false;
+let watchlistLastLoadedAt = 0;
+let watchlistTimer = null;
+let voiceActive = false;
+let voiceRecognition = null;
+let voiceStream = null;
+let voiceAudioContext = null;
+let voiceClapFrame = null;
+let voiceClapCooldownUntil = 0;
+let voiceMonitors = loadStored("the-sfm-trader-voice-monitors", []);
+let voiceRecognitionLanguageIndex = 0;
+let voiceRecognitionSuspended = false;
+let introTimer = null;
+
+initMarketBackground();
+initIntroCeremony();
+registerPwaServiceWorker();
+init();
+
+function registerPwaServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js").catch(() => {
+      // The app still works normally if iOS blocks service worker registration.
+    });
+  });
+}
+
+async function init() {
+  watchlist = normalizeWatchlist(watchlist);
+  voiceMonitors = normalizeWatchlist(voiceMonitors);
+  saveStored("the-sfm-trader-watchlist", watchlist);
+  saveStored("the-sfm-trader-voice-monitors", voiceMonitors);
+  watchlistOnlyToggle.checked = watchlistOnly;
+  initVoiceAssistant();
+  startSessionClock();
+  loadOllamaStatus();
+  renderWatchlist();
+  loadWatchlistData(true);
+  renderPortfolio();
+  await loadSharedTradeState();
+  await loadNotificationLog();
+  renderNotificationCenter();
+  renderHistory();
+  renderVoiceMonitor();
+  setActiveAnalysisModeButtons();
+
+  await loadMarkets();
+  await loadRecommendations();
+  timer = window.setInterval(loadRecommendations, 1000);
+  watchlistTimer = window.setInterval(() => loadWatchlistData(), WATCHLIST_REFRESH_MS);
+  sharedTradePollTimer = window.setInterval(() => loadSharedTradeState({ poll: true }), SHARED_TRADE_POLL_MS);
+  refreshButton.addEventListener("click", loadRecommendations);
+  notificationButton?.addEventListener("click", toggleNotificationPanel);
+  notificationCloseButton?.addEventListener("click", () => setNotificationPanelOpen(false));
+  notificationClearButton?.addEventListener("click", clearNotificationLog);
+  scalpForm?.addEventListener("submit", handleScalpSubmit);
+  expandAllCardsButton?.addEventListener("click", () => setAllSignalCardsExpanded(true));
+  collapseAllCardsButton?.addEventListener("click", () => setAllSignalCardsExpanded(false));
+  searchInput.addEventListener("input", () => renderRecommendations(lastData));
+  sortSelect.addEventListener("change", () => renderRecommendations(lastData));
+  for (const button of analysisModeButtons) {
+    button.addEventListener("click", () => {
+      activeAnalysisMode = button.dataset.analysisMode || "balanced";
+      saveStored("the-sfm-trader-analysis-mode", activeAnalysisMode);
+      setActiveAnalysisModeButtons();
+      renderRecommendations(lastData);
+    });
+  }
+  watchlistOnlyToggle.addEventListener("change", () => {
+    watchlistOnly = watchlistOnlyToggle.checked;
+    saveStored("the-sfm-trader-watchlist-only", watchlistOnly);
+    loadRecommendations();
+  });
+  watchlistForm.addEventListener("submit", addWatchlistSymbol);
+  portfolioForm.addEventListener("submit", addPortfolioPosition);
+  clearHistoryButton.addEventListener("click", () => {
+    recommendationHistory = [];
+    followedTradeKeys = new Set();
+    followedTradeAlerts = new Set();
+    saveStored("the-sfm-trader-history", recommendationHistory);
+    saveStored("the-sfm-trader-followed-trades", []);
+    saveStored("the-sfm-trader-followed-alerts", []);
+    persistSharedTradeState({ force: true });
+    renderHistory();
+  });
+
+  for (const button of document.querySelectorAll(".filter-button")) {
+    button.addEventListener("click", () => {
+      activeFilter = button.dataset.filter;
+      document.querySelectorAll(".filter-button").forEach((item) => item.classList.toggle("active", item === button));
+      renderRecommendations(lastData);
+    });
+  }
+
+  for (const button of document.querySelectorAll(".sharia-filter-button")) {
+    button.addEventListener("click", () => {
+      activeShariaFilter = button.dataset.shariaFilter;
+      setActiveShariaFilterButton();
+      renderRecommendations(lastData);
+    });
+  }
+}
+
+function initIntroCeremony() {
+  if (!introOverlay) return;
+
+  const greeting = getIntroGreeting();
+  const message = "مساعدك SFM جاهز للتحليل ومتابعة الأسهم.";
+  const honorificName = `سيدي ${USER_DISPLAY_NAME}`;
+  document.body.classList.add("intro-running");
+  introGreeting.textContent = `${greeting} ${honorificName}`;
+  introMessage.textContent = message;
+  introSkip?.addEventListener("click", closeIntroCeremony);
+
+  window.setTimeout(() => {
+    speakIntroGreeting(`${greeting} ${honorificName}. ${message}`);
+  }, 650);
+
+  introTimer = window.setTimeout(closeIntroCeremony, INTRO_DURATION_MS);
+}
+
+function getIntroGreeting() {
+  const hour = new Date().getHours();
+  return hour >= 5 && hour < 12 ? "صباح الخير" : "مساء الخير";
+}
+
+function speakIntroGreeting(text) {
+  if (!text || !("speechSynthesis" in window)) return;
+
+  try {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "ar-SA";
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    const voices = window.speechSynthesis.getVoices();
+    const arabicVoice = voices.find((voice) => voice.lang?.toLowerCase().startsWith("ar"));
+    if (arabicVoice) utterance.voice = arabicVoice;
+    window.speechSynthesis.speak(utterance);
+  } catch {
+    // بعض المتصفحات تمنع النطق التلقائي قبل أول تفاعل من المستخدم.
+  }
+}
+
+function closeIntroCeremony() {
+  if (!introOverlay || introOverlay.classList.contains("is-closing")) return;
+
+  if (introTimer) {
+    window.clearTimeout(introTimer);
+    introTimer = null;
+  }
+
+  document.body.classList.remove("intro-running");
+  introOverlay.classList.add("is-closing");
+  window.setTimeout(() => {
+    introOverlay.remove();
+  }, 700);
+}
+
+async function loadMarkets() {
+  const data = await fetchJson("/api/markets", {
+    fallbackMessage: "تعذر تحميل الأسواق. تأكد أن السيرفر يعمل ثم حدث الصفحة."
+  });
+  marketTabs.innerHTML = "";
+
+  for (const market of data.markets) {
+    const button = document.createElement("button");
+    button.className = "market-button";
+    button.type = "button";
+    button.dataset.market = market.id;
+    button.innerHTML = `<strong>${market.label}</strong><span>${market.count} رمز</span>`;
+    button.addEventListener("click", () => {
+      activeMarket = market.id;
+      activeShariaFilter = "all";
+      setActiveMarketButton();
+      setActiveShariaFilterButton();
+      loadRecommendations();
+    });
+    marketTabs.appendChild(button);
+  }
+
+  setActiveMarketButton();
+}
+
+async function loadRecommendations() {
+  if (isLoading) return;
+  isLoading = true;
+  loadingIndicator.textContent = "تحديث";
+
+  try {
+    const endpoint =
+      watchlistOnly && watchlist.length
+        ? `/api/watchlist?symbols=${encodeURIComponent(watchlist.join(","))}`
+        : `/api/recommendations?market=${encodeURIComponent(activeMarket)}`;
+    const data = await fetchJson(endpoint, {
+      retries: 1,
+      retryDelayMs: 700,
+      fallbackMessage: "تعذر الاتصال بالسيرفر. اضغط زر التحديث أو افتح الرابط الجديد للصفحة."
+    });
+
+    lastData = data;
+    updateRecommendationHistory(data.recommendations || []);
+    triggerSmartAlertPopup(data.smartAlerts || []);
+    renderRecommendations(data);
+    connectionStatus.textContent = data.cached ? "متصل - بيانات مخزنة لحظيا" : "متصل - بيانات جديدة";
+  } catch (error) {
+    const message = getFriendlyFetchError(error, "تعذر الاتصال بالسيرفر. اضغط تحديث أو أعد فتح الصفحة.");
+    connectionStatus.textContent = lastData?.recommendations?.length ? "اتصال متقطع - آخر بيانات محفوظة" : "تعذر الاتصال";
+
+    if (lastData?.recommendations?.length) {
+      renderRecommendations(lastData);
+    } else {
+      cards.innerHTML = `<div class="empty">${escapeHtml(message)}</div>`;
+    }
+  } finally {
+    loadingIndicator.textContent = "جاهز";
+    isLoading = false;
+  }
+}
+
+function renderRecommendations(data) {
+  if (!data) return;
+
+  const recommendations = sortRecommendations(filterRecommendations(data.recommendations));
+  const all = data.recommendations;
+  const buys = all.filter((item) => item.action === "buy");
+  const sells = all.filter((item) => item.action === "sell");
+  const avg = all.length ? Math.round(all.reduce((sum, item) => sum + item.confidence, 0) / all.length) : 0;
+
+  marketTitle.textContent = data.market.label;
+  marketNote.textContent = data.market.note;
+  updatedAt.textContent = formatDateTime(data.generatedAt);
+  opportunityCount.textContent = `${all.length} / ${data.market.totalSymbols}`;
+  buyCount.textContent = buys.length;
+  sellCount.textContent = sells.length;
+  avgConfidence.textContent = all.length ? `${avg}%` : "--";
+  dataProvider.textContent = data.dataProvider?.active || all[0]?.dataProvider || "--";
+  disclaimer.textContent = data.disclaimer;
+  marketPulse.textContent = getMarketPulse(all);
+
+  setInsight(bestBuy, getTopItem(buys, "confidence"), "لا توجد إشارة شراء");
+  setInsight(bestSell, getTopItem(sells, "confidence"), "لا توجد إشارة بيع");
+  setInsight(largestMove, getTopItem(all, "move"), "لا توجد بيانات");
+  updateTicker(all);
+  renderCommandCenter(data, recommendations);
+  renderOpportunityRadar(data);
+  renderSmartAlerts(data);
+  renderUsDashboard(data);
+  renderUsOutlook(data);
+  renderGoldenOpportunities(data);
+  renderScalpQuickList(data);
+  if (data.market?.id === "watchlist") {
+    watchlistData = data;
+    watchlistLastLoadedAt = Date.now();
+  }
+  renderWatchlist();
+  renderPortfolio(all);
+  renderHistory();
+  checkFollowedTrades(all);
+  checkSmartMarketNotifications(all);
+  checkVoiceMonitors(all);
+
+  cards.innerHTML = "";
+
+  if (!recommendations.length) {
+    cards.innerHTML = "<div class=\"empty\">لا توجد نتائج مطابقة للبحث أو الفلتر الحالي.</div>";
+  }
+
+  for (const item of recommendations) {
+    const card = template.content.firstElementChild.cloneNode(true);
+    const actionBadge = card.querySelector(".action-badge");
+    const shariaBadge = card.querySelector(".sharia-badge");
+    const confidenceFill = card.querySelector(".confidence-fill");
+
+    card.querySelector(".asset-name").textContent = item.name;
+    card.querySelector(".asset-symbol").textContent = `${item.symbol}${item.exchangeName ? ` · ${item.exchangeName}` : ""}`;
+    card.dataset.symbol = item.symbol;
+    card.setAttribute("role", "link");
+    card.tabIndex = 0;
+    card.title = "افتح صفحة تفاصيل السهم";
+    setupSignalCardToggle(card, item);
+    actionBadge.textContent = item.actionLabel;
+    actionBadge.classList.add(`action-${item.action}`);
+    if (item.shariaStatus === "compliant") {
+      shariaBadge.textContent = item.shariaLabel || "مطابق للشريعة";
+      shariaBadge.title = item.shariaSource || "تصنيف شرعي قابل للتحديث";
+      shariaBadge.classList.add("is-visible");
+    }
+    card.querySelector(".current-price").textContent = formatMoney(item.currentPrice, item.currency);
+    card.querySelector(".expected-price").textContent = formatMoney(item.expectedPrice, item.currency);
+    card.querySelector(".target-one").textContent = formatMoney(item.target1 || item.expectedPrice, item.currency);
+    card.querySelector(".target-two").textContent = formatMoney(item.target2, item.currency);
+    card.querySelector(".stop-loss").textContent = item.stopLoss ? formatMoney(item.stopLoss, item.currency) : "--";
+    card.querySelector(".risk-reward").textContent = item.riskReward ? `${formatNumber(item.riskReward, { maximumFractionDigits: 2 })}:1` : "--";
+    card.querySelector(".confidence").textContent = `${item.confidence}%`;
+    confidenceFill.style.width = `${item.confidence}%`;
+    card.querySelector(".duration").textContent = `المدة: ${item.duration}`;
+    card.querySelector(".expected-move").textContent = `الحركة: ${formatPercent(item.expectedMovePct)}`;
+    card.querySelector(".rsi").textContent = item.indicators?.rsi14 ?? "--";
+    card.querySelector(".momentum").textContent = formatPercent(item.indicators?.momentum20 ?? 0);
+    card.querySelector(".volatility").textContent = formatPercent(item.indicators?.volatility20 ?? 0);
+    card.querySelector(".risk-label").textContent = item.risk?.label || "--";
+    card.querySelector(".backtest-label").textContent = item.backtest?.winRate ? `${item.backtest.winRate}%` : item.backtest?.label || "--";
+    card.querySelector(".data-health-label").textContent = item.dataHealth?.score ? `${item.dataHealth.score}% ${item.dataHealth.label || ""}`.trim() : "--";
+    card.querySelector(".final-score").textContent = `${calculateFinalScore(item).score}%`;
+    card.querySelector(".timeframe-grid").innerHTML = renderTimeframePills(item.timeframes || []);
+
+    const reasons = card.querySelector(".reasons");
+    reasons.innerHTML = "";
+    for (const reason of item.reasons) {
+      const li = document.createElement("li");
+      li.textContent = reason;
+      reasons.appendChild(li);
+    }
+
+    cards.appendChild(card);
+    if (expandedSignalCards.has(item.symbol)) {
+      drawSparkline(card.querySelector(".sparkline"), item.sparkline, item.action);
+    }
+  }
+
+  attachDetailOpeners(cards);
+
+  if (data.unavailable?.length) {
+    unavailable.innerHTML = `<strong>رموز لم تتوفر بياناتها:</strong> ${data.unavailable
+      .map((item) => `${escapeHtml(item.name)} (${escapeHtml(item.symbol)})`)
+      .join("، ")}`;
+  } else {
+    unavailable.innerHTML = "";
+  }
+}
+
+function renderScalpQuickList(data) {
+  if (!scalpQuickList) return;
+
+  const items = (data?.recommendations || [])
+    .filter((item) => item?.symbol)
+    .sort((a, b) => calculateFinalScore(b).score - calculateFinalScore(a).score)
+    .slice(0, 8);
+
+  if (!items.length) {
+    scalpQuickList.innerHTML = "<span class=\"scalp-empty-chip\">تظهر الاختيارات بعد تحميل السوق</span>";
+    return;
+  }
+
+  scalpQuickList.innerHTML = items.map((item) => `
+    <button type="button" data-scalp-symbol="${escapeHtml(item.symbol)}">
+      <strong>${escapeHtml(item.symbol)}</strong>
+      <span>${escapeHtml(item.actionLabel)} · ${formatNumber(item.confidence)}%</span>
+    </button>
+  `).join("");
+
+  for (const button of scalpQuickList.querySelectorAll("[data-scalp-symbol]")) {
+    button.addEventListener("click", () => {
+      scalpSymbol.value = button.dataset.scalpSymbol;
+      analyzeScalpSymbol(button.dataset.scalpSymbol);
+    });
+  }
+}
+
+function handleScalpSubmit(event) {
+  event.preventDefault();
+  analyzeScalpSymbol(scalpSymbol.value);
+}
+
+async function analyzeScalpSymbol(rawSymbol) {
+  if (!scalpResult || scalpLoading) return;
+
+  const symbol = normalizeSymbol(rawSymbol);
+  if (!symbol) {
+    scalpResult.innerHTML = "<div class=\"scalp-empty\">اكتب رمز السهم أولاً.</div>";
+    return;
+  }
+
+  scalpLoading = true;
+  if (scalpStatus) scalpStatus.textContent = "يحلل";
+  if (scalpSubmit) scalpSubmit.disabled = true;
+  scalpResult.innerHTML = `<div class="scalp-empty">جاري تحليل ${escapeHtml(symbol)} لفريم 1m و15m...</div>`;
+
+  try {
+    const data = await fetchJson(`/api/asset?symbol=${encodeURIComponent(symbol)}`, {
+      retries: 1,
+      retryDelayMs: 700,
+      fallbackMessage: "تعذر الاتصال بالسيرفر. حدث الصفحة وحاول مرة ثانية، أو استخدم رمز Yahoo كامل مثل NZDUSD=X."
+    });
+
+    const item = data.recommendation;
+    const scalp = buildScalpDecision(item);
+    renderScalpResult(item, scalp);
+    if (scalpStatus) scalpStatus.textContent = scalp.statusLabel;
+  } catch (error) {
+    const message = getFriendlyFetchError(error, "تعذر الاتصال بالسيرفر. حدث الصفحة وحاول مرة ثانية، أو استخدم رمز Yahoo كامل مثل NZDUSD=X.");
+    scalpResult.innerHTML = `<div class="scalp-empty">${escapeHtml(message)}</div>`;
+    if (scalpStatus) scalpStatus.textContent = "تعذر";
+  } finally {
+    scalpLoading = false;
+    if (scalpSubmit) scalpSubmit.disabled = false;
+  }
+}
+
+function buildScalpDecision(item) {
+  const frames = item?.timeframes || [];
+  const oneMinute = frames.find((frame) => frame.id === "1m");
+  const fifteenMinute = frames.find((frame) => frame.id === "15m");
+  const thirtyMinute = frames.find((frame) => frame.id === "30m");
+  const usableFrames = [oneMinute, fifteenMinute].filter(Boolean);
+  const price = Number(item?.currentPrice);
+  const dataScore = Number(item?.dataHealth?.score ?? item?.analysisQuality?.score ?? 0);
+  const hasDataHealth = Number.isFinite(dataScore) && dataScore > 0;
+
+  if (usableFrames.length < 2 || !Number.isFinite(price) || price <= 0) {
+    return {
+      action: "hold",
+      actionText: "انتظر",
+      statusLabel: "انتظار",
+      confidence: 45,
+      duration: "5 إلى 15 دقيقة مراقبة فقط",
+      target: null,
+      stop: null,
+      movePct: 0,
+      reasons: ["فريم الدقيقة أو 15 دقيقة غير مكتمل حالياً.", "لا تدخل مضاربة بدون تأكيد الفريمات السريعة."]
+    };
+  }
+
+  if (hasDataHealth && dataScore < 50) {
+    return {
+      action: "hold",
+      actionText: "انتظر",
+      statusLabel: "انتظار",
+      confidence: Math.min(50, Math.round(dataScore)),
+      duration: "5 إلى 15 دقيقة مراقبة فقط",
+      target: null,
+      stop: null,
+      movePct: 0,
+      reasons: [
+        `صحة البيانات ${formatNumber(dataScore)}% فقط، وهذا غير كاف للمضاربة.`,
+        "لا تدخل مضاربة سريعة إذا كانت البيانات ناقصة أو متأخرة.",
+        ...(item?.dataHealth?.notes || []).slice(0, 2)
+      ]
+    };
+  }
+
+  if (item?.timeframeConsensus?.conflict) {
+    return {
+      action: "hold",
+      actionText: "انتظر",
+      statusLabel: "انتظار",
+      confidence: Math.min(55, Number(item.confidence || 55)),
+      duration: "5 إلى 15 دقيقة مراقبة فقط",
+      target: null,
+      stop: null,
+      movePct: 0,
+      reasons: [
+        "يوجد تضارب بين الفريمات السريعة والطويلة.",
+        item.timeframeConsensus.conflict,
+        "انتظر شمعة أوضح قبل المضاربة."
+      ]
+    };
+  }
+
+  const fastAgreement = oneMinute.action === fifteenMinute.action && ["buy", "sell"].includes(oneMinute.action);
+  const thirtyOpposite =
+    thirtyMinute &&
+    oneMinute.action !== "hold" &&
+    thirtyMinute.action !== "hold" &&
+    thirtyMinute.action !== oneMinute.action;
+  const confirmationBoost = thirtyMinute?.action === oneMinute.action ? 5 : 0;
+  const averageConfidence = Math.round((Number(oneMinute.confidence || 0) + Number(fifteenMinute.confidence || 0)) / 2);
+  const confidence = clamp(averageConfidence + confirmationBoost, 45, 92);
+  const action = fastAgreement && !thirtyOpposite && confidence >= 58 && (!hasDataHealth || dataScore >= 55) ? oneMinute.action : "hold";
+  const movePct = action === "hold" ? 0 : clamp(0.0012 + ((confidence - 55) / 10000), 0.0012, 0.008);
+  const stopPct = movePct * 0.68;
+  const direction = action === "sell" ? -1 : 1;
+
+  return {
+    action,
+    actionText: action === "buy" ? "اشتر الآن" : action === "sell" ? "بيع الآن" : "انتظر",
+    statusLabel: action === "buy" ? "شراء سريع" : action === "sell" ? "بيع سريع" : "انتظار",
+    confidence,
+    duration: action === "hold" ? "5 إلى 15 دقيقة مراقبة فقط" : confidence >= 78 ? "5 إلى 10 دقائق" : "10 إلى 15 دقيقة",
+    target: action === "hold" ? null : price * (1 + direction * movePct),
+    stop: action === "hold" ? null : price * (1 - direction * stopPct),
+    movePct: movePct * 100 * direction,
+    reasons: [
+      `فريم الدقيقة: ${oneMinute.actionLabel} بثقة ${formatNumber(oneMinute.confidence)}%`,
+      `فريم 15 دقيقة: ${fifteenMinute.actionLabel} بثقة ${formatNumber(fifteenMinute.confidence)}%`,
+      thirtyOpposite ? "فريم 30 دقيقة يعاكس الدقيقتين؛ لا دخول الآن." : thirtyMinute ? `فريم 30 دقيقة: ${thirtyMinute.actionLabel} كفلتر إضافي` : "فريم 30 دقيقة غير متاح كفلتر إضافي",
+      action === "hold" ? "الفريمات السريعة أو جودة البيانات غير كافية؛ الأفضل انتظار شمعة أوضح." : "الدخول مشروط بالالتزام بالهدف والوقف السريع."
+    ]
+  };
+}
+
+function renderScalpResult(item, scalp) {
+  const actionClass = `scalp-action-${scalp.action}`;
+  const current = formatMoney(item.currentPrice, item.currency);
+  const target = scalp.target ? formatMoney(scalp.target, item.currency) : "--";
+  const stop = scalp.stop ? formatMoney(scalp.stop, item.currency) : "--";
+
+  scalpResult.innerHTML = `
+    <article class="scalp-card ${actionClass}">
+      <div class="scalp-decision">
+        <span>قرار المضاربة</span>
+        <strong>${escapeHtml(scalp.actionText)}</strong>
+        <em>${formatNumber(scalp.confidence)}% ثقة · ${escapeHtml(scalp.duration)}</em>
+      </div>
+      <div class="scalp-symbol-block">
+        <span>${escapeHtml(item.name || item.symbol)}</span>
+        <strong>${escapeHtml(item.symbol)}</strong>
+      </div>
+      <div class="scalp-metrics">
+        <div><span>السعر الحالي</span><strong>${current}</strong></div>
+        <div><span>هدف سريع</span><strong>${target}</strong></div>
+        <div><span>وقف سريع</span><strong>${stop}</strong></div>
+        <div><span>الحركة</span><strong>${formatPercent(scalp.movePct)}</strong></div>
+      </div>
+      <ul>
+        ${scalp.reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}
+      </ul>
+      <p>المضاربة سريعة وحساسة؛ إذا تأخر الدخول أو تحرك السعر عكس القرار، انتظر إشارة جديدة.</p>
+    </article>
+  `;
+}
+
+function renderCommandCenter(data, filteredRecommendations = []) {
+  if (!commandCenterGrid) return;
+
+  const all = data?.recommendations || [];
+  const accuracy = calculateAccuracyStats(recommendationHistory);
+  const modeLabel = getAnalysisModeLabel(activeAnalysisMode);
+  const modeNote = getAnalysisModeNote(activeAnalysisMode);
+  const bestMode = filteredRecommendations[0] || getTopItem(all, "confidence");
+  const shariaBest = getBestBy(all.filter((item) => item.shariaStatus === "compliant" && item.action === "buy"), getAnalysisModeScore);
+  const fastSignal = getBestBy(all.filter((item) => item.action !== "hold"), (item) => getFastFrameAgreement(item) + item.confidence);
+  const saferSignal = getBestBy(
+    all.filter((item) => isLowRisk(item) && getDataHealthScore(item) >= 55),
+    (item) => calculateFinalScore(item).score + getDataHealthScore(item)
+  );
+
+  if (commandCenterMode) commandCenterMode.textContent = modeLabel;
+  if (commandCenterBrief) {
+    commandCenterBrief.textContent = `${data.market?.label || "السوق"} · ${formatNumber(all.length)} رمز · ${modeNote}`;
+  }
+
+  commandCenterGrid.innerHTML = [
+    renderCommandOpportunityCard("قرار الوضع الحالي", bestMode, "primary", "أفضل بطاقة حسب وضع التحليل المختار"),
+    renderCommandOpportunityCard("أفضل فرصة شرعية", shariaBest, "sharia", "مطابقة للشريعة مع فلترة ثقة وجودة"),
+    renderCommandOpportunityCard("إشارة سريعة", fastSignal, "fast", "توافق فريمات الدقيقة و 15 دقيقة و 30 دقيقة"),
+    renderCommandOpportunityCard("أقل مخاطرة", saferSignal, "safe", "بيانات أوضح ومخاطر أقل من المتوسط"),
+    renderCommandMetricCard("دقة السجل", accuracy.closed ? `${formatNumber(accuracy.winRate)}%` : "--", `${formatNumber(accuracy.wins)} رابحة · ${formatNumber(accuracy.losses)} خاسرة`, "accuracy"),
+    renderCommandMetricCard("تنبيهات محفوظة", formatNumber(notificationLog.length), `${formatNumber(followedTradeKeys.size)} صفقات مختارة للمتابعة`, "alerts")
+  ].join("");
+
+  attachDetailOpeners(commandCenterGrid);
+}
+
+function renderCommandOpportunityCard(title, item, tone, note) {
+  if (!item) {
+    return `
+      <article class="command-card command-card-${tone}">
+        <span>${escapeHtml(title)}</span>
+        <strong>لا توجد فرصة مناسبة</strong>
+        <p>${escapeHtml(note)}</p>
+      </article>
+    `;
+  }
+
+  const score = calculateFinalScore(item).score;
+  const health = getDataHealthScore(item);
+  const fastAgreement = getFastFrameAgreement(item);
+  const target = item.target1 || item.expectedPrice;
+
+  return `
+    <article class="command-card command-card-${tone}" data-symbol="${escapeHtml(item.symbol)}" role="link" tabindex="0" title="افتح صفحة تفاصيل ${escapeHtml(item.symbol)}">
+      <span>${escapeHtml(title)}</span>
+      <div class="command-symbol-row">
+        <strong>${escapeHtml(item.symbol)}</strong>
+        <em class="action-${escapeHtml(item.action)}">${escapeHtml(item.actionLabel || item.action)}</em>
+      </div>
+      <p>${escapeHtml(item.name || item.symbol)}</p>
+      <div class="command-card-metrics">
+        <b>${formatNumber(item.confidence)}% ثقة</b>
+        <b>Score ${formatNumber(score)}%</b>
+        <b>بيانات ${formatNumber(health)}%</b>
+      </div>
+      <div class="command-card-footer">
+        <span>الهدف ${formatMoney(target, item.currency)}</span>
+        <span>الفريمات ${formatNumber(fastAgreement)}%</span>
+      </div>
+    </article>
+  `;
+}
+
+function renderCommandMetricCard(title, value, note, tone) {
+  return `
+    <article class="command-card command-metric command-card-${tone}">
+      <span>${escapeHtml(title)}</span>
+      <strong>${escapeHtml(String(value))}</strong>
+      <p>${escapeHtml(note)}</p>
+    </article>
+  `;
+}
+
+function setActiveAnalysisModeButtons() {
+  for (const button of analysisModeButtons) {
+    const isActive = button.dataset.analysisMode === activeAnalysisMode;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  }
+
+  if (commandCenterMode) commandCenterMode.textContent = getAnalysisModeLabel(activeAnalysisMode);
+}
+
+function getAnalysisModeLabel(mode = activeAnalysisMode) {
+  return {
+    balanced: "قيادة السوق",
+    scalp: "مضاربة 5-15 دقيقة",
+    swing: "استثمار شهري",
+    sharia: "شرعي فقط",
+    safe: "مخاطرة منخفضة"
+  }[mode] || "قيادة السوق";
+}
+
+function getAnalysisModeNote(mode = activeAnalysisMode) {
+  return {
+    balanced: "يرتب الفرص حسب الثقة، جودة البيانات، الفريمات، والمخاطر.",
+    scalp: "يركز على إشارات الدقيقة و15 دقيقة و30 دقيقة للدخول السريع.",
+    swing: "يركز على فرص شهر إلى 3 أشهر مع هدف سعري أوضح.",
+    sharia: "يعرض الأسهم المطابقة للشريعة فقط.",
+    safe: "يستبعد المخاطر العالية والبيانات الضعيفة قدر الإمكان."
+  }[mode] || "يرتب الفرص حسب الثقة، جودة البيانات، الفريمات، والمخاطر.";
+}
+
+function isRecommendationInMode(item) {
+  if (!item) return false;
+  if (activeAnalysisMode === "sharia") return item.shariaStatus === "compliant";
+  if (activeAnalysisMode === "safe") return item.action !== "hold" && isLowRisk(item) && getDataHealthScore(item) >= 58 && !item.timeframeConsensus?.conflict;
+  if (activeAnalysisMode === "scalp") return item.action !== "hold" && item.confidence >= 55 && getFastFrameAgreement(item) >= 45;
+  if (activeAnalysisMode === "swing") return item.action === "buy" && item.confidence >= 55 && getSwingMoveScore(item) >= 1;
+  return true;
+}
+
+function getAnalysisModeScore(item) {
+  const finalScore = calculateFinalScore(item).score;
+  const confidence = Number(item?.confidence || 0);
+  const dataHealth = getDataHealthScore(item);
+  const fastAgreement = getFastFrameAgreement(item);
+  const riskBonus = isLowRisk(item) ? 8 : item?.risk?.level === "high" ? -10 : 0;
+
+  if (activeAnalysisMode === "scalp") return confidence * 0.35 + fastAgreement * 0.35 + dataHealth * 0.15 + finalScore * 0.15 + riskBonus;
+  if (activeAnalysisMode === "swing") return finalScore * 0.45 + confidence * 0.25 + getSwingMoveScore(item) * 6 + dataHealth * 0.15 + riskBonus;
+  if (activeAnalysisMode === "safe") return finalScore * 0.35 + dataHealth * 0.35 + confidence * 0.2 + riskBonus * 2;
+  if (activeAnalysisMode === "sharia") return item?.shariaStatus === "compliant" ? finalScore + 8 : finalScore - 30;
+  return finalScore;
+}
+
+function getDataHealthScore(item) {
+  return clamp(Number(item?.dataHealth?.score ?? item?.analysisQuality?.score ?? 0), 0, 100);
+}
+
+function getFastFrameAgreement(item) {
+  const wanted = new Set(["1m", "15m", "30m"]);
+  const frames = (item?.timeframes || []).filter((frame) => wanted.has(String(frame.id)));
+  if (!frames.length || !item?.action || item.action === "hold") return 0;
+  const matching = frames.filter((frame) => frame.action === item.action).length;
+  return Math.round((matching / frames.length) * 100);
+}
+
+function getSwingMoveScore(item) {
+  const outlook = item?.upsideOutlook || [];
+  const bestMove = Math.max(0, ...outlook.map((entry) => Number(entry.movePct || 0)));
+  const expected = item?.action === "buy" ? Number(item?.expectedMovePct || 0) : 0;
+  return Math.max(bestMove, expected);
+}
+
+function isLowRisk(item) {
+  const level = String(item?.risk?.level || "").toLowerCase();
+  return level === "low" || level === "medium" || level === "moderate" || !level;
+}
+
+function getBestBy(items, scoreFn) {
+  if (!items.length) return null;
+  return [...items].sort((a, b) => scoreFn(b) - scoreFn(a))[0];
+}
+
+function filterRecommendations(items) {
+  const query = searchInput.value.trim().toLowerCase();
+  return items.filter((item) => {
+    const matchesFilter = activeFilter === "all" || item.action === activeFilter;
+    const matchesSharia =
+      activeShariaFilter === "all" ||
+      item.shariaStatus === activeShariaFilter ||
+      (activeShariaFilter === "doubtful" && !["compliant", "not_compliant"].includes(item.shariaStatus));
+    const matchesQuery = !query || `${item.name} ${item.symbol}`.toLowerCase().includes(query);
+    const matchesMode = isRecommendationInMode(item);
+    return matchesFilter && matchesSharia && matchesQuery && matchesMode;
+  });
+}
+
+function sortRecommendations(items) {
+  const priority = { buy: 0, sell: 1, hold: 2 };
+  return [...items].sort((a, b) => {
+    const modeScore = getAnalysisModeScore(b) - getAnalysisModeScore(a);
+    if (sortSelect.value === "priority" && Math.abs(modeScore) > 0.01) return modeScore;
+    if (sortSelect.value === "confidence") return b.confidence - a.confidence;
+    if (sortSelect.value === "score") return calculateFinalScore(b).score - calculateFinalScore(a).score;
+    if (sortSelect.value === "move") return Math.abs(b.expectedMovePct) - Math.abs(a.expectedMovePct);
+    if (sortSelect.value === "price") return b.currentPrice - a.currentPrice;
+    return priority[a.action] - priority[b.action] || b.confidence - a.confidence;
+  });
+}
+
+function setInsight(element, item, emptyText) {
+  if (!item) {
+    element.textContent = emptyText;
+    return;
+  }
+
+  element.textContent = `${item.symbol} · ${item.confidence}% · ${formatPercent(item.expectedMovePct)}`;
+}
+
+function getTopItem(items, mode) {
+  if (!items.length) return null;
+  return [...items].sort((a, b) => {
+    if (mode === "move") return Math.abs(b.expectedMovePct) - Math.abs(a.expectedMovePct);
+    return b.confidence - a.confidence;
+  })[0];
+}
+
+function getMarketPulse(items) {
+  if (!items.length) return "--";
+  const buy = items.filter((item) => item.action === "buy").length;
+  const sell = items.filter((item) => item.action === "sell").length;
+
+  if (buy > sell) return "صاعد";
+  if (sell > buy) return "هابط";
+  return "متوازن";
+}
+
+function updateTicker(items) {
+  const top = sortRecommendations(items).slice(0, 8);
+  const spans = top.length
+    ? top.map((item) => `<span>${escapeHtml(item.symbol)} ${formatMoney(item.currentPrice, item.currency)} ${escapeHtml(item.actionLabel)} ${item.confidence}% ${formatPercent(item.expectedMovePct)}</span>`)
+    : ["<span>لا توجد بيانات حالية</span>"];
+
+  tickerTape.innerHTML = [...spans, ...spans].join("");
+}
+
+function startSessionClock() {
+  if (!sessionClock && !sessionCountdown && !marketHoursGrid) return;
+  updateSessionClock();
+  if (!sessionClockTimer) {
+    sessionClockTimer = window.setInterval(updateSessionClock, 1000);
+  }
+}
+
+function updateSessionClock() {
+  const marketId = activeMarket || lastData?.market?.id || "us";
+  const [timeZone, label] = MARKET_TIME_ZONES[marketId] || MARKET_TIME_ZONES.us;
+  const now = new Date();
+
+  if (sessionClock) {
+    sessionClock.textContent = new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+      timeZone
+    }).format(now);
+  }
+  if (sessionZone) sessionZone.textContent = label;
+  if (sessionMarketName) sessionMarketName.textContent = getMarketSessionName(marketId);
+  renderSessionCountdown(marketId, now);
+  renderMarketHoursGrid(now);
+}
+
+function renderSessionCountdown(marketId, now = new Date()) {
+  const state = getMarketSessionState(marketId, now);
+  if (!state || !sessionCountdown || !sessionStateLabel || !sessionNextEvent) return;
+
+  sessionStateLabel.textContent = state.isOpen ? "السوق مفتوح" : "السوق مغلق";
+  sessionStateLabel.classList.toggle("is-open", state.isOpen);
+  sessionStateLabel.classList.toggle("is-closed", !state.isOpen);
+  sessionCountdown.textContent = state.countdownLabel;
+  sessionNextEvent.textContent = state.eventLabel;
+}
+
+function renderMarketHoursGrid(now = new Date()) {
+  if (!marketHoursGrid) return;
+
+  marketHoursGrid.innerHTML = MARKET_HOURS_IDS
+    .map((id) => {
+      const entry = EXCHANGE_SESSION_KNOWLEDGE[id] || {
+        name: getMarketSessionName(id),
+        session: MARKET_SESSIONS[id]
+      };
+      if (!entry?.session) return "";
+
+      const state = getSessionStateForConfig(entry.session, now);
+      const hoursLabel = getMarketHoursLabel(entry.session);
+      const daysLabel = getSessionDaysLabel(entry.session);
+      const stateLabel = state.isOpen ? "مفتوح الآن" : "مغلق الآن";
+
+      return `
+        <article class="market-hours-card ${state.isOpen ? "is-open" : "is-closed"}">
+          <div>
+            <span>${escapeHtml(entry.name)}</span>
+            <strong>${escapeHtml(stateLabel)}</strong>
+          </div>
+          <p>${escapeHtml(hoursLabel)}</p>
+          <small>${escapeHtml(daysLabel)}</small>
+          <b>${escapeHtml(state.eventLabel)} ${escapeHtml(state.countdownLabel)}</b>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function getMarketHoursLabel(config) {
+  if (config.type === "always") return "مفتوح 24/7";
+  return `${formatSessionTime(config.open)} - ${formatSessionTime(config.close)} ${config.label}`;
+}
+
+function getMarketSessionState(marketId, now = new Date()) {
+  const config = MARKET_SESSIONS[marketId] || MARKET_SESSIONS.us;
+  return getSessionStateForConfig(config, now);
+}
+
+function getSessionStateForConfig(config, now = new Date()) {
+  if (config.type === "always") {
+    return {
+      isOpen: true,
+      countdownLabel: "24/7",
+      eventLabel: "السوق مفتوح دائماً"
+    };
+  }
+
+  const state = config.type === "weekly"
+    ? getWeeklySessionState(config, now)
+    : getRegularSessionState(config, now);
+
+  if (state.isOpen) {
+    return {
+      isOpen: true,
+      countdownLabel: formatCountdown(state.closeAt - now),
+      eventLabel: "يصكر بعد"
+    };
+  }
+
+  return {
+    isOpen: false,
+    countdownLabel: formatCountdown(state.openAt - now),
+    eventLabel: "يفتح بعد"
+  };
+}
+
+function getRegularSessionState(config, now) {
+  const parts = getZonedParts(now, config.timeZone);
+  let nextOpen = null;
+
+  for (let offset = -1; offset <= 8; offset += 1) {
+    const day = addDaysToYmd(parts, offset);
+    if (!config.days.includes(day.weekday)) continue;
+
+    const openAt = makeZonedDate(day, config.open, config.timeZone);
+    let closeAt = makeZonedDate(day, config.close, config.timeZone);
+    if (closeAt <= openAt) {
+      closeAt = makeZonedDate(addDaysToYmd(day, 1), config.close, config.timeZone);
+    }
+
+    if (now >= openAt && now < closeAt) return { isOpen: true, openAt, closeAt };
+    if (openAt > now && (!nextOpen || openAt < nextOpen)) nextOpen = openAt;
+  }
+
+  return { isOpen: false, openAt: nextOpen || now };
+}
+
+function getWeeklySessionState(config, now) {
+  const parts = getZonedParts(now, config.timeZone);
+  const currentWeekStart = addDaysToYmd(parts, -parts.weekday);
+  let nextOpen = null;
+
+  for (let weekOffset = -1; weekOffset <= 2; weekOffset += 1) {
+    const weekStart = addDaysToYmd(currentWeekStart, weekOffset * 7);
+    const openDay = addDaysToYmd(weekStart, config.openDay);
+    const closeDay = addDaysToYmd(weekStart, config.closeDay);
+    const openAt = makeZonedDate(openDay, config.open, config.timeZone);
+    let closeAt = makeZonedDate(closeDay, config.close, config.timeZone);
+    if (closeAt <= openAt) {
+      closeAt = makeZonedDate(addDaysToYmd(closeDay, 7), config.close, config.timeZone);
+    }
+
+    if (now >= openAt && now < closeAt) return { isOpen: true, openAt, closeAt };
+    if (openAt > now && (!nextOpen || openAt < nextOpen)) nextOpen = openAt;
+  }
+
+  return { isOpen: false, openAt: nextOpen || now };
+}
+
+function getZonedParts(date, timeZone) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday: "short",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23"
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return {
+    year: Number(values.year),
+    month: Number(values.month),
+    day: Number(values.day),
+    hour: Number(values.hour),
+    minute: Number(values.minute),
+    second: Number(values.second),
+    weekday: WEEKDAYS[values.weekday]
+  };
+}
+
+function addDaysToYmd(parts, days) {
+  const date = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + days));
+  return {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+    weekday: date.getUTCDay()
+  };
+}
+
+function makeZonedDate(day, time, timeZone) {
+  const [hour, minute] = time.split(":").map(Number);
+  const utcGuess = Date.UTC(day.year, day.month - 1, day.day, hour, minute, 0);
+  let offset = getTimeZoneOffsetMs(new Date(utcGuess), timeZone);
+  let zonedDate = new Date(utcGuess - offset);
+  const adjustedOffset = getTimeZoneOffsetMs(zonedDate, timeZone);
+  if (adjustedOffset !== offset) zonedDate = new Date(utcGuess - adjustedOffset);
+  return zonedDate;
+}
+
+function getTimeZoneOffsetMs(date, timeZone) {
+  const parts = getZonedParts(date, timeZone);
+  const asUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+  return asUtc - date.getTime();
+}
+
+function formatCountdown(ms) {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const time = [hours, minutes, seconds].map((value) => String(value).padStart(2, "0")).join(":");
+  return days ? `${formatNumber(days)} يوم · ${time}` : time;
+}
+
+function renderTradingAtmosphere(data) {
+  const items = data.recommendations || [];
+  updateSessionClock();
+
+  const buy = items.filter((item) => item.action === "buy").length;
+  const sell = items.filter((item) => item.action === "sell").length;
+  const hold = items.length - buy - sell;
+  const leader = getTopItem(items, "move");
+
+  if (tradingMood) tradingMood.textContent = `${getMarketPulse(items)} · ${formatNumber(items.length)} رمز`;
+  if (flowLeader) {
+    flowLeader.textContent = leader
+      ? `${leader.symbol} · ${formatPercent(leader.expectedMovePct)}`
+      : "--";
+  }
+  if (flowPressure) {
+    flowPressure.textContent = items.length
+      ? `شراء ${formatNumber(buy)} · بيع ${formatNumber(sell)} · انتظار ${formatNumber(hold)}`
+      : "--";
+  }
+
+  if (!marketBoard) return;
+  const boardItems = [...items]
+    .map((item) => ({ item, score: calculateFinalScore(item).score }))
+    .sort((a, b) => b.score - a.score || b.item.confidence - a.item.confidence)
+    .slice(0, 6)
+    .map(({ item }) => item);
+
+  marketBoard.innerHTML = boardItems.length
+    ? boardItems.map(renderMarketBoardCard).join("")
+    : "<div class=\"empty\">لا توجد بيانات للوحة التداول حالياً.</div>";
+}
+
+function renderMarketBoardCard(item) {
+  return `
+    <article class="market-board-card ${escapeHtml(item.action)}">
+      <span>${escapeHtml(item.exchangeName || "MARKET")}</span>
+      <strong>${escapeHtml(item.symbol)}</strong>
+      <b>${formatMoney(item.currentPrice, item.currency)} · ${formatPercent(item.expectedMovePct)}</b>
+      <em>${escapeHtml(item.actionLabel)} · ${item.confidence}%</em>
+    </article>
+  `;
+}
+
+function renderOpportunityRadar(data) {
+  if (!radarGrid || !radarMonthlyGrid) return;
+  const radar = data.opportunityRadar || {};
+  const items = [
+    radar.bestBuy,
+    radar.bestSell,
+    radar.mostTraded,
+    radar.bestRiskReward,
+    radar.shariaOpportunity
+  ].filter(Boolean);
+  const avgQuality = (data.recommendations || []).length
+    ? Math.round((data.recommendations || []).reduce((sum, item) => sum + Number(item.analysisQuality?.score || 0), 0) / data.recommendations.length)
+    : 0;
+
+  radarQuality.textContent = avgQuality ? `${avgQuality}%` : "--";
+  radarGrid.innerHTML = items.length
+    ? items.map(renderRadarCard).join("")
+    : "<div class=\"empty\">لا توجد فرص كافية للرادار حالياً.</div>";
+
+  const monthly = radar.monthlyUpside || [];
+  const avoid = radar.avoid || [];
+  radarMonthlyGrid.innerHTML = `
+    ${monthly.map(renderMonthlyRadarCard).join("")}
+    ${avoid.slice(0, 3).map((item) => renderRadarCard({ ...item, label: "لا تتداول الآن" }, "avoid")).join("")}
+  `;
+  attachDetailOpeners(radarGrid);
+  attachDetailOpeners(radarMonthlyGrid);
+}
+
+function renderRadarCard(item, tone = "") {
+  if (!item) return "";
+  const actionClass = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : "hold";
+  const dangerClass = tone === "avoid" || item.decision?.kind === "avoid" ? " radar-card-avoid" : "";
+
+  return `
+    <article class="radar-card ${actionClass}${dangerClass}" data-symbol="${escapeHtml(item.symbol)}" role="link" tabindex="0">
+      <span>${escapeHtml(item.label || item.actionLabel || "فرصة")}</span>
+      <div class="radar-card-top">
+        <strong>${escapeHtml(item.symbol)}</strong>
+        <em>${escapeHtml(item.actionLabel || item.decision?.badge || "--")}</em>
+      </div>
+      <p>${escapeHtml(item.name || "")}</p>
+      <div class="radar-metrics">
+        <div><span>Score</span><strong>${item.score ?? item.analysisQuality?.score ?? "--"}%</strong></div>
+        <div><span>الثقة</span><strong>${item.confidence ?? "--"}%</strong></div>
+        <div><span>الحالي</span><strong>${formatMoney(item.currentPrice, item.currency)}</strong></div>
+        <div><span>هدف 1</span><strong>${formatMoney(item.target1 || item.expectedPrice, item.currency)}</strong></div>
+        <div><span>وقف</span><strong>${item.stopLoss ? formatMoney(item.stopLoss, item.currency) : "--"}</strong></div>
+        <div><span>R/R</span><strong>${item.riskReward ? `${formatNumber(item.riskReward, { maximumFractionDigits: 2 })}:1` : "--"}</strong></div>
+      </div>
+      <div class="radar-foot">
+        <span>${item.latestVolume ? `تداول ${formatCompactNumber(item.latestVolume)}` : item.risk?.label || "--"}</span>
+        <span>${item.shariaLabel || getShariaShortLabel(item.shariaStatus)}</span>
+      </div>
+    </article>
+  `;
+}
+
+function renderMonthlyRadarCard(item) {
+  if (!item || item.empty) {
+    return `
+      <article class="radar-card hold">
+        <span>${escapeHtml(item?.label || "مدة")}</span>
+        <strong>لا توجد فرصة</strong>
+        <p>لا يوجد صعود واضح لهذه المدة حالياً.</p>
+      </article>
+    `;
+  }
+
+  return `
+    <article class="radar-card buy" data-symbol="${escapeHtml(item.symbol)}" role="link" tabindex="0">
+      <span>${escapeHtml(item.label)}</span>
+      <div class="radar-card-top">
+        <strong>${escapeHtml(item.symbol)}</strong>
+        <em>${item.confidence}%</em>
+      </div>
+      <p>${escapeHtml(item.name)}</p>
+      <div class="radar-target-line">الصعود إلى ${formatMoney(item.targetPrice, item.currency)} · ${formatPercent(item.movePct)}</div>
+      <div class="radar-foot">
+        <span>الحالي ${formatMoney(item.currentPrice, item.currency)}</span>
+        <span>${escapeHtml(item.shariaLabel || getShariaShortLabel(item.shariaStatus))}</span>
+      </div>
+    </article>
+  `;
+}
+
+function getShariaShortLabel(status) {
+  if (status === "compliant") return "مطابق";
+  if (status === "not_compliant") return "غير مطابق";
+  if (status === "doubtful") return "مختلف عليه";
+  return "شرعي غير معروف";
+}
+
+function renderSmartAlerts(data) {
+  const alerts = data.smartAlerts || [];
+  smartAlertCount.textContent = alerts.length ? alerts.length : "لا توجد";
+
+  if (!alerts.length) {
+    smartAlertsList.innerHTML = "<div class=\"empty\">لا توجد حالياً إشارة تجمع شراء + مطابق للشريعة + ثقة فوق 70%.</div>";
+    return;
+  }
+
+  smartAlertsList.innerHTML = alerts.map((alert) => `
+    <article class="smart-alert-card" data-symbol="${escapeHtml(alert.symbol)}" role="link" tabindex="0">
+      <span>${escapeHtml(alert.name)}</span>
+      <strong>${escapeHtml(alert.symbol)}</strong>
+      <span>الحالي ${formatMoney(alert.currentPrice, alert.currency)}</span>
+      <span>الهدف ${formatMoney(alert.expectedPrice, alert.currency)} · ${formatPercent(alert.expectedMovePct)}</span>
+      <em>${alert.confidence}% ثقة</em>
+    </article>
+  `).join("");
+  attachDetailOpeners(smartAlertsList);
+}
+
+function renderGoldenOpportunities(data) {
+  const golden = (data.recommendations || [])
+    .map((item) => ({ item, score: calculateFinalScore(item) }))
+    .filter(({ item, score }) => {
+      const backtestOk = Number(item.backtest?.winRate || 0) >= 55;
+      return (
+        item.action === "buy" &&
+        item.shariaStatus === "compliant" &&
+        item.risk?.level !== "high" &&
+        backtestOk &&
+        score.score >= 70
+      );
+    })
+    .sort((a, b) => b.score.score - a.score.score || b.item.confidence - a.item.confidence)
+    .slice(0, 8);
+
+  goldenCount.textContent = golden.length ? golden.length : "لا توجد";
+
+  if (!golden.length) {
+    goldenGrid.innerHTML = "<div class=\"empty\">لا توجد فرصة ذهبية مكتملة الشروط حالياً. راقب التحديثات أو وسع السوق المختار.</div>";
+    return;
+  }
+
+  goldenGrid.innerHTML = golden.map(({ item, score }) => `
+    <article class="golden-card" data-symbol="${escapeHtml(item.symbol)}" role="link" tabindex="0">
+      <span>${escapeHtml(item.name)}</span>
+      <strong>${escapeHtml(item.symbol)}</strong>
+      <div class="golden-meta">
+        <em class="score-pill">Score ${score.score}%</em>
+        <em class="status-pill-mini">${escapeHtml(item.actionLabel)}</em>
+        <em class="score-pill">${item.confidence}% ثقة</em>
+      </div>
+      <div class="outlook-target">
+        الهدف ${formatMoney(item.expectedPrice, item.currency)} خلال ${escapeHtml(item.duration)}
+      </div>
+    </article>
+  `).join("");
+
+  attachDetailOpeners(goldenGrid);
+}
+
+async function loadWatchlistData(force = false) {
+  if (!watchlist.length) {
+    watchlistData = null;
+    watchlistLoading = false;
+    renderWatchlist();
+    return;
+  }
+
+  if (watchlistLoading) return;
+  if (!force && Date.now() - watchlistLastLoadedAt < WATCHLIST_REFRESH_MS) return;
+
+  watchlistLoading = true;
+  renderWatchlist();
+
+  try {
+    const data = await fetchJson(`/api/watchlist?symbols=${encodeURIComponent(watchlist.join(","))}`, {
+      retries: 1,
+      retryDelayMs: 700,
+      fallbackMessage: "تعذر تحميل قائمة المراقبة. تأكد أن السيرفر يعمل ثم حاول مرة ثانية."
+    });
+
+    watchlistData = data;
+    watchlistLastLoadedAt = Date.now();
+  } catch (error) {
+    const message = getFriendlyFetchError(error, "تعذر تحميل قائمة المراقبة. تأكد أن السيرفر يعمل ثم حاول مرة ثانية.");
+    watchlistData = {
+      recommendations: [],
+      unavailable: watchlist.map((symbol) => ({
+        symbol,
+        name: symbol,
+        reason: message
+      }))
+    };
+  } finally {
+    watchlistLoading = false;
+    renderWatchlist();
+  }
+}
+
+function renderWatchlist() {
+  const currentItems = watchlistData?.recommendations || [];
+  const unavailableItems = watchlistData?.unavailable || [];
+  const lookup = getRecommendationLookup(currentItems);
+  const unavailableLookup = new Map((unavailableItems || []).map((item) => [item.symbol.toUpperCase(), item]));
+
+  watchlistChips.innerHTML = watchlist.length
+    ? watchlist.map((symbol) => `
+      <span class="chip">
+        ${escapeHtml(symbol)}
+        <button type="button" aria-label="حذف ${escapeHtml(symbol)}" data-remove-watchlist="${escapeHtml(symbol)}">×</button>
+      </span>
+    `).join("")
+    : "<span class=\"empty\">أضف أول رمز لقائمة المراقبة.</span>";
+
+  for (const button of watchlistChips.querySelectorAll("[data-remove-watchlist]")) {
+    button.addEventListener("click", () => removeWatchlistSymbol(button.dataset.removeWatchlist));
+  }
+
+  if (!watchlist.length) {
+    watchlistCards.innerHTML = "";
+    return;
+  }
+
+  watchlistCards.innerHTML = watchlist.map((symbol) => {
+    const item = lookup.get(symbol);
+    if (!item) {
+      const unavailable = unavailableLookup.get(symbol);
+      if (unavailable) {
+        return `
+          <article class="mini-card is-pending">
+            <span>تعذر جلب البيانات الآن</span>
+            <strong>${escapeHtml(symbol)}</strong>
+            <div class="mini-meta">
+              <em class="status-pill-mini hold">المزود مشغول مؤقتاً</em>
+            </div>
+            <p class="mini-note">${escapeHtml(simplifyUnavailableReason(unavailable.reason))}</p>
+          </article>
+        `;
+      }
+
+      return `
+        <article class="mini-card is-pending">
+          <span>${watchlistLoading ? "جاري تحليل الرمز" : "بانتظار تحديث قائمة المراقبة"}</span>
+          <strong>${escapeHtml(symbol)}</strong>
+          <div class="mini-meta">
+            <em class="status-pill-mini hold">${watchlistLoading ? "تحميل مستقل" : "سيتم التحليل تلقائياً"}</em>
+          </div>
+          <p class="mini-note">القائمة تحلل رموزها الآن حتى لو كانت من سوق آخر غير السوق المعروض.</p>
+        </article>
+      `;
+    }
+    return renderMiniSignalCard(item);
+  }).join("");
+
+  attachDetailOpeners(watchlistCards);
+}
+
+function addWatchlistSymbol(event) {
+  event.preventDefault();
+  const symbol = normalizeSymbol(watchlistSymbol.value);
+  if (!symbol) return;
+
+  if (!watchlist.includes(symbol)) {
+    watchlist = [...watchlist, symbol].slice(0, 30);
+    saveStored("the-sfm-trader-watchlist", watchlist);
+  }
+
+  watchlistSymbol.value = "";
+  renderWatchlist();
+  loadWatchlistData(true);
+  if (watchlistOnly) loadRecommendations();
+}
+
+function removeWatchlistSymbol(symbol) {
+  watchlist = watchlist.filter((item) => item !== symbol);
+  saveStored("the-sfm-trader-watchlist", watchlist);
+  renderWatchlist();
+  loadWatchlistData(true);
+  if (watchlistOnly) loadRecommendations();
+}
+
+function renderPortfolio(currentItems = []) {
+  const lookup = getRecommendationLookup(currentItems);
+
+  if (!portfolio.length) {
+    portfolioList.innerHTML = "<div class=\"empty\">محفظتك فارغة. أضف سهم والكمية وسعر الشراء.</div>";
+    return;
+  }
+
+  portfolioList.innerHTML = portfolio.map((position) => {
+    const item = lookup.get(position.symbol);
+    const currentPrice = Number(item?.currentPrice);
+    const hasPrice = Number.isFinite(currentPrice);
+    const cost = Number(position.qty) * Number(position.buyPrice);
+    const value = hasPrice ? Number(position.qty) * currentPrice : null;
+    const profit = hasPrice ? value - cost : null;
+    const profitPct = hasPrice && cost > 0 ? (profit / cost) * 100 : null;
+    const resultClass = profit >= 0 ? "profit" : "loss";
+
+    return `
+      <article class="portfolio-item">
+        <div>
+          <span>السهم</span>
+          <strong>${escapeHtml(position.symbol)}</strong>
+        </div>
+        <div>
+          <span>الكمية</span>
+          <strong>${formatNumber(position.qty, { maximumFractionDigits: 4 })}</strong>
+        </div>
+        <div>
+          <span>سعر الشراء</span>
+          <strong>${formatMoney(position.buyPrice, item?.currency || "USD")}</strong>
+        </div>
+        <div>
+          <span>السعر الحالي</span>
+          <strong>${hasPrice ? formatMoney(currentPrice, item.currency) : "--"}</strong>
+        </div>
+        <div>
+          <span>الربح / الخسارة</span>
+          <strong class="${resultClass}">${hasPrice ? `${formatMoney(profit, item.currency)} · ${formatPercent(profitPct)}` : "--"}</strong>
+        </div>
+        <button class="portfolio-remove" type="button" data-remove-position="${escapeHtml(position.id)}">حذف</button>
+      </article>
+    `;
+  }).join("");
+
+  for (const button of portfolioList.querySelectorAll("[data-remove-position]")) {
+    button.addEventListener("click", () => removePortfolioPosition(button.dataset.removePosition));
+  }
+}
+
+function addPortfolioPosition(event) {
+  event.preventDefault();
+  const symbol = normalizeSymbol(portfolioSymbol.value);
+  const qty = Number(portfolioQty.value);
+  const buyPrice = Number(portfolioPrice.value);
+
+  if (!symbol || !Number.isFinite(qty) || qty <= 0 || !Number.isFinite(buyPrice) || buyPrice <= 0) return;
+
+  const position = {
+    id: `${symbol}-${Date.now()}`,
+    symbol,
+    qty,
+    buyPrice
+  };
+
+  portfolio = [position, ...portfolio].slice(0, 60);
+  saveStored("the-sfm-trader-portfolio", portfolio);
+
+  if (!watchlist.includes(symbol)) {
+    watchlist = [...watchlist, symbol].slice(0, 30);
+    saveStored("the-sfm-trader-watchlist", watchlist);
+  }
+
+  portfolioSymbol.value = "";
+  portfolioQty.value = "";
+  portfolioPrice.value = "";
+  renderWatchlist();
+  loadWatchlistData(true);
+  renderPortfolio(lastData?.recommendations || []);
+}
+
+function removePortfolioPosition(id) {
+  portfolio = portfolio.filter((position) => position.id !== id);
+  saveStored("the-sfm-trader-portfolio", portfolio);
+  renderPortfolio(lastData?.recommendations || []);
+}
+
+function updateRecommendationHistory(items) {
+  if (!items.length) return;
+
+  const now = new Date().toISOString();
+  const byKey = new Map(recommendationHistory.map((entry) => [entry.key, entry]));
+
+  for (const item of items) {
+    const key = `${item.symbol}:${item.action}`;
+    const existing = byKey.get(key);
+    const entryPrice = Number(existing?.entryPrice ?? existing?.currentPrice ?? item.currentPrice);
+    const expectedPrice = Number(existing?.expectedPrice ?? item.expectedPrice);
+    const target1 = Number(existing?.target1 ?? item.target1 ?? item.expectedPrice);
+    const target2 = Number(existing?.target2 ?? item.target2 ?? item.expectedPrice);
+    const stopLoss = Number(existing?.stopLoss ?? item.stopLoss);
+    const lastPrice = Number(item.currentPrice);
+    const targetHit = existing?.targetHit || isTargetHit(item.action, lastPrice, target1);
+    const stopHit = existing?.stopHit || isStopHit(item.action, lastPrice, stopLoss);
+    const observedReturnPct = getObservedReturnPct(item.action, entryPrice, lastPrice);
+    const bestPrice = pickBestObservedPrice(item.action, existing?.bestPrice, lastPrice);
+    const worstPrice = pickWorstObservedPrice(item.action, existing?.worstPrice, lastPrice);
+    const outcome = targetHit ? "target" : stopHit ? "stop" : "pending";
+
+    byKey.set(key, {
+      key,
+      symbol: item.symbol,
+      name: item.name,
+      action: item.action,
+      actionLabel: item.actionLabel,
+      currentPrice: entryPrice,
+      lastPrice,
+      expectedPrice,
+      target1,
+      target2,
+      stopLoss: Number.isFinite(stopLoss) ? stopLoss : null,
+      currency: item.currency,
+      confidence: item.confidence,
+      expectedMovePct: item.expectedMovePct,
+      riskReward: item.riskReward,
+      analysisQuality: item.analysisQuality,
+      firstSeen: existing?.firstSeen || now,
+      lastSeen: now,
+      targetHit,
+      stopHit,
+      outcome,
+      hitAt: existing?.hitAt || (targetHit ? now : null),
+      stopAt: existing?.stopAt || (stopHit ? now : null),
+      observedReturnPct,
+      bestPrice,
+      worstPrice
+    });
+  }
+
+  const sortedHistory = [...byKey.values()]
+    .sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen));
+  const followedEntries = sortedHistory.filter((entry) => followedTradeKeys.has(entry.key));
+  const recentEntries = sortedHistory.filter((entry) => !followedTradeKeys.has(entry.key)).slice(0, 80);
+  recommendationHistory = [...followedEntries, ...recentEntries].slice(0, Math.max(80, followedEntries.length));
+  saveStored("the-sfm-trader-history", recommendationHistory);
+  if (followedTradeKeys.size) scheduleSharedTradeStateSave();
+}
+
+async function loadSharedTradeState(options = {}) {
+  try {
+    const poll = Boolean(options.poll);
+    const localKeysBeforeMerge = followedTradeKeys.size;
+    const localEntriesBeforeMerge = getFollowedTradeEntries().length;
+    const response = await fetch("/api/followed-trades", { cache: "no-store" });
+    if (!response.ok) throw new Error("shared trade state unavailable");
+
+    const data = await response.json();
+    const remoteEntries = Array.isArray(data.followedEntries) ? data.followedEntries : [];
+    const remoteKeys = Array.isArray(data.followedTradeKeys) ? data.followedTradeKeys : [];
+    const remoteAlerts = Array.isArray(data.followedTradeAlerts) ? data.followedTradeAlerts : [];
+    const remoteHadData = remoteKeys.length || remoteEntries.length || remoteAlerts.length;
+
+    if (remoteEntries.length) mergeRecommendationHistory(remoteEntries);
+
+    if (poll || sharedTradeStateLoaded) {
+      followedTradeKeys = new Set([...remoteKeys, ...remoteEntries.map((entry) => entry.key).filter(Boolean)]);
+      followedTradeAlerts = new Set(remoteAlerts);
+    } else {
+      followedTradeKeys = new Set([...followedTradeKeys, ...remoteKeys, ...remoteEntries.map((entry) => entry.key).filter(Boolean)]);
+      followedTradeAlerts = new Set([...followedTradeAlerts, ...remoteAlerts]);
+    }
+
+    persistFollowedTradeLocalState();
+    renderHistory();
+    sharedTradeStateLoaded = true;
+
+    const localHadData = localKeysBeforeMerge || localEntriesBeforeMerge;
+    if (!poll && (localHadData || !remoteHadData)) {
+      scheduleSharedTradeStateSave({ force: true });
+    }
+  } catch {
+    sharedTradeStateLoaded = false;
+  }
+}
+
+function mergeRecommendationHistory(entries) {
+  const byKey = new Map(recommendationHistory.map((entry) => [entry.key, entry]));
+
+  for (const entry of entries) {
+    if (!entry?.key) continue;
+
+    const existing = byKey.get(entry.key);
+    if (!existing || new Date(entry.lastSeen || 0) >= new Date(existing.lastSeen || 0)) {
+      byKey.set(entry.key, entry);
+    }
+  }
+
+  recommendationHistory = [...byKey.values()]
+    .sort((a, b) => new Date(b.lastSeen || 0) - new Date(a.lastSeen || 0))
+    .slice(0, 160);
+  saveStored("the-sfm-trader-history", recommendationHistory);
+}
+
+function getFollowedTradeEntries() {
+  return recommendationHistory
+    .filter((entry) => followedTradeKeys.has(entry.key))
+    .sort((a, b) => new Date(b.lastSeen || 0) - new Date(a.lastSeen || 0))
+    .slice(0, 120);
+}
+
+function persistFollowedTradeLocalState() {
+  saveStored("the-sfm-trader-history", recommendationHistory);
+  saveStored("the-sfm-trader-followed-trades", [...followedTradeKeys]);
+  saveStored("the-sfm-trader-followed-alerts", [...followedTradeAlerts].slice(-160));
+}
+
+function persistSharedTradeState(options = {}) {
+  persistFollowedTradeLocalState();
+  scheduleSharedTradeStateSave(options);
+}
+
+function scheduleSharedTradeStateSave(options = {}) {
+  const force = Boolean(options.force);
+  if (!force && !sharedTradeStateLoaded && !followedTradeKeys.size) return;
+
+  window.clearTimeout(sharedTradeSaveTimer);
+  sharedTradeSaveTimer = window.setTimeout(() => saveSharedTradeState(force), force ? 0 : SHARED_TRADE_SYNC_DEBOUNCE_MS);
+}
+
+async function saveSharedTradeState(force = false) {
+  const followedEntries = getFollowedTradeEntries();
+  if (!force && !followedTradeKeys.size && !followedEntries.length) return;
+
+  try {
+    await fetch("/api/followed-trades", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        followedTradeKeys: [...followedTradeKeys],
+        followedEntries,
+        followedTradeAlerts: [...followedTradeAlerts].slice(-160)
+      })
+    });
+    sharedTradeStateLoaded = true;
+  } catch {
+    sharedTradeStateLoaded = false;
+  }
+}
+
+function renderAccuracyDashboard() {
+  if (!accuracyGrid) return;
+
+  const stats = calculateAccuracyStats(recommendationHistory);
+  accuracyGrid.innerHTML = `
+    <article>
+      <span>إجمالي الإشارات</span>
+      <strong>${formatNumber(stats.total)}</strong>
+      <p>${formatNumber(stats.pending)} تحت المتابعة</p>
+    </article>
+    <article>
+      <span>نسبة الوصول للهدف</span>
+      <strong>${stats.closed ? `${formatNumber(stats.winRate)}%` : "--"}</strong>
+      <p>${formatNumber(stats.closed)} صفقات مغلقة</p>
+    </article>
+    <article>
+      <span>متوسط العائد</span>
+      <strong class="${stats.avgReturn >= 0 ? "profit" : "loss"}">${stats.closed ? formatPercent(stats.avgReturn) : "--"}</strong>
+      <p>${formatNumber(stats.wins)} رابحة · ${formatNumber(stats.losses)} خاسرة</p>
+    </article>
+    <article>
+      <span>المختارة للمتابعة</span>
+      <strong>${formatNumber(stats.followed)}</strong>
+      <p>تنبيهات هدف ووقف وتغير توصية</p>
+    </article>
+  `;
+}
+
+function calculateAccuracyStats(entries = []) {
+  const total = entries.length;
+  const closedEntries = entries.filter((entry) => entry.outcome === "target" || entry.outcome === "stop");
+  const wins = closedEntries.filter((entry) => entry.outcome === "target").length;
+  const losses = closedEntries.filter((entry) => entry.outcome === "stop").length;
+  const closed = closedEntries.length;
+  const avgReturn = closed
+    ? closedEntries.reduce((sum, entry) => sum + getHistoryReturnPct(entry), 0) / closed
+    : 0;
+
+  return {
+    total,
+    closed,
+    wins,
+    losses,
+    pending: entries.filter((entry) => entry.outcome === "pending").length,
+    followed: followedTradeKeys.size,
+    winRate: closed ? Math.round((wins / closed) * 100) : 0,
+    avgReturn
+  };
+}
+
+function renderHistory() {
+  renderAccuracyDashboard();
+
+  if (!recommendationHistory.length) {
+    historyList.innerHTML = "<div class=\"empty\">السجل فارغ حالياً. يبدأ الحفظ بعد أول تحديث للتوصيات.</div>";
+    return;
+  }
+
+  historyList.innerHTML = getHistoryGroups()
+    .map(renderHistoryGroup)
+    .join("");
+
+  for (const button of historyList.querySelectorAll("[data-follow-trade]")) {
+    button.addEventListener("click", () => toggleFollowTrade(button.dataset.followTrade));
+  }
+}
+
+function getHistoryGroups() {
+  const sorted = [...recommendationHistory].sort((a, b) => {
+    const followedSort = Number(followedTradeKeys.has(b.key)) - Number(followedTradeKeys.has(a.key));
+    if (followedSort) return followedSort;
+    return new Date(b.lastSeen) - new Date(a.lastSeen);
+  });
+  const followed = sorted.filter((entry) => followedTradeKeys.has(entry.key));
+  const rest = sorted.filter((entry) => !followedTradeKeys.has(entry.key));
+
+  return [
+    {
+      id: "followed",
+      title: "قائمة المتابعة",
+      note: "الصفقات اللي اخترتها وتوصل لك تنبيهات عنها.",
+      empty: "ما اخترت أي صفقة للمتابعة للحين.",
+      items: followed
+    },
+    {
+      id: "pending",
+      title: "تحت المتابعة",
+      note: "صفقات نشطة لم تصل للهدف أو وقف الخسارة.",
+      empty: "لا توجد صفقات نشطة حالياً.",
+      items: rest.filter((entry) => entry.outcome === "pending").slice(0, 16)
+    },
+    {
+      id: "target",
+      title: "وصل الهدف",
+      note: "إشارات حققت الهدف المسجل.",
+      empty: "لا توجد صفقات وصلت الهدف حالياً.",
+      items: rest.filter((entry) => entry.outcome === "target").slice(0, 16)
+    },
+    {
+      id: "loss",
+      title: "صفقة خاسرة",
+      note: "إشارات وصلت وقف الخسارة.",
+      empty: "لا توجد صفقات خاسرة حالياً.",
+      items: rest.filter((entry) => entry.outcome === "stop").slice(0, 16)
+    }
+  ];
+}
+
+function renderHistoryGroup(group) {
+  return `
+    <section class="history-group history-group-${group.id}">
+      <div class="history-group-head">
+        <div>
+          <h3>${group.title}</h3>
+          <p>${group.note}</p>
+        </div>
+        <strong class="history-count">${formatNumber(group.items.length)}</strong>
+      </div>
+      <div class="history-group-list">
+        ${group.items.length ? group.items.map(renderHistoryItem).join("") : `<div class="history-group-empty">${group.empty}</div>`}
+      </div>
+    </section>
+  `;
+}
+
+function renderHistoryItem(entry) {
+  return `
+    <article class="history-item">
+      <div>
+        <span>السهم</span>
+        <strong>${escapeHtml(entry.symbol)} · ${escapeHtml(entry.actionLabel)}</strong>
+      </div>
+      <div>
+        <span>الثقة</span>
+        <strong>${entry.confidence}%</strong>
+      </div>
+      <div>
+        <span>السعر وقت الإشارة</span>
+        <strong>${formatMoney(entry.currentPrice, entry.currency)}</strong>
+      </div>
+      <div>
+        <span>آخر سعر</span>
+        <strong>${formatMoney(entry.lastPrice ?? entry.currentPrice, entry.currency)}</strong>
+      </div>
+      <div>
+        <span>الهدف</span>
+        <strong>${formatMoney(entry.target1 || entry.expectedPrice, entry.currency)}</strong>
+      </div>
+      <div>
+        <span>وقف الخسارة</span>
+        <strong>${entry.stopLoss ? formatMoney(entry.stopLoss, entry.currency) : "--"}</strong>
+      </div>
+      <div>
+        <span>العائد الحالي</span>
+        ${renderHistoryReturn(entry)}
+      </div>
+      <div>
+        <span>الحالة</span>
+        <strong class="${entry.outcome === "target" ? "profit" : entry.outcome === "stop" ? "loss" : ""}">${getHistoryOutcomeLabel(entry)}</strong>
+      </div>
+      <div class="history-actions">
+        <span>التنبيه</span>
+        <button class="follow-trade-button ${followedTradeKeys.has(entry.key) ? "is-following" : ""}" type="button" data-follow-trade="${escapeHtml(entry.key)}">
+          ${followedTradeKeys.has(entry.key) ? "إيقاف المتابعة" : "تابع الصفقة"}
+        </button>
+      </div>
+    </article>
+  `;
+}
+
+function toggleFollowTrade(key) {
+  const entry = recommendationHistory.find((item) => item.key === key);
+  if (!entry) return;
+
+  if (followedTradeKeys.has(key)) {
+    followedTradeKeys.delete(key);
+    showToast(`تم إيقاف متابعة ${entry.symbol}`, "لن تصلك تنبيهات لهذه الصفقة.");
+  } else {
+    followedTradeKeys.add(key);
+    clearFollowedTradeAlertState(key);
+    requestTradeAlertPermission();
+    showToast(`تمت متابعة ${entry.symbol}`, `راح أنبهك عند الهدف، وقف الخسارة، أو تغير الإشارة.`);
+    playSignalTone();
+  }
+
+  persistSharedTradeState({ force: true });
+  checkFollowedTrades(lastData?.recommendations || []);
+  renderHistory();
+}
+
+function clearFollowedTradeAlertState(key) {
+  followedTradeAlerts = new Set([...followedTradeAlerts].filter((value) => !value.startsWith(`${key}:`)));
+  persistSharedTradeState();
+}
+
+function checkFollowedTrades(items) {
+  if (!followedTradeKeys.size || !items?.length) return;
+
+  const bySymbol = new Map(items.map((item) => [item.symbol.toUpperCase(), item]));
+  let changed = false;
+
+  for (const key of [...followedTradeKeys]) {
+    const entry = recommendationHistory.find((item) => item.key === key);
+    if (!entry) {
+      followedTradeKeys.delete(key);
+      changed = true;
+      continue;
+    }
+
+    const current = bySymbol.get(entry.symbol.toUpperCase());
+    if (!current) continue;
+
+    const currentPrice = Number(current.currentPrice);
+    const targetPrice = Number(entry.target1 ?? entry.expectedPrice);
+    const stopPrice = Number(entry.stopLoss);
+    const targetHitNow = isTargetHit(entry.action, currentPrice, targetPrice);
+    const stopHitNow = isStopHit(entry.action, currentPrice, stopPrice);
+    const actionChanged = current.action && current.action !== entry.action;
+
+    if (targetHitNow) {
+      notifyFollowedTrade(entry, current, "target");
+    } else if (stopHitNow) {
+      notifyFollowedTrade(entry, current, "stop");
+    } else if (actionChanged) {
+      notifyFollowedTrade(entry, current, "action");
+    }
+  }
+
+  if (changed) persistSharedTradeState({ force: true });
+}
+
+function notifyFollowedTrade(entry, current, eventType) {
+  const alertKey = `${entry.key}:${eventType}`;
+  if (followedTradeAlerts.has(alertKey)) return;
+
+  followedTradeAlerts.add(alertKey);
+  persistSharedTradeState();
+
+  const currentPrice = formatMoney(current.currentPrice, current.currency || entry.currency);
+  const target = formatMoney(entry.target1 ?? entry.expectedPrice, entry.currency);
+  const stop = entry.stopLoss ? formatMoney(entry.stopLoss, entry.currency) : "--";
+  const titles = {
+    target: `وصل هدف ${entry.symbol}`,
+    stop: `تنبيه وقف خسارة ${entry.symbol}`,
+    action: `تغيرت إشارة ${entry.symbol}`
+  };
+  const messages = {
+    target: `السعر الحالي ${currentPrice} وصل الهدف ${target}.`,
+    stop: `السعر الحالي ${currentPrice} وصل وقف الخسارة ${stop}.`,
+    action: `الإشارة تغيرت من ${entry.actionLabel} إلى ${current.actionLabel} بثقة ${current.confidence}%.`
+  };
+
+  showToast(titles[eventType], messages[eventType]);
+  sendBrowserTradeNotification(titles[eventType], messages[eventType]);
+  playSignalTone();
+
+  if (voiceActive) {
+    const spoken = `${titles[eventType]}. ${messages[eventType]}`;
+    voiceReply.textContent = spoken;
+    voiceStatus.textContent = "تنبيه صفقة متابعة";
+    speakVoice(spoken);
+  }
+}
+
+async function loadNotificationLog() {
+  try {
+    const response = await fetch("/api/notifications", { cache: "no-store" });
+    if (!response.ok) throw new Error("notifications unavailable");
+
+    const data = await response.json();
+    notificationLog = normalizeNotificationLog([
+      ...notificationLog,
+      ...(Array.isArray(data.notifications) ? data.notifications : [])
+    ]);
+    persistNotificationLocalState();
+    scheduleNotificationSave({ force: true });
+  } catch {
+    persistNotificationLocalState();
+  }
+}
+
+function saveNotification(title, message, options = {}) {
+  const notification = {
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    title: String(title || "SFM"),
+    message: String(message || ""),
+    type: options.type || "system",
+    createdAt: new Date().toISOString(),
+    read: false
+  };
+
+  notificationLog = normalizeNotificationLog([notification, ...notificationLog]);
+  persistNotificationLocalState();
+  renderNotificationCenter();
+  scheduleNotificationSave();
+  return notification;
+}
+
+function normalizeNotificationLog(items) {
+  const byId = new Map();
+
+  for (const item of Array.isArray(items) ? items : []) {
+    const notification = normalizeNotification(item);
+    if (!notification) continue;
+
+    const existing = byId.get(notification.id);
+    if (!existing || new Date(notification.createdAt) >= new Date(existing.createdAt)) {
+      byId.set(notification.id, notification);
+    }
+  }
+
+  return [...byId.values()]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, NOTIFICATION_LIMIT);
+}
+
+function normalizeNotification(item) {
+  if (!item || typeof item !== "object") return null;
+
+  const title = String(item.title || "").trim();
+  const message = String(item.message || "").trim();
+  if (!title && !message) return null;
+
+  return {
+    id: String(item.id || `${Date.now()}-${Math.random().toString(16).slice(2)}`),
+    title: title || "SFM",
+    message,
+    type: String(item.type || "system"),
+    createdAt: normalizeDateString(item.createdAt),
+    read: Boolean(item.read)
+  };
+}
+
+function persistNotificationLocalState() {
+  saveStored("the-sfm-trader-notifications", notificationLog);
+}
+
+function scheduleNotificationSave(options = {}) {
+  const force = Boolean(options.force);
+  window.clearTimeout(notificationSaveTimer);
+  notificationSaveTimer = window.setTimeout(saveNotificationLogToServer, force ? 0 : NOTIFICATION_SAVE_DEBOUNCE_MS);
+}
+
+async function saveNotificationLogToServer() {
+  try {
+    await fetch("/api/notifications", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ notifications: notificationLog })
+    });
+  } catch {
+    // يبقى السجل محفوظاً داخل المتصفح حتى يرجع الاتصال بالسيرفر.
+  }
+}
+
+async function clearNotificationLog() {
+  notificationLog = [];
+  persistNotificationLocalState();
+  renderNotificationCenter();
+
+  try {
+    await fetch("/api/notifications", { method: "DELETE" });
+  } catch {
+    scheduleNotificationSave({ force: true });
+  }
+}
+
+function renderNotificationCenter() {
+  if (!notificationButton || !notificationCount || !notificationPanel || !notificationList) return;
+
+  notificationCount.textContent = formatNumber(notificationLog.length);
+  notificationButton.classList.toggle("has-notifications", notificationLog.length > 0);
+
+  notificationList.innerHTML = notificationLog.length
+    ? notificationLog.map(renderNotificationItem).join("")
+    : "<div class=\"notification-empty\">لا توجد إشعارات محفوظة حالياً.</div>";
+}
+
+function renderNotificationItem(notification) {
+  return `
+    <article class="notification-item notification-type-${escapeHtml(notification.type)}">
+      <div>
+        <strong>${escapeHtml(notification.title)}</strong>
+        <time>${formatDateTime(notification.createdAt)}</time>
+      </div>
+      <p>${escapeHtml(notification.message || "--")}</p>
+    </article>
+  `;
+}
+
+function toggleNotificationPanel() {
+  setNotificationPanelOpen(!notificationPanelOpen);
+}
+
+function setNotificationPanelOpen(open) {
+  if (!notificationButton || !notificationPanel) return;
+
+  notificationPanelOpen = Boolean(open);
+  notificationPanel.hidden = !notificationPanelOpen;
+  notificationButton.setAttribute("aria-expanded", String(notificationPanelOpen));
+  notificationButton.classList.toggle("is-open", notificationPanelOpen);
+}
+
+function checkSmartMarketNotifications(items = []) {
+  if (!items.length) return;
+
+  const nowHour = new Date().toISOString().slice(0, 13);
+  let emitted = false;
+  const nextState = { ...(recommendationSignalState && typeof recommendationSignalState === "object" ? recommendationSignalState : {}) };
+  const tradable = items.filter((item) => item.action === "buy" || item.action === "sell");
+  const strongest = [...tradable]
+    .filter((item) => item.confidence >= 82 && getDataHealthScore(item) >= 58 && !item.timeframeConsensus?.conflict)
+    .sort((a, b) => getAnalysisModeScore(b) - getAnalysisModeScore(a))
+    .slice(0, 2);
+
+  for (const item of strongest) {
+    const key = `smart-strong:${nowHour}:${item.symbol}:${item.action}`;
+    if (!rememberSmartAlert(key)) continue;
+    emitted = true;
+    showToast(
+      `إشارة قوية: ${item.symbol}`,
+      `${item.actionLabel} · ثقة ${formatNumber(item.confidence)}% · الهدف ${formatMoney(item.target1 || item.expectedPrice, item.currency)}`,
+      { type: "strong-signal" }
+    );
+    sendBrowserTradeNotification(
+      `the-sfm trader: ${item.symbol}`,
+      `${item.actionLabel} بثقة ${formatNumber(item.confidence)}%`
+    );
+  }
+
+  for (const item of tradable) {
+    const previous = recommendationSignalState?.[item.symbol];
+    const changed = previous?.action && previous.action !== item.action;
+    if (changed && item.confidence >= 68) {
+      const key = `smart-change:${nowHour}:${item.symbol}:${previous.action}:${item.action}`;
+      if (rememberSmartAlert(key)) {
+        emitted = true;
+        showToast(
+          `تغيرت توصية ${item.symbol}`,
+          `انتقلت من ${previous.actionLabel || previous.action} إلى ${item.actionLabel} · ثقة ${formatNumber(item.confidence)}%`,
+          { type: "signal-change" }
+        );
+      }
+    }
+
+    nextState[item.symbol] = {
+      action: item.action,
+      actionLabel: item.actionLabel,
+      confidence: item.confidence,
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  const weakData = [...items]
+    .filter((item) => getDataHealthScore(item) < 45 || item.timeframeConsensus?.conflict)
+    .sort((a, b) => b.confidence - a.confidence)
+    .slice(0, 1);
+
+  for (const item of weakData) {
+    const key = `smart-risk:${nowHour}:${item.symbol}`;
+    if (!rememberSmartAlert(key)) continue;
+    emitted = true;
+    showToast(
+      `تنبيه حذر: ${item.symbol}`,
+      "البيانات أو الفريمات غير كافية، انتظر تأكيد أو افتح صفحة السهم للتفاصيل.",
+      { type: "risk-warning" }
+    );
+  }
+
+  recommendationSignalState = nextState;
+  saveStored("the-sfm-trader-signal-state", recommendationSignalState);
+  if (emitted) playSignalTone();
+}
+
+function rememberSmartAlert(key) {
+  if (alertedKeys.has(key)) return false;
+  alertedKeys.add(key);
+  saveStored("the-sfm-trader-alerted", [...alertedKeys].slice(-180));
+  return true;
+}
+
+function triggerSmartAlertPopup(alerts) {
+  const today = new Date().toISOString().slice(0, 10);
+  const freshAlerts = alerts
+    .filter((alert) => !alertedKeys.has(`${today}:${alert.symbol}`))
+    .slice(0, 2);
+
+  if (!freshAlerts.length) return;
+
+  for (const alert of freshAlerts) {
+    alertedKeys.add(`${today}:${alert.symbol}`);
+    showToast(
+      `تنبيه شراء: ${alert.symbol}`,
+      `${alert.confidence}% ثقة · الهدف ${formatMoney(alert.expectedPrice, alert.currency)}`
+    );
+  }
+
+  saveStored("the-sfm-trader-alerted", [...alertedKeys].slice(-80));
+  playSignalTone();
+}
+
+function showToast(title, message, options = {}) {
+  if (options.persist !== false) {
+    saveNotification(title, message, { type: options.type || "toast" });
+  }
+
+  let stack = document.querySelector(".toast-stack");
+  if (!stack) {
+    stack = document.createElement("div");
+    stack.className = "toast-stack";
+    document.body.appendChild(stack);
+  }
+
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  toast.innerHTML = `<strong>${escapeHtml(title)}</strong><span>${escapeHtml(message)}</span>`;
+  stack.appendChild(toast);
+  window.setTimeout(() => toast.remove(), 6500);
+}
+
+function requestTradeAlertPermission() {
+  if (!("Notification" in window) || Notification.permission !== "default") return;
+  Notification.requestPermission().catch(() => {});
+}
+
+function sendBrowserTradeNotification(title, message) {
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+  try {
+    const notification = new Notification(title, {
+      body: message,
+      dir: "rtl",
+      tag: `the-sfm-trader-${title}`
+    });
+    window.setTimeout(() => notification.close(), 9000);
+  } catch {
+    // Some browsers block notifications while the page is in focus or on mobile.
+  }
+}
+
+function playSignalTone() {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return;
+    const context = new AudioContext();
+    const oscillator = context.createOscillator();
+    const gain = context.createGain();
+    oscillator.frequency.value = 740;
+    oscillator.type = "sine";
+    gain.gain.setValueAtTime(0.0001, context.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.12, context.currentTime + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.22);
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 0.24);
+  } catch {
+    // المتصفح قد يمنع الصوت قبل أول تفاعل من المستخدم.
+  }
+}
+
+function renderUsDashboard(data) {
+  const isUsMarket = data.market?.id === "us";
+  usDashboardSection.classList.toggle("is-hidden", !isUsMarket);
+  if (!isUsMarket) return;
+
+  const all = data.recommendations;
+  const shariaOnly = all.filter((item) => item.shariaStatus === "compliant");
+  const highRisk = [...all].sort((a, b) => (b.risk?.score || 0) - (a.risk?.score || 0)).slice(0, 5);
+  const bestBacktest = [...all]
+    .filter((item) => Number.isFinite(item.backtest?.winRate))
+    .sort((a, b) => b.backtest.winRate - a.backtest.winRate)
+    .slice(0, 5);
+  const strongestUpside = [...all].sort((a, b) => Math.abs(b.expectedMovePct) - Math.abs(a.expectedMovePct)).slice(0, 5);
+  const summary = data.backtestSummary || {};
+
+  usBacktestScore.textContent = summary.avgWinRate ? `${summary.avgWinRate}%` : "--";
+  usDashboardGrid.innerHTML = `
+    ${renderDashboardCard("توصيات اليوم", `${all.length} سهم`, [
+      `شراء: ${all.filter((item) => item.action === "buy").length}`,
+      `بيع: ${all.filter((item) => item.action === "sell").length}`,
+      `انتظار: ${all.filter((item) => item.action === "hold").length}`
+    ])}
+    ${renderDashboardCard("الأسهم الشرعية فقط", `${shariaOnly.length} سهم`, shariaOnly.slice(0, 5).map((item) => `${item.symbol} · ${item.actionLabel} · ${item.confidence}%`))}
+    ${renderDashboardCard("أعلى مخاطرة", highRisk[0]?.symbol || "--", highRisk.map((item) => `${item.symbol} · ${item.risk?.label || "--"}`))}
+    ${renderDashboardCard("أفضل Backtest", summary.bestSymbol || "--", bestBacktest.map((item) => `${item.symbol} · ${item.backtest.winRate}% نجاح`))}
+    ${renderDashboardCard("أقوى حركة متوقعة", strongestUpside[0]?.symbol || "--", strongestUpside.map((item) => `${item.symbol} · ${formatPercent(item.expectedMovePct)}`))}
+  `;
+}
+
+function renderDashboardCard(title, value, lines) {
+  const safeLines = lines.length ? lines : ["لا توجد بيانات"];
+  return `
+    <article class="dashboard-card">
+      <span>${escapeHtml(title)}</span>
+      <strong>${escapeHtml(value)}</strong>
+      <ul class="dashboard-list">
+        ${safeLines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}
+      </ul>
+    </article>
+  `;
+}
+
+function renderUsOutlook(data) {
+  if (!usOutlookSection || !usOutlookGrid) return;
+
+  const isUsMarket = data.market?.id === "us";
+  usOutlookSection.classList.toggle("is-hidden", !isUsMarket);
+  if (!isUsMarket) return;
+
+  const horizons = [
+    { months: 1, title: "خلال شهر" },
+    { months: 2, title: "خلال شهرين" },
+    { months: 3, title: "خلال 3 شهور" }
+  ];
+  const candidates = data.recommendations
+    .flatMap((item) => (item.upsideOutlook || []).map((outlook) => ({ ...outlook, item })))
+    .filter((candidate) => candidate.targetPrice > candidate.item.currentPrice && candidate.movePct >= 0.75)
+    .sort((a, b) => b.confidence - a.confidence || b.movePct - a.movePct);
+  const uniqueSymbols = new Set(candidates.map((candidate) => candidate.item.symbol));
+
+  usOutlookCount.textContent = uniqueSymbols.size ? `${uniqueSymbols.size} سهم` : "لا توجد";
+  usOutlookGrid.innerHTML = horizons.map((horizon) => renderOutlookColumn(horizon, candidates)).join("");
+}
+
+function renderOutlookColumn(horizon, candidates) {
+  const items = candidates
+    .filter((candidate) => candidate.months === horizon.months)
+    .sort((a, b) => b.confidence - a.confidence || b.movePct - a.movePct)
+    .slice(0, 8);
+
+  if (!items.length) {
+    return `
+      <article class="outlook-column">
+        <h3>${horizon.title}</h3>
+        <div class="empty">لا توجد فرص صعود واضحة لهذه المدة حاليا.</div>
+      </article>
+    `;
+  }
+
+  return `
+    <article class="outlook-column">
+      <h3>${horizon.title}</h3>
+      <div class="outlook-list">
+        ${items.map(renderOutlookItem).join("")}
+      </div>
+    </article>
+  `;
+}
+
+function renderOutlookItem(candidate) {
+  const item = candidate.item;
+  return `
+    <div class="outlook-item">
+      <div class="outlook-item-top">
+        <span class="outlook-symbol">${escapeHtml(item.symbol)}</span>
+        <span class="outlook-confidence">${candidate.confidence}%</span>
+      </div>
+      <div class="outlook-name">${escapeHtml(item.name)}</div>
+      <div class="outlook-target">
+        الصعود إلى <strong>${formatMoney(candidate.targetPrice, item.currency)}</strong> خلال ${escapeHtml(candidate.label)}
+      </div>
+      <div class="outlook-item-meta">
+        <span>الحالي ${formatMoney(item.currentPrice, item.currency)}</span>
+        <span>${formatPercent(candidate.movePct)}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderMiniSignalCard(item) {
+  const score = calculateFinalScore(item);
+  const statusClass = item.action === "sell" ? "sell" : item.action === "hold" ? "hold" : "";
+
+  return `
+    <article class="mini-card" data-symbol="${escapeHtml(item.symbol)}" role="link" tabindex="0">
+      <span>${escapeHtml(item.name)}</span>
+      <strong>${escapeHtml(item.symbol)}</strong>
+      <div class="mini-meta">
+        <em class="status-pill-mini ${statusClass}">${escapeHtml(item.actionLabel)}</em>
+        <em class="score-pill">Score ${score.score}%</em>
+        <em class="score-pill">${item.confidence}% ثقة</em>
+      </div>
+      <div class="outlook-target">
+        الحالي ${formatMoney(item.currentPrice, item.currency)} · الهدف ${formatMoney(item.expectedPrice, item.currency)}
+      </div>
+    </article>
+  `;
+}
+
+function attachDetailOpeners(root) {
+  for (const card of root.querySelectorAll("[data-symbol]")) {
+    card.addEventListener("click", (event) => {
+      if (event.target.closest("button, a, input, select, textarea")) return;
+      openDetailPage(card.dataset.symbol);
+    });
+    card.addEventListener("keydown", (event) => {
+      if (event.target.closest("button, a, input, select, textarea")) return;
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openDetailPage(card.dataset.symbol);
+      }
+    });
+  }
+}
+
+function setupSignalCardToggle(card, item) {
+  const button = card.querySelector(".card-toggle");
+  const isCollapsed = !expandedSignalCards.has(item.symbol);
+  setSignalCardCollapsed(card, isCollapsed);
+
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const shouldCollapse = !card.classList.contains("is-collapsed");
+
+    if (shouldCollapse) {
+      expandedSignalCards.delete(item.symbol);
+    } else {
+      expandedSignalCards.add(item.symbol);
+    }
+
+    saveStored("the-sfm-trader-expanded-cards", [...expandedSignalCards]);
+    setSignalCardCollapsed(card, shouldCollapse);
+
+    if (!shouldCollapse) {
+      drawSparkline(card.querySelector(".sparkline"), item.sparkline, item.action);
+    }
+  });
+}
+
+function setSignalCardCollapsed(card, isCollapsed) {
+  const button = card.querySelector(".card-toggle");
+  card.classList.toggle("is-collapsed", isCollapsed);
+  if (button) {
+    button.textContent = isCollapsed ? "فتح التفاصيل" : "غلق التفاصيل";
+    button.setAttribute("aria-expanded", String(!isCollapsed));
+  }
+}
+
+function setAllSignalCardsExpanded(expanded) {
+  if (!lastData?.recommendations?.length) return;
+
+  const visibleSymbols = sortRecommendations(filterRecommendations(lastData.recommendations))
+    .map((item) => item.symbol);
+
+  if (expanded) {
+    expandedSignalCards = new Set([...expandedSignalCards, ...visibleSymbols]);
+  } else {
+    expandedSignalCards = new Set([...expandedSignalCards].filter((symbol) => !visibleSymbols.includes(symbol)));
+  }
+
+  saveStored("the-sfm-trader-expanded-cards", [...expandedSignalCards]);
+  renderRecommendations(lastData);
+}
+
+function openDetailPage(symbol) {
+  const normalized = normalizeSymbol(symbol);
+  if (!normalized) return;
+  window.open(`/detail.html?symbol=${encodeURIComponent(normalized)}`, "_blank", "noopener");
+}
+
+function renderTimeframePills(timeframes) {
+  if (!timeframes.length) {
+    return "<div class=\"timeframe-pill action-hold-lite\"><span>الفريمات</span><strong>غير مكتملة</strong></div>";
+  }
+
+  return timeframes.map((frame) => {
+    const actionClass =
+      frame.action === "buy" ? "action-buy-lite" : frame.action === "sell" ? "action-sell-lite" : "action-hold-lite";
+    return `
+      <div class="timeframe-pill ${actionClass}" title="RSI ${frame.rsi14} · زخم ${formatPercent(frame.momentum20)}">
+        <span>${escapeHtml(frame.label)}</span>
+        <strong>${escapeHtml(frame.actionLabel)}</strong>
+      </div>
+    `;
+  }).join("");
+}
+
+function initVoiceAssistant() {
+  if (!voiceStartButton) return;
+
+  voiceStartButton.addEventListener("click", () => {
+    if (voiceActive) {
+      stopVoiceAssistant();
+    } else {
+      startVoiceAssistant();
+    }
+  });
+
+  voiceTextForm?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const text = voiceTextCommand.value.trim();
+    if (!text) return;
+    voiceTextCommand.value = "";
+    handleVoiceTranscript(text);
+  });
+
+  voiceMonitorBestButton?.addEventListener("click", monitorBestVoiceOpportunity);
+
+  if (!("mediaDevices" in navigator) || !navigator.mediaDevices?.getUserMedia) {
+    voiceStatus.textContent = "المتصفح لا يدعم المايك";
+    voiceStartButton.disabled = true;
+  }
+}
+
+async function loadOllamaStatus() {
+  if (!ollamaStatus) return;
+
+  try {
+    const response = await fetch("/api/ollama-status");
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "تعذر فحص Ollama");
+
+    if (!data.enabled) {
+      ollamaStatus.textContent = "Ollama معطل";
+      return;
+    }
+
+    if (!data.connected) {
+      ollamaStatus.textContent = "Ollama غير مثبت أو غير شغال";
+      return;
+    }
+
+    ollamaStatus.textContent = data.hasConfiguredModel ? `Ollama جاهز: ${data.model}` : `Ollama يحتاج موديل: ${data.model}`;
+  } catch {
+    ollamaStatus.textContent = "تعذر فحص Ollama";
+  }
+}
+
+function setVoiceActivityState(state = "idle", label = "") {
+  if (!voiceActivity) return;
+
+  const labels = {
+    idle: "جاهز",
+    listening: "يستقبل صوتك",
+    thinking: "يفكر",
+    speaking: "SFM يتكلم",
+    error: "تنبيه صوتي"
+  };
+  const states = ["idle", "listening", "thinking", "speaking", "error"];
+  const safeState = states.includes(state) ? state : "idle";
+
+  voiceActivity.classList.remove(...states.map((item) => `is-${item}`));
+  voiceActivity.classList.add(`is-${safeState}`);
+  voiceActivity.dataset.state = safeState;
+  if (voiceActivityText) voiceActivityText.textContent = label || labels[safeState];
+
+  if (voiceBand) {
+    voiceBand.classList.toggle("voice-is-listening", safeState === "listening");
+    voiceBand.classList.toggle("voice-is-speaking", safeState === "speaking");
+    voiceBand.classList.toggle("voice-is-thinking", safeState === "thinking");
+  }
+}
+
+function restoreVoiceActivityState() {
+  if (voiceActive && !voiceRecognitionSuspended) {
+    setVoiceActivityState("listening", "يستقبل صوتك");
+  } else if (voiceActive) {
+    setVoiceActivityState("idle", "الصوت جاهز");
+  } else {
+    setVoiceActivityState("idle", "جاهز");
+  }
+}
+
+async function startVoiceAssistant() {
+  voiceActive = true;
+  voiceRecognitionLanguageIndex = 0;
+  voiceRecognitionSuspended = false;
+  setVoiceActivityState("thinking", "طلب إذن المايك");
+  voiceStartButton.classList.add("is-listening");
+  voiceStartButton.textContent = "إيقاف المحادثة الصوتية";
+  voiceStatus.textContent = "جاري طلب إذن المايك";
+  renderVoiceMonitor();
+
+  try {
+    voiceStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    startClapDetector(voiceStream);
+    const recognitionStarted = startSpeechRecognition();
+    const reply = getLocalGreeting();
+    voiceReply.textContent = reply;
+    if (recognitionStarted) {
+      voiceStatus.textContent = `يستمع الآن (${VOICE_RECOGNITION_LANGUAGES[voiceRecognitionLanguageIndex]})`;
+      setVoiceActivityState("listening", "يستقبل صوتك");
+    }
+    speakVoice(reply);
+  } catch (error) {
+    voiceStatus.textContent = "تعذر تشغيل المايك";
+    voiceReply.textContent = error.message || "تأكد من سماح المتصفح باستخدام المايك.";
+    stopVoiceAssistant();
+    setVoiceActivityState("error", "خطأ في المايك");
+  }
+}
+
+function stopVoiceAssistant() {
+  voiceActive = false;
+  voiceRecognitionSuspended = true;
+  voiceStartButton.classList.remove("is-listening");
+  voiceStartButton.textContent = "ابدأ المحادثة الصوتية";
+  voiceStatus.textContent = "متوقف";
+  setVoiceActivityState("idle", "متوقف");
+  renderVoiceMonitor();
+
+  if (voiceRecognition) {
+    voiceRecognition.onend = null;
+    try {
+      voiceRecognition.stop();
+    } catch {
+      // قد يكون متوقفاً بالفعل.
+    }
+    voiceRecognition = null;
+  }
+
+  if (voiceClapFrame) {
+    window.cancelAnimationFrame(voiceClapFrame);
+    voiceClapFrame = null;
+  }
+
+  if (voiceAudioContext) {
+    voiceAudioContext.close().catch(() => {});
+    voiceAudioContext = null;
+  }
+
+  if (voiceStream) {
+    voiceStream.getTracks().forEach((track) => track.stop());
+    voiceStream = null;
+  }
+}
+
+function startSpeechRecognition() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    voiceStatus.textContent = "التعرف الصوتي غير مدعوم في هذا المتصفح";
+    return false;
+  }
+
+  if (voiceRecognitionSuspended) return false;
+
+  if (voiceRecognition) {
+    voiceRecognition.onend = null;
+    try {
+      voiceRecognition.stop();
+    } catch {
+      // قد يكون متوقفاً بالفعل.
+    }
+  }
+
+  voiceRecognition = new SpeechRecognition();
+  voiceRecognition.lang = VOICE_RECOGNITION_LANGUAGES[voiceRecognitionLanguageIndex] || "ar-SA";
+  voiceRecognition.continuous = true;
+  voiceRecognition.interimResults = true;
+  voiceRecognition.maxAlternatives = 1;
+
+  voiceRecognition.onresult = (event) => {
+    let finalText = "";
+    let interimText = "";
+
+    for (let index = event.resultIndex; index < event.results.length; index += 1) {
+      const text = event.results[index][0]?.transcript || "";
+      if (event.results[index].isFinal) finalText += text;
+      else interimText += text;
+    }
+
+    const heard = (finalText || interimText).trim();
+    if (heard) {
+      voiceTranscript.textContent = heard;
+      setVoiceActivityState("listening", "يستقبل صوتك");
+    }
+    if (finalText.trim()) {
+      setVoiceActivityState("thinking", "يفهم الأمر");
+      handleVoiceTranscript(finalText.trim());
+    }
+  };
+
+  voiceRecognition.onerror = (event) => {
+    if (event.error === "network") {
+      handleSpeechNetworkError();
+      return;
+    }
+
+    if (event.error === "language-not-supported") {
+      handleSpeechNetworkError("اللغة غير مدعومة في المتصفح، أجرب لغة ثانية");
+      return;
+    }
+
+    voiceStatus.textContent = event.error === "no-speech" ? "بانتظار صوتك" : `خطأ صوتي: ${event.error}`;
+    setVoiceActivityState(event.error === "no-speech" ? "listening" : "error", event.error === "no-speech" ? "بانتظار صوتك" : "خطأ صوتي");
+  };
+
+  voiceRecognition.onend = () => {
+    if (!voiceActive || !voiceRecognition || voiceRecognitionSuspended) return;
+    window.setTimeout(() => {
+      try {
+        voiceRecognition?.start();
+      } catch {
+        // بعض المتصفحات تحتاج فاصلاً قصيراً قبل إعادة التشغيل.
+      }
+    }, 450);
+  };
+
+  try {
+    voiceRecognition.start();
+    voiceStatus.textContent = `يستمع الآن (${voiceRecognition.lang})`;
+    setVoiceActivityState("listening", "يستقبل صوتك");
+    return true;
+  } catch {
+    voiceStatus.textContent = "الاستماع يعمل بالفعل";
+    setVoiceActivityState("listening", "يستقبل صوتك");
+    return false;
+  }
+}
+
+function handleSpeechNetworkError(message = "خدمة التعرف الصوتي في المتصفح تعذرت بسبب الشبكة") {
+  if (voiceRecognition) {
+    voiceRecognition.onend = null;
+    try {
+      voiceRecognition.stop();
+    } catch {
+      // قد يكون متوقفاً بالفعل.
+    }
+  }
+
+  if (voiceRecognitionLanguageIndex < VOICE_RECOGNITION_LANGUAGES.length - 1) {
+    voiceRecognitionLanguageIndex += 1;
+    const nextLanguage = VOICE_RECOGNITION_LANGUAGES[voiceRecognitionLanguageIndex];
+    voiceStatus.textContent = `${message}. أجرب ${nextLanguage}`;
+    setVoiceActivityState("thinking", "أجرب لغة ثانية");
+    window.setTimeout(() => {
+      if (voiceActive) startSpeechRecognition();
+    }, 900);
+    return;
+  }
+
+  voiceRecognitionSuspended = true;
+  voiceStatus.textContent = "التعرف الصوتي متوقف بسبب network. استخدم خانة الأمر النصي مؤقتاً.";
+  voiceReply.textContent = "التصفيق والرد الصوتي ما زالوا يعملون، لكن تحويل الكلام إلى نص من المتصفح يحتاج اتصالاً بخدمة التعرف الصوتي.";
+  setVoiceActivityState("error", "network");
+}
+
+function startClapDetector(stream) {
+  voiceAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+  const source = voiceAudioContext.createMediaStreamSource(stream);
+  const analyser = voiceAudioContext.createAnalyser();
+  analyser.fftSize = 1024;
+  source.connect(analyser);
+  const samples = new Uint8Array(analyser.fftSize);
+
+  function tick() {
+    analyser.getByteTimeDomainData(samples);
+    let peak = 0;
+    let total = 0;
+
+    for (const sample of samples) {
+      const value = Math.abs((sample - 128) / 128);
+      peak = Math.max(peak, value);
+      total += value * value;
+    }
+
+    const rms = Math.sqrt(total / samples.length);
+    const now = Date.now();
+    if (peak > 0.92 && rms > 0.19 && now > voiceClapCooldownUntil) {
+      voiceClapCooldownUntil = now + 3000;
+      const reply = `سمعت التصفيق يا سيدي ${USER_DISPLAY_NAME}. SFM حاضر، شنو تبي اليوم؟`;
+      voiceReply.textContent = reply;
+      voiceStatus.textContent = "تم تنبيه SFM بالتصفيق";
+      speakVoice(reply);
+    }
+
+    if (voiceActive) voiceClapFrame = window.requestAnimationFrame(tick);
+  }
+
+  tick();
+}
+
+async function handleVoiceTranscript(text) {
+  voiceTranscript.textContent = text;
+  voiceStatus.textContent = "يفهم الأمر";
+  setVoiceActivityState("thinking", "يفهم الأمر");
+
+  const localSessionReply = getLocalMarketSessionReply(text);
+  if (localSessionReply) {
+    voiceReply.textContent = localSessionReply.reply;
+    voiceStatus.textContent = "رد محلي عن جلسة السوق";
+    speakVoice(localSessionReply.reply);
+
+    if (localSessionReply.marketId && localSessionReply.marketId !== activeMarket) {
+      activeMarket = localSessionReply.marketId;
+      setActiveMarketButton();
+      updateSessionClock();
+      loadRecommendations();
+    }
+    return;
+  }
+
+  const localAssetReply = await getLocalAssetQueryReply(text);
+  if (localAssetReply) {
+    voiceReply.textContent = localAssetReply.reply;
+    voiceStatus.textContent = "رد محلي عن الأصل المطلوب";
+    speakVoice(localAssetReply.reply);
+
+    if (localAssetReply.marketId && localAssetReply.marketId !== activeMarket) {
+      activeMarket = localAssetReply.marketId;
+      activeShariaFilter = "all";
+      setActiveMarketButton();
+      setActiveShariaFilterButton();
+      updateSessionClock();
+      loadRecommendations();
+    }
+    return;
+  }
+
+  const localRecommendationReply = await getLocalMarketRecommendationReply(text);
+  if (localRecommendationReply) {
+    voiceReply.textContent = localRecommendationReply.reply;
+    voiceStatus.textContent = "رد محلي حسب السوق المطلوب";
+    speakVoice(localRecommendationReply.reply);
+    return;
+  }
+
+  try {
+    const response = await fetch("/api/voice-command", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        transcript: text,
+        activeMarket,
+        recommendations: summarizeRecommendationsForVoice(lastData?.recommendations || [])
+      })
+    });
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "تعذر تنفيذ الأمر الصوتي");
+    }
+
+    voiceReply.textContent = result.reply || "--";
+    voiceStatus.textContent = result.aiEngine === "ollama" ? "تم الرد بواسطة Ollama" : "تم الرد بواسطة Python";
+    speakVoice(result.reply || "تم.");
+
+    if (result.marketId && result.marketId !== activeMarket) {
+      activeMarket = result.marketId;
+      activeShariaFilter = "all";
+      setActiveMarketButton();
+      setActiveShariaFilterButton();
+      updateSessionClock();
+      loadRecommendations();
+    }
+
+    if (result.monitor && result.watchSymbol) {
+      addVoiceMonitor(result.watchSymbol);
+    }
+
+    if (result.openDetail && result.detailUrl) {
+      window.open(result.detailUrl, "_blank", "noopener");
+    }
+  } catch (error) {
+    voiceStatus.textContent = "تعذر الرد";
+    voiceReply.textContent = error.message;
+    speakVoice("تعذر تنفيذ الأمر الصوتي حالياً.");
+  }
+}
+
+async function getLocalAssetQueryReply(text) {
+  const normalized = normalizeArabicText(text);
+  const match = ASSET_QUERY_ALIASES.find((item) => item.pattern.test(normalized));
+  const asksAsset =
+    /(سعر|كم|بكم|بجم|حلل|تحليل|اتجاه|وين|ذهب|فضه|فضة|نفط|برنت|غاز|نحاس|قهوه|قهوة|كاكاو|ككاو|gold|silver|oil|coffee|cocoa)/.test(normalized);
+
+  if (!match || !asksAsset) return null;
+
+  try {
+    const response = await fetch(`/api/asset?symbol=${encodeURIComponent(match.symbol)}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "تعذر تحميل الأصل");
+
+    const item = data.recommendation || {};
+    const marketId = ["KC=F", "CC=F"].includes(match.symbol) ? "food" : "commodities";
+    return {
+      marketId,
+      reply: `${match.name}: السعر الحالي ${formatMoney(item.currentPrice, item.currency)}، التوصية ${item.actionLabel || "انتظار"} بثقة ${formatNumber(item.confidence || 0)}%. الهدف ${formatMoney(item.target1 || item.expectedPrice, item.currency)} خلال ${item.duration || "الفترة القادمة"}. راقب المخاطر لأن السلع والعقود الآجلة تتحرك بسرعة.`
+    };
+  } catch (error) {
+    return {
+      marketId: ["KC=F", "CC=F"].includes(match.symbol) ? "food" : "commodities",
+      reply: `ما قدرت أحمل ${match.name} حالياً. السبب: ${error.message}`
+    };
+  }
+}
+
+async function getLocalMarketRecommendationReply(text) {
+  const normalized = normalizeArabicText(text);
+  const marketId = resolveMarketIdFromText(normalized);
+  const intent = resolveVoiceMarketIntent(normalized);
+
+  if (!intent || !marketId || marketId === "world" || marketId === "gcc") return null;
+  if (!["best_buy", "best_sell", "best_sharia", "monthly_upside", "most_traded", "market_trend"].includes(intent)) return null;
+
+  try {
+    const data = await fetchMarketRecommendationsForVoice(marketId);
+    applyVoiceMarketData(data, marketId);
+    return {
+      marketId,
+      reply: buildLocalRecommendationReply(data, intent)
+    };
+  } catch (error) {
+    return {
+      marketId,
+      reply: `ما قدرت أحمل بيانات ${getMarketSessionName(marketId)} حالياً. السبب: ${error.message}`
+    };
+  }
+}
+
+function resolveVoiceMarketIntent(text) {
+  if (/(اكثر|الأكثر|اكبر|اعلى|أعلى|سيوله|سيولة|حجم التداول|تداول اليوم|most traded|volume)/.test(text)) return "most_traded";
+  if (/(شرعي|الشريعه|الشريعة|حلال|halal|مطابق)/.test(text)) return "best_sharia";
+  if (/(شهر|شهرين|ثلاث|3|تصعد|صعود|ترتفع|يرتفع|upside|monthly)/.test(text)) return "monthly_upside";
+  if (/(ابيع|أبيع|بيع|بيعه|اخرج|sell)/.test(text)) return "best_sell";
+  if (/(اتجاه|ترند|نبض|صاعد|هابط|وضع السوق|market trend)/.test(text)) return "market_trend";
+  if (/(افضل|أفضل|اقوى|أقوى|اشتري|أشتري|شراء|فرصه|فرصة|سهم اليوم|ترشح|تنصح|best|buy)/.test(text)) return "best_buy";
+  return null;
+}
+
+async function fetchMarketRecommendationsForVoice(marketId) {
+  const response = await fetch(`/api/recommendations?market=${encodeURIComponent(marketId)}`);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.error || "تعذر تحميل بيانات السوق");
+  }
+  return data;
+}
+
+function applyVoiceMarketData(data, marketId) {
+  activeMarket = marketId;
+  activeShariaFilter = "all";
+  lastData = data;
+  updateRecommendationHistory(data.recommendations || []);
+  renderRecommendations(data);
+  setActiveMarketButton();
+  setActiveShariaFilterButton();
+  updateSessionClock();
+  connectionStatus.textContent = data.cached ? "متصل - بيانات مخزنة لحظياً" : "متصل - بيانات جديدة";
+}
+
+function buildLocalRecommendationReply(data, intent) {
+  const items = data.recommendations || [];
+  const marketLabel = data.market?.label || "السوق";
+
+  if (!items.length) {
+    return `${marketLabel}: ما وصلت بيانات كافية حالياً عشان أحدد فرصة دقيقة. جرّب تحديث السوق بعد ثواني.`;
+  }
+
+  if (intent === "market_trend") {
+    const buys = items.filter((item) => item.action === "buy").length;
+    const sells = items.filter((item) => item.action === "sell").length;
+    const holds = items.filter((item) => item.action === "hold").length;
+    const pulse = buys > sells ? "صاعد" : sells > buys ? "هابط" : "متوازن";
+    const leader = pickBestVoiceItem(items);
+    return `${marketLabel}: اتجاه السوق حالياً ${pulse}. إشارات الشراء ${buys}، البيع ${sells}، والانتظار ${holds}. أقوى رمز للمتابعة ${leader.symbol} بثقة ${formatNumber(leader.confidence)}%.`;
+  }
+
+  if (intent === "most_traded") {
+    const liquid = items.filter((item) => Number(item.latestVolume) > 0);
+    if (!liquid.length) return `${marketLabel}: مزود البيانات الحالي ما أعطاني حجم تداول واضح لهذا السوق. أقدر أعطيك أفضل فرصة فنية بدل السيولة.`;
+    const item = [...liquid].sort((a, b) => Number(b.latestVolume || 0) - Number(a.latestVolume || 0))[0];
+    return `${marketLabel}: أكثر سهم تداولاً حالياً هو ${item.name || item.symbol} (${item.symbol}). حجم التداول تقريباً ${formatCompactNumber(item.latestVolume)}، والتوصية ${item.actionLabel} بثقة ${formatNumber(item.confidence)}%. السعر ${formatMoney(item.currentPrice, item.currency)} والهدف ${formatMoney(item.target1 || item.expectedPrice, item.currency)}.`;
+  }
+
+  if (intent === "monthly_upside") {
+    const monthly = items
+      .flatMap((item) => (item.upsideOutlook || []).map((outlook) => ({ item, outlook })))
+      .filter(({ item, outlook }) => Number(outlook.targetPrice) > Number(item.currentPrice))
+      .sort((a, b) => Number(b.outlook.confidence || 0) - Number(a.outlook.confidence || 0) || Number(b.outlook.movePct || 0) - Number(a.outlook.movePct || 0));
+    const picked = monthly[0];
+    if (picked) {
+      return `${marketLabel}: أقوى صعود خلال ${picked.outlook.label || "الفترة القادمة"} هو ${picked.item.name || picked.item.symbol} (${picked.item.symbol}). السعر الحالي ${formatMoney(picked.item.currentPrice, picked.item.currency)} والهدف ${formatMoney(picked.outlook.targetPrice, picked.item.currency)}، والثقة ${formatNumber(picked.outlook.confidence || picked.item.confidence)}%.`;
+    }
+  }
+
+  const candidates = filterVoiceCandidates(items, intent);
+  const item = pickBestVoiceItem(candidates.length ? candidates : items);
+  const target = item.target1 || item.expectedPrice;
+  const sharia = item.shariaStatus === "compliant" ? "ومذكور أنه مطابق للشريعة." : item.shariaStatus === "not_compliant" ? "ومذكور أنه غير مطابق للشريعة." : "والتصنيف الشرعي يحتاج تحقق.";
+  const prefix = intent === "best_sell"
+    ? "أقوى فرصة بيع"
+    : intent === "best_sharia"
+      ? "أفضل سهم مطابق للشريعة"
+      : "أفضل سهم";
+
+  return `${marketLabel}: ${prefix} الآن هو ${item.name || item.symbol} (${item.symbol}). التوصية ${item.actionLabel}، الثقة ${formatNumber(item.confidence)}%. السعر الحالي ${formatMoney(item.currentPrice, item.currency)}، الهدف ${formatMoney(target, item.currency)} خلال ${item.duration || "الفترة القادمة"}. ${sharia} تذكير: راجع المخاطر قبل أي قرار.`;
+}
+
+function filterVoiceCandidates(items, intent) {
+  if (intent === "best_sell") return items.filter((item) => item.action === "sell");
+  if (intent === "best_sharia") return items.filter((item) => item.shariaStatus === "compliant");
+  return items.filter((item) => item.action === "buy");
+}
+
+function pickBestVoiceItem(items) {
+  return [...items].sort((a, b) => {
+    const scoreA = calculateFinalScore(a).score + Number(a.confidence || 0) + Math.abs(Number(a.expectedMovePct || 0));
+    const scoreB = calculateFinalScore(b).score + Number(b.confidence || 0) + Math.abs(Number(b.expectedMovePct || 0));
+    return scoreB - scoreA;
+  })[0];
+}
+
+function getLocalMarketSessionReply(text) {
+  const normalized = normalizeArabicText(text);
+  const isSessionQuestion =
+    /(متى|وقت|اوقات|أوقات|كم|هل)/.test(normalized) &&
+    /(يفتح|تفتح|فتح|يبدا|يبدأ|يصكر|تسكر|يغلق|اغلاق|إغلاق|مفتوح|مغلق|الجلسه|الجلسة|السوق|البورصه|البورصة)/.test(normalized);
+
+  if (!isSessionQuestion) return null;
+
+  if (/(كل|جميع|العالم|عالمي|world|global)/.test(normalized)) {
+    return {
+      marketId: null,
+      reply: getWorldSessionsReply()
+    };
+  }
+
+  const exchangeId = resolveExchangeSessionIdFromText(normalized);
+  const marketId = resolveMarketIdFromText(normalized) || (MARKET_SESSIONS[exchangeId] ? exchangeId : activeMarket || "kuwait");
+  const entry = EXCHANGE_SESSION_KNOWLEDGE[exchangeId];
+  const config = entry?.session || MARKET_SESSIONS[marketId] || MARKET_SESSIONS.kuwait;
+  const state = getSessionStateForConfig(config, new Date());
+  const marketName = entry?.name || getMarketSessionName(marketId);
+
+  if (config.type === "always") {
+    return {
+      marketId: MARKET_SESSIONS[marketId] ? marketId : null,
+      reply: `${marketName} مفتوح 24 ساعة، 7 أيام في الأسبوع.`
+    };
+  }
+
+  const openLabel = formatSessionTime(config.open);
+  const closeLabel = formatSessionTime(config.close);
+  const daysLabel = getSessionDaysLabel(config);
+  const status = state.isOpen
+    ? `مفتوح الآن ويصكر بعد ${state.countdownLabel}`
+    : `مغلق الآن ويفتح بعد ${state.countdownLabel}`;
+
+  return {
+    marketId: MARKET_SESSIONS[marketId] ? marketId : null,
+    reply: `${marketName}: يفتح ${openLabel} ويغلق ${closeLabel} بتوقيت ${config.label}، ${daysLabel}. ${status}.`
+  };
+}
+
+function getWorldSessionsReply() {
+  const ids = ["kuwait", "saudi", "uae", "qatar", "bahrain", "oman", "us", "uk", "germany", "france", "netherlands", "switzerland", "japan", "hongkong", "china", "korea", "india", "australia", "singapore", "forex", "commodities", "crypto"];
+  const lines = ids
+    .map((id) => EXCHANGE_SESSION_KNOWLEDGE[id])
+    .filter(Boolean)
+    .map((entry) => formatExchangeSessionLine(entry));
+  return `أعرف أوقات الأسواق الرئيسية: ${lines.join("، ")}. هذه أوقات اعتيادية ولا تشمل العطل الرسمية أو المزادات الخاصة.`;
+}
+
+function formatExchangeSessionLine(entry) {
+  const config = entry.session;
+  if (config.type === "always") return `${entry.name}: مفتوح 24/7`;
+  if (config.type === "weekly") return `${entry.name}: من ${formatSessionTime(config.open)} إلى ${formatSessionTime(config.close)} بتوقيت ${config.label}`;
+  return `${entry.name}: ${formatSessionTime(config.open)}-${formatSessionTime(config.close)} بتوقيت ${config.label}`;
+}
+
+function resolveExchangeSessionIdFromText(text) {
+  const tests = [
+    ["kuwait", /(كويت|الكويتي|بورصة الكويت|kuwait|xkuw)/],
+    ["saudi", /(سعود|تداول|saudi|tadawul)/],
+    ["uae", /(امارات|دبي|ابوظبي|uae|dfm|adx)/],
+    ["qatar", /(قطر|qatar|doha)/],
+    ["bahrain", /(بحرين|bahrain)/],
+    ["oman", /(عمان|مسقط|oman|muscat)/],
+    ["us", /(امريكا|امريكي|الامريكي|ناسداك|داو|nyse|nasdaq|us)/],
+    ["canada", /(كندا|canada|toronto)/],
+    ["brazil", /(برازيل|البرازيل|brazil|sao paulo)/],
+    ["uk", /(بريطانيا|لندن|uk|london)/],
+    ["germany", /(المانيا|ألمانيا|germany|frankfurt)/],
+    ["france", /(فرنسا|france|paris)/],
+    ["netherlands", /(هولندا|netherlands|amsterdam)/],
+    ["switzerland", /(سويسرا|switzerland|zurich)/],
+    ["japan", /(اليابان|يابان|japan|tokyo)/],
+    ["hongkong", /(هونغ|هونج|hong kong|hkex)/],
+    ["china", /(الصين|صين|china|shanghai)/],
+    ["korea", /(كوريا|korea|seoul)/],
+    ["india", /(الهند|india|mumbai)/],
+    ["australia", /(استراليا|أستراليا|australia|sydney)/],
+    ["singapore", /(سنغافوره|سنغافورة|singapore)/],
+    ["forex", /(فوركس|عملات|forex|fx)/],
+    ["commodities", /(ذهب|فضه|فضة|نفط|برنت|غاز|نحاس|سلع|commodities|gold|silver|oil)/],
+    ["crypto", /(كريبتو|رقميه|رقمية|بتكوين|بيتكوين|crypto|bitcoin)/]
+  ];
+  return tests.find(([, pattern]) => pattern.test(text))?.[0] || "";
+}
+
+function normalizeArabicText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[أإآ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .replace(/ـ/g, "")
+    .replace(/[^\u0600-\u06FFa-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function resolveMarketIdFromText(text) {
+  const tests = [
+    ["kuwait", /(كويت|الكويتي|xkuw|kuwait)/],
+    ["saudi", /(سعود|تداول|tadawul|saudi)/],
+    ["ai", /(ذكاء اصطناعي|الذكاء|ai|artificial intelligence)/],
+    ["tech", /(تقنيه|تقنية|تكنولوجيا|tech|technology)/],
+    ["dividends", /(توزيع|توزيعات|ارباح|أرباح|dividend|dividends)/],
+    ["healthcare", /(طبي|طبيه|طبية|الطب|رعايه صحيه|رعاية صحية|صحيه|صحية|ادويه|أدوية|دواء|مستشفى|مستشفيات|بيوتك|بايوتك|healthcare|health care|medical|pharma|biotech|hospital)/],
+    ["commodities", /(ذهب|فضه|فضة|نفط|برنت|غاز|نحاس|سلع|commodities|gold|silver|oil)/],
+    ["food", /(طعام|اغذيه|أغذية|قهوه|قهوة|كاكاو|ككاو|coffee|cocoa|food)/],
+    ["us", /(امريكا|امريكي|الامريكي|ناسداك|داو|وول|nyse|nasdaq|us)/],
+    ["forex", /(فوركس|عملات|forex|fx)/],
+    ["crypto", /(كريبتو|رقميه|رقمية|بتكوين|بيتكوين|crypto|bitcoin)/],
+    ["uae", /(امارات|دبي|ابوظبي|uae|dfm|adx)/],
+    ["qatar", /(قطر|qatar|doha)/],
+    ["bahrain", /(بحرين|bahrain)/],
+    ["oman", /(عمان|مسقط|oman|muscat)/],
+    ["europe", /(بريطانيا|لندن|المانيا|ألمانيا|فرنسا|هولندا|سويسرا|اوروبا|اوروبي|europe|london|germany|france|netherlands|switzerland)/],
+    ["asia", /(اليابان|هونغ|هونج|الصين|كوريا|الهند|اسيا|اسيوي|asia|tokyo|japan|china|korea|india)/],
+    ["world", /(كل الاسواق|كل الأسواق|جميع الاسواق|جميع الأسواق|العالم|عالمي|world|global)/]
+  ];
+  return tests.find(([, pattern]) => pattern.test(text))?.[0] || null;
+}
+
+function getMarketSessionName(marketId) {
+  const names = {
+    forex: "سوق الفوركس",
+    crypto: "سوق العملات الرقمية",
+    kuwait: "بورصة الكويت",
+    saudi: "بورصة السعودية",
+    uae: "أسواق الإمارات",
+    qatar: "بورصة قطر",
+    bahrain: "بورصة البحرين",
+    oman: "بورصة عمان",
+    gcc: "بورصات الخليج",
+    us: "السوق الأمريكي",
+    europe: "السوق الأوروبي",
+    asia: "السوق الآسيوي",
+    world: "جميع الأسواق",
+    ai: "أسهم الذكاء الاصطناعي",
+    tech: "أسهم التقنية",
+    dividends: "أسهم توزيعات الأرباح",
+    healthcare: "أسهم الرعاية الصحية والطب",
+    commodities: "الذهب والفضة والنفط",
+    food: "اسهم سلع غذائية",
+    watchlist: "قائمة المراقبة"
+  };
+  return names[marketId] || "السوق";
+}
+
+function getSessionDaysLabel(config) {
+  if (config.type === "weekly") return "من مساء الأحد إلى مساء الجمعة";
+  const dayKey = JSON.stringify(config.days || []);
+  if (dayKey === JSON.stringify([0, 1, 2, 3, 4])) return "من الأحد إلى الخميس";
+  if (dayKey === JSON.stringify([1, 2, 3, 4, 5])) return "من الاثنين إلى الجمعة";
+  return "حسب أيام التداول المعتادة";
+}
+
+function formatSessionTime(value) {
+  const [hour, minute] = value.split(":").map(Number);
+  const suffix = hour >= 12 ? "م" : "ص";
+  const hour12 = hour % 12 || 12;
+  return `${formatNumber(hour12)}:${String(minute).padStart(2, "0")} ${suffix}`;
+}
+
+function summarizeRecommendationsForVoice(items) {
+  return items.slice(0, 80).map((item) => ({
+    symbol: item.symbol,
+    name: item.name,
+    action: item.action,
+    actionLabel: item.actionLabel,
+    confidence: item.confidence,
+    currentPrice: item.currentPrice,
+    expectedPrice: item.expectedPrice,
+    target1: item.target1,
+    target2: item.target2,
+    stopLoss: item.stopLoss,
+    riskReward: item.riskReward,
+    expectedMovePct: item.expectedMovePct,
+    currency: item.currency,
+    duration: item.duration,
+    latestVolume: item.latestVolume,
+    averageVolume20: item.averageVolume20,
+    averageVolume50: item.averageVolume50,
+    relativeVolume: item.relativeVolume,
+    shariaStatus: item.shariaStatus,
+    shariaLabel: item.shariaLabel,
+    finalScore: calculateFinalScore(item).score,
+    risk: item.risk ? { level: item.risk.level, label: item.risk.label } : null,
+    analysisQuality: item.analysisQuality ? { score: item.analysisQuality.score, label: item.analysisQuality.label } : null,
+    upsideOutlook: item.upsideOutlook || []
+  }));
+}
+
+function monitorBestVoiceOpportunity() {
+  const rankedBuys = (lastData?.recommendations || [])
+    .filter((item) => item.action === "buy")
+    .map((item) => ({ item, score: calculateFinalScore(item).score }))
+    .sort((a, b) => b.score - a.score || Number(b.item.confidence || 0) - Number(a.item.confidence || 0));
+  const best = rankedBuys[0]?.item;
+
+  if (!best) {
+    const reply = "لا توجد فرصة شراء واضحة حالياً للمراقبة الصوتية.";
+    voiceReply.textContent = reply;
+    if (voiceMonitorNote) voiceMonitorNote.textContent = "انتظر تحديث السوق أو اختر سوقاً آخر.";
+    speakVoice(reply);
+    return;
+  }
+
+  const previous = voiceMonitors.join(", ");
+  voiceMonitors = [normalizeSymbol(best.symbol)];
+  saveStored("the-sfm-trader-voice-monitors", voiceMonitors);
+  renderVoiceMonitor();
+
+  const isSame = previous === voiceMonitors.join(", ");
+  const reply = isSame
+    ? `أفضل فرصة حالياً لا تزال ${best.symbol}. لذلك بقيت تحت المراقبة الصوتية.`
+    : `تم تبديل المراقبة إلى ${best.symbol}. إذا ظهرت فرصة قوية راح أنبهك صوتياً.`;
+  voiceReply.textContent = reply;
+  if (voiceStatus) voiceStatus.textContent = voiceActive ? "المراقبة الصوتية مفعلة" : "شغل المحادثة الصوتية لسماع التنبيه";
+  speakVoice(reply);
+}
+
+function addVoiceMonitor(symbol) {
+  const normalized = normalizeSymbol(symbol);
+  if (!normalized) return;
+  if (!voiceMonitors.includes(normalized)) {
+    voiceMonitors = [...voiceMonitors, normalized].slice(0, 20);
+    saveStored("the-sfm-trader-voice-monitors", voiceMonitors);
+  }
+  renderVoiceMonitor();
+}
+
+function removeVoiceMonitor(symbol) {
+  const normalized = normalizeSymbol(symbol);
+  if (!normalized) return;
+  voiceMonitors = voiceMonitors.filter((value) => value !== normalized);
+  saveStored("the-sfm-trader-voice-monitors", voiceMonitors);
+  renderVoiceMonitor();
+}
+
+function renderVoiceMonitor() {
+  if (!voiceMonitor) return;
+  if (voiceMonitors.length) {
+    voiceMonitor.innerHTML = `
+      <span class="voice-monitor-list">
+        ${voiceMonitors.map((symbol) => `
+          <span class="voice-monitor-chip">
+            ${escapeHtml(symbol)}
+            <button type="button" data-remove-voice-monitor="${escapeHtml(symbol)}" aria-label="إزالة ${escapeHtml(symbol)}">×</button>
+          </span>
+        `).join("")}
+      </span>
+    `;
+    for (const button of voiceMonitor.querySelectorAll("[data-remove-voice-monitor]")) {
+      button.addEventListener("click", () => removeVoiceMonitor(button.dataset.removeVoiceMonitor));
+    }
+    if (voiceMonitorNote) {
+      voiceMonitorNote.textContent = voiceActive
+        ? "اضغط × لإزالة أي سهم، أو راقب أفضل فرصة لتبديل الاختيار."
+        : "اضغط × لإزالة أي سهم. شغل المحادثة الصوتية لسماع التنبيه.";
+    }
+    return;
+  }
+
+  voiceMonitor.textContent = "لا توجد أسهم مراقبة";
+  if (voiceMonitorNote) voiceMonitorNote.textContent = "لم تضف رمزاً للمراقبة الصوتية بعد.";
+}
+
+function checkVoiceMonitors(items) {
+  if (!voiceActive || !voiceMonitors.length) return;
+  const lookup = getRecommendationLookup(items);
+
+  for (const symbol of [...voiceMonitors]) {
+    const item = lookup.get(symbol.toUpperCase());
+    if (!item) continue;
+
+    const isStrongBuy = item.action === "buy" && item.confidence >= 70;
+    const isStrongSell = item.action === "sell" && item.confidence >= 75;
+    if (!isStrongBuy && !isStrongSell) continue;
+
+    const reply = `${item.symbol} ظهرت عليه فرصة ${item.actionLabel} بثقة ${item.confidence}%. السعر الحالي ${formatMoney(item.currentPrice, item.currency)} والهدف ${formatMoney(item.expectedPrice, item.currency)}.`;
+    voiceReply.textContent = reply;
+    voiceStatus.textContent = "تنبيه صوتي";
+    showToast(`تنبيه صوتي: ${item.symbol}`, reply, { type: "voice" });
+    speakVoice(reply);
+    voiceMonitors = voiceMonitors.filter((value) => value !== symbol);
+    saveStored("the-sfm-trader-voice-monitors", voiceMonitors);
+    renderVoiceMonitor();
+    break;
+  }
+}
+
+function speakVoice(text) {
+  if (!text || !("speechSynthesis" in window)) {
+    restoreVoiceActivityState();
+    return;
+  }
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "ar-SA";
+  utterance.rate = 0.95;
+  utterance.pitch = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const arabicVoice = voices.find((voice) => voice.lang?.toLowerCase().startsWith("ar"));
+  if (arabicVoice) utterance.voice = arabicVoice;
+  utterance.onstart = () => setVoiceActivityState("speaking", "SFM يتكلم");
+  utterance.onend = () => restoreVoiceActivityState();
+  utterance.onerror = () => restoreVoiceActivityState();
+  window.speechSynthesis.cancel();
+  setVoiceActivityState("speaking", "SFM يتكلم");
+  window.speechSynthesis.speak(utterance);
+}
+
+function getLocalGreeting() {
+  const hour = new Date().getHours();
+  const honorificName = `يا سيدي ${USER_DISPLAY_NAME}`;
+  if (hour >= 5 && hour < 12) return `صباح الخير ${honorificName}، SFM مساعدك تحت أمرك. شنو تبي نسوي اليوم؟`;
+  if (hour >= 18 || hour < 5) return `مساء الخير ${honorificName}، SFM مساعدك تحت أمرك. شنو تبي نسوي اليوم؟`;
+  return `ماذا تريد اليوم ${honorificName}؟ SFM جاهز للتحليل.`;
+}
+
+function calculateFinalScore(item) {
+  const confidencePoints = clamp(Number(item.confidence || 0), 0, 100) * 0.31;
+  const agreementPoints = clamp(Number(item.timeframeConsensus?.agreementPct || 0), 0, 100) * 0.14;
+  const dataHealthPoints = clamp(Number(item.dataHealth?.score || 0), 0, 100) * 0.1;
+  const shariaPoints = {
+    compliant: 20,
+    doubtful: 8,
+    unknown: 4,
+    not_compliant: 0
+  }[item.shariaStatus] ?? 4;
+  const riskPoints = {
+    low: 15,
+    medium: 9,
+    high: 3
+  }[item.risk?.level] ?? 8;
+  const winRate = Number(item.backtest?.winRate);
+  const backtestPoints = Number.isFinite(winRate) ? clamp(winRate * 0.1, 0, 10) : 4;
+  const movePoints = clamp(Math.abs(Number(item.expectedMovePct || 0)) * 1.2, 0, 5);
+  const qualityPoints = clamp(Number(item.analysisQuality?.score || 0), 0, 100) * 0.07;
+  const riskRewardPoints = clamp(Number(item.riskReward || 0), 0, 3) * 2;
+  const conflictPenalty = item.timeframeConsensus?.conflict ? 8 : 0;
+  const lowDataPenalty = Number(item.dataHealth?.score || 100) < 55 ? 7 : 0;
+  const score = Math.round(clamp(confidencePoints + agreementPoints + dataHealthPoints + shariaPoints + riskPoints + backtestPoints + movePoints + qualityPoints + riskRewardPoints - conflictPenalty - lowDataPenalty, 0, 100));
+  const label = score >= 80 ? "قوي جداً" : score >= 70 ? "قوي" : score >= 55 ? "متوسط" : "ضعيف";
+
+  return { score, label };
+}
+
+function getRecommendationLookup(items) {
+  return new Map((items || []).map((item) => [item.symbol.toUpperCase(), item]));
+}
+
+function isTargetHit(action, currentPrice, expectedPrice) {
+  const current = Number(currentPrice);
+  const expected = Number(expectedPrice);
+  if (!Number.isFinite(current) || !Number.isFinite(expected)) return false;
+  if (action === "buy") return current >= expected;
+  if (action === "sell") return current <= expected;
+  return false;
+}
+
+function isStopHit(action, currentPrice, stopLoss) {
+  const current = Number(currentPrice);
+  const stop = Number(stopLoss);
+  if (!Number.isFinite(current) || !Number.isFinite(stop)) return false;
+  if (action === "buy") return current <= stop;
+  if (action === "sell") return current >= stop;
+  return false;
+}
+
+function getObservedReturnPct(action, entryPrice, currentPrice) {
+  const entry = Number(entryPrice);
+  const current = Number(currentPrice);
+  if (!Number.isFinite(entry) || !Number.isFinite(current) || entry <= 0) return 0;
+  const raw = ((current - entry) / entry) * 100;
+  return action === "sell" ? -raw : raw;
+}
+
+function renderHistoryReturn(entry) {
+  const value = getHistoryReturnPct(entry);
+  const isFresh = Number.isFinite(Number(entry.lastPrice));
+  const className = value >= 0 ? "profit" : "loss";
+  const suffix = !isFresh && entry.outcome === "pending" ? " · بانتظار تحديث السعر" : "";
+  return `<strong class="${className}">${formatPercent(value)}${suffix}</strong>`;
+}
+
+function getHistoryReturnPct(entry) {
+  const entryPrice = Number(entry.entryPrice ?? entry.currentPrice);
+  const lastPrice = Number(entry.lastPrice ?? entry.currentPrice);
+
+  if (entry.outcome === "target" || entry.targetHit) {
+    const target = Number(entry.target1 ?? entry.expectedPrice);
+    if (Number.isFinite(target)) return getObservedReturnPct(entry.action, entryPrice, target);
+  }
+
+  if (entry.outcome === "stop" || entry.stopHit) {
+    const stop = Number(entry.stopLoss);
+    if (Number.isFinite(stop)) return getObservedReturnPct(entry.action, entryPrice, stop);
+  }
+
+  return getObservedReturnPct(entry.action, entryPrice, lastPrice);
+}
+
+function pickBestObservedPrice(action, existing, currentPrice) {
+  const current = Number(currentPrice);
+  const previous = Number(existing);
+  if (!Number.isFinite(current)) return Number.isFinite(previous) ? previous : null;
+  if (!Number.isFinite(previous)) return current;
+  return action === "sell" ? Math.min(previous, current) : Math.max(previous, current);
+}
+
+function pickWorstObservedPrice(action, existing, currentPrice) {
+  const current = Number(currentPrice);
+  const previous = Number(existing);
+  if (!Number.isFinite(current)) return Number.isFinite(previous) ? previous : null;
+  if (!Number.isFinite(previous)) return current;
+  return action === "sell" ? Math.max(previous, current) : Math.min(previous, current);
+}
+
+function getHistoryOutcomeLabel(entry) {
+  if (entry.outcome === "target") return "وصل الهدف";
+  if (entry.outcome === "stop") return "ضرب وقف الخسارة";
+  return "تحت المتابعة";
+}
+
+function normalizeSymbol(value) {
+  const raw = String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9.^=-]/g, "")
+    .slice(0, 18);
+
+  return SYMBOL_ALIASES[raw] || raw;
+}
+
+function normalizeWatchlist(items) {
+  return [...new Set((items || []).map(normalizeSymbol).filter(Boolean))].slice(0, 30);
+}
+
+function simplifyUnavailableReason(reason = "") {
+  if (String(reason).includes("429")) {
+    return "مزود البيانات رفض الطلب مؤقتاً بسبب كثرة التحديثات. انتظر ثواني أو فعّل القائمة الخاصة لعدد أقل من الرموز.";
+  }
+
+  if (String(reason).includes("لا توجد بيانات")) {
+    return "الرمز غير متوفر عند مزود البيانات الحالي أو يحتاج صيغة مختلفة.";
+  }
+
+  return reason || "تعذر تحميل هذا الرمز حالياً.";
+}
+
+function loadStored(key, fallback) {
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (raw !== null) return JSON.parse(raw);
+
+    const legacyKey = key.startsWith(STORAGE_PREFIX)
+      ? `${LEGACY_STORAGE_PREFIX}${key.slice(STORAGE_PREFIX.length)}`
+      : null;
+
+    if (legacyKey) {
+      const legacyRaw = window.localStorage.getItem(legacyKey);
+      if (legacyRaw !== null) {
+        window.localStorage.setItem(key, legacyRaw);
+        return JSON.parse(legacyRaw);
+      }
+    }
+
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function saveStored(key, value) {
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    // التخزين المحلي قد يكون مغلقاً في بعض المتصفحات.
+  }
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function setActiveMarketButton() {
+  for (const button of marketTabs.querySelectorAll(".market-button")) {
+    button.classList.toggle("active", button.dataset.market === activeMarket);
+  }
+}
+
+function setActiveShariaFilterButton() {
+  for (const button of document.querySelectorAll(".sharia-filter-button")) {
+    button.classList.toggle("active", button.dataset.shariaFilter === activeShariaFilter);
+  }
+}
+
+function drawSparkline(canvas, values = [], action) {
+  const context = canvas.getContext("2d");
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+  canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+  context.scale(dpr, dpr);
+  context.clearRect(0, 0, rect.width, rect.height);
+
+  const data = values.filter(Number.isFinite);
+  if (data.length < 2) return;
+
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const pad = 10;
+  const width = rect.width - pad * 2;
+  const height = rect.height - pad * 2;
+
+  context.strokeStyle = "rgba(135, 154, 172, 0.16)";
+  context.lineWidth = 1;
+  for (let index = 1; index <= 3; index += 1) {
+    const y = pad + (height / 4) * index;
+    context.beginPath();
+    context.moveTo(pad, y);
+    context.lineTo(rect.width - pad, y);
+    context.stroke();
+  }
+
+  const lineColor = action === "sell" ? "#ff6b6b" : action === "hold" ? "#91a7ff" : "#65d98d";
+  context.strokeStyle = lineColor;
+  context.lineWidth = 2;
+  context.beginPath();
+  data.forEach((value, index) => {
+    const x = pad + (index / (data.length - 1)) * width;
+    const y = pad + height - ((value - min) / range) * height;
+    if (index === 0) context.moveTo(x, y);
+    else context.lineTo(x, y);
+  });
+  context.stroke();
+
+  context.fillStyle = lineColor;
+  const last = data.at(-1);
+  const x = pad + width;
+  const y = pad + height - ((last - min) / range) * height;
+  context.beginPath();
+  context.arc(x, y, 3.5, 0, Math.PI * 2);
+  context.fill();
+}
+
+function initMarketBackground() {
+  const canvas = document.querySelector("#market-bg");
+  const context = canvas.getContext("2d");
+  const rows = Array.from({ length: 8 }, (_, index) => ({
+    y: 80 + index * 92,
+    phase: Math.random() * 100,
+    speed: 0.35 + Math.random() * 0.45,
+    color: index % 3 === 0 ? "53, 194, 164" : index % 3 === 1 ? "255, 107, 107" : "90, 167, 255"
+  }));
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.floor(window.innerWidth * dpr);
+    canvas.height = Math.floor(window.innerHeight * dpr);
+    canvas.style.width = `${window.innerWidth}px`;
+    canvas.style.height = `${window.innerHeight}px`;
+    context.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function frame() {
+    context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+    drawGrid(context);
+
+    for (const row of rows) {
+      row.phase += row.speed;
+      drawMarketLine(context, row);
+      drawCandles(context, row);
+    }
+
+    window.requestAnimationFrame(frame);
+  }
+
+  window.addEventListener("resize", resize);
+  resize();
+  frame();
+}
+
+function drawGrid(context) {
+  context.strokeStyle = "rgba(135, 154, 172, 0.055)";
+  context.lineWidth = 1;
+
+  for (let x = 0; x < window.innerWidth; x += 72) {
+    context.beginPath();
+    context.moveTo(x, 0);
+    context.lineTo(x, window.innerHeight);
+    context.stroke();
+  }
+
+  for (let y = 0; y < window.innerHeight; y += 72) {
+    context.beginPath();
+    context.moveTo(0, y);
+    context.lineTo(window.innerWidth, y);
+    context.stroke();
+  }
+}
+
+function drawMarketLine(context, row) {
+  context.strokeStyle = `rgba(${row.color}, 0.22)`;
+  context.lineWidth = 1.5;
+  context.beginPath();
+
+  for (let x = -20; x <= window.innerWidth + 20; x += 18) {
+    const wave = Math.sin((x + row.phase * 3) * 0.012) * 18 + Math.cos((x - row.phase) * 0.027) * 9;
+    const y = (row.y + row.phase * 0.12 + wave) % (window.innerHeight + 120);
+    if (x === -20) context.moveTo(x, y);
+    else context.lineTo(x, y);
+  }
+
+  context.stroke();
+}
+
+function drawCandles(context, row) {
+  for (let x = ((row.phase * 7) % 90) - 90; x < window.innerWidth + 90; x += 90) {
+    const mid = (row.y + Math.sin((x + row.phase) * 0.02) * 20) % (window.innerHeight + 120);
+    const height = 18 + Math.abs(Math.sin((x + row.phase) * 0.04)) * 34;
+    const up = Math.sin((x + row.phase) * 0.03) > 0;
+    context.strokeStyle = up ? "rgba(101, 217, 141, 0.24)" : "rgba(255, 107, 107, 0.2)";
+    context.fillStyle = up ? "rgba(101, 217, 141, 0.12)" : "rgba(255, 107, 107, 0.1)";
+    context.beginPath();
+    context.moveTo(x, mid - height * 0.65);
+    context.lineTo(x, mid + height * 0.65);
+    context.stroke();
+    context.fillRect(x - 5, mid - height * 0.28, 10, height * 0.56);
+  }
+}
+
+function formatMoney(value, currency) {
+  if (value === null || value === undefined || value === "") {
+    return "--";
+  }
+
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    return "--";
+  }
+
+  const digits = Math.abs(number) < 1 ? 4 : 2;
+  return `${formatNumber(number, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits
+  })}${currency ? ` ${currency}` : ""}`;
+}
+
+function formatPercent(value) {
+  const number = Number(value || 0);
+  const prefix = number > 0 ? "+" : "";
+  return `${prefix}${formatNumber(number, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}%`;
+}
+
+function formatDateTime(value) {
+  return new Intl.DateTimeFormat(NUMBER_LOCALE, {
+    numberingSystem: "latn",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    day: "2-digit",
+    month: "2-digit"
+  }).format(new Date(value));
+}
+
+function normalizeDateString(value) {
+  const date = new Date(value || Date.now());
+  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+}
+
+function formatNumber(value, options = {}) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "--";
+  return number.toLocaleString(NUMBER_LOCALE, {
+    ...NUMBER_OPTIONS,
+    ...options
+  });
+}
+
+function formatCompactNumber(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "--";
+  return number.toLocaleString("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 1
+  });
+}
+
+async function fetchJson(url, options = {}) {
+  const retries = Number.isFinite(options.retries) ? options.retries : 0;
+  const retryDelayMs = Number.isFinite(options.retryDelayMs) ? options.retryDelayMs : 500;
+  let lastError = null;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    try {
+      const response = await fetch(url, { cache: "no-store" });
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+
+      if (!response.ok) {
+        throw new Error(data.error || `تعذر تحميل البيانات (${response.status})`);
+      }
+
+      return data;
+    } catch (error) {
+      lastError = error;
+      if (attempt < retries) {
+        await wait(retryDelayMs);
+      }
+    }
+  }
+
+  throw new Error(getFriendlyFetchError(lastError, options.fallbackMessage));
+}
+
+function getFriendlyFetchError(error, fallbackMessage = "تعذر الاتصال بالسيرفر. تأكد أن التطبيق يعمل ثم حاول مرة ثانية.") {
+  const message = error?.message || "";
+
+  if (!message || message === "Failed to fetch" || message.includes("NetworkError") || message.includes("Load failed")) {
+    return fallbackMessage;
+  }
+
+  if (message.includes("Unexpected token") || message.includes("JSON")) {
+    return "وصل رد غير مفهوم من السيرفر. حدث الصفحة وحاول مرة ثانية.";
+  }
+
+  return message;
+}
+
+function wait(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\"", "&quot;")
+    .replaceAll("'", "&#039;");
+}
+

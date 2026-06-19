@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>the-sfm trader</title>
+    <meta name="theme-color" content="#05090d" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="the-sfm trader" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
+    <link rel="icon" type="image/png" sizes="256x256" href="/the-sfm-trader-icon-256.png" />
+    <link rel="stylesheet" href="/styles.css?v=20260618-command-center" />
+  </head>
+  <body>
+    <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
+
+    <section id="intro-overlay" class="intro-overlay" aria-live="polite">
+      <div class="intro-scanline" aria-hidden="true"></div>
+      <div class="intro-card">
+        <div class="intro-copy">
+          <p class="eyebrow">the-sfm trader startup</p>
+          <h2 id="intro-greeting">أهلاً سيدي محمد</h2>
+          <p id="intro-message">مساعدك SFM جاهز للتحليل ومتابعة الأسهم.</p>
+          <div class="intro-status">
+            <span></span>
+            <strong>جاري فتح منصة التحليل</strong>
+          </div>
+          <button id="intro-skip" class="intro-skip" type="button">دخول سريع</button>
+        </div>
+        <div class="intro-agent-wrap" aria-hidden="true">
+          <div class="intro-agent">
+            <div class="agent-cap"></div>
+            <div class="agent-head">
+              <span class="agent-visor"></span>
+              <span class="agent-face-light"></span>
+            </div>
+            <div class="agent-neck"></div>
+            <div class="agent-body">
+              <span class="agent-badge">SFM</span>
+              <span class="agent-tie"></span>
+            </div>
+            <div class="agent-arm agent-arm-left"></div>
+            <div class="agent-arm agent-arm-right"></div>
+            <div class="agent-hand"></div>
+            <div class="agent-base"></div>
+          </div>
+          <div class="intro-rings">
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-lockup">
+          <p class="eyebrow">وكيل تحليل الأسواق</p>
+          <h1>the-sfm trader</h1>
+          <p class="brand-subtitle">powered by M.ALQ</p>
+        </div>
+        <div class="top-actions">
+          <div class="status-pill" aria-live="polite">
+            <span class="pulse"></span>
+            <span id="connection-status">جاري الاتصال</span>
+          </div>
+          <button id="notification-button" class="notification-button" type="button" aria-expanded="false" aria-controls="notification-panel">
+            <span>الإشعارات</span>
+            <strong id="notification-count">0</strong>
+          </button>
+          <button id="refresh-button" class="icon-button" title="تحديث الآن" aria-label="تحديث الآن">↻</button>
+        </div>
+      </header>
+
+      <aside id="notification-panel" class="notification-panel" hidden>
+        <div class="notification-panel-head">
+          <div>
+            <p class="eyebrow">SFM ALERTS</p>
+            <h2>مركز الإشعارات</h2>
+          </div>
+          <div class="notification-panel-actions">
+            <button id="notification-clear-button" class="text-button" type="button">مسح الكل</button>
+            <button id="notification-close-button" class="icon-button" type="button" aria-label="إغلاق الإشعارات">×</button>
+          </div>
+        </div>
+        <div id="notification-list" class="notification-list"></div>
+      </aside>
+
+      <section class="ticker-band" aria-label="شريط السوق">
+        <div id="ticker-tape" class="ticker-tape">
+          <span>the-sfm trader scan</span>
+          <span>FOREX</span>
+          <span>GCC</span>
+          <span>US MARKET</span>
+          <span>GLOBAL WATCHLIST</span>
+        </div>
+      </section>
+
+      <main>
+        <section class="market-band" aria-label="اختيار السوق">
+          <div class="section-head">
+            <div>
+              <h2>الأسواق</h2>
+              <p>اختر السوق، وسيعرض الوكيل فرص الشراء والبيع مع الثقة والسعر المتوقع والمدة.</p>
+            </div>
+            <div class="scan-meter">
+              <span>نبض السوق</span>
+              <strong id="market-pulse">--</strong>
+            </div>
+          </div>
+          <div id="market-tabs" class="market-tabs"></div>
+        </section>
+
+        <section id="command-center-section" class="command-center-band" aria-label="غرفة قيادة التحليل">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">SFM COMMAND CENTER</p>
+              <h2>غرفة قيادة السوق</h2>
+              <p id="command-center-brief">ملخص سريع لأقوى الفرص، المخاطر، والتنبيهات قبل الدخول على التفاصيل.</p>
+            </div>
+            <div class="scan-meter">
+              <span>وضع التحليل</span>
+              <strong id="command-center-mode">قيادة السوق</strong>
+            </div>
+          </div>
+          <div class="mode-row" aria-label="أوضاع التحليل">
+            <button class="analysis-mode-button active" type="button" data-analysis-mode="balanced">قيادة السوق</button>
+            <button class="analysis-mode-button" type="button" data-analysis-mode="scalp">مضاربة 5-15 دقيقة</button>
+            <button class="analysis-mode-button" type="button" data-analysis-mode="swing">استثمار شهري</button>
+            <button class="analysis-mode-button" type="button" data-analysis-mode="sharia">شرعي فقط</button>
+            <button class="analysis-mode-button" type="button" data-analysis-mode="safe">مخاطرة منخفضة</button>
+          </div>
+          <div id="command-center-grid" class="command-center-grid"></div>
+        </section>
+
+        <section class="market-hours-band" aria-label="أوقات الأسواق ونبض السوق">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">MARKET HOURS</p>
+              <h2>أوقات الأسواق ونبض السوق</h2>
+              <p>تابع حالة السوق الحالي، متى يفتح أو يصكر، وأوقات أهم الأسواق حسب توقيتها المحلي.</p>
+            </div>
+            <div class="session-clock-card">
+              <span>ساعة الجلسة</span>
+              <strong id="session-clock">--:--:--</strong>
+              <em id="session-zone">--</em>
+            </div>
+          </div>
+          <div class="session-summary">
+            <div>
+              <span>السوق الحالي</span>
+              <strong id="session-market-name">--</strong>
+            </div>
+            <div>
+              <span>الحالة</span>
+              <strong id="session-state-label">--</strong>
+            </div>
+            <div>
+              <span id="session-next-event">العد التنازلي</span>
+              <strong id="session-countdown">--</strong>
+            </div>
+          </div>
+          <div id="market-hours-grid" class="market-hours-grid"></div>
+        </section>
+
+        <section class="voice-band" aria-label="محادثة SFM الصوتية">
+          <div class="voice-panel">
+            <div>
+              <p class="eyebrow">SFM VOICE</p>
+              <h2>المحادثة الصوتية</h2>
+              <p id="voice-status">جاهز للتشغيل</p>
+            </div>
+            <div class="voice-controls">
+              <div id="voice-activity" class="voice-activity is-idle" aria-live="polite" aria-label="حالة المحادثة الصوتية">
+                <span class="voice-orb" aria-hidden="true"></span>
+                <span class="voice-bars" aria-hidden="true">
+                  <i></i>
+                  <i></i>
+                  <i></i>
+                  <i></i>
+                </span>
+                <strong id="voice-activity-text">جاهز</strong>
+              </div>
+              <button id="voice-start-button" class="voice-button" type="button">
+                ابدأ المحادثة الصوتية
+              </button>
+            </div>
+          </div>
+          <div class="voice-grid">
+            <div>
+              <span>سمعت</span>
+              <strong id="voice-transcript">--</strong>
+            </div>
+            <div>
+              <span>رد SFM</span>
+              <strong id="voice-reply">--</strong>
+            </div>
+            <div>
+              <span>المراقبة الصوتية</span>
+              <strong id="voice-monitor">لا توجد أسهم مراقبة</strong>
+              <p id="voice-monitor-note" class="voice-note">لم تضف رمزاً للمراقبة الصوتية بعد.</p>
+              <button id="voice-monitor-best-button" class="mini-action-button" type="button">راقب أفضل فرصة</button>
+            </div>
+            <div>
+              <span>العقل المحلي</span>
+              <strong id="ollama-status">فحص Ollama</strong>
+            </div>
+          </div>
+          <form id="voice-text-form" class="voice-text-form">
+            <input id="voice-text-command" type="text" placeholder="إذا ظهر خطأ network اكتب الأمر هنا: شنو أشتري اليوم؟" autocomplete="off" />
+            <button type="submit">إرسال الأمر</button>
+          </form>
+        </section>
+
+        <section id="scalping-section" class="scalping-band" aria-label="المضاربة">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">5-15 MIN SCALP</p>
+              <h2>المضاربة</h2>
+              <p>اختر سهم أو اكتب رمزه، وسيعطيك SFM قرار مضاربة سريع بين 5 إلى 15 دقيقة.</p>
+            </div>
+            <div class="scan-meter">
+              <span>حالة المضاربة</span>
+              <strong id="scalp-status">جاهز</strong>
+            </div>
+          </div>
+          <form id="scalp-form" class="scalp-form">
+            <input id="scalp-symbol" type="text" placeholder="مثال: AAPL أو MSFT أو TSLA" autocomplete="off" />
+            <button id="scalp-submit" type="submit">حلل المضاربة</button>
+          </form>
+          <div id="scalp-quick-list" class="scalp-quick-list" aria-label="اختيارات سريعة للمضاربة"></div>
+          <div id="scalp-result" class="scalp-result">
+            <div class="scalp-empty">اختر سهم لعرض توصية مضاربة فورية.</div>
+          </div>
+        </section>
+
+        <section class="summary-band">
+          <div class="market-current">
+            <p class="eyebrow">السوق الحالي</p>
+            <h2 id="market-title">السوق الأمريكي</h2>
+            <p id="market-note"></p>
+          </div>
+          <div class="summary-grid">
+            <div>
+              <span>آخر تحديث</span>
+              <strong id="updated-at">--</strong>
+            </div>
+            <div>
+              <span>عدد الفرص</span>
+              <strong id="opportunity-count">--</strong>
+            </div>
+            <div>
+              <span>شراء</span>
+              <strong id="buy-count">--</strong>
+            </div>
+            <div>
+              <span>بيع</span>
+              <strong id="sell-count">--</strong>
+            </div>
+            <div>
+              <span>متوسط الثقة</span>
+              <strong id="avg-confidence">--</strong>
+            </div>
+            <div>
+              <span>مزود البيانات</span>
+              <strong id="data-provider">--</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="insight-band" aria-label="ملخص الوكيل">
+          <div>
+            <span>أفضل فرصة شراء</span>
+            <strong id="best-buy">--</strong>
+          </div>
+          <div>
+            <span>أقوى إشارة بيع</span>
+            <strong id="best-sell">--</strong>
+          </div>
+          <div>
+            <span>أعلى حركة متوقعة</span>
+            <strong id="largest-move">--</strong>
+          </div>
+        </section>
+
+        <section id="radar-section" class="radar-band">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">SFM RADAR V2</p>
+              <h2>رادار الفرص والقرارات</h2>
+              <p>يرتب أقوى الفرص حسب جودة التحليل، توافق الفريمات، المخاطرة، حجم التداول، والهدف.</p>
+            </div>
+            <div class="scan-meter">
+              <span>جودة السوق</span>
+              <strong id="radar-quality">--</strong>
+            </div>
+          </div>
+          <div id="radar-grid" class="radar-grid"></div>
+          <div id="radar-monthly-grid" class="radar-monthly-grid"></div>
+        </section>
+
+        <section id="smart-alerts-section" class="smart-alerts-band">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">تنبيهات ذكية</p>
+              <h2>شراء + مطابق للشريعة + ثقة عالية</h2>
+              <p>تظهر هنا الإشارات التي تجمع بين إشارة شراء، تصنيف شرعي، وثقة 70% أو أكثر.</p>
+            </div>
+            <div class="scan-meter">
+              <span>تنبيهات</span>
+              <strong id="smart-alert-count">--</strong>
+            </div>
+          </div>
+          <div id="smart-alerts-list" class="smart-alerts-list"></div>
+        </section>
+
+        <section id="golden-section" class="golden-band">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">فلتر الفرص الذهبية</p>
+              <h2>أقوى فرص شراء شرعية منخفضة المخاطر</h2>
+              <p>يرشح النظام الأسهم التي تجمع شراء، مطابقة للشريعة، مخاطرة مقبولة، ونتيجة اختبار خلفي جيدة.</p>
+            </div>
+            <div class="scan-meter">
+              <span>فرص ذهبية</span>
+              <strong id="golden-count">--</strong>
+            </div>
+          </div>
+          <div id="golden-grid" class="golden-grid"></div>
+        </section>
+
+        <section id="watchlist-section" class="watchlist-band">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">مراقبة خاصة</p>
+              <h2>قائمة مراقبة الأسهم</h2>
+              <p>أضف رموزك المفضلة وخل الوكيل يركز عليها فقط وقت الحاجة.</p>
+            </div>
+            <label class="toggle-line">
+              <input id="watchlist-only-toggle" type="checkbox" />
+              <span>راقب قائمتي فقط</span>
+            </label>
+          </div>
+          <form id="watchlist-form" class="inline-form">
+            <input id="watchlist-symbol" type="text" inputmode="latin" placeholder="مثال: AMD أو NVDA" autocomplete="off" />
+            <button type="submit">إضافة</button>
+          </form>
+          <div id="watchlist-chips" class="chip-row"></div>
+          <div id="watchlist-cards" class="mini-grid"></div>
+        </section>
+
+        <section id="portfolio-section" class="portfolio-band">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">محفظتي</p>
+              <h2>متابعة الربح والخسارة</h2>
+              <p>أدخل رمز السهم والكمية وسعر الشراء، والواجهة تحسب لك الأداء حسب السعر الحالي.</p>
+            </div>
+          </div>
+          <form id="portfolio-form" class="portfolio-form">
+            <input id="portfolio-symbol" type="text" inputmode="latin" placeholder="رمز السهم" autocomplete="off" />
+            <input id="portfolio-qty" type="number" min="0" step="0.01" placeholder="الكمية" />
+            <input id="portfolio-price" type="number" min="0" step="0.01" placeholder="سعر الشراء" />
+            <button type="submit">إضافة للمحفظة</button>
+          </form>
+          <div id="portfolio-list" class="portfolio-list"></div>
+        </section>
+
+        <section id="us-dashboard-section" class="us-dashboard-band">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">لوحة أمريكية متقدمة</p>
+              <h2>ملخص القرار للسوق الأمريكي</h2>
+              <p>تجمع توصيات اليوم، الأسهم الشرعية فقط، أعلى مخاطرة، وأفضل نتيجة اختبار خلفي.</p>
+            </div>
+            <div class="scan-meter">
+              <span>Backtest</span>
+              <strong id="us-backtest-score">--</strong>
+            </div>
+          </div>
+          <div id="us-dashboard-grid" class="us-dashboard-grid"></div>
+        </section>
+
+        <section id="us-outlook-section" class="us-outlook-band">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">خاص بالسوق الأمريكي</p>
+              <h2>أسهم مرشحة للصعود خلال 1 إلى 3 أشهر</h2>
+              <p>كل خانة تعرض هدف السعر المتوقع والمدة: شهر، شهرين، أو 3 شهور.</p>
+            </div>
+            <div class="scan-meter">
+              <span>فرص الصعود</span>
+              <strong id="us-outlook-count">--</strong>
+            </div>
+          </div>
+          <div id="us-outlook-grid" class="us-outlook-grid"></div>
+        </section>
+
+        <section class="recommendations-band">
+          <div class="section-head recommendations-head">
+            <div>
+              <h2>التوصيات</h2>
+              <p id="disclaimer">هذه تحليلات آلية تعليمية وليست نصيحة مالية.</p>
+            </div>
+            <div class="recommendation-card-actions" aria-label="فتح وغلق كروت الأسهم">
+              <button id="collapse-all-cards" type="button">غلق الكل</button>
+              <button id="expand-all-cards" type="button">فتح الكل</button>
+              <div id="loading-indicator" class="loading-indicator">تحميل</div>
+            </div>
+          </div>
+
+          <div class="mode-row recommendations-mode-row" aria-label="أوضاع عرض التوصيات">
+            <button class="analysis-mode-button active" type="button" data-analysis-mode="balanced">قيادة السوق</button>
+            <button class="analysis-mode-button" type="button" data-analysis-mode="scalp">مضاربة</button>
+            <button class="analysis-mode-button" type="button" data-analysis-mode="swing">استثمار شهري</button>
+            <button class="analysis-mode-button" type="button" data-analysis-mode="sharia">شرعي فقط</button>
+            <button class="analysis-mode-button" type="button" data-analysis-mode="safe">مخاطرة منخفضة</button>
+          </div>
+
+          <div class="tool-row" aria-label="أدوات التوصيات">
+            <div class="segmented" role="tablist" aria-label="فلترة الإشارات">
+              <button class="filter-button active" type="button" data-filter="all">الكل</button>
+              <button class="filter-button" type="button" data-filter="buy">شراء</button>
+              <button class="filter-button" type="button" data-filter="sell">بيع</button>
+              <button class="filter-button" type="button" data-filter="hold">انتظار</button>
+            </div>
+            <div class="segmented sharia-segmented" role="tablist" aria-label="فلترة شرعية">
+              <button class="sharia-filter-button active" type="button" data-sharia-filter="all">كل التصنيفات</button>
+              <button class="sharia-filter-button" type="button" data-sharia-filter="compliant">مطابق</button>
+              <button class="sharia-filter-button" type="button" data-sharia-filter="not_compliant">غير مطابق</button>
+              <button class="sharia-filter-button" type="button" data-sharia-filter="doubtful">مختلف عليه</button>
+            </div>
+            <label class="search-box">
+              <span>بحث</span>
+              <input id="search-input" type="search" placeholder="رمز أو اسم السهم" autocomplete="off" />
+            </label>
+            <label class="sort-box">
+              <span>فرز</span>
+              <select id="sort-select">
+                <option value="priority">الأولوية</option>
+                <option value="confidence">الثقة</option>
+                <option value="score">السكور</option>
+                <option value="move">الحركة المتوقعة</option>
+                <option value="price">السعر</option>
+              </select>
+            </label>
+          </div>
+
+          <div id="cards" class="cards" aria-live="polite"></div>
+          <div id="unavailable" class="unavailable"></div>
+        </section>
+
+        <section id="history-section" class="history-band">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">سجل التوصيات</p>
+              <h2>آخر إشارات الوكيل</h2>
+              <p>يحفظ آخر التوصيات مع متابعة هل وصل السعر إلى الهدف لاحقاً.</p>
+            </div>
+            <button id="clear-history-button" class="text-button" type="button">مسح السجل</button>
+          </div>
+          <div id="accuracy-grid" class="accuracy-grid" aria-label="تقييم دقة التوصيات"></div>
+          <div id="history-list" class="history-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <template id="card-template">
+      <article class="signal-card">
+        <div class="card-top">
+          <div>
+            <h3 class="asset-name"></h3>
+            <p class="asset-symbol"></p>
+          </div>
+          <div class="action-stack">
+            <span class="action-badge"></span>
+            <span class="sharia-badge"></span>
+            <button class="card-toggle" type="button" aria-expanded="false">فتح التفاصيل</button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <canvas class="sparkline" aria-hidden="true"></canvas>
+
+          <div class="price-row">
+            <div>
+              <span>السعر الحالي</span>
+              <strong class="current-price"></strong>
+            </div>
+            <div>
+              <span>السعر المتوقع</span>
+              <strong class="expected-price"></strong>
+            </div>
+          </div>
+
+          <div class="trade-plan-row">
+            <div>
+              <span>هدف 1</span>
+              <strong class="target-one"></strong>
+            </div>
+            <div>
+              <span>هدف 2</span>
+              <strong class="target-two"></strong>
+            </div>
+            <div>
+              <span>وقف الخسارة</span>
+              <strong class="stop-loss"></strong>
+            </div>
+            <div>
+              <span>R/R</span>
+              <strong class="risk-reward"></strong>
+            </div>
+          </div>
+
+          <div class="confidence-wrap">
+            <div>
+              <span>نسبة الثقة</span>
+              <strong class="confidence"></strong>
+            </div>
+            <div class="confidence-track"><span class="confidence-fill"></span></div>
+          </div>
+
+          <div class="indicator-grid">
+            <div><span>RSI</span><strong class="rsi"></strong></div>
+            <div><span>زخم</span><strong class="momentum"></strong></div>
+            <div><span>تذبذب</span><strong class="volatility"></strong></div>
+            <div><span>المخاطرة</span><strong class="risk-label"></strong></div>
+            <div><span>Backtest</span><strong class="backtest-label"></strong></div>
+            <div><span>صحة البيانات</span><strong class="data-health-label"></strong></div>
+            <div><span>Score</span><strong class="final-score"></strong></div>
+          </div>
+
+          <div class="timeframe-grid" aria-label="تحليل الفريمات"></div>
+
+          <div class="meta-row">
+            <span class="duration"></span>
+            <span class="expected-move"></span>
+          </div>
+          <ul class="reasons"></ul>
+        </div>
+      </article>
+    </template>
+
+    <script src="/app.js?v=20260620-arabic-fix" type="module"></script>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "appId": "com.malq.thesfmtrader",
+  "appName": "the-sfm trader",
+  "webDir": "public",
+  "server": {
+    "url": "http://192.168.255.180:4173",
+    "cleartext": true
+  },
+  "ios": {
+    "path": "ios"
+  }
+}

@@ -1,0 +1,56 @@
+name: iOS Simulator Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      server_url:
+        description: "the-sfm trader server URL used by the iOS shell"
+        required: true
+        default: "http://192.168.255.180:4173"
+
+jobs:
+  build-simulator:
+    name: Build iOS simulator app
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set iOS server URL
+        run: node tools/set-ios-server-url.mjs "${{ inputs.server_url }}"
+
+      - name: Sync iOS project
+        run: npx cap sync ios
+
+      - name: Show Xcode project
+        run: xcodebuild -list -project ios/App/App.xcodeproj
+
+      - name: Build without code signing
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Upload simulator build logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: the-sfm-trader-ios-simulator-check
+          path: |
+            ~/Library/Developer/Xcode/DerivedData/**/Logs/Build/*.xcactivitylog
+          if-no-files-found: ignore

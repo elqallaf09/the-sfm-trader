@@ -1,0 +1,28 @@
+{
+  "name": "the-sfm trader",
+  "short_name": "SFM Trader",
+  "description": "تطبيق the-sfm trader الخاص لتحليل ومتابعة الأسواق.",
+  "lang": "ar-KW",
+  "dir": "rtl",
+  "start_url": "/?app=ios",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#05090d",
+  "theme_color": "#05090d",
+  "categories": ["finance", "productivity"],
+  "icons": [
+    {
+      "src": "/the-sfm-trader-icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/the-sfm-trader-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
