@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { analyzeSymbol } from "./src/analysis.mjs";
 import { getConfiguredProvider } from "./src/dataProviders.mjs";
+import { applyEconomicNewsOverlayToRecommendations, getEconomicCalendarForMarket } from "./src/economicCalendar.mjs";
 import { getMarketSummaries, markets } from "./src/markets.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -16,7 +17,11 @@ const notificationLogPath = path.join(__dirname, "the-sfm-trader-notifications.j
 loadEnvFile(path.join(__dirname, ".env"));
 const preferredPort = Number(process.env.PORT || 4173);
 const cache = new Map();
-const CACHE_TTL_MS = 15_000;
+const CACHE_TTL_MS = 90_000;
+const STALE_CACHE_TTL_MS = 10 * 60_000;
+const FIRST_RESPONSE_BUDGET_MS = Number(process.env.FIRST_RESPONSE_BUDGET_MS || 5_000);
+const UI_RECOMMENDATION_REFRESH_MS = Number(process.env.UI_RECOMMENDATION_REFRESH_MS || 12_000);
+const ANALYSIS_CONCURRENCY = Number(process.env.ANALYSIS_CONCURRENCY || 4);
 const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL || "http://localhost:11434").replace(/\/$/, "");
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3.2:3b";
 const OLLAMA_ENABLED = String(process.env.OLLAMA_ENABLED || "true").toLowerCase() !== "false";
@@ -176,6 +181,13 @@ const server = http.createServer(async (request, response) => {
       return await handleRecommendations(response, marketId);
     }
 
+    if (url.pathname === "/api/economic-calendar") {
+      const marketId = url.searchParams.get("market") || "us";
+      const market = markets[marketId];
+      const symbols = market?.symbols?.map((asset) => asset.symbol) || [];
+      return sendJson(response, await getEconomicCalendarForMarket(marketId, symbols));
+    }
+
     if (url.pathname === "/api/watchlist") {
       const symbols = (url.searchParams.get("symbols") || "")
         .split(",")
@@ -244,17 +256,43 @@ async function handleRecommendations(response, marketId) {
   const cached = cache.get(cacheKey);
 
   if (cached && Date.now() - cached.createdAt < CACHE_TTL_MS) {
-    return sendJson(response, { ...cached.payload, cached: true });
+    return sendJson(response, { ...finalizeRecommendationsPayloadForSession(cached.payload, marketId), cached: true });
   }
 
-  const settled = await settleAnalyzeAssets(market.symbols);
-  const recommendations = [];
+  if (cached && Date.now() - cached.createdAt < STALE_CACHE_TTL_MS) {
+    refreshMarketCache(cacheKey, marketId, market);
+    return sendJson(response, { ...finalizeRecommendationsPayloadForSession(cached.payload, marketId), cached: true, stale: true, refreshing: true });
+  }
+
+  const economicCalendar = await getEconomicCalendarForMarket(marketId, market.symbols.map((asset) => asset.symbol));
+  const job = createAnalyzeAssetsJob(market.symbols, getAnalysisConcurrency(market.symbols.length), { fast: true });
+  const completed = await waitForPromise(job.done, FIRST_RESPONSE_BUDGET_MS);
+  const settled = completed ? await job.done : job.results.slice();
+  const payload = buildRecommendationsPayload(marketId, market, settled, {
+    partial: !completed,
+    analyzedCount: job.completed,
+    economicCalendar
+  });
+
+  if (completed) {
+    cache.set(cacheKey, { createdAt: Date.now(), payload });
+  } else {
+    cache.set(cacheKey, { createdAt: Date.now(), payload });
+    completeMarketJobInBackground(cacheKey, marketId, market, job, economicCalendar);
+  }
+
+  return sendJson(response, finalizeRecommendationsPayloadForSession(payload, marketId));
+}
+
+function buildRecommendationsPayload(marketId, market, settled = [], options = {}) {
+  const rawRecommendations = [];
   const unavailable = [];
 
   settled.forEach((result, index) => {
+    if (!result) return;
     const asset = market.symbols[index];
     if (result.status === "fulfilled") {
-      recommendations.push(result.value);
+      rawRecommendations.push(result.value);
     } else {
       unavailable.push({
         symbol: asset.symbol,
@@ -264,12 +302,15 @@ async function handleRecommendations(response, marketId) {
     }
   });
 
+  const economicCalendar = options.economicCalendar || null;
+  const recommendations = applyEconomicNewsOverlayToRecommendations(rawRecommendations, marketId, economicCalendar);
+
   recommendations.sort((a, b) => {
     const priority = { buy: 0, sell: 1, hold: 2 };
     return priority[a.action] - priority[b.action] || b.confidence - a.confidence;
   });
 
-  const payload = {
+  return {
     market: {
       id: marketId,
       label: market.label,
@@ -281,7 +322,11 @@ async function handleRecommendations(response, marketId) {
     opportunityRadar: buildOpportunityRadar(recommendations),
     smartAlerts: buildSmartAlerts(recommendations),
     backtestSummary: buildBacktestSummary(recommendations),
+    economicCalendar,
     unavailable,
+    partial: Boolean(options.partial),
+    analyzedCount: Number(options.analyzedCount || recommendations.length + unavailable.length),
+    pendingCount: Math.max(0, market.symbols.length - Number(options.analyzedCount || recommendations.length + unavailable.length)),
     generatedAt: new Date().toISOString(),
     dataProvider: {
       active: getConfiguredProvider(),
@@ -289,21 +334,167 @@ async function handleRecommendations(response, marketId) {
       fallback: "yahoo"
     },
     refreshPolicy: {
-      uiRefreshMs: 1000,
+      uiRefreshMs: UI_RECOMMENDATION_REFRESH_MS,
       dataCacheMs: CACHE_TTL_MS,
-      note: "الواجهة تحدث كل ثانية، أما تغير السعر الحقيقي فيعتمد على مزود البيانات والسوق."
+      staleCacheMs: STALE_CACHE_TTL_MS,
+      firstResponseBudgetMs: FIRST_RESPONSE_BUDGET_MS,
+      note: "الواجهة تعرض أول نتيجة سريعة ثم يكمل السيرفر التحليل بالخلفية."
     },
     disclaimer: "ليست نصيحة مالية. النموذج يعتمد على مؤشرات فنية بسيطة وبيانات مجانية قد تكون متأخرة أو ناقصة."
   };
+}
 
-  cache.set(cacheKey, { createdAt: Date.now(), payload });
-  return sendJson(response, payload);
+function finalizeRecommendationsPayloadForSession(payload, marketId) {
+  const session = getExecutionSessionState(marketId);
+  if (!session) return payload;
+
+  const closed = session.isOpen === false;
+  const recommendations = closed
+    ? (payload.recommendations || []).map((item) => applyClosedMarketGuard(item, session))
+    : payload.recommendations || [];
+  const note = closed
+    ? `${payload.market?.note || ""} السوق مغلق الآن؛ الإشارات المعروضة للمراقبة وليست أوامر دخول فورية.`
+    : payload.market?.note;
+  const disclaimer = closed
+    ? `${payload.disclaimer || ""} وقت إغلاق السوق لا تنفذ شراء أو بيع حتى يعود التداول وتظهر أسعار حية.`
+    : payload.disclaimer;
+
+  return {
+    ...payload,
+    market: {
+      ...(payload.market || {}),
+      session,
+      note
+    },
+    recommendations,
+    opportunityRadar: buildOpportunityRadar(recommendations),
+    smartAlerts: buildSmartAlerts(recommendations),
+    backtestSummary: buildBacktestSummary(recommendations),
+    disclaimer
+  };
+}
+
+function applyClosedMarketGuard(item, session) {
+  const reasons = Array.isArray(item.reasons) ? item.reasons : [];
+  const nextOpen = session.openAt ? new Date(session.openAt).toLocaleString("ar-KW-u-nu-latn", {
+    timeZone: session.timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    weekday: "long",
+    day: "2-digit",
+    month: "2-digit"
+  }) : "";
+
+  return {
+    ...item,
+    setupAction: item.action,
+    setupActionLabel: item.actionLabel,
+    action: "hold",
+    actionLabel: "انتظار",
+    confidence: Math.min(Number(item.confidence) || 0, 62),
+    duration: session.openAt ? `مراقبة حتى افتتاح السوق: ${nextOpen} بتوقيت ${session.label}` : "مراقبة حتى افتتاح السوق",
+    marketClosed: true,
+    marketSession: session,
+    reasons: [
+      `السوق مغلق الآن؛ لا توجد توصية دخول فورية قبل عودة التداول.`,
+      ...reasons.filter(Boolean)
+    ].slice(0, 6),
+    decision: item.decision
+      ? {
+          ...item.decision,
+          badge: "انتظار",
+          summary: "السوق مغلق الآن؛ راقب الإشارة عند الافتتاح ولا تدخل قبل ظهور أسعار حية."
+        }
+      : item.decision
+  };
+}
+
+function getExecutionSessionState(marketId, now = new Date()) {
+  const config = getExecutionSessionConfig(marketId);
+  if (!config) return null;
+
+  if (config.type === "always") {
+    return {
+      isOpen: true,
+      type: config.type,
+      label: config.label,
+      timeZone: config.timeZone,
+      statusLabel: "السوق مفتوح",
+      eventLabel: "مفتوح دائماً",
+      countdownMs: 0
+    };
+  }
+
+  const state = getVoiceSessionState(config, now);
+  const eventDate = state.isOpen ? state.closeAt : state.openAt;
+  return {
+    isOpen: state.isOpen,
+    type: config.type,
+    label: config.label,
+    timeZone: config.timeZone,
+    statusLabel: state.isOpen ? "السوق مفتوح" : "السوق مغلق",
+    eventLabel: state.isOpen ? "يغلق بعد" : "يفتح بعد",
+    countdownMs: Math.max(0, eventDate - now),
+    openAt: state.openAt ? state.openAt.toISOString() : null,
+    closeAt: state.closeAt ? state.closeAt.toISOString() : null
+  };
+}
+
+function getExecutionSessionConfig(marketId) {
+  if (voiceSessionKnowledge[marketId]) return voiceSessionKnowledge[marketId];
+
+  const aliases = {
+    ai: "us",
+    tech: "us",
+    dividends: "us",
+    healthcare: "healthcare",
+    commodities: "commodities",
+    food: "commodities",
+    crypto: "crypto"
+  };
+  const alias = aliases[marketId];
+  return alias ? voiceSessionKnowledge[alias] : null;
+}
+
+function refreshMarketCache(cacheKey, marketId, market) {
+  const refreshKey = `${cacheKey}:refreshing`;
+  if (cache.get(refreshKey)) return;
+
+  cache.set(refreshKey, { createdAt: Date.now(), payload: true });
+  const job = createAnalyzeAssetsJob(market.symbols, getAnalysisConcurrency(market.symbols.length), { fast: true });
+  Promise.all([
+    job.done,
+    getEconomicCalendarForMarket(marketId, market.symbols.map((asset) => asset.symbol))
+  ]).then(([settled, economicCalendar]) => {
+    const payload = buildRecommendationsPayload(marketId, market, settled, { economicCalendar });
+    cache.set(cacheKey, { createdAt: Date.now(), payload });
+  }).catch(() => {
+    // الخلفية اختيارية؛ إذا فشلت يبقى الكاش القديم متاحاً للمستخدم.
+  }).finally(() => {
+    cache.delete(refreshKey);
+  });
+}
+
+function completeMarketJobInBackground(cacheKey, marketId, market, job, economicCalendar) {
+  const refreshKey = `${cacheKey}:completing`;
+  if (cache.get(refreshKey)) return;
+
+  cache.set(refreshKey, { createdAt: Date.now(), payload: true });
+  job.done.then((settled) => {
+    const payload = buildRecommendationsPayload(marketId, market, settled, { economicCalendar });
+    cache.set(cacheKey, { createdAt: Date.now(), payload });
+  }).catch(() => {
+    // Keep the first fast response if the background completion fails.
+  }).finally(() => {
+    cache.delete(refreshKey);
+  });
 }
 
 async function handleWatchlist(response, symbols) {
   const uniqueSymbols = [...new Set(symbols)];
 
   if (!uniqueSymbols.length) {
+    const economicCalendar = await getEconomicCalendarForMarket("watchlist", []);
     return sendJson(response, {
       market: {
         id: "watchlist",
@@ -315,6 +506,7 @@ async function handleWatchlist(response, symbols) {
       recommendations: [],
       smartAlerts: [],
       backtestSummary: buildBacktestSummary([]),
+      economicCalendar,
       unavailable: [],
       generatedAt: new Date().toISOString(),
       dataProvider: {
@@ -333,15 +525,41 @@ async function handleWatchlist(response, symbols) {
     return sendJson(response, { ...cached.payload, cached: true });
   }
 
+  if (cached && Date.now() - cached.createdAt < STALE_CACHE_TTL_MS) {
+    refreshWatchlistCache(cacheKey, uniqueSymbols);
+    return sendJson(response, { ...cached.payload, cached: true, stale: true, refreshing: true });
+  }
+
   const assets = uniqueSymbols.map(resolveAsset);
-  const settled = await settleAnalyzeAssets(assets);
-  const recommendations = [];
+  const economicCalendar = await getEconomicCalendarForMarket("watchlist", assets.map((asset) => asset.symbol));
+  const job = createAnalyzeAssetsJob(assets, getAnalysisConcurrency(assets.length), { fast: true });
+  const completed = await waitForPromise(job.done, FIRST_RESPONSE_BUDGET_MS);
+  const settled = completed ? await job.done : job.results.slice();
+  const payload = buildWatchlistPayload(assets, settled, {
+    partial: !completed,
+    analyzedCount: job.completed,
+    economicCalendar
+  });
+
+  if (completed) {
+    cache.set(cacheKey, { createdAt: Date.now(), payload });
+  } else {
+    cache.set(cacheKey, { createdAt: Date.now(), payload });
+    completeWatchlistJobInBackground(cacheKey, assets, job, economicCalendar);
+  }
+
+  return sendJson(response, payload);
+}
+
+function buildWatchlistPayload(assets, settled = [], options = {}) {
+  const rawRecommendations = [];
   const unavailable = [];
 
   settled.forEach((result, index) => {
+    if (!result) return;
     const asset = assets[index];
     if (result.status === "fulfilled") {
-      recommendations.push(result.value);
+      rawRecommendations.push(result.value);
     } else {
       unavailable.push({
         symbol: asset.symbol,
@@ -351,9 +569,12 @@ async function handleWatchlist(response, symbols) {
     }
   });
 
+  const economicCalendar = options.economicCalendar || null;
+  const recommendations = applyEconomicNewsOverlayToRecommendations(rawRecommendations, "watchlist", economicCalendar);
+
   recommendations.sort((a, b) => b.confidence - a.confidence || Math.abs(b.expectedMovePct) - Math.abs(a.expectedMovePct));
 
-  const payload = {
+  return {
     market: {
       id: "watchlist",
       label: "Watchlist",
@@ -365,7 +586,11 @@ async function handleWatchlist(response, symbols) {
     opportunityRadar: buildOpportunityRadar(recommendations),
     smartAlerts: buildSmartAlerts(recommendations),
     backtestSummary: buildBacktestSummary(recommendations),
+    economicCalendar,
     unavailable,
+    partial: Boolean(options.partial),
+    analyzedCount: Number(options.analyzedCount || recommendations.length + unavailable.length),
+    pendingCount: Math.max(0, assets.length - Number(options.analyzedCount || recommendations.length + unavailable.length)),
     generatedAt: new Date().toISOString(),
     dataProvider: {
       active: getConfiguredProvider(),
@@ -374,9 +599,42 @@ async function handleWatchlist(response, symbols) {
     },
     disclaimer: "ليست نصيحة مالية. هذه مراقبة مخصصة للرموز التي أضفتها."
   };
+}
 
-  cache.set(cacheKey, { createdAt: Date.now(), payload });
-  return sendJson(response, payload);
+function refreshWatchlistCache(cacheKey, symbols) {
+  const refreshKey = `${cacheKey}:refreshing`;
+  if (cache.get(refreshKey)) return;
+
+  const assets = symbols.map(resolveAsset);
+  cache.set(refreshKey, { createdAt: Date.now(), payload: true });
+  const job = createAnalyzeAssetsJob(assets, getAnalysisConcurrency(assets.length), { fast: true });
+  Promise.all([
+    job.done,
+    getEconomicCalendarForMarket("watchlist", assets.map((asset) => asset.symbol))
+  ]).then(([settled, economicCalendar]) => {
+    cache.set(cacheKey, { createdAt: Date.now(), payload: buildWatchlistPayload(assets, settled, { economicCalendar }) });
+  }).catch(() => {
+    // تحديث الخلفية اختياري.
+  }).finally(() => {
+    cache.delete(refreshKey);
+  });
+}
+
+function completeWatchlistJobInBackground(cacheKey, assets, job, economicCalendar) {
+  const refreshKey = `${cacheKey}:completing`;
+  if (cache.get(refreshKey)) return;
+
+  cache.set(refreshKey, { createdAt: Date.now(), payload: true });
+  job.done.then((settled) => {
+    cache.set(cacheKey, {
+      createdAt: Date.now(),
+      payload: buildWatchlistPayload(assets, settled, { economicCalendar })
+    });
+  }).catch(() => {
+    // Keep the first fast response if the background completion fails.
+  }).finally(() => {
+    cache.delete(refreshKey);
+  });
 }
 
 async function handleFollowedTrades(request, response) {
@@ -411,18 +669,29 @@ async function writeSharedTradeState(state) {
 
 function normalizeSharedTradeState(payload = {}) {
   const entries = normalizeSharedTradeEntries(payload.followedEntries || payload.entries || []);
+  const removedKeys = uniqueStrings(payload.removedFollowedTradeKeys || payload.removedKeys || [], 240);
+  const removedSet = new Set(removedKeys);
   const keys = uniqueStrings([
     ...(payload.followedTradeKeys || payload.keys || []),
     ...entries.map((entry) => entry.key)
-  ], 120);
-  const alerts = uniqueStrings(payload.followedTradeAlerts || payload.alerts || [], 160);
+  ], 120).filter((key) => !removedSet.has(key));
+  const alerts = uniqueStrings(payload.followedTradeAlerts || payload.alerts || [], 160)
+    .filter((alertKey) => !isSharedAlertForRemovedTrade(alertKey, removedSet));
 
   return {
     followedTradeKeys: keys,
-    followedEntries: entries.filter((entry) => keys.includes(entry.key)),
+    followedEntries: entries.filter((entry) => keys.includes(entry.key) && !removedSet.has(entry.key)),
     followedTradeAlerts: alerts,
+    removedFollowedTradeKeys: removedKeys,
     updatedAt: new Date().toISOString()
   };
+}
+
+function isSharedAlertForRemovedTrade(alertKey, removedSet) {
+  for (const key of removedSet) {
+    if (String(alertKey || "").startsWith(`${key}:`)) return true;
+  }
+  return false;
 }
 
 function normalizeSharedTradeEntries(entries) {
@@ -657,9 +926,11 @@ async function handleVoiceCommand(response, payload) {
   };
 
   const pythonResult = await runPythonVoiceAgent(voicePayload);
-  const agentResult = isUsefulVoiceResult(pythonResult)
+  const aiResult = isUsefulVoiceResult(pythonResult)
     ? pythonResult
     : ((await runOllamaVoiceAgent(voicePayload)) || pythonResult);
+  const localFallback = buildSessionAwareVoiceFallback(transcript, requestedMarket, recommendations, language);
+  const agentResult = isUsefulVoiceResult(aiResult) ? aiResult : (localFallback || aiResult);
   const result = {
     ...agentResult,
     aiEngine: agentResult.aiEngine || "python",
@@ -679,6 +950,82 @@ async function handleVoiceCommand(response, payload) {
   }
 
   return sendJson(response, result);
+}
+
+function buildSessionAwareVoiceFallback(transcript, marketId, recommendations = [], language = "ar") {
+  const text = String(transcript || "").toLowerCase().normalize("NFC");
+  const wantsSell = includesAnyText(text, [
+    "\u0628\u064a\u0639",
+    "\u0627\u0628\u064a\u0639",
+    "\u0623\u0628\u064a\u0639",
+    "\u0627\u062e\u0631\u062c"
+  ]) || /sell/i.test(text);
+  const wantsBuy = includesAnyText(text, [
+    "\u0627\u0641\u0636\u0644",
+    "\u0623\u0641\u0636\u0644",
+    "\u0627\u0642\u0648\u0649",
+    "\u0623\u0642\u0648\u0649",
+    "\u0627\u0634\u062a\u0631\u064a",
+    "\u0623\u0634\u062a\u0631\u064a",
+    "\u0634\u0631\u0627\u0621",
+    "\u0641\u0631\u0635\u0647",
+    "\u0641\u0631\u0635\u0629",
+    "\u062a\u0631\u0634\u062d"
+  ]) || /buy|best/i.test(text);
+
+  const session = getExecutionSessionState(marketId);
+  const marketName = markets[marketId]?.label || "السوق";
+  const intent = wantsSell ? "best_sell" : "best_buy";
+  const english = language === "en";
+
+  if (!wantsBuy && !wantsSell && (!session || session.isOpen)) return null;
+
+  if (session && !session.isOpen) {
+    const openText = session.openAt
+      ? new Date(session.openAt).toLocaleString(english ? "en-US" : "ar-KW-u-nu-latn", {
+          timeZone: session.timeZone,
+          weekday: "long",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        })
+      : "";
+    return {
+      intent,
+      reply: english
+        ? `${marketName} is closed now. I will not give a live buy or sell order before the market opens. Next open: ${openText} ${session.label}. Watch only and wait for live prices.`
+        : `${marketName} مغلق الآن. ما أعطيك أمر شراء أو بيع مباشر قبل افتتاح السوق. الافتتاح القادم ${openText} بتوقيت ${session.label}. حالياً مراقبة فقط وانتظر الأسعار الحية.`,
+      aiEngine: "local-session"
+    };
+  }
+
+  const candidates = recommendations
+    .filter((item) => item.action === (wantsSell ? "sell" : "buy"))
+    .sort((a, b) => Number(b.confidence || 0) - Number(a.confidence || 0));
+  const item = candidates[0];
+  if (!item) {
+    return {
+      intent,
+      reply: english
+        ? `${marketName}: I do not see a clear ${wantsSell ? "sell" : "buy"} signal now. Wait for a cleaner setup.`
+        : `${marketName}: ما عندي إشارة ${wantsSell ? "بيع" : "شراء"} واضحة حالياً. الأفضل الانتظار لين تتضح الفرصة.`,
+      aiEngine: "local-session"
+    };
+  }
+
+  return {
+    intent,
+    symbol: item.symbol,
+    reply: english
+      ? `${marketName}: strongest ${wantsSell ? "sell" : "buy"} setup is ${item.name || item.symbol} (${item.symbol}) with ${item.confidence}% confidence. Current price ${formatVoiceMoney(item.currentPrice, item.currency)}, target ${formatVoiceMoney(item.target1 || item.expectedPrice, item.currency)}. Manage risk before any trade.`
+      : `${marketName}: أقوى فرصة ${wantsSell ? "بيع" : "شراء"} هي ${item.name || item.symbol} (${item.symbol}) بثقة ${item.confidence}%. السعر ${formatVoiceMoney(item.currentPrice, item.currency)} والهدف ${formatVoiceMoney(item.target1 || item.expectedPrice, item.currency)}. راجع المخاطر قبل أي قرار.`,
+    aiEngine: "local-session"
+  };
+}
+
+function includesAnyText(value, needles) {
+  return needles.some((needle) => value.includes(needle));
 }
 
 async function getVoiceRecommendationsForTranscript(transcript, requestedMarket, currentRecommendations, originalActiveMarket = "") {
@@ -913,11 +1260,17 @@ function resolveVoiceMarketId(transcript) {
 
 async function getMarketPayloadForVoice(marketId) {
   const fullMarketCached = cache.get(`market:${marketId}`);
-  if (fullMarketCached && Date.now() - fullMarketCached.createdAt < CACHE_TTL_MS) return fullMarketCached.payload;
+  if (fullMarketCached && Date.now() - fullMarketCached.createdAt < CACHE_TTL_MS) {
+    const guardedPayload = finalizeRecommendationsPayloadForSession(fullMarketCached.payload, marketId);
+    return { recommendations: guardedPayload.recommendations || [] };
+  }
 
   const cacheKey = `voice-market:${marketId}`;
   const cached = cache.get(cacheKey);
-  if (cached && Date.now() - cached.createdAt < CACHE_TTL_MS) return cached.payload;
+  if (cached && Date.now() - cached.createdAt < CACHE_TTL_MS) {
+    const guardedPayload = finalizeRecommendationsPayloadForSession(cached.payload, marketId);
+    return { recommendations: guardedPayload.recommendations || [] };
+  }
 
   const market = markets[marketId];
   if (!market) throw new Error("السوق غير معروف");
@@ -929,9 +1282,18 @@ async function getMarketPayloadForVoice(marketId) {
       const priority = { buy: 0, sell: 1, hold: 2 };
       return priority[a.action] - priority[b.action] || b.confidence - a.confidence;
     });
-  const payload = { recommendations };
+  const payload = {
+    market: {
+      id: marketId,
+      label: market.label,
+      note: market.note,
+      totalSymbols: market.symbols.length
+    },
+    recommendations
+  };
   cache.set(cacheKey, { createdAt: Date.now(), payload });
-  return payload;
+  const guardedPayload = finalizeRecommendationsPayloadForSession(payload, marketId);
+  return { recommendations: guardedPayload.recommendations || [] };
 }
 
 function normalizeArabicText(value) {
@@ -1529,31 +1891,68 @@ function getShariaText(status) {
   };
 }
 
-async function settleAnalyzeAssets(assets, concurrency = 3) {
+async function settleAnalyzeAssets(assets, concurrency = 3, analysisOptions = {}) {
+  return await createAnalyzeAssetsJob(assets, concurrency, analysisOptions).done;
+}
+
+function createAnalyzeAssetsJob(assets, concurrency = ANALYSIS_CONCURRENCY, analysisOptions = {}) {
   const results = new Array(assets.length);
   let nextIndex = 0;
+  let completed = 0;
+  let cancelled = false;
 
   async function worker() {
-    while (nextIndex < assets.length) {
+    while (!cancelled && nextIndex < assets.length) {
       const index = nextIndex;
       nextIndex += 1;
 
       try {
         results[index] = {
           status: "fulfilled",
-          value: await analyzeSymbol(await enrichShariaAsset(assets[index]))
+          value: await analyzeSymbol(await enrichShariaAsset(assets[index]), analysisOptions)
         };
       } catch (error) {
         results[index] = {
           status: "rejected",
           reason: error
         };
+      } finally {
+        completed += 1;
       }
     }
   }
 
-  await Promise.all(Array.from({ length: Math.min(concurrency, assets.length) }, worker));
-  return results;
+  const done = Promise.all(Array.from({ length: Math.min(concurrency, assets.length) }, worker)).then(() => results);
+  return {
+    results,
+    done,
+    cancel() {
+      cancelled = true;
+    },
+    get completed() {
+      return completed;
+    }
+  };
+}
+
+async function waitForPromise(promise, timeoutMs) {
+  let timer;
+  const timeout = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(false), timeoutMs);
+  });
+
+  const completed = await Promise.race([
+    promise.then(() => true, () => true),
+    timeout
+  ]);
+  clearTimeout(timer);
+  return completed;
+}
+
+function getAnalysisConcurrency(size) {
+  if (size >= 60) return Math.max(2, Math.min(ANALYSIS_CONCURRENCY, 3));
+  if (size >= 20) return Math.max(2, Math.min(ANALYSIS_CONCURRENCY, 4));
+  return Math.max(2, ANALYSIS_CONCURRENCY);
 }
 
 function normalizeInputSymbol(value) {

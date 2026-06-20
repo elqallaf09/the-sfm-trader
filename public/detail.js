@@ -161,13 +161,34 @@ const elements = {
   outlook: document.querySelector("#outlook-detail-list"),
   reasons: document.querySelector("#detail-reasons"),
   sparkline: document.querySelector("#detail-sparkline"),
-  backtest: document.querySelector("#backtest-detail")
+  backtest: document.querySelector("#backtest-detail"),
+  back: document.querySelector(".detail-back")
 };
 
 applyDetailLanguage();
 initMarketBackground();
+initDetailBackButton();
 registerPwaServiceWorker();
 loadDetail();
+
+function initDetailBackButton() {
+  elements.back?.addEventListener("click", (event) => {
+    event.preventDefault();
+    try {
+      sessionStorage.setItem("the-sfm-trader-skip-intro", "1");
+    } catch {}
+
+    try {
+      const referrer = document.referrer ? new URL(document.referrer) : null;
+      if (referrer?.origin === window.location.origin && history.length > 1) {
+        history.back();
+        return;
+      }
+    } catch {}
+
+    window.location.href = "/?skipIntro=1#view-markets";
+  });
+}
 
 function registerPwaServiceWorker() {
   if (!("serviceWorker" in navigator)) return;

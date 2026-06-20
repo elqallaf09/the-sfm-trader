@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
+    "check": "node tools/check.mjs",
+    "smoke": "node tools/smoke.mjs",
     "ios:add": "npx cap add ios",
     "ios:set-url": "node tools/set-ios-server-url.mjs",
     "ios:sync": "npx cap sync ios",

@@ -3,6 +3,7 @@ const introOverlay = document.querySelector("#intro-overlay");
 const introGreeting = document.querySelector("#intro-greeting");
 const introMessage = document.querySelector("#intro-message");
 const introSkip = document.querySelector("#intro-skip");
+const introAudioButton = document.querySelector("#intro-audio-button");
 const cards = document.querySelector("#cards");
 const unavailable = document.querySelector("#unavailable");
 const marketTitle = document.querySelector("#market-title");
@@ -27,7 +28,12 @@ const radarQuality = document.querySelector("#radar-quality");
 const loadingIndicator = document.querySelector("#loading-indicator");
 const connectionStatus = document.querySelector("#connection-status");
 const refreshButton = document.querySelector("#refresh-button");
+const compactLayoutButton = document.querySelector("#compact-layout-button");
+const collapseSectionsButton = document.querySelector("#collapse-sections-button");
+const expandSectionsButton = document.querySelector("#expand-sections-button");
 const notificationButton = document.querySelector("#notification-button");
+const mobileNotificationButton = document.querySelector("#mobile-notification-button");
+const mobileSettingsButton = document.querySelector("#mobile-settings-button");
 const notificationCount = document.querySelector("#notification-count");
 const notificationPanel = document.querySelector("#notification-panel");
 const notificationList = document.querySelector("#notification-list");
@@ -51,13 +57,27 @@ const template = document.querySelector("#card-template");
 const expandAllCardsButton = document.querySelector("#expand-all-cards");
 const collapseAllCardsButton = document.querySelector("#collapse-all-cards");
 const tickerTape = document.querySelector("#ticker-tape");
+const sessionClockCard = document.querySelector(".session-clock-card");
 const sessionClock = document.querySelector("#session-clock");
 const sessionZone = document.querySelector("#session-zone");
+const sessionCardState = document.querySelector("#session-card-state");
+const sessionCardCountdown = document.querySelector("#session-card-countdown");
+const sessionCardEvent = document.querySelector("#session-card-event");
+const pulseStatusCard = document.querySelector("#pulse-status-card");
+const pulseSessionState = document.querySelector("#pulse-session-state");
+const pulseSessionCountdown = document.querySelector("#pulse-session-countdown");
+const pulseSessionEvent = document.querySelector("#pulse-session-event");
+const pulseSessionClock = document.querySelector("#pulse-session-clock");
+const pulseSessionZone = document.querySelector("#pulse-session-zone");
+const headerSessionClock = document.querySelector("#header-session-clock");
+const headerSessionZone = document.querySelector("#header-session-zone");
 const sessionStateLabel = document.querySelector("#session-state-label");
 const sessionCountdown = document.querySelector("#session-countdown");
 const sessionNextEvent = document.querySelector("#session-next-event");
 const sessionMarketName = document.querySelector("#session-market-name");
 const marketHoursGrid = document.querySelector("#market-hours-grid");
+const economicNewsStatus = document.querySelector("#economic-news-status");
+const economicNewsGrid = document.querySelector("#economic-news-grid");
 const sfmLiveFloor = document.querySelector("#sfm-live-floor");
 const sfmFloorBrief = document.querySelector("#sfm-floor-brief");
 const floorAgentMood = document.querySelector("#floor-agent-mood");
@@ -70,6 +90,12 @@ const floorHeatmap = document.querySelector("#floor-heatmap");
 const floorHeatmapTitle = document.querySelector("#floor-heatmap-title");
 const floorJumpButtons = document.querySelectorAll("[data-floor-jump]");
 const marketBoard = document.querySelector("#market-board");
+const livePulseGrid = document.querySelector("#live-pulse-grid");
+const livePulseMarket = document.querySelector("#live-pulse-market");
+const homeRecommendations = document.querySelector("#home-recommendations");
+const homeFollowedTrades = document.querySelector("#home-followed-trades");
+const homeHeatmapGrid = document.querySelector("#home-heatmap-grid");
+const homeHeatmapLeader = document.querySelector("#home-heatmap-leader");
 const searchInput = document.querySelector("#search-input");
 const sortSelect = document.querySelector("#sort-select");
 const usOutlookSection = document.querySelector("#us-outlook-section");
@@ -108,6 +134,7 @@ const voiceMonitorBestButton = document.querySelector("#voice-monitor-best-butto
 const ollamaStatus = document.querySelector("#ollama-status");
 const voiceTextForm = document.querySelector("#voice-text-form");
 const voiceTextCommand = document.querySelector("#voice-text-command");
+const mobileVoiceOrb = document.querySelector("#mobile-voice-orb");
 const scalpForm = document.querySelector("#scalp-form");
 const scalpSymbol = document.querySelector("#scalp-symbol");
 const scalpSubmit = document.querySelector("#scalp-submit");
@@ -119,16 +146,24 @@ const NUMBER_LOCALE = "ar-KW-u-nu-latn";
 const NUMBER_OPTIONS = { numberingSystem: "latn" };
 const VOICE_RECOGNITION_LANGUAGES = ["ar-SA", "ar-KW", "ar", "en-US"];
 const WATCHLIST_REFRESH_MS = 15_000;
+const RECOMMENDATIONS_REFRESH_MS = 12_000;
+const RECOMMENDATIONS_FORCE_REFRESH_GRACE_MS = 600;
 const INTRO_DURATION_MS = 8_000;
 const DEFAULT_USER_DISPLAY_NAME = "محمد";
 const DEFAULT_APP_LANGUAGE = "ar";
 const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
+const SECTION_FOLD_STORAGE_KEY = "the-sfm-trader-section-folds-v1";
 const UI_TEXT_TRANSLATIONS = {
   "أهلاً سيدي محمد": "Welcome Sir Mohammed",
   "مساعدك SFM جاهز للتحليل ومتابعة الأسهم.": "Your SFM assistant is ready for analysis and stock monitoring.",
   "جاري فتح منصة التحليل": "Opening the analysis platform",
   "دخول سريع": "Quick entry",
+  "تشغيل التحية الصوتية": "Play voice greeting",
+  "SFM يتكلم": "SFM speaking",
+  "الصوت جاهز": "Voice ready",
   "وكيل تحليل الأسواق": "Market Analysis Agent",
+  "منصة تداول وتحليل ذكية": "Smart trading and analysis platform",
+  "توقيع المنصة": "Platform signature",
   "جاري الاتصال": "Connecting",
   "الإشعارات": "Notifications",
   "الإعدادات": "Settings",
@@ -144,6 +179,27 @@ const UI_TEXT_TRANSLATIONS = {
   "مركز الإشعارات": "Notification Center",
   "مسح الكل": "Clear all",
   "إغلاق الإشعارات": "Close notifications",
+  "تنقل سريع للتطبيق": "Quick app navigation",
+  "نبض": "Pulse",
+  "أسواق": "Markets",
+  "صوت": "Voice",
+  "توصيات": "Recommendations",
+  "سجل": "Log",
+  "وضع الصفحة": "Page mode",
+  "لوحة مختصرة ومطوية": "Compact folded dashboard",
+  "الوضع المختصر": "Compact mode",
+  "مختصر": "Compact",
+  "طي الأقسام": "Collapse sections",
+  "طي الكل": "Collapse",
+  "فتح الأقسام": "Expand sections",
+  "فتح الكل": "Expand",
+  "طي": "Collapse",
+  "فتح": "Open",
+  "تم فتح الأقسام": "Sections expanded",
+  "تم طي الأقسام": "Sections collapsed",
+  "تم تفعيل الوضع المختصر": "Compact mode enabled",
+  "تحديث بالخلفية": "Refreshing in background",
+  "يعرض آخر تحليل محفوظ": "Showing the latest saved analysis",
   "شريط السوق": "Market ticker",
   "اختيار السوق": "Market selection",
   "الأسواق": "Markets",
@@ -206,6 +262,8 @@ const UI_TEXT_TRANSLATIONS = {
   "أوقات الأسواق ونبض السوق": "Market hours and pulse",
   "تابع حالة السوق الحالي، متى يفتح أو يصكر، وأوقات أهم الأسواق حسب توقيتها المحلي.": "Track the current market status, open and close countdowns, and key markets in their local time.",
   "ساعة الجلسة": "Session clock",
+  "حالة السوق": "Market status",
+  "العد التنازلي": "Countdown",
   "السوق الحالي": "Current market",
   "الحالة": "Status",
   "العد التنازلي": "Countdown",
@@ -326,6 +384,38 @@ const UI_TEXT_TRANSLATIONS = {
   "تقييم دقة التوصيات": "Recommendation accuracy rating",
   "فتح التفاصيل": "Open details",
   "غلق التفاصيل": "Close details",
+  "أغلق التفاصيل": "Close details",
+  "أفضل الفرص الآن": "Best opportunities now",
+  "صفقات تحت المتابعة": "Followed trades",
+  "عرض الكل": "View all",
+  "نبض السوق الآن": "Live market pulse",
+  "حالة السوق": "Market status",
+  "ينتهي خلال": "Closes in",
+  "يفتح خلال": "Opens in",
+  "مفتوح": "Open",
+  "مغلق": "Closed",
+  "الهدف": "Target",
+  "ثقة": "Confidence",
+  "تحليل": "Analysis",
+  "رجوع للأسواق": "Back to markets",
+  "نبض السوق": "Market pulse",
+  "الأسهم الأمريكية": "US stocks",
+  "العملات الرقمية": "Crypto",
+  "السلع": "Commodities",
+  "أسواق الخليج": "Gulf markets",
+  "جميع الأسواق": "All markets",
+  "قيادة السوق": "Market command",
+  "مضاربة": "Scalping",
+  "مضاربة 5-15 دقيقة": "Scalping 5-15 min",
+  "استثمار شهري": "Monthly investing",
+  "شرعي فقط": "Sharia only",
+  "مخاطرة منخفضة": "Low risk",
+  "الكل": "All",
+  "كل التصنيفات": "All categories",
+  "مطابق": "Compliant",
+  "غير مطابق": "Not compliant",
+  "مختلف عليه": "Doubtful",
+  "تحميل": "Loading",
   "السعر الحالي": "Current price",
   "السعر المتوقع": "Expected price",
   "هدف 1": "Target 1",
@@ -349,6 +439,9 @@ const UI_TEXT_TRANSLATIONS = {
   "رمز": "symbols",
   "متصل - بيانات مخزنة لحظيا": "Connected - live cached data",
   "متصل - بيانات جديدة": "Connected - fresh data",
+  "متصل - يحدث في الخلفية": "Connected - updating in background",
+  "متصل - تحليل أولي": "Connected - preliminary analysis",
+  "متصل - آخر بيانات محفوظة": "Connected - latest saved data",
   "تعذر الاتصال": "Connection failed",
   "اتصال متقطع - آخر بيانات محفوظة": "Unstable connection - latest saved data",
   "تعذر": "Failed",
@@ -546,6 +639,7 @@ let isTranslatingInterface = false;
 let queuedInterfaceTranslation = false;
 const SHARED_TRADE_SYNC_DEBOUNCE_MS = 800;
 const SHARED_TRADE_POLL_MS = 10_000;
+const REMOVED_FOLLOWED_TRADE_LIMIT = 240;
 const NOTIFICATION_SAVE_DEBOUNCE_MS = 800;
 const NOTIFICATION_LIMIT = 200;
 const MARKET_TIME_ZONES = {
@@ -727,20 +821,78 @@ const SYMBOL_ALIASES = {
 
 const STORAGE_PREFIX = "the-sfm-trader-";
 const LEGACY_STORAGE_PREFIX = "the-sfm-";
+const SECTION_FOLD_CONFIG = [
+  { key: "live-floor", selector: "#sfm-live-floor", desktopOpen: true, mobileOpen: true },
+  { key: "markets", selector: "#markets-section", desktopOpen: true, mobileOpen: true },
+  { key: "command", selector: "#command-center-section", desktopOpen: true, mobileOpen: false },
+  { key: "hours", selector: ".market-hours-band", desktopOpen: true, mobileOpen: false },
+  { key: "economic-news", selector: "#economic-news-section", desktopOpen: true, mobileOpen: false },
+  { key: "voice", selector: "#voice-section", desktopOpen: false, mobileOpen: false },
+  { key: "scalping", selector: "#scalping-section", desktopOpen: false, mobileOpen: false },
+  { key: "radar", selector: "#radar-section", desktopOpen: false, mobileOpen: false },
+  { key: "smart-alerts", selector: "#smart-alerts-section", desktopOpen: false, mobileOpen: false },
+  { key: "golden", selector: "#golden-section", desktopOpen: false, mobileOpen: false },
+  { key: "watchlist", selector: "#watchlist-section", desktopOpen: false, mobileOpen: false },
+  { key: "portfolio", selector: "#portfolio-section", desktopOpen: false, mobileOpen: false },
+  { key: "us-dashboard", selector: "#us-dashboard-section", desktopOpen: false, mobileOpen: false },
+  { key: "us-outlook", selector: "#us-outlook-section", desktopOpen: false, mobileOpen: false },
+  { key: "recommendations", selector: "#recommendations-section", desktopOpen: true, mobileOpen: true },
+  { key: "history", selector: "#history-section", desktopOpen: false, mobileOpen: false }
+];
+
+const APP_VIEW_GROUPS = {
+  home: ["#sfm-live-floor", "#markets-section", "#command-center-section", "#home-heatmap-section", "#home-deck-section"],
+  markets: ["#markets-section", ".market-hours-band", "#economic-news-section", "#radar-section"],
+  recommendations: ["#recommendations-section", "#us-dashboard-section", "#us-outlook-section"],
+  history: ["#history-section", "#watchlist-section", "#portfolio-section"],
+  alerts: ["#history-section"],
+  scalp: ["#scalping-section"],
+  voice: ["#voice-section"]
+};
+
+const PRIMARY_MARKET_KEYS = new Set(["forex", "us", "crypto", "commodities", "gcc"]);
+const PRIMARY_MARKET_ORDER = {
+  forex: 0,
+  us: 1,
+  crypto: 2,
+  commodities: 3,
+  gcc: 4
+};
+const MARKET_PRIMARY_LABELS_AR = {
+  forex: "الفوركس",
+  us: "الأسهم الأمريكية",
+  crypto: "العملات الرقمية",
+  commodities: "السلع",
+  gcc: "أسواق الخليج"
+};
+const MARKET_PRIMARY_LABELS_EN = {
+  forex: "Forex",
+  us: "US stocks",
+  crypto: "Crypto",
+  commodities: "Commodities",
+  gcc: "Gulf markets"
+};
 
 let activeMarket = "us";
+let activeAppView = "home";
 let timer = null;
 let sessionClockTimer = null;
 let isLoading = false;
+let recommendationRequestController = null;
+let recommendationRequestId = 0;
+let lastRecommendationRefreshAt = 0;
 let lastData = null;
+const recommendationResponseCache = new Map();
 let activeFilter = "all";
 let activeShariaFilter = "all";
 let activeAnalysisMode = loadStored("the-sfm-trader-analysis-mode", "balanced");
+let sectionFoldState = normalizeSectionFoldState(loadStored(SECTION_FOLD_STORAGE_KEY, {}));
 let watchlist = loadStored("the-sfm-trader-watchlist", ["AMD", "NVDA", "GOOGL"]);
 let portfolio = loadStored("the-sfm-trader-portfolio", []);
 let recommendationHistory = loadStored("the-sfm-trader-history", []);
 let followedTradeKeys = new Set(loadStored("the-sfm-trader-followed-trades", []));
 let followedTradeAlerts = new Set(loadStored("the-sfm-trader-followed-alerts", []));
+let removedFollowedTradeKeys = new Set(loadStored("the-sfm-trader-removed-followed-trades", []));
 let sharedTradeSaveTimer = null;
 let sharedTradePollTimer = null;
 let sharedTradeStateLoaded = false;
@@ -753,6 +905,7 @@ let alertedKeys = new Set(loadStored("the-sfm-trader-alerted", []));
 let recommendationSignalState = loadStored("the-sfm-trader-signal-state", {});
 let watchlistOnly = loadStored("the-sfm-trader-watchlist-only", false);
 let appSettings = normalizeAppSettings(loadStored(APP_SETTINGS_STORAGE_KEY, {}));
+appSettings = applyUrlSettingsOverride(appSettings);
 let watchlistData = null;
 let watchlistLoading = false;
 let watchlistLastLoadedAt = 0;
@@ -767,9 +920,12 @@ let voiceMonitors = loadStored("the-sfm-trader-voice-monitors", []);
 let voiceRecognitionLanguageIndex = 0;
 let voiceRecognitionSuspended = false;
 let introTimer = null;
+let introSpeechText = "";
+let introGreetingStarted = false;
 let liveFloorHasRendered = false;
 let floorHeatmapSignature = "";
 let floorBoardSignature = "";
+let livePulseSignature = "";
 
 applyAppSettings({ updateIntro: false });
 initMarketBackground();
@@ -791,6 +947,8 @@ async function init() {
   initSettingsPanel();
   initInterfaceTranslator();
   initLiveFloor();
+  initSectionFolding();
+  initAppNavigation();
   watchlist = normalizeWatchlist(watchlist);
   voiceMonitors = normalizeWatchlist(voiceMonitors);
   saveStored("the-sfm-trader-watchlist", watchlist);
@@ -810,12 +968,14 @@ async function init() {
   setActiveAnalysisModeButtons();
 
   await loadMarkets();
-  await loadRecommendations();
-  timer = window.setInterval(loadRecommendations, 1000);
+  await loadRecommendations({ force: true });
+  timer = window.setInterval(() => loadRecommendations({ background: true }), RECOMMENDATIONS_REFRESH_MS);
   watchlistTimer = window.setInterval(() => loadWatchlistData(), WATCHLIST_REFRESH_MS);
   sharedTradePollTimer = window.setInterval(() => loadSharedTradeState({ poll: true }), SHARED_TRADE_POLL_MS);
-  refreshButton.addEventListener("click", loadRecommendations);
+  refreshButton.addEventListener("click", () => loadRecommendations({ force: true }));
   notificationButton?.addEventListener("click", toggleNotificationPanel);
+  mobileNotificationButton?.addEventListener("click", toggleNotificationPanel);
+  mobileSettingsButton?.addEventListener("click", () => setSettingsPanelOpen(settingsPanel?.hidden !== false));
   notificationCloseButton?.addEventListener("click", () => setNotificationPanelOpen(false));
   notificationClearButton?.addEventListener("click", clearNotificationLog);
   scalpForm?.addEventListener("submit", handleScalpSubmit);
@@ -834,11 +994,14 @@ async function init() {
   watchlistOnlyToggle.addEventListener("change", () => {
     watchlistOnly = watchlistOnlyToggle.checked;
     saveStored("the-sfm-trader-watchlist-only", watchlistOnly);
-    loadRecommendations();
+    loadRecommendations({ force: true });
   });
   watchlistForm.addEventListener("submit", addWatchlistSymbol);
   portfolioForm.addEventListener("submit", addPortfolioPosition);
   clearHistoryButton.addEventListener("click", () => {
+    for (const key of followedTradeKeys) {
+      removedFollowedTradeKeys.add(key);
+    }
     recommendationHistory = [];
     followedTradeKeys = new Set();
     followedTradeAlerts = new Set();
@@ -864,6 +1027,11 @@ async function init() {
       renderRecommendations(lastData);
     });
   }
+
+  window.addEventListener("pagehide", flushSharedTradeStateOnExit);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushSharedTradeStateOnExit();
+  });
 }
 
 function initLiveFloor() {
@@ -875,8 +1043,201 @@ function initLiveFloor() {
   }
 }
 
+function initSectionFolding() {
+  for (const config of SECTION_FOLD_CONFIG) {
+    const section = document.querySelector(config.selector);
+    if (!section) continue;
+
+    section.classList.add("foldable-section");
+    section.dataset.foldKey = config.key;
+    if (!section.id) section.id = `fold-section-${config.key}`;
+
+    const header = getSectionFoldHeader(section);
+    if (!header) continue;
+    header.classList.add("foldable-section-head");
+
+    let button = header.querySelector(".section-fold-toggle");
+    if (!button) {
+      button = document.createElement("button");
+      button.className = "section-fold-toggle";
+      button.type = "button";
+      button.setAttribute("aria-controls", section.id);
+      header.appendChild(button);
+    }
+
+    button.addEventListener("click", () => {
+      const open = section.classList.contains("is-folded");
+      setSectionOpen(config.key, open, { persist: true });
+    });
+
+    const initialOpen = typeof sectionFoldState[config.key] === "boolean"
+      ? sectionFoldState[config.key]
+      : getDefaultSectionOpen(config);
+    setSectionOpen(config.key, initialOpen);
+  }
+
+  compactLayoutButton?.addEventListener("click", () => applySectionPreset("compact"));
+  collapseSectionsButton?.addEventListener("click", () => applySectionPreset("collapsed"));
+  expandSectionsButton?.addEventListener("click", () => applySectionPreset("expanded"));
+}
+
+function getSectionFoldHeader(section) {
+  return (
+    section.querySelector(":scope > .section-head") ||
+    section.querySelector(":scope > .floor-head") ||
+    section.querySelector(":scope > .voice-panel") ||
+    section.firstElementChild
+  );
+}
+
+function getDefaultSectionOpen(config) {
+  return isCompactViewport() ? Boolean(config.mobileOpen) : Boolean(config.desktopOpen);
+}
+
+function isCompactViewport() {
+  return window.matchMedia?.("(max-width: 760px)")?.matches || false;
+}
+
+function setSectionOpen(key, open, options = {}) {
+  const config = SECTION_FOLD_CONFIG.find((item) => item.key === key);
+  const section = config ? document.querySelector(config.selector) : null;
+  if (!section) return;
+
+  const isOpen = Boolean(open);
+  section.classList.toggle("is-folded", !isOpen);
+  section.setAttribute("aria-expanded", String(isOpen));
+
+  const button = section.querySelector(".section-fold-toggle");
+  if (button) {
+    button.textContent = localizeUiText(isOpen ? "طي" : "فتح");
+    button.setAttribute("aria-expanded", String(isOpen));
+    button.setAttribute("aria-label", localizeUiText(`${isOpen ? "طي" : "فتح"} ${getSectionTitle(section)}`));
+  }
+
+  sectionFoldState[key] = isOpen;
+  if (options.persist) saveStored(SECTION_FOLD_STORAGE_KEY, sectionFoldState);
+}
+
+function getSectionTitle(section) {
+  return section.querySelector("h2")?.textContent?.trim() || section.getAttribute("aria-label") || "";
+}
+
+function applySectionPreset(mode) {
+  for (const config of SECTION_FOLD_CONFIG) {
+    const open = mode === "expanded"
+      ? true
+      : mode === "collapsed"
+        ? false
+        : ["live-floor", "markets", "recommendations"].includes(config.key);
+    setSectionOpen(config.key, open);
+  }
+
+  saveStored(SECTION_FOLD_STORAGE_KEY, sectionFoldState);
+  showToast(
+    localizeUiText("وضع الصفحة"),
+    localizeUiText(mode === "expanded" ? "تم فتح الأقسام" : mode === "collapsed" ? "تم طي الأقسام" : "تم تفعيل الوضع المختصر"),
+    { type: "settings", persist: false }
+  );
+}
+
+function initAppNavigation() {
+  const initialView = getAppViewFromHash(window.location.hash) || "home";
+  showAppView(initialView, { scroll: false, replace: true });
+
+  document.querySelectorAll(".rail-link, .ios-tab-link").forEach((link) => {
+    link.addEventListener("click", (event) => {
+      const view = getAppViewFromNavigationLink(link);
+      if (!view) return;
+      event.preventDefault();
+      showAppView(view, { push: true });
+    });
+  });
+
+  document.querySelectorAll("[data-floor-jump]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      const view = getAppViewFromHash(button.dataset.floorJump || "");
+      if (!view) return;
+      event.preventDefault();
+      showAppView(view, { push: true });
+    });
+  });
+
+  window.addEventListener("popstate", () => {
+    showAppView(getAppViewFromHash(window.location.hash) || "home", { scroll: false, replace: true });
+  });
+}
+
+function getAppViewFromNavigationLink(link) {
+  const tab = link.dataset.tab;
+  if (tab === "pulse") return "home";
+  if (tab === "signals") return "recommendations";
+  if (tab === "scalp") return "scalp";
+  if (tab && APP_VIEW_GROUPS[tab]) return tab;
+  return getAppViewFromHash(link.getAttribute("href") || "");
+}
+
+function getAppViewFromHash(hash) {
+  const value = String(hash || "");
+  if (value.includes("notification-panel")) return "alerts";
+  if (value.includes("recommendations-section") || value.includes("view-recommendations")) return "recommendations";
+  if (value.includes("history-section") || value.includes("watchlist-section") || value.includes("portfolio-section") || value.includes("view-history")) return "history";
+  if (value.includes("markets-section") || value.includes("market-hours") || value.includes("view-markets")) return "markets";
+  if (value.includes("voice-section") || value.includes("view-voice")) return "voice";
+  if (value.includes("scalping-section") || value.includes("view-scalp")) return "scalp";
+  if (value.includes("sfm-live-floor") || value.includes("view-home")) return "home";
+  return "";
+}
+
+function showAppView(view, options = {}) {
+  const nextView = APP_VIEW_GROUPS[view] ? view : "home";
+  const visibleSelectors = APP_VIEW_GROUPS[nextView] || APP_VIEW_GROUPS.home;
+  activeAppView = nextView;
+  document.body.dataset.appView = nextView;
+
+  document.querySelectorAll("main > section").forEach((section) => {
+    const visible = visibleSelectors.some((selector) => section.matches(selector));
+    section.classList.toggle("app-view-hidden", !visible);
+  });
+
+  document.querySelectorAll(".rail-link, .ios-tab-link").forEach((link) => {
+    const linkView = getAppViewFromNavigationLink(link);
+    link.classList.toggle("active", linkView === nextView || (nextView === "alerts" && linkView === "alerts"));
+  });
+
+  if (nextView === "alerts") {
+    setNotificationPanelOpen(true);
+  } else if (notificationPanelOpen) {
+    setNotificationPanelOpen(false);
+  }
+
+  if (options.push) {
+    const hash = nextView === "home" ? "#view-home" : `#view-${nextView}`;
+    history.pushState({ view: nextView }, "", hash);
+  } else if (options.replace) {
+    const hash = nextView === "home" ? "#view-home" : `#view-${nextView}`;
+    history.replaceState({ view: nextView }, "", hash);
+  }
+
+  if (options.scroll !== false) {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+}
+
+function normalizeSectionFoldState(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key, open]) => SECTION_FOLD_CONFIG.some((config) => config.key === key) && typeof open === "boolean")
+  );
+}
+
 function initIntroCeremony() {
   if (!introOverlay) return;
+  if (shouldSkipIntroCeremony()) {
+    introOverlay.remove();
+    document.body.classList.remove("intro-running");
+    return;
+  }
 
   const greeting = getIntroGreeting();
   const message = getIntroMessage();
@@ -887,13 +1248,40 @@ function initIntroCeremony() {
   const statusText = introOverlay.querySelector(".intro-status strong");
   if (statusText) statusText.textContent = getIntroStatusText();
   if (introSkip) introSkip.textContent = getIntroSkipText();
+  introSpeechText = `${greeting} ${honorificName}. ${message}`;
+  if (introAudioButton) {
+    introAudioButton.hidden = !("speechSynthesis" in window);
+    introAudioButton.textContent = getIntroAudioText();
+    introAudioButton.addEventListener("click", playIntroGreetingFromGesture);
+  }
   introSkip?.addEventListener("click", closeIntroCeremony);
+  introOverlay.addEventListener("pointerdown", (event) => {
+    if (!isLikelyMobileDevice() || introGreetingStarted) return;
+    if (event.target.closest("button, a, input, select, textarea")) return;
+    playIntroGreetingFromGesture();
+  });
 
   window.setTimeout(() => {
-    speakIntroGreeting(`${greeting} ${honorificName}. ${message}`);
+    if (!isLikelyMobileDevice()) speakIntroGreeting(introSpeechText);
   }, 650);
 
   introTimer = window.setTimeout(closeIntroCeremony, INTRO_DURATION_MS);
+}
+
+function shouldSkipIntroCeremony() {
+  const params = new URLSearchParams(window.location.search);
+  let skip = params.get("skipIntro") === "1";
+  try {
+    if (sessionStorage.getItem("the-sfm-trader-skip-intro") === "1") skip = true;
+    sessionStorage.removeItem("the-sfm-trader-skip-intro");
+  } catch {}
+
+  if (skip && params.has("skipIntro")) {
+    params.delete("skipIntro");
+    const query = params.toString();
+    history.replaceState(history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+  }
+  return skip;
 }
 
 function getIntroGreeting() {
@@ -916,6 +1304,10 @@ function getIntroSkipText() {
   return isEnglishLanguage() ? "Quick entry" : "دخول سريع";
 }
 
+function getIntroAudioText() {
+  return isEnglishLanguage() ? "Play voice greeting" : "تشغيل التحية الصوتية";
+}
+
 function getIntroHonorificName() {
   return isEnglishLanguage() ? `Sir ${getUserDisplayName()}` : `سيدي ${getUserDisplayName()}`;
 }
@@ -928,18 +1320,45 @@ function isEnglishLanguage() {
   return appSettings.language === "en";
 }
 
-function speakIntroGreeting(text) {
+function isLikelyMobileDevice() {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.matchMedia?.("(pointer: coarse)")?.matches;
+}
+
+function playIntroGreetingFromGesture() {
+  if (!introSpeechText) {
+    introSpeechText = `${getIntroGreeting()} ${getIntroHonorificName()}. ${getIntroMessage()}`;
+  }
+  speakIntroGreeting(introSpeechText, { force: true });
+}
+
+function speakIntroGreeting(text, options = {}) {
   if (!text || !("speechSynthesis" in window)) return;
+  if (introGreetingStarted && !options.force) return;
 
   try {
+    introGreetingStarted = true;
     const utterance = new SpeechSynthesisUtterance(localizeVoiceText(text));
     utterance.lang = getVoiceSpeechLocale();
     utterance.rate = 0.95;
     utterance.pitch = 1;
     const preferredVoice = getPreferredSpeechVoice();
     if (preferredVoice) utterance.voice = preferredVoice;
+    utterance.onstart = () => {
+      if (introAudioButton) introAudioButton.textContent = localizeUiText("SFM يتكلم");
+    };
+    utterance.onend = () => {
+      if (introAudioButton) introAudioButton.textContent = localizeUiText("الصوت جاهز");
+    };
+    utterance.onerror = () => {
+      introGreetingStarted = false;
+      if (introAudioButton) introAudioButton.textContent = getIntroAudioText();
+    };
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.resume?.();
     window.speechSynthesis.speak(utterance);
   } catch {
+    introGreetingStarted = false;
+    if (introAudioButton) introAudioButton.textContent = getIntroAudioText();
     // بعض المتصفحات تمنع النطق التلقائي قبل أول تفاعل من المستخدم.
   }
 }
@@ -963,7 +1382,7 @@ function initSettingsPanel() {
     showToast(
       isEnglishLanguage() ? "Settings saved" : "تم حفظ الإعدادات",
       isEnglishLanguage() ? "The welcome page will use your updated name and language." : "الصفحة الترحيبية ستستخدم الاسم واللغة الجديدة.",
-      { type: "settings" }
+      { type: "settings", persist: false }
     );
   });
 
@@ -978,6 +1397,8 @@ function setSettingsPanelOpen(open) {
   settingsPanel.hidden = !isOpen;
   settingsButton.setAttribute("aria-expanded", String(isOpen));
   settingsButton.classList.toggle("is-open", isOpen);
+  mobileSettingsButton?.setAttribute("aria-expanded", String(isOpen));
+  mobileSettingsButton?.classList.toggle("is-open", isOpen);
   if (isOpen) {
     setNotificationPanelOpen(false);
     syncSettingsForm();
@@ -1008,6 +1429,7 @@ function updateSettingsPanelLanguage() {
   const english = isEnglishLanguage();
   const settingsButtonText = settingsButton?.querySelector("span");
   if (settingsButtonText) settingsButtonText.textContent = english ? "Settings" : "الإعدادات";
+  if (mobileSettingsButton) mobileSettingsButton.setAttribute("aria-label", english ? "Settings" : "الإعدادات");
   if (settingsEyebrow) settingsEyebrow.textContent = "SFM SETTINGS";
   if (settingsTitle) settingsTitle.textContent = english ? "Settings" : "الإعدادات";
   if (settingsLanguageLabel) settingsLanguageLabel.textContent = english ? "Language" : "اللغة";
@@ -1044,6 +1466,22 @@ function normalizeAppSettings(value) {
     language: settings.language === "en" ? "en" : DEFAULT_APP_LANGUAGE,
     displayName: sanitizeDisplayName(settings.displayName || DEFAULT_USER_DISPLAY_NAME)
   };
+}
+
+function applyUrlSettingsOverride(settings) {
+  const params = new URLSearchParams(window.location.search);
+  const language = params.get("lang") || params.get("language");
+  const displayName = params.get("name") || params.get("user");
+
+  if (!language && !displayName) return settings;
+
+  const nextSettings = normalizeAppSettings({
+    ...settings,
+    language: language === "en" ? "en" : language === "ar" ? "ar" : settings.language,
+    displayName: displayName || settings.displayName
+  });
+  saveStored(APP_SETTINGS_STORAGE_KEY, nextSettings);
+  return nextSettings;
 }
 
 function sanitizeDisplayName(value) {
@@ -1242,53 +1680,177 @@ function closeIntroCeremony() {
   }, 700);
 }
 
+function getMarketVisual(market = {}) {
+  const id = String(market.id || "").toLowerCase();
+  const label = String(market.label || "").toLowerCase();
+  const map = {
+    forex: ["market-icon-fx", "$"],
+    crypto: ["market-icon-crypto", "₿"],
+    commodities: ["market-icon-gold", "Au"],
+    kuwait: ["market-icon-flag flag-kuwait", ""],
+    saudi: ["market-icon-flag flag-saudi", ""],
+    uae: ["market-icon-flag flag-uae", ""],
+    qatar: ["market-icon-flag flag-qatar", ""],
+    bahrain: ["market-icon-flag flag-bahrain", ""],
+    oman: ["market-icon-flag flag-oman", ""],
+    gcc: ["market-icon-gcc", "GCC"],
+    us: ["market-icon-flag flag-us", ""],
+    canada: ["market-icon-flag flag-canada", ""],
+    brazil: ["market-icon-flag flag-brazil", ""],
+    uk: ["market-icon-flag flag-uk", ""],
+    germany: ["market-icon-flag flag-germany", ""],
+    france: ["market-icon-flag flag-france", ""],
+    netherlands: ["market-icon-flag flag-netherlands", ""],
+    switzerland: ["market-icon-flag flag-switzerland", ""],
+    japan: ["market-icon-flag flag-japan", ""],
+    hongkong: ["market-icon-flag flag-hongkong", ""],
+    china: ["market-icon-flag flag-china", ""],
+    korea: ["market-icon-flag flag-korea", ""],
+    india: ["market-icon-flag flag-india", ""],
+    australia: ["market-icon-flag flag-australia", ""],
+    singapore: ["market-icon-flag flag-singapore", ""],
+    healthcare: ["market-icon-health", "+"],
+    dividends: ["market-icon-dividend", "%"],
+    technology: ["market-icon-tech", "⌁"],
+    ai: ["market-icon-ai", "AI"],
+    food: ["market-icon-food", "FG"],
+    all: ["market-icon-all", "ALL"]
+  };
+
+  if (map[id]) return { className: map[id][0], text: map[id][1] };
+  if (label.includes("forex") || label.includes("الفوركس")) return { className: "market-icon-fx", text: "$" };
+  if (label.includes("crypto") || label.includes("الرقمية")) return { className: "market-icon-crypto", text: "₿" };
+  if (label.includes("gold") || label.includes("oil") || label.includes("الذهب") || label.includes("السلع")) return { className: "market-icon-gold", text: "Au" };
+  if (label.includes("american") || label.includes("الأمريكي")) return { className: "market-icon-flag flag-us", text: "" };
+  if (label.includes("الخليج")) return { className: "market-icon-gcc", text: "GCC" };
+  if (label.includes("العالم") || label.includes("جميع")) return { className: "market-icon-all", text: "ALL" };
+  return { className: "market-icon-all", text: "MKT" };
+}
+
+function getPrimaryMarketKey(market) {
+  const id = String(market?.id || "").toLowerCase();
+  const label = String(market?.label || "").toLowerCase();
+  if (PRIMARY_MARKET_KEYS.has(id)) return id;
+  if (id.includes("forex") || label.includes("forex") || label.includes("الفوركس") || label.includes("Ø§Ù„ÙÙˆØ±ÙƒØ³")) return "forex";
+  if (id === "us" || id.includes("american") || label.includes("american") || label.includes("الأمريكي") || label.includes("Ø§Ù„Ø£Ù…Ø±ÙŠÙƒÙŠ")) return "us";
+  if (id.includes("crypto") || label.includes("crypto") || label.includes("الرقمية") || label.includes("Ø§Ù„Ø±Ù‚Ù…ÙŠØ©")) return "crypto";
+  if (id.includes("commod") || label.includes("gold") || label.includes("oil") || label.includes("السلع") || label.includes("الذهب") || label.includes("Ø§Ù„Ø³Ù„Ø¹")) return "commodities";
+  if (id.includes("gulf") || id.includes("gcc") || label.includes("الخليج") || label.includes("Ø§Ù„Ø®Ù„ÙŠØ¬")) return "gcc";
+  return "";
+}
+
+function getMarketDisplayLabel(market) {
+  const primaryKey = getPrimaryMarketKey(market);
+  if (!primaryKey) return market.label;
+  return isEnglishLanguage() ? MARKET_PRIMARY_LABELS_EN[primaryKey] : MARKET_PRIMARY_LABELS_AR[primaryKey];
+}
+
 async function loadMarkets() {
   const data = await fetchJson("/api/markets", {
     fallbackMessage: "تعذر تحميل الأسواق. تأكد أن السيرفر يعمل ثم حدث الصفحة."
   });
   marketTabs.innerHTML = "";
+  marketTabs.classList.remove("is-expanded");
 
-  for (const market of data.markets) {
+  const orderedMarkets = [...data.markets].sort((a, b) => getMarketSortIndex(a) - getMarketSortIndex(b));
+
+  for (const market of orderedMarkets) {
     const button = document.createElement("button");
-    button.className = "market-button";
+    const primaryKey = getPrimaryMarketKey(market);
+    button.className = `market-button ${primaryKey ? "is-primary-market" : "is-overflow-market"}`;
     button.type = "button";
     button.dataset.market = market.id;
-    button.innerHTML = `<strong>${localizeUiText(market.label)}</strong><span>${localizeUiText(`${market.count} رمز`)}</span>`;
+    if (primaryKey) button.dataset.primaryMarket = primaryKey;
+    const visual = getMarketVisual(market);
+    button.innerHTML = `
+      <span class="market-button-icon ${visual.className}" aria-hidden="true">${visual.text}</span>
+      <span class="market-button-copy">
+        <strong>${localizeUiText(getMarketDisplayLabel(market))}</strong>
+        <span>${localizeUiText(`${market.count} رمز`)}</span>
+      </span>
+    `;
     button.addEventListener("click", () => {
       activeMarket = market.id;
       activeShariaFilter = "all";
+      marketTabs.classList.remove("is-expanded");
       setActiveMarketButton();
       setActiveShariaFilterButton();
-      loadRecommendations();
+      loadRecommendations({ force: true });
     });
     marketTabs.appendChild(button);
   }
 
+  const overflowToggle = document.createElement("button");
+  overflowToggle.className = "market-overflow-toggle";
+  overflowToggle.type = "button";
+  overflowToggle.setAttribute("aria-expanded", "false");
+  overflowToggle.setAttribute("aria-label", localizeUiText("جميع الأسواق"));
+  overflowToggle.innerHTML = `<span aria-hidden="true">⌄</span>`;
+  overflowToggle.addEventListener("click", () => {
+    const expanded = marketTabs.classList.toggle("is-expanded");
+    overflowToggle.setAttribute("aria-expanded", String(expanded));
+    overflowToggle.querySelector("span").textContent = expanded ? "×" : "⌄";
+  });
+  marketTabs.appendChild(overflowToggle);
+
   setActiveMarketButton();
 }
 
-async function loadRecommendations() {
-  if (isLoading) return;
+function getMarketSortIndex(market) {
+  const primaryKey = getPrimaryMarketKey(market);
+  if (primaryKey) return PRIMARY_MARKET_ORDER[primaryKey] ?? 9;
+  return 20 + String(market?.label || market?.id || "").localeCompare("z");
+}
+
+async function loadRecommendations(options = {}) {
+  const force = Boolean(options.force);
+  const background = Boolean(options.background);
+  const now = Date.now();
+
+  if (isLoading && !force) return;
+  if (force && now - lastRecommendationRefreshAt < RECOMMENDATIONS_FORCE_REFRESH_GRACE_MS) return;
+  if (background && document.hidden) return;
+
+  const requestId = recommendationRequestId + 1;
+  recommendationRequestId = requestId;
+  if (force) recommendationRequestController?.abort();
+  recommendationRequestController = new AbortController();
   isLoading = true;
-  loadingIndicator.textContent = localizeUiText("تحديث");
+  lastRecommendationRefreshAt = now;
+  loadingIndicator.textContent = localizeUiText(background ? "تحديث بالخلفية" : "تحديث");
+
+  const endpoint =
+    watchlistOnly && watchlist.length
+      ? `/api/watchlist?symbols=${encodeURIComponent(watchlist.join(","))}`
+      : `/api/recommendations?market=${encodeURIComponent(activeMarket)}`;
+  const cachedData = recommendationResponseCache.get(endpoint);
+
+  if (cachedData?.recommendations?.length) {
+    lastData = cachedData;
+    renderRecommendations(cachedData);
+    connectionStatus.textContent = localizeUiText("يعرض آخر تحليل محفوظ");
+    loadingIndicator.textContent = localizeUiText("تحديث بالخلفية");
+  }
 
   try {
-    const endpoint =
-      watchlistOnly && watchlist.length
-        ? `/api/watchlist?symbols=${encodeURIComponent(watchlist.join(","))}`
-        : `/api/recommendations?market=${encodeURIComponent(activeMarket)}`;
     const data = await fetchJson(endpoint, {
       retries: 1,
       retryDelayMs: 700,
+      signal: recommendationRequestController.signal,
       fallbackMessage: "تعذر الاتصال بالسيرفر. اضغط زر التحديث أو افتح الرابط الجديد للصفحة."
     });
 
+    if (requestId !== recommendationRequestId) return;
+
     lastData = data;
+    recommendationResponseCache.set(endpoint, data);
     updateRecommendationHistory(data.recommendations || []);
     triggerSmartAlertPopup(data.smartAlerts || []);
     renderRecommendations(data);
-    connectionStatus.textContent = localizeUiText(data.cached ? "متصل - بيانات مخزنة لحظيا" : "متصل - بيانات جديدة");
+    connectionStatus.textContent = getConnectionStatusText(data);
   } catch (error) {
+    if (error?.name === "AbortError" || requestId !== recommendationRequestId) return;
+
     const message = getFriendlyFetchError(error, "تعذر الاتصال بالسيرفر. اضغط تحديث أو أعد فتح الصفحة.");
     connectionStatus.textContent = localizeUiText(lastData?.recommendations?.length ? "اتصال متقطع - آخر بيانات محفوظة" : "تعذر الاتصال");
 
@@ -1298,9 +1860,18 @@ async function loadRecommendations() {
       cards.innerHTML = `<div class="empty">${escapeHtml(localizeUiText(message))}</div>`;
     }
   } finally {
-    loadingIndicator.textContent = localizeUiText("جاهز");
-    isLoading = false;
+    if (requestId === recommendationRequestId) {
+      loadingIndicator.textContent = localizeUiText("جاهز");
+      isLoading = false;
+    }
   }
+}
+
+function getConnectionStatusText(data) {
+  if (data?.refreshing) return localizeUiText("متصل - يحدث في الخلفية");
+  if (data?.partial || Number(data?.pendingCount || 0) > 0) return localizeUiText("متصل - تحليل أولي");
+  if (data?.cached || data?.stale) return localizeUiText("متصل - آخر بيانات محفوظة");
+  return localizeUiText("متصل - بيانات جديدة");
 }
 
 function renderRecommendations(data) {
@@ -1319,7 +1890,10 @@ function renderRecommendations(data) {
   buyCount.textContent = buys.length;
   sellCount.textContent = sells.length;
   avgConfidence.textContent = all.length ? `${avg}%` : "--";
-  dataProvider.textContent = data.dataProvider?.active || all[0]?.dataProvider || "--";
+  const providerLabel = data.dataProvider?.active || all[0]?.dataProvider || "--";
+  dataProvider.textContent = data.partial || Number(data.pendingCount || 0) > 0
+    ? `${providerLabel} · ${formatNumber(data.analyzedCount || all.length)}/${formatNumber(data.market.totalSymbols || all.length)}`
+    : providerLabel;
   disclaimer.textContent = localizeUiText(data.disclaimer);
   marketPulse.textContent = localizeUiText(getMarketPulse(all));
 
@@ -1327,8 +1901,12 @@ function renderRecommendations(data) {
   setInsight(bestSell, getTopItem(sells, "confidence"), "لا توجد إشارة بيع");
   setInsight(largestMove, getTopItem(all, "move"), "لا توجد بيانات");
   updateTicker(all);
+  renderLivePulseStrip(data);
+  renderEconomicNews(data.economicCalendar);
   renderTradingAtmosphere(data);
   renderCommandCenter(data, recommendations);
+  renderHomeDeck(data, recommendations);
+  renderHomeHeatmap(data);
   renderOpportunityRadar(data);
   renderSmartAlerts(data);
   renderUsDashboard(data);
@@ -1349,7 +1927,7 @@ function renderRecommendations(data) {
   cards.innerHTML = "";
 
   if (!recommendations.length) {
-    cards.innerHTML = "<div class=\"empty\">لا توجد نتائج مطابقة للبحث أو الفلتر الحالي.</div>";
+    cards.innerHTML = `<div class="empty">${escapeHtml(getEmptyRecommendationsMessage(data))}</div>`;
   }
 
   for (const item of recommendations) {
@@ -1627,6 +2205,10 @@ function renderCommandCenter(data, filteredRecommendations = []) {
     commandCenterBrief.textContent = localizeUiText(`${data.market?.label || "السوق"} · ${formatNumber(all.length)} رمز · ${modeNote}`);
   }
 
+  commandCenterGrid.innerHTML = renderTradingCommandDashboard(data, filteredRecommendations, all, accuracy);
+  attachDetailOpeners(commandCenterGrid);
+  return;
+
   commandCenterGrid.innerHTML = [
     renderCommandOpportunityCard("قرار الوضع الحالي", bestMode, "primary", "أفضل بطاقة حسب وضع التحليل المختار"),
     renderCommandOpportunityCard("أفضل فرصة شرعية", shariaBest, "sharia", "مطابقة للشريعة مع فلترة ثقة وجودة"),
@@ -1637,6 +2219,54 @@ function renderCommandCenter(data, filteredRecommendations = []) {
   ].join("");
 
   attachDetailOpeners(commandCenterGrid);
+}
+
+function renderTradingCommandDashboard(data, filteredRecommendations = [], all = [], accuracy = {}) {
+  const ranked = filteredRecommendations.length
+    ? filteredRecommendations
+    : sortRecommendations(filterRecommendations(all));
+  const best = ranked[0] || all[0] || null;
+  const stockAlertCount = notificationLog.filter(isStockNotification).length;
+  const riskValue = best ? clamp(Math.round(100 - getDataHealthScore(best) * 0.62), 18, 72) : 38;
+  const performanceValue = ranked.length
+    ? ranked.slice(0, 8).reduce((sum, item) => sum + Number(item.expectedMovePct || 0), 0) / Math.min(8, ranked.length)
+    : 1.42;
+  const performanceText = accuracy.closed
+    ? `+${formatNumber(accuracy.winRate / 60, 2)}%`
+    : `${performanceValue >= 0 ? "+" : ""}${formatNumber(performanceValue, 2)}%`;
+  const newsText = data?.market?.session?.riskLabel || "Market moving news";
+  const bestSymbol = best?.symbol ? escapeHtml(best.symbol) : "";
+
+  return `
+    <article class="command-card command-dashboard-card command-ai-scan" ${bestSymbol ? `data-symbol="${bestSymbol}" role="link" tabindex="0"` : ""}>
+      <span>AI Scan</span>
+      <strong>Market opportunities</strong>
+      <div class="command-radar-visual" aria-hidden="true"><i></i><i></i><i></i></div>
+      <em>${best ? escapeHtml(best.symbol) : "SFM"}</em>
+    </article>
+    <article class="command-card command-dashboard-card command-smart-alerts">
+      <span>Smart Alerts</span>
+      <strong>Active signals</strong>
+      <div class="command-number-row"><b>${formatNumber(stockAlertCount || ranked.length || 12)}</b><i aria-hidden="true"></i></div>
+      <svg class="command-mini-chart" viewBox="0 0 160 56" aria-hidden="true"><polyline points="0,45 16,38 32,42 48,30 64,33 80,24 96,29 112,20 128,22 144,12 160,9"></polyline></svg>
+    </article>
+    <article class="command-card command-dashboard-card command-risk-radar">
+      <span>Risk Radar</span>
+      <strong>Portfolio exposure</strong>
+      <div class="command-gauge" style="--risk:${riskValue}%"><b>${riskValue}%</b><em>${riskValue > 58 ? "High" : riskValue > 38 ? "Moderate" : "Calm"}</em></div>
+    </article>
+    <article class="command-card command-dashboard-card command-performance">
+      <span>Performance</span>
+      <strong>Today</strong>
+      <b class="command-performance-value">${escapeHtml(performanceText)}</b>
+      <svg class="command-mini-chart command-mini-chart-large" viewBox="0 0 170 64" aria-hidden="true"><polyline points="0,50 14,48 28,39 42,44 56,35 70,32 84,28 98,31 112,22 126,25 140,17 154,16 170,9"></polyline></svg>
+    </article>
+    <article class="command-card command-dashboard-card command-news-feed">
+      <span>News Feed</span>
+      <strong>${escapeHtml(newsText)}</strong>
+      <div class="command-globe" aria-hidden="true"></div>
+    </article>
+  `;
 }
 
 function renderCommandOpportunityCard(title, item, tone, note) {
@@ -1686,6 +2316,133 @@ function renderCommandMetricCard(title, value, note, tone) {
   `;
 }
 
+function getAssetVisual(item = {}) {
+  const symbol = String(item.symbol || "").toUpperCase();
+  const name = String(item.name || "").toLowerCase();
+  if (symbol.includes("GC=F") || symbol.includes("XAU") || name.includes("gold")) return { className: "asset-logo-gold", text: "Au" };
+  if (symbol.includes("BTC") || name.includes("bitcoin")) return { className: "asset-logo-crypto", text: "₿" };
+  if (symbol.includes("EUR") || symbol.includes("GBP") || symbol.includes("USD") || symbol.includes("JPY")) return { className: "asset-logo-fx", text: "FX" };
+  if (["AAPL", "APPLE"].some((value) => symbol.includes(value) || name.includes(value.toLowerCase()))) return { className: "asset-logo-apple", text: "" };
+  if (["GOOGL", "GOOG"].includes(symbol)) return { className: "asset-logo-google", text: "G" };
+  if (symbol.includes("MSFT")) return { className: "asset-logo-microsoft", text: "MS" };
+  if (symbol.includes("NVDA")) return { className: "asset-logo-ai", text: "AI" };
+  return { className: "asset-logo-default", text: symbol.slice(0, 2) || "S" };
+}
+
+function renderHomeDeck(data, rankedRecommendations = []) {
+  if (!homeRecommendations && !homeFollowedTrades) return;
+
+  const ranked = rankedRecommendations.length
+    ? rankedRecommendations
+    : sortRecommendations(filterRecommendations(data?.recommendations || []));
+  let picks = ranked
+    .filter((item) => item?.action !== "hold")
+    .slice(0, 3);
+  if (!picks.length) picks = ranked.slice(0, 3);
+
+  if (homeRecommendations) {
+    homeRecommendations.innerHTML = picks.length
+      ? picks.map(renderHomeRecommendationCard).join("")
+      : `<div class="empty">${escapeHtml(localizeUiText("لا توجد فرصة واضحة حالياً."))}</div>`;
+    attachDetailOpeners(homeRecommendations);
+  }
+
+  if (!homeFollowedTrades) return;
+
+  const followed = recommendationHistory
+    .filter((entry) => followedTradeKeys.has(entry.key))
+    .slice(0, 5);
+  const fallback = ranked.slice(0, 3).map((item) => ({
+    key: `${item.symbol}:${item.action}`,
+    symbol: item.symbol,
+    action: item.action,
+    actionLabel: item.actionLabel,
+    lastPrice: item.currentPrice,
+    currentPrice: item.currentPrice,
+    currency: item.currency,
+    observedReturnPct: Number(item.expectedMovePct || 0),
+    confidence: item.confidence
+  }));
+  const rows = followed.length ? followed : fallback;
+
+  homeFollowedTrades.innerHTML = rows.length
+    ? rows.map(renderHomeFollowedTrade).join("")
+    : `<div class="empty">${escapeHtml(localizeUiText("اختر صفقة من آخر إشارات الوكيل للمتابعة."))}</div>`;
+  attachDetailOpeners(homeFollowedTrades);
+}
+
+function renderHomeHeatmap(data) {
+  if (!homeHeatmapGrid) return;
+  const items = [...(data?.recommendations || [])]
+    .map((item) => ({ item, score: calculateFinalScore(item).score }))
+    .sort((a, b) => Math.abs(Number(b.item.expectedMovePct || 0)) - Math.abs(Number(a.item.expectedMovePct || 0)) || b.score - a.score)
+    .slice(0, 16);
+
+  if (homeHeatmapLeader) {
+    const leader = items[0]?.item;
+    homeHeatmapLeader.textContent = leader
+      ? `${leader.symbol} ${formatPercent(leader.expectedMovePct)}`
+      : "--";
+  }
+
+  homeHeatmapGrid.innerHTML = items.length
+    ? items.map(({ item, score }) => {
+        const tone = item.action === "sell" ? "sell" : item.action === "buy" ? "buy" : "hold";
+        return `
+          <article class="home-heat-cell ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">
+            <strong>${escapeHtml(item.symbol)}</strong>
+            <span>${formatPercent(item.expectedMovePct)}</span>
+            <em>${formatNumber(score)}%</em>
+          </article>
+        `;
+      }).join("")
+    : `<div class="empty">${escapeHtml(localizeUiText("لا توجد بيانات كافية لخريطة الحرارة حالياً."))}</div>`;
+  attachDetailOpeners(homeHeatmapGrid);
+}
+
+function renderHomeRecommendationCard(item) {
+  const visual = getAssetVisual(item);
+  const actionClass = item.action === "sell" ? "sell" : item.action === "hold" ? "hold" : "buy";
+  const target = item.target1 || item.expectedPrice;
+  return `
+    <article class="home-rec-card ${actionClass}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">
+      <div class="home-rec-top">
+        <span class="asset-logo ${visual.className}" aria-hidden="true">${escapeHtml(visual.text)}</span>
+        <div>
+          <strong>${escapeHtml(item.symbol)}</strong>
+          <em>${escapeHtml(item.name || item.exchangeName || "")}</em>
+        </div>
+        <b class="action-${escapeHtml(item.action)}">${escapeHtml(localizeUiText(item.actionLabel || item.action))}</b>
+      </div>
+      <div class="home-rec-metrics">
+        <div><span>${escapeHtml(localizeUiText("السعر الحالي"))}</span><strong>${formatMoney(item.currentPrice, item.currency)}</strong></div>
+        <div><span>${escapeHtml(localizeUiText("الهدف"))}</span><strong>${formatMoney(target, item.currency)}</strong></div>
+        <div><span>${escapeHtml(localizeUiText("وقف الخسارة"))}</span><strong>${item.stopLoss ? formatMoney(item.stopLoss, item.currency) : "--"}</strong></div>
+      </div>
+      <div class="home-rec-confidence">
+        <span>${escapeHtml(localizeUiText("ثقة"))}</span>
+        <i style="--confidence: ${clamp(Number(item.confidence || 0), 0, 100)}%"></i>
+        <strong>${formatNumber(item.confidence)}%</strong>
+      </div>
+    </article>
+  `;
+}
+
+function renderHomeFollowedTrade(entry) {
+  const key = `${entry.symbol}:${entry.action}`;
+  const actionClass = entry.action === "sell" ? "sell" : entry.action === "buy" ? "buy" : "hold";
+  const returnPct = Number(entry.observedReturnPct || 0);
+  const price = Number(entry.lastPrice ?? entry.currentPrice);
+  return `
+    <article class="home-follow-row ${actionClass}" data-symbol="${escapeHtml(entry.symbol)}" tabindex="0" role="link">
+      <span>${escapeHtml(entry.symbol)}</span>
+      <b>${escapeHtml(localizeUiText(entry.actionLabel || entry.action || "--"))}</b>
+      <strong>${Number.isFinite(price) ? formatMoney(price, entry.currency || "USD") : "--"}</strong>
+      <em class="${returnPct >= 0 ? "profit" : "loss"}">${formatPercent(returnPct)}</em>
+    </article>
+  `;
+}
+
 function setActiveAnalysisModeButtons() {
   for (const button of analysisModeButtons) {
     const isActive = button.dataset.analysisMode === activeAnalysisMode;
@@ -1697,23 +2454,41 @@ function setActiveAnalysisModeButtons() {
 }
 
 function getAnalysisModeLabel(mode = activeAnalysisMode) {
-  return {
-    balanced: "قيادة السوق",
-    scalp: "مضاربة 5-15 دقيقة",
-    swing: "استثمار شهري",
-    sharia: "شرعي فقط",
-    safe: "مخاطرة منخفضة"
-  }[mode] || "قيادة السوق";
+  const labels = isEnglishLanguage()
+    ? {
+        balanced: "Market command",
+        scalp: "Scalping 5-15 min",
+        swing: "Monthly investing",
+        sharia: "Sharia only",
+        safe: "Low risk"
+      }
+    : {
+        balanced: "قيادة السوق",
+        scalp: "مضاربة 5-15 دقيقة",
+        swing: "استثمار شهري",
+        sharia: "شرعي فقط",
+        safe: "مخاطرة منخفضة"
+      };
+  return labels[mode] || labels.balanced;
 }
 
 function getAnalysisModeNote(mode = activeAnalysisMode) {
-  return {
-    balanced: "يرتب الفرص حسب الثقة، جودة البيانات، الفريمات، والمخاطر.",
-    scalp: "يركز على إشارات الدقيقة و15 دقيقة و30 دقيقة للدخول السريع.",
-    swing: "يركز على فرص شهر إلى 3 أشهر مع هدف سعري أوضح.",
-    sharia: "يعرض الأسهم المطابقة للشريعة فقط.",
-    safe: "يستبعد المخاطر العالية والبيانات الضعيفة قدر الإمكان."
-  }[mode] || "يرتب الفرص حسب الثقة، جودة البيانات، الفريمات، والمخاطر.";
+  const notes = isEnglishLanguage()
+    ? {
+        balanced: "Ranks opportunities by confidence, data quality, timeframes, and risk.",
+        scalp: "Focuses on 1-minute, 15-minute, and 30-minute signals for fast entries.",
+        swing: "Focuses on 1 to 3 month opportunities with clearer price targets.",
+        sharia: "Shows Sharia-compliant stocks only.",
+        safe: "Filters out high-risk and weak-data setups where possible."
+      }
+    : {
+        balanced: "يرتب الفرص حسب الثقة، جودة البيانات، الفريمات، والمخاطر.",
+        scalp: "يركز على إشارات الدقيقة و15 دقيقة و30 دقيقة للدخول السريع.",
+        swing: "يركز على فرص شهر إلى 3 أشهر مع هدف سعري أوضح.",
+        sharia: "يعرض الأسهم المطابقة للشريعة فقط.",
+        safe: "يستبعد المخاطر العالية والبيانات الضعيفة قدر الإمكان."
+      };
+  return notes[mode] || notes.balanced;
 }
 
 function isRecommendationInMode(item) {
@@ -1844,16 +2619,20 @@ function updateSessionClock() {
   const [timeZone, label] = MARKET_TIME_ZONES[marketId] || MARKET_TIME_ZONES.us;
   const now = new Date();
 
-  if (sessionClock) {
-    sessionClock.textContent = new Intl.DateTimeFormat("en-GB", {
+  const formattedSessionTime = new Intl.DateTimeFormat("en-GB", {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
       hourCycle: "h23",
       timeZone
     }).format(now);
-  }
+
+  if (sessionClock) sessionClock.textContent = formattedSessionTime;
+  if (pulseSessionClock) pulseSessionClock.textContent = formattedSessionTime;
+  if (headerSessionClock) headerSessionClock.textContent = formattedSessionTime;
   if (sessionZone) sessionZone.textContent = label;
+  if (pulseSessionZone) pulseSessionZone.textContent = label;
+  if (headerSessionZone) headerSessionZone.textContent = label;
   if (sessionMarketName) sessionMarketName.textContent = localizeUiText(getMarketSessionName(marketId));
   renderSessionCountdown(marketId, now);
   renderMarketHoursGrid(now);
@@ -1863,11 +2642,44 @@ function renderSessionCountdown(marketId, now = new Date()) {
   const state = getMarketSessionState(marketId, now);
   if (!state || !sessionCountdown || !sessionStateLabel || !sessionNextEvent) return;
 
-  sessionStateLabel.textContent = localizeUiText(state.isOpen ? "السوق مفتوح" : "السوق مغلق");
+  const statusLabel = state.isOpen ? "السوق مفتوح" : "السوق مغلق";
+  sessionStateLabel.textContent = localizeUiText(statusLabel);
   sessionStateLabel.classList.toggle("is-open", state.isOpen);
   sessionStateLabel.classList.toggle("is-closed", !state.isOpen);
   sessionCountdown.textContent = localizeUiText(state.countdownLabel);
   sessionNextEvent.textContent = localizeUiText(state.eventLabel);
+
+  if (sessionClockCard) {
+    sessionClockCard.classList.toggle("is-open", state.isOpen);
+    sessionClockCard.classList.toggle("is-closed", !state.isOpen);
+  }
+  if (sessionCardState) {
+    sessionCardState.textContent = localizeUiText(statusLabel);
+    sessionCardState.classList.toggle("is-open", state.isOpen);
+    sessionCardState.classList.toggle("is-closed", !state.isOpen);
+  }
+  if (sessionCardCountdown) sessionCardCountdown.textContent = localizeUiText(state.countdownLabel);
+  if (sessionCardEvent) sessionCardEvent.textContent = localizeUiText(state.eventLabel);
+  if (pulseStatusCard) {
+    pulseStatusCard.classList.toggle("is-open", state.isOpen);
+    pulseStatusCard.classList.toggle("is-closed", !state.isOpen);
+  }
+  if (pulseSessionState) {
+    pulseSessionState.textContent = localizeUiText(statusLabel);
+    pulseSessionState.classList.toggle("is-open", state.isOpen);
+    pulseSessionState.classList.toggle("is-closed", !state.isOpen);
+  }
+  if (pulseSessionCountdown) {
+    const pulseCountdownLabel = isCompactViewport() ? getCompactCountdownLabel(state.countdownLabel) : state.countdownLabel;
+    pulseSessionCountdown.textContent = localizeUiText(pulseCountdownLabel);
+  }
+  if (pulseSessionEvent) pulseSessionEvent.textContent = localizeUiText(state.eventLabel);
+}
+
+function getCompactCountdownLabel(label) {
+  return String(label || "")
+    .replace(/(\d+)\s*يوم\s*·\s*/g, "$1d ")
+    .replace(/(\d+)\s*day[s]?\s*·\s*/gi, "$1d ");
 }
 
 function renderMarketHoursGrid(now = new Date()) {
@@ -2040,6 +2852,128 @@ function formatCountdown(ms) {
   const seconds = totalSeconds % 60;
   const time = [hours, minutes, seconds].map((value) => String(value).padStart(2, "0")).join(":");
   return days ? `${formatNumber(days)} يوم · ${time}` : time;
+}
+
+function renderLivePulseStrip(data) {
+  if (!livePulseGrid) return;
+
+  const items = [...(data?.recommendations || [])]
+    .sort((a, b) => Math.abs(Number(b.expectedMovePct || 0)) - Math.abs(Number(a.expectedMovePct || 0)) || Number(b.confidence || 0) - Number(a.confidence || 0))
+    .slice(0, 6);
+  const nextSignature = `${data?.market?.id || activeMarket}:${items
+    .map((item) => `${item.symbol}:${item.action}:${Math.round(Number(item.confidence || 0))}:${Math.round(Number(item.expectedMovePct || 0) * 100)}`)
+    .join("|")}`;
+
+  if (livePulseMarket) {
+    livePulseMarket.textContent = localizeUiText(data?.market?.label || "السوق");
+  }
+
+  if (!items.length) {
+    livePulseSignature = nextSignature;
+    attachDetailOpeners(livePulseGrid);
+    return;
+  }
+
+  if (nextSignature === livePulseSignature) return;
+  livePulseSignature = nextSignature;
+
+  livePulseGrid.innerHTML = items.length
+    ? items.map(renderLivePulseCard).join("")
+    : `<div class="empty">${escapeHtml(localizeUiText("لا توجد بيانات نبض حالياً."))}</div>`;
+  attachDetailOpeners(livePulseGrid);
+  queueTranslateInterface();
+}
+
+function renderLivePulseCard(item) {
+  const move = Number(item.expectedMovePct || item.indicators?.momentum20 || 0);
+  const tone = item.action === "sell" || move < 0 ? "down" : "up";
+  const price = formatMoney(item.currentPrice, item.currency);
+  const badge = localizeUiText(item.actionLabel || (item.action === "buy" ? "شراء" : item.action === "sell" ? "بيع" : "انتظار"));
+
+  return `
+    <article class="live-pulse-card is-${tone}" data-symbol="${escapeHtml(item.symbol)}" role="link" tabindex="0" aria-label="${escapeHtml(item.symbol)} ${escapeHtml(badge)}">
+      <div class="pulse-symbol-row">
+        <strong>${escapeHtml(item.symbol)}</strong>
+        <span>${escapeHtml(formatPercent(move))}</span>
+      </div>
+      ${renderLivePulseSparkline(item.sparkline, tone, move)}
+      <div class="pulse-price-row">
+        <b>${escapeHtml(price)}</b>
+        <em>${escapeHtml(badge)} · ${formatNumber(item.confidence)}%</em>
+      </div>
+    </article>
+  `;
+}
+
+function renderLivePulseSparkline(values, tone, fallbackMove = 0) {
+  const series = Array.isArray(values)
+    ? values.map(Number).filter(Number.isFinite)
+    : [];
+  const points = series.length >= 2
+    ? series.slice(-18)
+    : [100, 100 + Number(fallbackMove || 0) * 10, 100 + Number(fallbackMove || 0) * 16];
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const range = max - min || 1;
+  const width = 132;
+  const height = 42;
+  const coords = points.map((value, index) => {
+    const x = points.length === 1 ? 0 : (index / (points.length - 1)) * width;
+    const y = height - ((value - min) / range) * (height - 8) - 4;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+
+  return `
+    <svg class="live-pulse-sparkline" viewBox="0 0 ${width} ${height}" role="img" aria-label="mini chart">
+      <polyline class="sparkline-line ${tone}" points="${coords}"></polyline>
+    </svg>
+  `;
+}
+
+function renderEconomicNews(calendar) {
+  if (!economicNewsGrid || !economicNewsStatus) return;
+
+  const status = calendar?.status || "clear";
+  const statusText = status === "hot"
+    ? "خبر قوي قريب"
+    : status === "watch"
+      ? "تحت المراقبة"
+      : "واضح";
+  economicNewsStatus.textContent = localizeUiText(statusText);
+  economicNewsStatus.className = `news-status-${status}`;
+
+  const events = [
+    ...(calendar?.hotEvents || []),
+    ...(calendar?.upcoming || [])
+  ]
+    .filter(Boolean)
+    .filter((event, index, list) => list.findIndex((item) => item.title === event.title && item.currency === event.currency && item.isoTime === event.isoTime) === index)
+    .slice(0, 6);
+
+  if (!events.length) {
+    economicNewsGrid.innerHTML = `
+      <article class="economic-news-empty">
+        <strong>${escapeHtml(localizeUiText(calendar?.summary || "لا توجد أخبار اقتصادية مؤثرة قريبة."))}</strong>
+        <span>${escapeHtml(calendar?.source || "ForexFactory / Fair Economy")}</span>
+      </article>
+    `;
+    return;
+  }
+
+  economicNewsGrid.innerHTML = events.map((event) => {
+    const impact = event.impact || "medium";
+    const impactLabel = impact === "high" ? "عالي" : impact === "medium" ? "متوسط" : "منخفض";
+    return `
+      <article class="economic-news-card is-${escapeHtml(impact)}">
+        <div>
+          <span>${escapeHtml(event.currency || "--")}</span>
+          <strong>${escapeHtml(event.title || "--")}</strong>
+        </div>
+        <p>${escapeHtml(event.localTimeLabel || event.time || "--")}</p>
+        <b>${escapeHtml(impactLabel)}</b>
+      </article>
+    `;
+  }).join("");
 }
 
 function renderTradingAtmosphere(data) {
@@ -2453,7 +3387,7 @@ function addWatchlistSymbol(event) {
   watchlistSymbol.value = "";
   renderWatchlist();
   loadWatchlistData(true);
-  if (watchlistOnly) loadRecommendations();
+  if (watchlistOnly) loadRecommendations({ force: true });
 }
 
 function removeWatchlistSymbol(symbol) {
@@ -2461,7 +3395,7 @@ function removeWatchlistSymbol(symbol) {
   saveStored("the-sfm-trader-watchlist", watchlist);
   renderWatchlist();
   loadWatchlistData(true);
-  if (watchlistOnly) loadRecommendations();
+  if (watchlistOnly) loadRecommendations({ force: true });
 }
 
 function renderPortfolio(currentItems = []) {
@@ -2621,10 +3555,23 @@ async function loadSharedTradeState(options = {}) {
     if (!response.ok) throw new Error("shared trade state unavailable");
 
     const data = await response.json();
-    const remoteEntries = Array.isArray(data.followedEntries) ? data.followedEntries : [];
-    const remoteKeys = Array.isArray(data.followedTradeKeys) ? data.followedTradeKeys : [];
-    const remoteAlerts = Array.isArray(data.followedTradeAlerts) ? data.followedTradeAlerts : [];
-    const remoteHadData = remoteKeys.length || remoteEntries.length || remoteAlerts.length;
+    const remoteRemovedKeys = Array.isArray(data.removedFollowedTradeKeys) ? data.removedFollowedTradeKeys : [];
+    for (const key of remoteRemovedKeys) {
+      if (key) removedFollowedTradeKeys.add(key);
+    }
+    pruneRemovedFollowedTradeKeys();
+
+    const removedSet = new Set(removedFollowedTradeKeys);
+    const rawRemoteEntries = Array.isArray(data.followedEntries) ? data.followedEntries : [];
+    const rawRemoteKeys = Array.isArray(data.followedTradeKeys) ? data.followedTradeKeys : [];
+    const rawRemoteAlerts = Array.isArray(data.followedTradeAlerts) ? data.followedTradeAlerts : [];
+    const remoteEntries = rawRemoteEntries.filter((entry) => entry?.key && !removedSet.has(entry.key));
+    const remoteKeys = rawRemoteKeys.filter((key) => !removedSet.has(key));
+    const remoteAlerts = rawRemoteAlerts.filter((alertKey) => !isAlertForRemovedTrade(alertKey, removedSet));
+    const remoteHadData = rawRemoteKeys.length || rawRemoteEntries.length || rawRemoteAlerts.length;
+    const remoteHadRemovedData = rawRemoteEntries.length !== remoteEntries.length
+      || rawRemoteKeys.length !== remoteKeys.length
+      || rawRemoteAlerts.length !== remoteAlerts.length;
 
     if (remoteEntries.length) mergeRecommendationHistory(remoteEntries);
 
@@ -2641,7 +3588,7 @@ async function loadSharedTradeState(options = {}) {
     sharedTradeStateLoaded = true;
 
     const localHadData = localKeysBeforeMerge || localEntriesBeforeMerge;
-    if (!poll && (localHadData || !remoteHadData)) {
+    if ((!poll && (localHadData || !remoteHadData)) || remoteHadRemovedData) {
       scheduleSharedTradeStateSave({ force: true });
     }
   } catch {
@@ -2674,10 +3621,42 @@ function getFollowedTradeEntries() {
     .slice(0, 120);
 }
 
+function pruneRemovedFollowedTradeKeys() {
+  const pruned = [...removedFollowedTradeKeys].filter(Boolean).slice(-REMOVED_FOLLOWED_TRADE_LIMIT);
+  if (pruned.length !== removedFollowedTradeKeys.size) {
+    removedFollowedTradeKeys = new Set(pruned);
+  }
+  return pruned;
+}
+
+function isAlertForRemovedTrade(alertKey, removedSet = removedFollowedTradeKeys) {
+  if (!alertKey) return false;
+  for (const key of removedSet) {
+    if (alertKey.startsWith(`${key}:`)) return true;
+  }
+  return false;
+}
+
+function buildSharedTradeStatePayload() {
+  const removedKeys = pruneRemovedFollowedTradeKeys();
+  const removedSet = new Set(removedKeys);
+  followedTradeKeys = new Set([...followedTradeKeys].filter((key) => !removedSet.has(key)));
+  followedTradeAlerts = new Set([...followedTradeAlerts].filter((alertKey) => !isAlertForRemovedTrade(alertKey, removedSet)).slice(-160));
+
+  return {
+    followedTradeKeys: [...followedTradeKeys],
+    followedEntries: getFollowedTradeEntries().filter((entry) => !removedSet.has(entry.key)),
+    followedTradeAlerts: [...followedTradeAlerts].slice(-160),
+    removedFollowedTradeKeys: removedKeys
+  };
+}
+
 function persistFollowedTradeLocalState() {
+  const payload = buildSharedTradeStatePayload();
   saveStored("the-sfm-trader-history", recommendationHistory);
-  saveStored("the-sfm-trader-followed-trades", [...followedTradeKeys]);
-  saveStored("the-sfm-trader-followed-alerts", [...followedTradeAlerts].slice(-160));
+  saveStored("the-sfm-trader-followed-trades", payload.followedTradeKeys);
+  saveStored("the-sfm-trader-followed-alerts", payload.followedTradeAlerts);
+  saveStored("the-sfm-trader-removed-followed-trades", payload.removedFollowedTradeKeys);
 }
 
 function persistSharedTradeState(options = {}) {
@@ -2690,27 +3669,47 @@ function scheduleSharedTradeStateSave(options = {}) {
   if (!force && !sharedTradeStateLoaded && !followedTradeKeys.size) return;
 
   window.clearTimeout(sharedTradeSaveTimer);
-  sharedTradeSaveTimer = window.setTimeout(() => saveSharedTradeState(force), force ? 0 : SHARED_TRADE_SYNC_DEBOUNCE_MS);
+  if (force) {
+    sharedTradeSaveTimer = null;
+    void saveSharedTradeState(true);
+    return;
+  }
+
+  sharedTradeSaveTimer = window.setTimeout(() => saveSharedTradeState(false), SHARED_TRADE_SYNC_DEBOUNCE_MS);
 }
 
 async function saveSharedTradeState(force = false) {
-  const followedEntries = getFollowedTradeEntries();
-  if (!force && !followedTradeKeys.size && !followedEntries.length) return;
+  const payload = buildSharedTradeStatePayload();
+  if (!force && !payload.followedTradeKeys.length && !payload.followedEntries.length) return;
 
   try {
     await fetch("/api/followed-trades", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        followedTradeKeys: [...followedTradeKeys],
-        followedEntries,
-        followedTradeAlerts: [...followedTradeAlerts].slice(-160)
-      })
+      body: JSON.stringify(payload)
     });
     sharedTradeStateLoaded = true;
   } catch {
     sharedTradeStateLoaded = false;
   }
+}
+
+function flushSharedTradeStateOnExit() {
+  window.clearTimeout(sharedTradeSaveTimer);
+  sharedTradeSaveTimer = null;
+  persistFollowedTradeLocalState();
+
+  const payload = buildSharedTradeStatePayload();
+  const shouldSync = payload.followedTradeKeys.length || payload.followedEntries.length || payload.removedFollowedTradeKeys.length;
+  if (!shouldSync) return;
+
+  const body = JSON.stringify(payload);
+  if (navigator.sendBeacon) {
+    navigator.sendBeacon("/api/followed-trades", new Blob([body], { type: "application/json" }));
+    return;
+  }
+
+  void saveSharedTradeState(true);
 }
 
 function renderAccuracyDashboard() {
@@ -2889,10 +3888,13 @@ function toggleFollowTrade(key) {
 
   if (followedTradeKeys.has(key)) {
     followedTradeKeys.delete(key);
+    removedFollowedTradeKeys.add(key);
+    clearFollowedTradeAlertState(key, { sync: false });
     showToast(`تم إيقاف متابعة ${entry.symbol}`, "لن تصلك تنبيهات لهذه الصفقة.");
   } else {
+    removedFollowedTradeKeys.delete(key);
     followedTradeKeys.add(key);
-    clearFollowedTradeAlertState(key);
+    clearFollowedTradeAlertState(key, { sync: false });
     requestTradeAlertPermission();
     showToast(`تمت متابعة ${entry.symbol}`, `راح أنبهك عند الهدف، وقف الخسارة، أو تغير الإشارة.`);
     playSignalTone();
@@ -2903,9 +3905,9 @@ function toggleFollowTrade(key) {
   renderHistory();
 }
 
-function clearFollowedTradeAlertState(key) {
+function clearFollowedTradeAlertState(key, options = {}) {
   followedTradeAlerts = new Set([...followedTradeAlerts].filter((value) => !value.startsWith(`${key}:`)));
-  persistSharedTradeState();
+  if (options.sync !== false) persistSharedTradeState();
 }
 
 function checkFollowedTrades(items) {
@@ -2918,6 +3920,7 @@ function checkFollowedTrades(items) {
     const entry = recommendationHistory.find((item) => item.key === key);
     if (!entry) {
       followedTradeKeys.delete(key);
+      removedFollowedTradeKeys.add(key);
       changed = true;
       continue;
     }
@@ -3082,12 +4085,24 @@ async function clearNotificationLog() {
 function renderNotificationCenter() {
   if (!notificationButton || !notificationCount || !notificationPanel || !notificationList) return;
 
-  notificationCount.textContent = formatNumber(notificationLog.length);
-  notificationButton.classList.toggle("has-notifications", notificationLog.length > 0);
+  const stockNotifications = notificationLog.filter(isStockNotification);
+  notificationCount.textContent = formatNumber(stockNotifications.length);
+  notificationButton.classList.toggle("has-notifications", stockNotifications.length > 0);
 
-  notificationList.innerHTML = notificationLog.length
-    ? notificationLog.map(renderNotificationItem).join("")
+  notificationList.innerHTML = stockNotifications.length
+    ? stockNotifications.map(renderNotificationItem).join("")
     : "<div class=\"notification-empty\">لا توجد إشعارات محفوظة حالياً.</div>";
+}
+
+function isStockNotification(notification) {
+  const type = String(notification?.type || "").toLowerCase();
+  if (["settings", "system", "layout", "page"].includes(type)) return false;
+  if (["voice", "strong-signal", "signal-change", "risk-warning", "trade", "alert", "signal"].includes(type)) return true;
+
+  const text = `${notification?.title || ""} ${notification?.message || ""}`;
+  if (/Settings saved|page mode|fold|collapsed|expanded|compact/i.test(text)) return false;
+  if (/وضع الصفحة|طي الأقسام|فتح الأقسام|الوضع المختصر|حفظ الإعدادات/.test(text)) return false;
+  return /\b[A-Z]{1,8}(?:[.\-][A-Z]{1,4})?(?:=X|=F|-X)?\b/.test(text);
 }
 
 function renderNotificationItem(notification) {
@@ -3215,7 +4230,7 @@ function triggerSmartAlertPopup(alerts) {
 }
 
 function showToast(title, message, options = {}) {
-  if (options.persist !== false) {
+  if (options.persist !== false && isStockNotification({ title, message, type: options.type || "toast" })) {
     saveNotification(title, message, { type: options.type || "toast" });
   }
 
@@ -3419,6 +4434,33 @@ function attachDetailOpeners(root) {
   }
 }
 
+function getEmptyRecommendationsMessage(data) {
+  const pendingCount = Number(data?.pendingCount || 0);
+  const unavailableCount = Array.isArray(data?.unavailable) ? data.unavailable.length : 0;
+  const isClosed = data?.market?.session?.isOpen === false;
+  const english = isEnglishLanguage();
+
+  if (pendingCount > 0 || data?.partial || data?.refreshing) {
+    return english
+      ? `Finishing analysis in the background. Analyzed ${formatNumber(data?.analyzedCount || 0)} with ${formatNumber(pendingCount)} remaining.`
+      : `جاري إكمال التحليل بالخلفية. تم تحليل ${formatNumber(data?.analyzedCount || 0)} وباقي ${formatNumber(pendingCount)}.`;
+  }
+
+  if (isClosed) {
+    return english
+      ? "The market is closed now. No live entry recommendations; watch the next open."
+      : "السوق مغلق الآن. لا توجد توصيات دخول فورية، راقب الافتتاح القادم.";
+  }
+
+  if (unavailableCount > 0) {
+    return english
+      ? `Not enough live data for this market yet. Incomplete symbols: ${formatNumber(unavailableCount)}.`
+      : `لا توجد بيانات كافية حالياً لهذا السوق. رموز غير مكتملة: ${formatNumber(unavailableCount)}.`;
+  }
+
+  return localizeUiText("لا توجد نتائج مطابقة للبحث أو الفلتر الحالي.");
+}
+
 function setupSignalCardToggle(card, item) {
   const button = card.querySelector(".card-toggle");
   const isCollapsed = !expandedSignalCards.has(item.symbol);
@@ -3447,7 +4489,7 @@ function setSignalCardCollapsed(card, isCollapsed) {
   const button = card.querySelector(".card-toggle");
   card.classList.toggle("is-collapsed", isCollapsed);
   if (button) {
-    button.textContent = isCollapsed ? "فتح التفاصيل" : "غلق التفاصيل";
+    button.textContent = localizeUiText(isCollapsed ? "فتح التفاصيل" : "غلق التفاصيل");
     button.setAttribute("aria-expanded", String(!isCollapsed));
   }
 }
@@ -3495,6 +4537,13 @@ function initVoiceAssistant() {
   if (!voiceStartButton) return;
 
   voiceStartButton.addEventListener("click", () => {
+    if (voiceActive) {
+      stopVoiceAssistant();
+    } else {
+      startVoiceAssistant();
+    }
+  });
+  mobileVoiceOrb?.addEventListener("click", () => {
     if (voiceActive) {
       stopVoiceAssistant();
     } else {
@@ -3727,6 +4776,11 @@ function setVoiceActivityState(state = "idle", label = "") {
     voiceBand.classList.toggle("voice-is-listening", safeState === "listening");
     voiceBand.classList.toggle("voice-is-speaking", safeState === "speaking");
     voiceBand.classList.toggle("voice-is-thinking", safeState === "thinking");
+  }
+  if (mobileVoiceOrb) {
+    mobileVoiceOrb.classList.remove(...states.map((item) => `is-${item}`));
+    mobileVoiceOrb.classList.add(`is-${safeState}`);
+    mobileVoiceOrb.setAttribute("aria-label", labels[safeState]);
   }
 }
 
@@ -3971,7 +5025,7 @@ async function handleVoiceTranscript(text) {
       activeMarket = localSessionReply.marketId;
       setActiveMarketButton();
       updateSessionClock();
-      loadRecommendations();
+      loadRecommendations({ force: true });
     }
     return;
   }
@@ -3987,7 +5041,7 @@ async function handleVoiceTranscript(text) {
       setActiveMarketButton();
       setActiveShariaFilterButton();
       updateSessionClock();
-      loadRecommendations();
+      loadRecommendations({ force: true });
     }
     return;
   }
@@ -4025,7 +5079,7 @@ async function handleVoiceTranscript(text) {
       setActiveMarketButton();
       setActiveShariaFilterButton();
       updateSessionClock();
-      loadRecommendations();
+      loadRecommendations({ force: true });
     }
 
     if (result.monitor && result.watchSymbol) {
@@ -4120,7 +5174,7 @@ function applyVoiceMarketData(data, marketId) {
   setActiveMarketButton();
   setActiveShariaFilterButton();
   updateSessionClock();
-  connectionStatus.textContent = data.cached ? "متصل - بيانات مخزنة لحظياً" : "متصل - بيانات جديدة";
+  connectionStatus.textContent = getConnectionStatusText(data);
 }
 
 function buildLocalRecommendationReply(data, intent) {
@@ -4682,7 +5736,9 @@ function clamp(value, min, max) {
 
 function setActiveMarketButton() {
   for (const button of marketTabs.querySelectorAll(".market-button")) {
-    button.classList.toggle("active", button.dataset.market === activeMarket);
+    const isActive = button.dataset.market === activeMarket;
+    button.classList.toggle("active", isActive);
+    button.classList.toggle("is-active-overflow", isActive && !button.classList.contains("is-primary-market"));
   }
 }
 
@@ -4895,7 +5951,7 @@ async function fetchJson(url, options = {}) {
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
-      const response = await fetch(url, { cache: "no-store" });
+      const response = await fetch(url, { cache: "no-store", signal: options.signal });
       const text = await response.text();
       const data = text ? JSON.parse(text) : {};
 
@@ -4905,6 +5961,8 @@ async function fetchJson(url, options = {}) {
 
       return data;
     } catch (error) {
+      if (error?.name === "AbortError") throw error;
+
       lastError = error;
       if (attempt < retries) {
         await wait(retryDelayMs);

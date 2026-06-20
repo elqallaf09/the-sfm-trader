@@ -21,3 +21,6 @@ dist/
 DerivedData/
 ios/**/DerivedData/
 ios/**/build/
+
+# Local visual review captures
+screenshots/

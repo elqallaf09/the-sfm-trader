@@ -10,9 +10,12 @@ const TIMEFRAME_CONFIGS = [
   { id: "1mo", label: "شهري", range: "5y", interval: "1mo", weight: 0.13, minBars: 35 },
   { id: "1y", label: "سنوي", range: "10y", interval: "1mo", weight: 0.1, minBars: 60 }
 ];
+const TIMEFRAME_FIRST_PASS_MS = Number(process.env.TIMEFRAME_FIRST_PASS_MS || 4_000);
+const PRIMARY_TIMEFRAME_IDS = new Set(["15m", "1h", "1d", "1wk"]);
+const FAST_MARKET_TIMEFRAME_IDS = new Set(["1d"]);
 
-export async function analyzeSymbol(asset) {
-  const timeframeAnalyses = await fetchTimeframeAnalyses(asset.symbol);
+export async function analyzeSymbol(asset, options = {}) {
+  const timeframeAnalyses = await fetchTimeframeAnalyses(asset.symbol, options);
   const primaryFrame = pickPrimaryFrame(timeframeAnalyses);
 
   if (!primaryFrame) {
@@ -125,10 +128,16 @@ export async function analyzeSymbol(asset) {
   };
 }
 
-async function fetchTimeframeAnalyses(symbol) {
+async function fetchTimeframeAnalyses(symbol, options = {}) {
   const frames = [];
+  let acceptingFrames = true;
+  const firstPassMs = Number(options.maxWaitMs || TIMEFRAME_FIRST_PASS_MS);
+  const primaryConfigs = TIMEFRAME_CONFIGS.filter((config) => (
+    options.fast ? FAST_MARKET_TIMEFRAME_IDS.has(config.id) : PRIMARY_TIMEFRAME_IDS.has(config.id)
+  ));
+  const remainingConfigs = TIMEFRAME_CONFIGS.filter((config) => !PRIMARY_TIMEFRAME_IDS.has(config.id));
 
-  for (const config of TIMEFRAME_CONFIGS) {
+  const fetchFrame = async (config) => {
     try {
       const chart = await fetchChart(symbol, {
         range: config.range,
@@ -136,11 +145,25 @@ async function fetchTimeframeAnalyses(symbol) {
         includePrePost: false
       });
       const frame = buildTimeframeAnalysis(config, chart);
-      if (frame) frames.push(frame);
+      if (frame && acceptingFrames) frames.push(frame);
     } catch {
       // بعض الأسواق لا توفر كل الفريمات اللحظية؛ نستخدم المتاح فقط.
     }
+  };
+
+  await Promise.race([
+    Promise.allSettled(primaryConfigs.map(fetchFrame)),
+    wait(firstPassMs)
+  ]);
+
+  if (!options.fast && frames.length) {
+    await Promise.race([
+      Promise.allSettled(remainingConfigs.map(fetchFrame)),
+      wait(firstPassMs)
+    ]);
   }
+
+  acceptingFrames = false;
 
   if (!frames.length) {
     const fallbackChart = await fetchChart(symbol);
@@ -151,7 +174,12 @@ async function fetchTimeframeAnalyses(symbol) {
     if (fallbackFrame) frames.push(fallbackFrame);
   }
 
+  frames.sort((a, b) => TIMEFRAME_CONFIGS.findIndex((item) => item.id === a.id) - TIMEFRAME_CONFIGS.findIndex((item) => item.id === b.id));
   return frames;
+}
+
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function buildTimeframeAnalysis(config, chart) {

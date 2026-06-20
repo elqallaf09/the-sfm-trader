@@ -1,9 +1,19 @@
-const YAHOO_CHART_BASE = "https://query1.finance.yahoo.com/v8/finance/chart";
+const YAHOO_CHART_BASES = [
+  "https://query1.finance.yahoo.com/v8/finance/chart",
+  "https://query2.finance.yahoo.com/v8/finance/chart"
+];
 const FINNHUB_BASE = "https://finnhub.io/api/v1/stock/candle";
 const ALPHA_VANTAGE_BASE = "https://www.alphavantage.co/query";
 const TWELVE_DATA_BASE = "https://api.twelvedata.com";
 const responseCache = new Map();
 const RESPONSE_CACHE_TTL_MS = 45_000;
+const PROVIDER_REQUEST_TIMEOUT_MS = Number(process.env.PROVIDER_REQUEST_TIMEOUT_MS || 3_500);
+const PROVIDER_MAX_ATTEMPTS = Math.max(1, Number(process.env.PROVIDER_MAX_ATTEMPTS || 2));
+const PROVIDER_MAX_CONCURRENT = Math.max(1, Number(process.env.PROVIDER_MAX_CONCURRENT || 3));
+const PROVIDER_MIN_START_GAP_MS = Math.max(0, Number(process.env.PROVIDER_MIN_START_GAP_MS || 240));
+const providerQueue = [];
+let providerActiveRequests = 0;
+let providerLastStartAt = 0;
 
 export async function fetchChart(symbol, options = {}) {
   const preferred = (process.env.DATA_PROVIDER || "yahoo").toLowerCase();
@@ -43,9 +53,23 @@ async function fetchYahooChart(symbol, options = {}) {
   const range = options.range || "6mo";
   const interval = options.interval || "1d";
   const includePrePost = options.includePrePost ? "true" : "false";
-  const url = `${YAHOO_CHART_BASE}/${encodeURIComponent(symbol)}?range=${encodeURIComponent(range)}&interval=${encodeURIComponent(interval)}&includePrePost=${includePrePost}`;
-  const response = await fetchJson(url);
-  const result = response.chart?.result?.[0];
+  const errors = [];
+  let response;
+
+  for (const baseUrl of YAHOO_CHART_BASES) {
+    const url = `${baseUrl}/${encodeURIComponent(symbol)}?range=${encodeURIComponent(range)}&interval=${encodeURIComponent(interval)}&includePrePost=${includePrePost}`;
+    try {
+      response = await fetchJson(url);
+      break;
+    } catch (error) {
+      errors.push(error.message);
+    }
+  }
+
+  const result = response?.chart?.result?.[0];
+  if (!response?.chart) {
+    response = { chart: { error: { description: errors.join(" | ") } } };
+  }
 
   if (!result) {
     throw new Error(response.chart?.error?.description || "لا توجد بيانات متاحة لهذا الرمز");
@@ -301,16 +325,25 @@ async function fetchJson(url) {
   }
 
   let response;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    response = await fetch(url, {
-      headers: {
-        accept: "application/json",
-        "user-agent": "the-sfm-trader/1.0"
+  for (let attempt = 0; attempt < PROVIDER_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      response = await scheduleProviderRequest(() => fetchWithTimeout(url));
+    } catch (error) {
+      if (error.name === "AbortError") {
+        if (attempt < PROVIDER_MAX_ATTEMPTS - 1) {
+          await delay(450 * (attempt + 1));
+          continue;
+        }
+        throw new Error("انتهت مهلة مزود البيانات");
       }
-    });
+
+      throw error;
+    }
 
     if (response.status !== 429) break;
-    await delay(800 * (attempt + 1));
+    if (attempt < PROVIDER_MAX_ATTEMPTS - 1) {
+      await delay(800 * (attempt + 1));
+    }
   }
 
   if (!response.ok) {
@@ -320,6 +353,55 @@ async function fetchJson(url) {
   const data = await response.json();
   responseCache.set(url, { createdAt: Date.now(), data });
   return structuredClone(data);
+}
+
+function fetchWithTimeout(url) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PROVIDER_REQUEST_TIMEOUT_MS);
+
+  return fetch(url, {
+    signal: controller.signal,
+    headers: {
+      accept: "application/json",
+      "accept-language": "en-US,en;q=0.9,ar;q=0.8",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+    }
+  }).finally(() => {
+    clearTimeout(timer);
+  });
+}
+
+function scheduleProviderRequest(task) {
+  return new Promise((resolve, reject) => {
+    providerQueue.push({ task, resolve, reject });
+    drainProviderQueue();
+  });
+}
+
+function drainProviderQueue() {
+  while (providerActiveRequests < PROVIDER_MAX_CONCURRENT && providerQueue.length) {
+    const now = Date.now();
+    const scheduledStartAt = Math.max(now, providerLastStartAt + PROVIDER_MIN_START_GAP_MS);
+    const waitMs = Math.max(0, scheduledStartAt - now);
+    const entry = providerQueue.shift();
+    providerLastStartAt = scheduledStartAt;
+
+    providerActiveRequests += 1;
+    windowlessDelay(waitMs)
+      .then(() => {
+        return entry.task();
+      })
+      .then(entry.resolve, entry.reject)
+      .finally(() => {
+        providerActiveRequests -= 1;
+        drainProviderQueue();
+      });
+  }
+}
+
+function windowlessDelay(ms) {
+  if (ms <= 0) return Promise.resolve();
+  return delay(ms);
 }
 
 function delay(ms) {

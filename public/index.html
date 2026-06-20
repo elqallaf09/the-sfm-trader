@@ -1,8 +1,8 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>the-sfm trader</title>
     <meta name="theme-color" content="#05090d" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -11,7 +11,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
     <link rel="icon" type="image/png" sizes="256x256" href="/the-sfm-trader-icon-256.png" />
-    <link rel="stylesheet" href="/styles.css?v=20260620-english-voice-6" />
+    <link rel="stylesheet" href="/styles.css?v=20260620-reference-lock-1" />
   </head>
   <body>
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
@@ -27,6 +27,7 @@
             <span></span>
             <strong>جاري فتح منصة التحليل</strong>
           </div>
+          <button id="intro-audio-button" class="intro-audio-button" type="button">تشغيل التحية الصوتية</button>
           <button id="intro-skip" class="intro-skip" type="button">دخول سريع</button>
         </div>
         <div class="intro-agent-wrap" aria-hidden="true">
@@ -60,7 +61,12 @@
         <div class="brand-lockup">
           <p class="eyebrow">وكيل تحليل الأسواق</p>
           <h1>the-sfm trader</h1>
-          <p class="brand-subtitle">powered by M.ALQ</p>
+          <p class="brand-subtitle">منصة تداول وتحليل ذكية</p>
+        </div>
+        <div class="header-session-mini" aria-live="polite">
+          <span></span>
+          <em id="header-session-zone">London FX</em>
+          <strong id="header-session-clock">--:--:--</strong>
         </div>
         <div class="top-actions">
           <div class="status-pill" aria-live="polite">
@@ -76,7 +82,46 @@
           </button>
           <button id="refresh-button" class="icon-button" title="تحديث الآن" aria-label="تحديث الآن">↻</button>
         </div>
+        <button id="mobile-notification-button" class="mobile-notification-visual" type="button" aria-label="الإشعارات">
+          <svg class="mobile-notification-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 9a6 6 0 0 0-12 0v4.6L4.5 16v1h15v-1L18 13.6V9Z"></path>
+            <path d="M9.3 19a2.8 2.8 0 0 0 5.4 0"></path>
+            <circle cx="19" cy="5" r="2.2"></circle>
+          </svg>
+        </button>
+        <button id="mobile-settings-button" class="mobile-settings-button" type="button" aria-label="الإعدادات"></button>
       </header>
+
+      <aside class="desktop-trading-rail" aria-label="تنقل غرفة التداول">
+        <a href="#sfm-live-floor" class="rail-link active" aria-label="الرئيسية">
+          <span class="rail-icon rail-home" aria-hidden="true"></span>
+          <b>الرئيسية</b>
+        </a>
+        <a href="#markets-section" class="rail-link" aria-label="الأسواق">
+          <span class="rail-icon rail-globe" aria-hidden="true"></span>
+          <b>الأسواق</b>
+        </a>
+        <a href="#recommendations-section" class="rail-link" aria-label="التوصيات">
+          <span class="rail-icon rail-bars" aria-hidden="true"></span>
+          <b>التوصيات</b>
+        </a>
+        <a href="#history-section" class="rail-link" aria-label="المتابعات">
+          <span class="rail-icon rail-bookmark" aria-hidden="true"></span>
+          <b>المتابعات</b>
+        </a>
+        <a href="#notification-panel" class="rail-link" aria-label="التنبيهات">
+          <span class="rail-icon rail-bell" aria-hidden="true"></span>
+          <b>التنبيهات</b>
+        </a>
+        <a href="#scalping-section" class="rail-link" aria-label="الأوامر">
+          <span class="rail-icon rail-orders" aria-hidden="true"></span>
+          <b>الأوامر</b>
+        </a>
+        <a href="#voice-section" class="rail-link rail-voice" aria-label="الصوت">
+          <span class="rail-icon rail-wave" aria-hidden="true"></span>
+          <b>Voice</b>
+        </a>
+      </aside>
 
       <aside id="settings-panel" class="settings-panel" hidden>
         <div class="settings-panel-head">
@@ -130,6 +175,18 @@
         </div>
       </section>
 
+      <section class="layout-control-bar" aria-label="تحكم اختصار الصفحة">
+        <div>
+          <span>وضع الصفحة</span>
+          <strong>لوحة مختصرة ومطوية</strong>
+        </div>
+        <div class="layout-control-actions">
+          <button id="compact-layout-button" type="button">مختصر</button>
+          <button id="collapse-sections-button" type="button">طي الكل</button>
+          <button id="expand-sections-button" type="button">فتح الكل</button>
+        </div>
+      </section>
+
       <main>
         <section id="sfm-live-floor" class="sfm-live-floor" aria-label="لوحة التداول الحية">
           <div class="floor-aurora" aria-hidden="true"></div>
@@ -146,6 +203,57 @@
                 <strong id="floor-agent-mood">جاهز يراقب السوق</strong>
                 <em id="trading-mood">--</em>
               </div>
+            </div>
+          </div>
+
+          <div class="live-pulse-strip" aria-label="Live Market Pulse">
+            <div class="live-pulse-head">
+              <div>
+                <p class="eyebrow">LIVE MARKET PULSE</p>
+                <h3>نبض السوق الآن</h3>
+              </div>
+              <span id="live-pulse-market">--</span>
+            </div>
+            <div id="live-pulse-grid" class="live-pulse-grid">
+              <article class="live-pulse-card is-up" data-symbol="US30" role="link" tabindex="0" aria-label="US30">
+                <div class="pulse-symbol-row"><strong>US30</strong><span>+0.34%</span></div>
+                <svg class="live-pulse-sparkline" viewBox="0 0 132 42" role="img" aria-label="mini chart"><polyline class="sparkline-line up" points="0,32 12,26 24,30 36,20 48,22 60,15 72,18 84,12 96,14 108,8 120,11 132,5"></polyline></svg>
+                <div class="pulse-price-row"><b>39,872.11</b><em>شراء · 78%</em></div>
+              </article>
+              <article class="live-pulse-card is-up" data-symbol="NAS100" role="link" tabindex="0" aria-label="NAS100">
+                <div class="pulse-symbol-row"><strong>NAS100</strong><span>+0.52%</span></div>
+                <svg class="live-pulse-sparkline" viewBox="0 0 132 42" role="img" aria-label="mini chart"><polyline class="sparkline-line up" points="0,34 12,30 24,23 36,26 48,18 60,10 72,14 84,19 96,15 108,11 120,8 132,12"></polyline></svg>
+                <div class="pulse-price-row"><b>18,234.75</b><em>شراء · 76%</em></div>
+              </article>
+              <article class="live-pulse-card is-up" data-symbol="XAUUSD" role="link" tabindex="0" aria-label="XAUUSD">
+                <div class="pulse-symbol-row"><strong>XAUUSD</strong><span>+0.28%</span></div>
+                <svg class="live-pulse-sparkline" viewBox="0 0 132 42" role="img" aria-label="mini chart"><polyline class="sparkline-line gold" points="0,30 12,25 24,27 36,18 48,23 60,14 72,17 84,21 96,15 108,19 120,13 132,16"></polyline></svg>
+                <div class="pulse-price-row"><b>2,382.45</b><em>شراء · 74%</em></div>
+              </article>
+              <article class="live-pulse-card is-down" data-symbol="EURUSD" role="link" tabindex="0" aria-label="EURUSD">
+                <div class="pulse-symbol-row"><strong>EURUSD</strong><span>-0.21%</span></div>
+                <svg class="live-pulse-sparkline" viewBox="0 0 132 42" role="img" aria-label="mini chart"><polyline class="sparkline-line down" points="0,11 12,14 24,10 36,18 48,20 60,26 72,23 84,30 96,32 108,29 120,35 132,33"></polyline></svg>
+                <div class="pulse-price-row"><b>1.08243</b><em>بيع · 61%</em></div>
+              </article>
+              <article class="live-pulse-card is-up" data-symbol="BTCUSD" role="link" tabindex="0" aria-label="BTCUSD">
+                <div class="pulse-symbol-row"><strong>BTCUSD</strong><span>+1.18%</span></div>
+                <svg class="live-pulse-sparkline" viewBox="0 0 132 42" role="img" aria-label="mini chart"><polyline class="sparkline-line up" points="0,31 12,26 24,28 36,19 48,13 60,16 72,12 84,18 96,10 108,14 120,8 132,11"></polyline></svg>
+                <div class="pulse-price-row"><b>67,345.12</b><em>شراء · 82%</em></div>
+              </article>
+              <article class="live-pulse-card is-up" data-symbol="S&P500" role="link" tabindex="0" aria-label="S&P500">
+                <div class="pulse-symbol-row"><strong>S&amp;P500</strong><span>+0.31%</span></div>
+                <svg class="live-pulse-sparkline" viewBox="0 0 132 42" role="img" aria-label="mini chart"><polyline class="sparkline-line up" points="0,35 12,33 24,25 36,28 48,21 60,18 72,22 84,16 96,13 108,17 120,9 132,6"></polyline></svg>
+                <div class="pulse-price-row"><b>5,321.41</b><em>شراء · 75%</em></div>
+              </article>
+            </div>
+            <div id="pulse-status-card" class="pulse-status-card" aria-live="polite">
+              <span id="pulse-session-state">حالة السوق</span>
+              <strong id="pulse-session-countdown">--</strong>
+              <small class="pulse-session-clockline">
+                <b id="pulse-session-clock">--:--:--</b>
+                <i id="pulse-session-zone">--</i>
+              </small>
+              <em id="pulse-session-event">العد التنازلي</em>
             </div>
           </div>
 
@@ -199,7 +307,7 @@
           <div id="market-board" class="market-board floor-board"></div>
         </section>
 
-        <section class="market-band" aria-label="اختيار السوق">
+        <section id="markets-section" class="market-band" aria-label="اختيار السوق">
           <div class="section-head">
             <div>
               <h2>الأسواق</h2>
@@ -210,7 +318,31 @@
               <strong id="market-pulse">--</strong>
             </div>
           </div>
-          <div id="market-tabs" class="market-tabs"></div>
+          <div id="market-tabs" class="market-tabs">
+            <button class="market-button is-primary-market active" type="button" data-market="forex">
+              <span class="market-button-icon market-icon-fx" aria-hidden="true">$</span>
+              <span class="market-button-copy"><strong>الفوركس</strong><span>8 رمز</span></span>
+            </button>
+            <button class="market-button is-primary-market" type="button" data-market="us">
+              <span class="market-button-icon market-icon-flag flag-us" aria-hidden="true"></span>
+              <span class="market-button-copy"><strong>الأسهم الأمريكية</strong><span>20 رمز</span></span>
+            </button>
+            <button class="market-button is-primary-market" type="button" data-market="crypto">
+              <span class="market-button-icon market-icon-crypto" aria-hidden="true">₿</span>
+              <span class="market-button-copy"><strong>العملات الرقمية</strong><span>10 رمز</span></span>
+            </button>
+            <button class="market-button is-primary-market" type="button" data-market="commodities">
+              <span class="market-button-icon market-icon-gold" aria-hidden="true">Au</span>
+              <span class="market-button-copy"><strong>السلع</strong><span>7 رمز</span></span>
+            </button>
+            <button class="market-button is-primary-market" type="button" data-market="gcc">
+              <span class="market-button-icon market-icon-gcc" aria-hidden="true">GCC</span>
+              <span class="market-button-copy"><strong>أسواق الخليج</strong><span>8 رمز</span></span>
+            </button>
+            <button class="market-overflow-toggle" type="button" aria-expanded="false" aria-label="جميع الأسواق">
+              <span aria-hidden="true">⌄</span>
+            </button>
+          </div>
         </section>
 
         <section id="command-center-section" class="command-center-band" aria-label="غرفة قيادة التحليل">
@@ -235,6 +367,40 @@
           <div id="command-center-grid" class="command-center-grid"></div>
         </section>
 
+        <section id="home-heatmap-section" class="home-heatmap-section" aria-label="خريطة حرارة الفرص">
+          <div class="home-deck-head">
+            <div>
+              <p class="eyebrow">OPPORTUNITY HEATMAP</p>
+              <h2>خريطة حرارة الفرص</h2>
+            </div>
+            <span id="home-heatmap-leader">--</span>
+          </div>
+          <div id="home-heatmap-grid" class="home-heatmap-grid"></div>
+        </section>
+
+        <section id="home-deck-section" class="home-deck-section" aria-label="مختصر التداول">
+          <div class="home-deck-panel">
+            <div class="home-deck-head">
+              <div>
+                <p class="eyebrow">RECOMMENDATIONS</p>
+                <h2>أفضل الفرص الآن</h2>
+              </div>
+              <a href="#recommendations-section">عرض الكل</a>
+            </div>
+            <div id="home-recommendations" class="home-recommendations"></div>
+          </div>
+          <div class="home-deck-panel">
+            <div class="home-deck-head">
+              <div>
+                <p class="eyebrow">FOLLOWED TRADES</p>
+                <h2>صفقات تحت المتابعة</h2>
+              </div>
+              <a href="#history-section">عرض الكل</a>
+            </div>
+            <div id="home-followed-trades" class="home-followed-trades"></div>
+          </div>
+        </section>
+
         <section class="market-hours-band" aria-label="أوقات الأسواق ونبض السوق">
           <div class="section-head">
             <div>
@@ -243,9 +409,13 @@
               <p>تابع حالة السوق الحالي، متى يفتح أو يصكر، وأوقات أهم الأسواق حسب توقيتها المحلي.</p>
             </div>
             <div class="session-clock-card">
-              <span>ساعة الجلسة</span>
-              <strong id="session-clock">--:--:--</strong>
-              <em id="session-zone">--</em>
+              <span id="session-card-state">حالة السوق</span>
+              <strong id="session-card-countdown">--</strong>
+              <em class="session-clock-meta">
+                <span id="session-card-event">العد التنازلي</span>
+                <b id="session-zone">--</b>
+                <b id="session-clock">--:--:--</b>
+              </em>
             </div>
           </div>
           <div class="session-summary">
@@ -265,7 +435,22 @@
           <div id="market-hours-grid" class="market-hours-grid"></div>
         </section>
 
-        <section class="voice-band" aria-label="محادثة SFM الصوتية">
+        <section id="economic-news-section" class="economic-news-band" aria-label="رزنامة الأخبار الاقتصادية">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">FOREXFACTORY NEWS RISK</p>
+              <h2>رزنامة الأخبار الاقتصادية</h2>
+              <p>يربط SFM أحداث ForexFactory مع التحليل الفني حتى يخفض الثقة أو ينتظر وقت الأخبار القوية.</p>
+            </div>
+            <div class="scan-meter">
+              <span>حالة الأخبار</span>
+              <strong id="economic-news-status">--</strong>
+            </div>
+          </div>
+          <div id="economic-news-grid" class="economic-news-grid"></div>
+        </section>
+
+        <section id="voice-section" class="voice-band" aria-label="محادثة SFM الصوتية">
           <div class="voice-panel">
             <div>
               <p class="eyebrow">SFM VOICE</p>
@@ -498,7 +683,7 @@
           <div id="us-outlook-grid" class="us-outlook-grid"></div>
         </section>
 
-        <section class="recommendations-band">
+        <section id="recommendations-section" class="recommendations-band">
           <div class="section-head recommendations-head">
             <div>
               <h2>التوصيات</h2>
@@ -565,6 +750,39 @@
           <div id="history-list" class="history-list"></div>
         </section>
       </main>
+
+      <footer class="site-footer" aria-label="توقيع المنصة">
+        <span>the-sfm trader</span>
+        <strong>Powered by M.ALQ</strong>
+      </footer>
+
+      <button id="mobile-voice-orb" class="mobile-voice-orb" type="button" aria-label="ابدأ المحادثة الصوتية">
+        <span aria-hidden="true"></span>
+        <b aria-hidden="true"></b>
+      </button>
+
+      <nav class="ios-tabbar" aria-label="تنقل سريع للتطبيق">
+        <a class="ios-tab-link" href="#sfm-live-floor" data-tab="pulse">
+          <span aria-hidden="true"></span>
+          <strong>نبض</strong>
+        </a>
+        <a class="ios-tab-link" href="#markets-section" data-tab="markets">
+          <span aria-hidden="true"></span>
+          <strong>أسواق</strong>
+        </a>
+        <a class="ios-tab-link" href="#voice-section" data-tab="voice">
+          <span aria-hidden="true"></span>
+          <strong>صوت</strong>
+        </a>
+        <a class="ios-tab-link" href="#scalping-section" data-tab="scalp">
+          <span aria-hidden="true"></span>
+          <strong>مضاربة</strong>
+        </a>
+        <a class="ios-tab-link" href="#recommendations-section" data-tab="signals">
+          <span aria-hidden="true"></span>
+          <strong>توصيات</strong>
+        </a>
+      </nav>
     </div>
 
     <template id="card-template">
@@ -643,6 +861,23 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260620-english-voice-6" type="module"></script>
+    <script src="/app.js?v=20260620-reference-lock-1" type="module"></script>
   </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
