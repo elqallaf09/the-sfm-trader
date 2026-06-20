@@ -1532,51 +1532,130 @@ function closeIntroCeremony() {
   }, 700);
 }
 
+const LUCIDE_MARKET_ICONS = {
+  Landmark: `
+    <line x1="3" x2="21" y1="22" y2="22"></line>
+    <line x1="6" x2="6" y1="18" y2="11"></line>
+    <line x1="10" x2="10" y1="18" y2="11"></line>
+    <line x1="14" x2="14" y1="18" y2="11"></line>
+    <line x1="18" x2="18" y1="18" y2="11"></line>
+    <polygon points="12 2 20 7 4 7 12 2"></polygon>
+  `,
+  Building2: `
+    <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path>
+    <path d="M6 12H4a2 2 0 0 0-2 2v8h20v-8a2 2 0 0 0-2-2h-2"></path>
+    <path d="M10 6h4"></path>
+    <path d="M10 10h4"></path>
+    <path d="M10 14h4"></path>
+    <path d="M10 18h4"></path>
+  `,
+  Globe2: `
+    <circle cx="12" cy="12" r="10"></circle>
+    <path d="M7 3.34V5a3 3 0 0 0 3 3h0a2 2 0 0 1 2 2v0c0 1.1.9 2 2 2h0a2 2 0 0 0 2-2v0c0-1.1.9-2 2-2h3.17"></path>
+    <path d="M11 21.95V18a2 2 0 0 0-2-2H4.34"></path>
+    <path d="M21.54 15H17a2 2 0 0 0-2 2v4.54"></path>
+  `,
+  Euro: `
+    <path d="M4 10h12"></path>
+    <path d="M4 14h9"></path>
+    <path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2"></path>
+  `,
+  ArrowLeftRight: `
+    <path d="M8 3 4 7l4 4"></path>
+    <path d="M4 7h16"></path>
+    <path d="m16 21 4-4-4-4"></path>
+    <path d="M20 17H4"></path>
+  `,
+  Bitcoin: `
+    <path d="M11.767 19.089c4.924.868 6.14-6.025 1.216-6.894"></path>
+    <path d="M11.767 19.089 5.86 18.047"></path>
+    <path d="m11.768 19.089-.347 1.97"></path>
+    <path d="M12.984 12.195c4.924.869 6.14-6.025 1.216-6.893"></path>
+    <path d="m12.984 12.195-3.94-.694"></path>
+    <path d="M14.2 5.302 8.29 4.26"></path>
+    <path d="m14.199 5.302.348-1.97"></path>
+    <path d="M7.48 20.364 10.606 2.637"></path>
+  `,
+  Coins: `
+    <circle cx="8" cy="8" r="6"></circle>
+    <path d="M18.09 10.37A6 6 0 1 1 10.34 18"></path>
+    <path d="M7 6h1v4"></path>
+    <path d="m16.71 13.88.7.71-2.82 2.82"></path>
+  `,
+  ChartCandlestick: `
+    <path d="M9 5v4"></path>
+    <rect width="4" height="6" x="7" y="9" rx="1"></rect>
+    <path d="M9 15v2"></path>
+    <path d="M17 3v2"></path>
+    <rect width="4" height="8" x="15" y="5" rx="1"></rect>
+    <path d="M17 13v3"></path>
+  `,
+  TrendingUp: `
+    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
+    <polyline points="16 7 22 7 22 13"></polyline>
+  `,
+  Activity: `<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>`,
+  Gem: `
+    <path d="M6 3h12l4 6-10 13L2 9Z"></path>
+    <path d="M11 3 8 9l4 13 4-13-3-6"></path>
+    <path d="M2 9h20"></path>
+  `
+};
+
+const MARKET_ICON_CONFIG = {
+  kuwait: ["Landmark", "market-icon-exchange"],
+  saudi: ["Landmark", "market-icon-exchange"],
+  uae: ["Building2", "market-icon-exchange"],
+  oman: ["Landmark", "market-icon-exchange"],
+  qatar: ["Landmark", "market-icon-exchange"],
+  bahrain: ["Landmark", "market-icon-exchange"],
+  gcc: ["Globe2", "market-icon-global"],
+  europe: ["Euro", "market-icon-europe"],
+  asia: ["Globe2", "market-icon-global"],
+  world: ["Globe2", "market-icon-global"],
+  global: ["Globe2", "market-icon-global"],
+  all: ["Globe2", "market-icon-global"],
+  forex: ["ArrowLeftRight", "market-icon-fx"],
+  crypto: ["Bitcoin", "market-icon-crypto"],
+  commodities: ["Gem", "market-icon-commodities"],
+  indices: ["Activity", "market-icon-indices"],
+  us: ["Activity", "market-icon-indices"],
+  ai: ["Activity", "market-icon-ai"],
+  tech: ["TrendingUp", "market-icon-tech"],
+  technology: ["TrendingUp", "market-icon-tech"],
+  dividends: ["Coins", "market-icon-dividend"],
+  healthcare: ["Activity", "market-icon-health"],
+  food: ["Coins", "market-icon-food"]
+};
+
 function getMarketVisual(market = {}) {
   const id = String(market.id || "").toLowerCase();
   const label = String(market.label || "").toLowerCase();
-  const map = {
-    forex: ["market-icon-fx", "$"],
-    crypto: ["market-icon-crypto", "₿"],
-    commodities: ["market-icon-gold", "Au"],
-    kuwait: ["market-icon-flag flag-kuwait", ""],
-    saudi: ["market-icon-flag flag-saudi", ""],
-    uae: ["market-icon-flag flag-uae", ""],
-    qatar: ["market-icon-flag flag-qatar", ""],
-    bahrain: ["market-icon-flag flag-bahrain", ""],
-    oman: ["market-icon-flag flag-oman", ""],
-    gcc: ["market-icon-gcc", "GCC"],
-    us: ["market-icon-flag flag-us", ""],
-    canada: ["market-icon-flag flag-canada", ""],
-    brazil: ["market-icon-flag flag-brazil", ""],
-    uk: ["market-icon-flag flag-uk", ""],
-    germany: ["market-icon-flag flag-germany", ""],
-    france: ["market-icon-flag flag-france", ""],
-    netherlands: ["market-icon-flag flag-netherlands", ""],
-    switzerland: ["market-icon-flag flag-switzerland", ""],
-    japan: ["market-icon-flag flag-japan", ""],
-    hongkong: ["market-icon-flag flag-hongkong", ""],
-    china: ["market-icon-flag flag-china", ""],
-    korea: ["market-icon-flag flag-korea", ""],
-    india: ["market-icon-flag flag-india", ""],
-    australia: ["market-icon-flag flag-australia", ""],
-    singapore: ["market-icon-flag flag-singapore", ""],
-    healthcare: ["market-icon-health", "+"],
-    dividends: ["market-icon-dividend", "%"],
-    technology: ["market-icon-tech", "⌁"],
-    ai: ["market-icon-ai", "AI"],
-    food: ["market-icon-food", "FG"],
-    all: ["market-icon-all", "ALL"]
+  const config = MARKET_ICON_CONFIG[id] || getMarketIconConfigFromLabel(label);
+  return {
+    className: config[1],
+    html: renderLucideMarketIcon(config[0])
   };
+}
 
-  if (map[id]) return { className: map[id][0], text: map[id][1] };
-  if (label.includes("forex") || label.includes("الفوركس")) return { className: "market-icon-fx", text: "$" };
-  if (label.includes("crypto") || label.includes("الرقمية")) return { className: "market-icon-crypto", text: "₿" };
-  if (label.includes("gold") || label.includes("oil") || label.includes("الذهب") || label.includes("السلع")) return { className: "market-icon-gold", text: "Au" };
-  if (label.includes("american") || label.includes("الأمريكي")) return { className: "market-icon-flag flag-us", text: "" };
-  if (label.includes("الخليج")) return { className: "market-icon-gcc", text: "GCC" };
-  if (label.includes("العالم") || label.includes("جميع")) return { className: "market-icon-all", text: "ALL" };
-  return { className: "market-icon-all", text: "MKT" };
+function getMarketIconConfigFromLabel(label) {
+  if (label.includes("forex") || label.includes("الفوركس")) return MARKET_ICON_CONFIG.forex;
+  if (label.includes("crypto") || label.includes("الرقمية")) return MARKET_ICON_CONFIG.crypto;
+  if (label.includes("gold") || label.includes("oil") || label.includes("metal") || label.includes("الذهب") || label.includes("السلع") || label.includes("المعادن")) return MARKET_ICON_CONFIG.commodities;
+  if (label.includes("europe") || label.includes("أوروبا") || label.includes("الأوروبية")) return MARKET_ICON_CONFIG.europe;
+  if (label.includes("global") || label.includes("العالم") || label.includes("جميع")) return MARKET_ICON_CONFIG.world;
+  if (label.includes("indices") || label.includes("المؤشرات") || label.includes("american") || label.includes("الأمريكي")) return MARKET_ICON_CONFIG.indices;
+  if (label.includes("الإمارات")) return MARKET_ICON_CONFIG.uae;
+  if (label.includes("الكويت")) return MARKET_ICON_CONFIG.kuwait;
+  if (label.includes("السعود")) return MARKET_ICON_CONFIG.saudi;
+  if (label.includes("عمان")) return MARKET_ICON_CONFIG.oman;
+  if (label.includes("الخليج")) return MARKET_ICON_CONFIG.gcc;
+  return ["ChartCandlestick", "market-icon-generic"];
+}
+
+function renderLucideMarketIcon(name) {
+  const paths = LUCIDE_MARKET_ICONS[name] || LUCIDE_MARKET_ICONS.ChartCandlestick;
+  return `<svg class="lucide-market-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths}</svg>`;
 }
 
 function getPrimaryMarketKey(market) {
@@ -1614,7 +1693,7 @@ async function loadMarkets() {
     if (primaryKey) button.dataset.primaryMarket = primaryKey;
     const visual = getMarketVisual(market);
     button.innerHTML = `
-      <span class="market-button-icon ${visual.className}" aria-hidden="true">${visual.text}</span>
+      <span class="market-button-icon ${visual.className}" aria-hidden="true">${visual.html}</span>
       <span class="market-button-copy">
         <strong>${localizeUiText(getMarketDisplayLabel(market))}</strong>
         <span>${localizeUiText(`${market.count} رمز`)}</span>

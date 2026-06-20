@@ -6069,6 +6069,17 @@ body::after {
   line-height: 1;
 }
 
+.lucide-market-icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .market-button-copy {
   display: grid !important;
   gap: 2px;
@@ -6090,7 +6101,8 @@ body::after {
 }
 
 .market-icon-fx,
-.market-icon-gcc {
+.market-icon-gcc,
+.market-icon-exchange {
   color: #62f0a7;
   border-color: rgba(101, 217, 141, 0.42);
   background: rgba(37, 199, 166, 0.12);
@@ -6102,10 +6114,24 @@ body::after {
   background: rgba(255, 190, 85, 0.12);
 }
 
-.market-icon-gold {
+.market-icon-gold,
+.market-icon-commodities {
   color: var(--sfm-gold);
   border-color: rgba(215, 174, 85, 0.48);
   background: rgba(215, 174, 85, 0.12);
+}
+
+.market-icon-europe,
+.market-icon-global {
+  color: #d8e9ff;
+  border-color: rgba(104, 190, 255, 0.38);
+  background: rgba(22, 141, 255, 0.11);
+}
+
+.market-icon-indices {
+  color: #92ffa9;
+  border-color: rgba(56, 232, 137, 0.42);
+  background: rgba(56, 232, 137, 0.11);
 }
 
 .market-icon-flag {
@@ -6199,7 +6225,8 @@ body::after {
 .market-icon-health,
 .market-icon-food,
 .market-icon-dividend,
-.market-icon-all {
+.market-icon-all,
+.market-icon-generic {
   color: #d9ecff;
   border-color: rgba(22, 141, 255, 0.34);
   background: rgba(22, 141, 255, 0.1);
