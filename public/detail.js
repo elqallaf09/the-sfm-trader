@@ -58,6 +58,9 @@ const DETAIL_TEXT_TRANSLATIONS = {
   "حجم التداول النسبي": "Relative volume",
   "غير معروف": "Unknown",
   "لا يوجد تصنيف شرعي مؤكد.": "No confirmed Sharia rating is available.",
+  "مطابق للشريعة": "Sharia compliant",
+  "غير مطابق للشريعة": "Not Sharia compliant",
+  "مختلف عليه شرعياً": "Sharia status is disputed",
   "المصدر": "Source",
   "تصنيف داخلي قابل للتحديث": "Internal rating, subject to updates",
   "آخر مراجعة": "Last review",
@@ -125,6 +128,95 @@ const DETAIL_COMMON_TERM_TRANSLATIONS = [
   ["شهر", "month"],
   ["شهرين", "2 months"],
   ["3 شهور", "3 months"]
+].sort((a, b) => b[0].length - a[0].length);
+const DETAIL_ENGLISH_PHRASE_TO_ARABIC = [
+  [/\bCompliant\s+للشريعة/gi, "مطابق للشريعة"],
+  [/\bNot\s+compliant\s+للشريعة/gi, "غير مطابق للشريعة"],
+  [/\bDoubtful\s+للشريعة/gi, "مختلف عليه شرعياً"],
+  [/\blow\s+مخاطرة/gi, "مخاطرة منخفضة"],
+  [/\bmedium\s+مخاطرة/gi, "مخاطرة متوسطة"],
+  [/\bhigh\s+مخاطرة/gi, "مخاطرة مرتفعة"],
+  [/\bMarket\s+الأمريكي/gi, "السوق الأمريكي"],
+  [/\bmarket\s+الأمريكي/gi, "السوق الأمريكي"],
+  [/ضغط\s*Sell\s*ي/gi, "ضغط بيعي"],
+  [/زخم\s*Sell\s*ي/gi, "زخم بيعي"],
+  [/اتجاه\s*Sell\s*ي/gi, "اتجاه بيعي"],
+  [/ضغط\s*Buy\s*ي/gi, "ضغط شرائي"],
+  [/زخم\s*Buy\s*ي/gi, "زخم شرائي"],
+  [/اتجاه\s*Buy\s*ي/gi, "اتجاه شرائي"],
+  [/\bSell\s*ي/gi, "بيعي"],
+  [/\bBuy\s*ي/gi, "شرائي"]
+];
+const DETAIL_ENGLISH_TERM_TO_ARABIC = [
+  ["Strong sell signal", "إشارة بيع قوية"],
+  ["Strong buy signal", "إشارة شراء قوية"],
+  ["Clear sell signal", "إشارة بيع واضحة"],
+  ["Do not trade this stock now", "لا تتداول هذا السهم الآن"],
+  ["Timeframe agreement", "توافق الفريمات"],
+  ["Risk notes", "ملاحظات المخاطرة"],
+  ["Provider note", "ملاحظة المزود"],
+  ["Market status", "حالة السوق"],
+  ["Relative volume", "حجم التداول النسبي"],
+  ["Analysis quality", "جودة التحليل"],
+  ["Data health", "صحة البيانات"],
+  ["Execution plan", "خطة التنفيذ"],
+  ["Average return", "متوسط العائد"],
+  ["Test horizon", "أفق الاختبار"],
+  ["Win rate", "معدل النجاح"],
+  ["Very strong", "قوي جداً"],
+  ["Strong Sell", "بيع قوي"],
+  ["Strong Buy", "شراء قوي"],
+  ["Not compliant", "غير مطابق"],
+  ["Compliant", "مطابق"],
+  ["Doubtful", "مختلف عليه"],
+  ["Sell now", "بيع الآن"],
+  ["Buy now", "اشتر الآن"],
+  ["Sideways", "عرضي"],
+  ["Bullish", "صاعد"],
+  ["Bearish", "هابط"],
+  ["Neutral", "محايد"],
+  ["Americas", "الأمريكيتان"],
+  ["America", "أمريكا"],
+  ["Europe", "أوروبا"],
+  ["Asia", "آسيا"],
+  ["Gulf", "الخليج"],
+  ["Global", "عالمي"],
+  ["Confidence", "الثقة"],
+  ["confidence", "الثقة"],
+  ["coverage", "التغطية"],
+  ["timeframes", "الفريمات"],
+  ["timeframe", "الفريم"],
+  ["targets", "الأهداف"],
+  ["target", "الهدف"],
+  ["price", "السعر"],
+  ["Market", "السوق"],
+  ["market", "السوق"],
+  ["Exchange", "البورصة"],
+  ["Region", "المنطقة"],
+  ["Currency", "العملة"],
+  ["Source", "المصدر"],
+  ["Risk", "المخاطرة"],
+  ["risk", "المخاطرة"],
+  ["Strong", "قوي"],
+  ["strong", "قوي"],
+  ["Medium", "متوسط"],
+  ["medium", "متوسط"],
+  ["Weak", "ضعيف"],
+  ["weak", "ضعيف"],
+  ["High", "مرتفع"],
+  ["high", "مرتفع"],
+  ["Low", "منخفض"],
+  ["low", "منخفض"],
+  ["Buy", "شراء"],
+  ["buy", "شراء"],
+  ["Sell", "بيع"],
+  ["sell", "بيع"],
+  ["Hold", "انتظار"],
+  ["hold", "انتظار"],
+  ["Wait", "انتظار"],
+  ["wait", "انتظار"],
+  ["Trend", "الاتجاه"],
+  ["trend", "الاتجاه"]
 ].sort((a, b) => b[0].length - a[0].length);
 
 const elements = {
@@ -543,8 +635,11 @@ function translateDetailTextNode(node) {
   }
 
   if (detailOriginalTextByNode.has(node)) {
-    node.nodeValue = detailOriginalTextByNode.get(node);
+    node.nodeValue = translateDetailEnglishToArabic(detailOriginalTextByNode.get(node));
+    return;
   }
+
+  node.nodeValue = translateDetailEnglishToArabic(currentText);
 }
 
 function translateDetailElementAttributes(element) {
@@ -566,7 +661,8 @@ function translateDetailElementAttributes(element) {
       continue;
     }
 
-    if (element.dataset[datasetKey]) element.setAttribute(attr, element.dataset[datasetKey]);
+    const originalValue = element.dataset[datasetKey] || currentValue;
+    element.setAttribute(attr, translateDetailEnglishToArabic(originalValue));
   }
 }
 
@@ -593,6 +689,37 @@ function translateDetailArabicToEnglish(text) {
   }
 
   return `${leading}${translated}${trailing}`;
+}
+
+function translateDetailEnglishToArabic(text) {
+  let translated = String(text ?? "");
+  if (!/[A-Za-z]/.test(translated)) return translated;
+
+  for (const [pattern, arabic] of DETAIL_ENGLISH_PHRASE_TO_ARABIC) {
+    translated = translated.replace(pattern, arabic);
+  }
+
+  for (const [english, arabic] of DETAIL_ENGLISH_TERM_TO_ARABIC) {
+    translated = replaceDetailLatinTerm(translated, english, arabic);
+  }
+
+  return translated
+    .replace(/مخاطرة\s+مرتفع/g, "مخاطرة مرتفعة")
+    .replace(/مخاطرة\s+متوسط/g, "مخاطرة متوسطة")
+    .replace(/مخاطرة\s+منخفض/g, "مخاطرة منخفضة")
+    .replace(/قوي جدا/g, "قوي جداً")
+    .replace(/الثقة\s+الفريمات/g, "ثقة الفريمات")
+    .replace(/السوق\s+status/gi, "حالة السوق")
+    .replace(/analysis\s+quality/gi, "جودة التحليل");
+}
+
+function replaceDetailLatinTerm(text, english, arabic) {
+  const pattern = new RegExp(`(^|[^A-Za-z])${escapeDetailRegExp(english)}(?=$|[^A-Za-z])`, "g");
+  return text.replace(pattern, (_, prefix) => `${prefix}${arabic}`);
+}
+
+function escapeDetailRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function detailHasArabicText(text) {
