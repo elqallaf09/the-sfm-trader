@@ -11,7 +11,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
     <link rel="icon" type="image/png" sizes="256x256" href="/the-sfm-trader-icon-256.png" />
-    <link rel="stylesheet" href="/styles.css?v=20260620-reference-lock-1" />
+    <link rel="stylesheet" href="/styles.css?v=20260621-remove-fold-controls-1" />
   </head>
   <body>
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
@@ -175,18 +175,6 @@
         </div>
       </section>
 
-      <section class="layout-control-bar" aria-label="تحكم اختصار الصفحة">
-        <div>
-          <span>وضع الصفحة</span>
-          <strong>لوحة مختصرة ومطوية</strong>
-        </div>
-        <div class="layout-control-actions">
-          <button id="compact-layout-button" type="button">مختصر</button>
-          <button id="collapse-sections-button" type="button">طي الكل</button>
-          <button id="expand-sections-button" type="button">فتح الكل</button>
-        </div>
-      </section>
-
       <main>
         <section id="sfm-live-floor" class="sfm-live-floor" aria-label="لوحة التداول الحية">
           <div class="floor-aurora" aria-hidden="true"></div>
@@ -208,11 +196,10 @@
 
           <div class="live-pulse-strip" aria-label="Live Market Pulse">
             <div class="live-pulse-head">
-              <div>
-                <p class="eyebrow">LIVE MARKET PULSE</p>
-                <h3>نبض السوق الآن</h3>
-              </div>
-              <span id="live-pulse-market">--</span>
+            <div>
+              <p class="eyebrow">LIVE MARKET PULSE</p>
+              <h3>نبض السوق الآن</h3>
+            </div>
             </div>
             <div id="live-pulse-grid" class="live-pulse-grid">
               <article class="live-pulse-card is-up" data-symbol="US30" role="link" tabindex="0" aria-label="US30">
@@ -339,9 +326,6 @@
               <span class="market-button-icon market-icon-gcc" aria-hidden="true">GCC</span>
               <span class="market-button-copy"><strong>أسواق الخليج</strong><span>8 رمز</span></span>
             </button>
-            <button class="market-overflow-toggle" type="button" aria-expanded="false" aria-label="جميع الأسواق">
-              <span aria-hidden="true">⌄</span>
-            </button>
           </div>
         </section>
 
@@ -385,7 +369,6 @@
                 <p class="eyebrow">RECOMMENDATIONS</p>
                 <h2>أفضل الفرص الآن</h2>
               </div>
-              <a href="#recommendations-section">عرض الكل</a>
             </div>
             <div id="home-recommendations" class="home-recommendations"></div>
           </div>
@@ -395,7 +378,6 @@
                 <p class="eyebrow">FOLLOWED TRADES</p>
                 <h2>صفقات تحت المتابعة</h2>
               </div>
-              <a href="#history-section">عرض الكل</a>
             </div>
             <div id="home-followed-trades" class="home-followed-trades"></div>
           </div>
@@ -689,9 +671,7 @@
               <h2>التوصيات</h2>
               <p id="disclaimer">هذه تحليلات آلية تعليمية وليست نصيحة مالية.</p>
             </div>
-            <div class="recommendation-card-actions" aria-label="فتح وغلق كروت الأسهم">
-              <button id="collapse-all-cards" type="button">غلق الكل</button>
-              <button id="expand-all-cards" type="button">فتح الكل</button>
+            <div class="recommendation-card-actions">
               <div id="loading-indicator" class="loading-indicator">تحميل</div>
             </div>
           </div>
@@ -861,7 +841,7 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260620-reference-lock-1" type="module"></script>
+    <script src="/app.js?v=20260621-remove-fold-controls-1" type="module"></script>
   </body>
 </html>
 

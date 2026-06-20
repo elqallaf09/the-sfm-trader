@@ -944,63 +944,6 @@ h2 {
   background: var(--warn);
 }
 
-.layout-control-bar {
-  position: sticky;
-  top: 92px;
-  z-index: 8;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin: 12px 0 18px;
-  padding: 12px 14px;
-  border: 1px solid rgba(144, 165, 185, 0.18);
-  border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(37, 199, 166, 0.14), rgba(215, 183, 108, 0.08)),
-    rgba(5, 10, 14, 0.86);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(16px);
-}
-
-.layout-control-bar span {
-  display: block;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.layout-control-bar strong {
-  color: var(--text);
-  font-size: 14px;
-}
-
-.layout-control-actions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.layout-control-actions button,
-.section-fold-toggle {
-  min-height: 40px;
-  padding: 0 14px;
-  border: 1px solid rgba(53, 194, 164, 0.4);
-  border-radius: 8px;
-  background: rgba(8, 13, 18, 0.72);
-  color: var(--text);
-  font-weight: 900;
-  cursor: pointer;
-  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
-}
-
-.layout-control-actions button:hover,
-.section-fold-toggle:hover {
-  border-color: rgba(101, 217, 141, 0.8);
-  background: rgba(53, 194, 164, 0.16);
-  transform: translateY(-1px);
-}
-
 @keyframes ticker {
   from {
     transform: translateX(0);
@@ -1479,59 +1422,12 @@ h2 {
   margin-bottom: 18px;
 }
 
-.foldable-section {
-  transition: border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
-}
-
-.foldable-section-head {
-  position: relative;
-}
-
-.foldable-section-head .section-fold-toggle {
-  flex: 0 0 auto;
-  align-self: flex-start;
-}
-
-.foldable-section.is-folded {
-  border-color: rgba(144, 165, 185, 0.16);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
-}
-
-.foldable-section.is-folded > :not(.section-head):not(.floor-head):not(.voice-panel) {
-  display: none !important;
-}
-
-.foldable-section.is-folded .section-head,
-.foldable-section.is-folded .floor-head,
-.foldable-section.is-folded .voice-panel {
-  margin-bottom: 0;
-}
-
-.foldable-section.is-folded.voice-band .voice-controls {
-  display: none;
-}
-
 .recommendation-card-actions {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   flex-wrap: wrap;
   gap: 8px;
-}
-
-.recommendation-card-actions button {
-  min-height: 40px;
-  padding: 0 14px;
-  border: 1px solid rgba(53, 194, 164, 0.42);
-  border-radius: 8px;
-  background: rgba(53, 194, 164, 0.12);
-  color: var(--text);
-  font-weight: 900;
-  cursor: pointer;
-}
-
-.recommendation-card-actions button:hover {
-  border-color: rgba(101, 217, 141, 0.85);
 }
 
 .voice-band {
@@ -4355,7 +4251,6 @@ main > section {
 }
 
 .card-toggle,
-.recommendation-card-actions button,
 .inline-form button,
 .portfolio-form button,
 .voice-text-form button,
@@ -4367,7 +4262,6 @@ main > section {
 }
 
 .card-toggle:hover,
-.recommendation-card-actions button:hover,
 .inline-form button:hover,
 .portfolio-form button:hover,
 .voice-text-form button:hover,
@@ -4502,27 +4396,6 @@ main > section {
 @media (max-width: 760px) {
   .app-shell {
     padding: 16px;
-  }
-
-  .layout-control-bar {
-    position: static;
-    display: grid;
-    gap: 10px;
-    padding: 12px;
-  }
-
-  .layout-control-actions {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    width: 100%;
-  }
-
-  .layout-control-actions button,
-  .section-fold-toggle {
-    width: 100%;
-    min-height: 44px;
-    padding-inline: 8px;
-    font-size: 13px;
   }
 
   .topbar {
@@ -4733,8 +4606,7 @@ main > section {
   main,
   main > section,
   .topbar,
-  .ticker-band,
-  .layout-control-bar {
+  .ticker-band {
     width: 100%;
     max-width: 100%;
     min-width: 0;
@@ -5928,10 +5800,6 @@ body::after {
   background: rgba(2, 7, 11, 0.74);
 }
 
-.layout-control-bar {
-  display: none;
-}
-
 .ticker-band {
   min-height: 32px;
   margin-bottom: 14px;
@@ -6427,14 +6295,6 @@ body::after {
   margin: 0;
   color: #fffaf0;
   font-size: 18px;
-}
-
-.home-deck-head a,
-.home-deck-head > span {
-  color: var(--sfm-gold);
-  text-decoration: none;
-  font-size: 12px;
-  font-weight: 900;
 }
 
 .home-heatmap-grid {
@@ -7004,59 +6864,14 @@ body::after {
   color: #94a7b5;
 }
 
-.market-overflow-toggle {
-  display: grid;
-  place-items: center;
-  min-height: 58px;
-  border: 1px solid rgba(144, 165, 185, 0.2);
-  border-radius: 13px;
-  color: #eef6fb;
-  background: rgba(6, 13, 19, 0.8);
-  cursor: pointer;
-  transition: border-color 180ms ease, color 180ms ease, background 180ms ease;
-}
-
-.market-overflow-toggle:hover,
-.market-overflow-toggle:focus-visible {
-  border-color: rgba(215, 174, 85, 0.6);
-  color: var(--sfm-gold);
-  background: rgba(215, 174, 85, 0.08);
-}
-
-.market-overflow-toggle span {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  font-size: 18px;
-  line-height: 1;
-}
-
-.market-tabs:not(.is-expanded) .market-button.is-overflow-market:not(.is-active-overflow) {
-  display: none !important;
-}
-
-.market-tabs.is-expanded .market-button.is-overflow-market {
-  display: grid !important;
-}
-
 @media (min-width: 1100px) {
   .market-tabs {
     direction: rtl !important;
     grid-auto-flow: row !important;
     grid-auto-columns: initial !important;
-    grid-template-columns: repeat(5, minmax(150px, 1fr)) 48px !important;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
     overflow: visible !important;
     padding-bottom: 0 !important;
-  }
-
-  .market-tabs.is-expanded {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
-  }
-
-  .market-overflow-toggle {
-    min-width: 48px;
   }
 
   .rail-voice .rail-wave {
@@ -7210,17 +7025,8 @@ body::after {
   .market-tabs {
     grid-auto-flow: row !important;
     grid-auto-columns: initial !important;
-    grid-template-columns: repeat(5, minmax(0, 1fr)) 44px !important;
-    overflow: visible !important;
-  }
-
-  .market-tabs.is-expanded {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-  }
-
-  .market-overflow-toggle {
-    min-height: 58px;
-    min-width: 44px;
+    overflow: visible !important;
   }
 
   .pulse-status-card {
@@ -7565,7 +7371,6 @@ body::after {
 }
 
 .market-button,
-.market-overflow-toggle,
 .command-dashboard-card,
 .home-rec-card,
 .home-follow-row,
@@ -7587,9 +7392,6 @@ body::after {
     direction: ltr !important;
   }
 
-  .market-tabs .market-overflow-toggle {
-    order: 99;
-  }
 }
 
 @media (max-width: 760px) {
@@ -8120,14 +7922,13 @@ main > section {
 
 .market-tabs {
   display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) 44px !important;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
   gap: 10px !important;
   direction: ltr !important;
   overflow: visible !important;
 }
 
-.market-button,
-.market-overflow-toggle {
+.market-button {
   min-height: 54px !important;
   border-radius: 12px !important;
   border-color: rgba(126, 153, 174, 0.18) !important;
@@ -8207,10 +8008,6 @@ main > section {
 
 .home-deck-head .eyebrow {
   color: #aebac5 !important;
-}
-
-.home-deck-head a {
-  color: var(--reference-gold) !important;
 }
 
 .home-heatmap-grid {
@@ -8553,12 +8350,8 @@ html[dir="ltr"] .notification-item {
   }
 
   .market-tabs {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    gap: 8px !important;
-  }
-
-  .market-tabs.is-expanded {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
   }
 
   .market-button {
@@ -8570,10 +8363,6 @@ html[dir="ltr"] .notification-item {
 
   .market-button-copy {
     display: none !important;
-  }
-
-  .market-overflow-toggle {
-    min-height: 54px !important;
   }
 
   .command-center-band,
@@ -8613,11 +8402,6 @@ html[dir="ltr"] .notification-item {
     border-top: 1px solid rgba(126, 153, 174, 0.15) !important;
     background: rgba(2, 8, 12, 0.96) !important;
   }
-}
-
-/* Final density and mobile icon correction */
-.section-fold-toggle {
-  display: none !important;
 }
 
 @media (min-width: 761px) {

@@ -28,9 +28,6 @@ const radarQuality = document.querySelector("#radar-quality");
 const loadingIndicator = document.querySelector("#loading-indicator");
 const connectionStatus = document.querySelector("#connection-status");
 const refreshButton = document.querySelector("#refresh-button");
-const compactLayoutButton = document.querySelector("#compact-layout-button");
-const collapseSectionsButton = document.querySelector("#collapse-sections-button");
-const expandSectionsButton = document.querySelector("#expand-sections-button");
 const notificationButton = document.querySelector("#notification-button");
 const mobileNotificationButton = document.querySelector("#mobile-notification-button");
 const mobileSettingsButton = document.querySelector("#mobile-settings-button");
@@ -54,8 +51,6 @@ const settingsPreviewLabel = document.querySelector("#settings-preview-label");
 const settingsSaveButton = document.querySelector("#settings-save-button");
 const disclaimer = document.querySelector("#disclaimer");
 const template = document.querySelector("#card-template");
-const expandAllCardsButton = document.querySelector("#expand-all-cards");
-const collapseAllCardsButton = document.querySelector("#collapse-all-cards");
 const tickerTape = document.querySelector("#ticker-tape");
 const sessionClockCard = document.querySelector(".session-clock-card");
 const sessionClock = document.querySelector("#session-clock");
@@ -91,7 +86,6 @@ const floorHeatmapTitle = document.querySelector("#floor-heatmap-title");
 const floorJumpButtons = document.querySelectorAll("[data-floor-jump]");
 const marketBoard = document.querySelector("#market-board");
 const livePulseGrid = document.querySelector("#live-pulse-grid");
-const livePulseMarket = document.querySelector("#live-pulse-market");
 const homeRecommendations = document.querySelector("#home-recommendations");
 const homeFollowedTrades = document.querySelector("#home-followed-trades");
 const homeHeatmapGrid = document.querySelector("#home-heatmap-grid");
@@ -152,7 +146,6 @@ const INTRO_DURATION_MS = 8_000;
 const DEFAULT_USER_DISPLAY_NAME = "محمد";
 const DEFAULT_APP_LANGUAGE = "ar";
 const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
-const SECTION_FOLD_STORAGE_KEY = "the-sfm-trader-section-folds-v1";
 const UI_TEXT_TRANSLATIONS = {
   "أهلاً سيدي محمد": "Welcome Sir Mohammed",
   "مساعدك SFM جاهز للتحليل ومتابعة الأسهم.": "Your SFM assistant is ready for analysis and stock monitoring.",
@@ -185,19 +178,6 @@ const UI_TEXT_TRANSLATIONS = {
   "صوت": "Voice",
   "توصيات": "Recommendations",
   "سجل": "Log",
-  "وضع الصفحة": "Page mode",
-  "لوحة مختصرة ومطوية": "Compact folded dashboard",
-  "الوضع المختصر": "Compact mode",
-  "مختصر": "Compact",
-  "طي الأقسام": "Collapse sections",
-  "طي الكل": "Collapse",
-  "فتح الأقسام": "Expand sections",
-  "فتح الكل": "Expand",
-  "طي": "Collapse",
-  "فتح": "Open",
-  "تم فتح الأقسام": "Sections expanded",
-  "تم طي الأقسام": "Sections collapsed",
-  "تم تفعيل الوضع المختصر": "Compact mode enabled",
   "تحديث بالخلفية": "Refreshing in background",
   "يعرض آخر تحليل محفوظ": "Showing the latest saved analysis",
   "شريط السوق": "Market ticker",
@@ -355,9 +335,6 @@ const UI_TEXT_TRANSLATIONS = {
   "فرص الصعود": "Upside opportunities",
   "التوصيات": "Recommendations",
   "هذه تحليلات آلية تعليمية وليست نصيحة مالية.": "These are educational automated analyses, not financial advice.",
-  "فتح وغلق كروت الأسهم": "Open and close stock cards",
-  "غلق الكل": "Close all",
-  "فتح الكل": "Open all",
   "تحميل": "Loading",
   "أوضاع عرض التوصيات": "Recommendation display modes",
   "مضاربة": "Scalping",
@@ -387,7 +364,6 @@ const UI_TEXT_TRANSLATIONS = {
   "أغلق التفاصيل": "Close details",
   "أفضل الفرص الآن": "Best opportunities now",
   "صفقات تحت المتابعة": "Followed trades",
-  "عرض الكل": "View all",
   "نبض السوق الآن": "Live market pulse",
   "حالة السوق": "Market status",
   "ينتهي خلال": "Closes in",
@@ -821,25 +797,6 @@ const SYMBOL_ALIASES = {
 
 const STORAGE_PREFIX = "the-sfm-trader-";
 const LEGACY_STORAGE_PREFIX = "the-sfm-";
-const SECTION_FOLD_CONFIG = [
-  { key: "live-floor", selector: "#sfm-live-floor", desktopOpen: true, mobileOpen: true },
-  { key: "markets", selector: "#markets-section", desktopOpen: true, mobileOpen: true },
-  { key: "command", selector: "#command-center-section", desktopOpen: true, mobileOpen: false },
-  { key: "hours", selector: ".market-hours-band", desktopOpen: true, mobileOpen: false },
-  { key: "economic-news", selector: "#economic-news-section", desktopOpen: true, mobileOpen: false },
-  { key: "voice", selector: "#voice-section", desktopOpen: false, mobileOpen: false },
-  { key: "scalping", selector: "#scalping-section", desktopOpen: false, mobileOpen: false },
-  { key: "radar", selector: "#radar-section", desktopOpen: false, mobileOpen: false },
-  { key: "smart-alerts", selector: "#smart-alerts-section", desktopOpen: false, mobileOpen: false },
-  { key: "golden", selector: "#golden-section", desktopOpen: false, mobileOpen: false },
-  { key: "watchlist", selector: "#watchlist-section", desktopOpen: false, mobileOpen: false },
-  { key: "portfolio", selector: "#portfolio-section", desktopOpen: false, mobileOpen: false },
-  { key: "us-dashboard", selector: "#us-dashboard-section", desktopOpen: false, mobileOpen: false },
-  { key: "us-outlook", selector: "#us-outlook-section", desktopOpen: false, mobileOpen: false },
-  { key: "recommendations", selector: "#recommendations-section", desktopOpen: true, mobileOpen: true },
-  { key: "history", selector: "#history-section", desktopOpen: false, mobileOpen: false }
-];
-
 const APP_VIEW_GROUPS = {
   home: ["#sfm-live-floor", "#markets-section", "#command-center-section", "#home-heatmap-section", "#home-deck-section"],
   markets: ["#markets-section", ".market-hours-band", "#economic-news-section", "#radar-section"],
@@ -886,7 +843,6 @@ const recommendationResponseCache = new Map();
 let activeFilter = "all";
 let activeShariaFilter = "all";
 let activeAnalysisMode = loadStored("the-sfm-trader-analysis-mode", "balanced");
-let sectionFoldState = normalizeSectionFoldState(loadStored(SECTION_FOLD_STORAGE_KEY, {}));
 let watchlist = loadStored("the-sfm-trader-watchlist", ["AMD", "NVDA", "GOOGL"]);
 let portfolio = loadStored("the-sfm-trader-portfolio", []);
 let recommendationHistory = loadStored("the-sfm-trader-history", []);
@@ -947,7 +903,6 @@ async function init() {
   initSettingsPanel();
   initInterfaceTranslator();
   initLiveFloor();
-  initSectionFolding();
   initAppNavigation();
   watchlist = normalizeWatchlist(watchlist);
   voiceMonitors = normalizeWatchlist(voiceMonitors);
@@ -979,8 +934,6 @@ async function init() {
   notificationCloseButton?.addEventListener("click", () => setNotificationPanelOpen(false));
   notificationClearButton?.addEventListener("click", clearNotificationLog);
   scalpForm?.addEventListener("submit", handleScalpSubmit);
-  expandAllCardsButton?.addEventListener("click", () => setAllSignalCardsExpanded(true));
-  collapseAllCardsButton?.addEventListener("click", () => setAllSignalCardsExpanded(false));
   searchInput.addEventListener("input", () => renderRecommendations(lastData));
   sortSelect.addEventListener("change", () => renderRecommendations(lastData));
   for (const button of analysisModeButtons) {
@@ -1041,103 +994,6 @@ function initLiveFloor() {
       target?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   }
-}
-
-function initSectionFolding() {
-  for (const config of SECTION_FOLD_CONFIG) {
-    const section = document.querySelector(config.selector);
-    if (!section) continue;
-
-    section.classList.add("foldable-section");
-    section.dataset.foldKey = config.key;
-    if (!section.id) section.id = `fold-section-${config.key}`;
-
-    const header = getSectionFoldHeader(section);
-    if (!header) continue;
-    header.classList.add("foldable-section-head");
-
-    let button = header.querySelector(".section-fold-toggle");
-    if (!button) {
-      button = document.createElement("button");
-      button.className = "section-fold-toggle";
-      button.type = "button";
-      button.setAttribute("aria-controls", section.id);
-      header.appendChild(button);
-    }
-
-    button.addEventListener("click", () => {
-      const open = section.classList.contains("is-folded");
-      setSectionOpen(config.key, open, { persist: true });
-    });
-
-    const initialOpen = typeof sectionFoldState[config.key] === "boolean"
-      ? sectionFoldState[config.key]
-      : getDefaultSectionOpen(config);
-    setSectionOpen(config.key, initialOpen);
-  }
-
-  compactLayoutButton?.addEventListener("click", () => applySectionPreset("compact"));
-  collapseSectionsButton?.addEventListener("click", () => applySectionPreset("collapsed"));
-  expandSectionsButton?.addEventListener("click", () => applySectionPreset("expanded"));
-}
-
-function getSectionFoldHeader(section) {
-  return (
-    section.querySelector(":scope > .section-head") ||
-    section.querySelector(":scope > .floor-head") ||
-    section.querySelector(":scope > .voice-panel") ||
-    section.firstElementChild
-  );
-}
-
-function getDefaultSectionOpen(config) {
-  return isCompactViewport() ? Boolean(config.mobileOpen) : Boolean(config.desktopOpen);
-}
-
-function isCompactViewport() {
-  return window.matchMedia?.("(max-width: 760px)")?.matches || false;
-}
-
-function setSectionOpen(key, open, options = {}) {
-  const config = SECTION_FOLD_CONFIG.find((item) => item.key === key);
-  const section = config ? document.querySelector(config.selector) : null;
-  if (!section) return;
-
-  const isOpen = Boolean(open);
-  section.classList.toggle("is-folded", !isOpen);
-  section.setAttribute("aria-expanded", String(isOpen));
-
-  const button = section.querySelector(".section-fold-toggle");
-  if (button) {
-    button.textContent = localizeUiText(isOpen ? "طي" : "فتح");
-    button.setAttribute("aria-expanded", String(isOpen));
-    button.setAttribute("aria-label", localizeUiText(`${isOpen ? "طي" : "فتح"} ${getSectionTitle(section)}`));
-  }
-
-  sectionFoldState[key] = isOpen;
-  if (options.persist) saveStored(SECTION_FOLD_STORAGE_KEY, sectionFoldState);
-}
-
-function getSectionTitle(section) {
-  return section.querySelector("h2")?.textContent?.trim() || section.getAttribute("aria-label") || "";
-}
-
-function applySectionPreset(mode) {
-  for (const config of SECTION_FOLD_CONFIG) {
-    const open = mode === "expanded"
-      ? true
-      : mode === "collapsed"
-        ? false
-        : ["live-floor", "markets", "recommendations"].includes(config.key);
-    setSectionOpen(config.key, open);
-  }
-
-  saveStored(SECTION_FOLD_STORAGE_KEY, sectionFoldState);
-  showToast(
-    localizeUiText("وضع الصفحة"),
-    localizeUiText(mode === "expanded" ? "تم فتح الأقسام" : mode === "collapsed" ? "تم طي الأقسام" : "تم تفعيل الوضع المختصر"),
-    { type: "settings", persist: false }
-  );
 }
 
 function initAppNavigation() {
@@ -1223,12 +1079,8 @@ function showAppView(view, options = {}) {
   }
 }
 
-function normalizeSectionFoldState(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-  return Object.fromEntries(
-    Object.entries(value)
-      .filter(([key, open]) => SECTION_FOLD_CONFIG.some((config) => config.key === key) && typeof open === "boolean")
-  );
+function isCompactViewport() {
+  return window.matchMedia?.("(max-width: 760px)")?.matches || false;
 }
 
 function initIntroCeremony() {
@@ -1750,14 +1602,13 @@ async function loadMarkets() {
     fallbackMessage: "تعذر تحميل الأسواق. تأكد أن السيرفر يعمل ثم حدث الصفحة."
   });
   marketTabs.innerHTML = "";
-  marketTabs.classList.remove("is-expanded");
 
   const orderedMarkets = [...data.markets].sort((a, b) => getMarketSortIndex(a) - getMarketSortIndex(b));
 
   for (const market of orderedMarkets) {
     const button = document.createElement("button");
     const primaryKey = getPrimaryMarketKey(market);
-    button.className = `market-button ${primaryKey ? "is-primary-market" : "is-overflow-market"}`;
+    button.className = `market-button ${primaryKey ? "is-primary-market" : "is-secondary-market"}`;
     button.type = "button";
     button.dataset.market = market.id;
     if (primaryKey) button.dataset.primaryMarket = primaryKey;
@@ -1772,26 +1623,12 @@ async function loadMarkets() {
     button.addEventListener("click", () => {
       activeMarket = market.id;
       activeShariaFilter = "all";
-      marketTabs.classList.remove("is-expanded");
       setActiveMarketButton();
       setActiveShariaFilterButton();
       loadRecommendations({ force: true });
     });
     marketTabs.appendChild(button);
   }
-
-  const overflowToggle = document.createElement("button");
-  overflowToggle.className = "market-overflow-toggle";
-  overflowToggle.type = "button";
-  overflowToggle.setAttribute("aria-expanded", "false");
-  overflowToggle.setAttribute("aria-label", localizeUiText("جميع الأسواق"));
-  overflowToggle.innerHTML = `<span aria-hidden="true">⌄</span>`;
-  overflowToggle.addEventListener("click", () => {
-    const expanded = marketTabs.classList.toggle("is-expanded");
-    overflowToggle.setAttribute("aria-expanded", String(expanded));
-    overflowToggle.querySelector("span").textContent = expanded ? "×" : "⌄";
-  });
-  marketTabs.appendChild(overflowToggle);
 
   setActiveMarketButton();
 }
@@ -2863,10 +2700,6 @@ function renderLivePulseStrip(data) {
   const nextSignature = `${data?.market?.id || activeMarket}:${items
     .map((item) => `${item.symbol}:${item.action}:${Math.round(Number(item.confidence || 0))}:${Math.round(Number(item.expectedMovePct || 0) * 100)}`)
     .join("|")}`;
-
-  if (livePulseMarket) {
-    livePulseMarket.textContent = localizeUiText(data?.market?.label || "السوق");
-  }
 
   if (!items.length) {
     livePulseSignature = nextSignature;
@@ -4494,22 +4327,6 @@ function setSignalCardCollapsed(card, isCollapsed) {
   }
 }
 
-function setAllSignalCardsExpanded(expanded) {
-  if (!lastData?.recommendations?.length) return;
-
-  const visibleSymbols = sortRecommendations(filterRecommendations(lastData.recommendations))
-    .map((item) => item.symbol);
-
-  if (expanded) {
-    expandedSignalCards = new Set([...expandedSignalCards, ...visibleSymbols]);
-  } else {
-    expandedSignalCards = new Set([...expandedSignalCards].filter((symbol) => !visibleSymbols.includes(symbol)));
-  }
-
-  saveStored("the-sfm-trader-expanded-cards", [...expandedSignalCards]);
-  renderRecommendations(lastData);
-}
-
 function openDetailPage(symbol) {
   const normalized = normalizeSymbol(symbol);
   if (!normalized) return;
@@ -5738,7 +5555,6 @@ function setActiveMarketButton() {
   for (const button of marketTabs.querySelectorAll(".market-button")) {
     const isActive = button.dataset.market === activeMarket;
     button.classList.toggle("active", isActive);
-    button.classList.toggle("is-active-overflow", isActive && !button.classList.contains("is-primary-market"));
   }
 }
 
