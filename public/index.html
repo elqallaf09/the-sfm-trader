@@ -188,26 +188,116 @@
           </div>
           <button id="settings-close-button" class="icon-button" type="button" aria-label="إغلاق الإعدادات">×</button>
         </div>
-        <form id="settings-form" class="settings-form">
-          <label class="settings-field settings-field-language">
-            <span id="settings-language-label">اللغة</span>
-            <select id="settings-language">
-              <option value="ar">العربية</option>
-              <option value="en">English</option>
-            </select>
-          </label>
-          <label class="settings-field settings-field-name">
-            <span id="settings-name-label">الاسم في الصفحة الترحيبية</span>
-            <input id="settings-display-name" type="text" maxlength="32" autocomplete="name" placeholder="محمد" />
-          </label>
-          <div class="settings-preview">
-            <span id="settings-preview-label">المعاينة</span>
-            <strong id="settings-preview">مساء الخير سيدي محمد</strong>
-            <small>ستظهر هذه العبارة في شاشة الدخول والتحية الصوتية.</small>
-          </div>
-          <div class="settings-actions-row">
-            <button id="settings-save-button" class="primary-button" type="submit">حفظ الإعدادات</button>
-          </div>
+        <form id="settings-form" class="settings-form settings-grid">
+          <section class="settings-card settings-card-profile">
+            <div class="settings-card-head">
+              <span>Profile</span>
+              <strong>الملف الشخصي</strong>
+            </div>
+            <label class="settings-field settings-field-name">
+              <span id="settings-name-label">الاسم في الصفحة الترحيبية</span>
+              <input id="settings-display-name" type="text" maxlength="32" autocomplete="name" placeholder="محمد" />
+            </label>
+            <div class="settings-preview">
+              <span id="settings-preview-label">المعاينة</span>
+              <strong id="settings-preview">مساء الخير سيدي محمد</strong>
+              <small>تستخدم هذه العبارة في شاشة الدخول والتحية الصوتية.</small>
+            </div>
+          </section>
+
+          <section class="settings-card">
+            <div class="settings-card-head">
+              <span>Preferences</span>
+              <strong>تفضيلات الحساب</strong>
+            </div>
+            <label class="settings-field settings-field-language">
+              <span id="settings-language-label">اللغة</span>
+              <select id="settings-language">
+                <option value="ar">العربية</option>
+                <option value="en">English</option>
+              </select>
+            </label>
+            <label class="settings-switch">
+              <input type="checkbox" checked />
+              <span>استخدام الأرقام الإنجليزية داخل الواجهة</span>
+            </label>
+          </section>
+
+          <section class="settings-card">
+            <div class="settings-card-head">
+              <span>Notifications</span>
+              <strong>التنبيهات</strong>
+            </div>
+            <label class="settings-switch">
+              <input type="checkbox" checked />
+              <span>تنبيه عند وصول الصفقة إلى الهدف</span>
+            </label>
+            <label class="settings-switch">
+              <input type="checkbox" checked />
+              <span>تنبيه صوتي للفرص عالية الثقة</span>
+            </label>
+          </section>
+
+          <section class="settings-card">
+            <div class="settings-card-head">
+              <span>Trading</span>
+              <strong>تفضيلات التداول</strong>
+            </div>
+            <label class="settings-field">
+              <span>نمط التحليل الافتراضي</span>
+              <select>
+                <option>قيادة السوق</option>
+                <option>مضاربة 5-15 دقيقة</option>
+                <option>استثمار شهري</option>
+              </select>
+            </label>
+            <label class="settings-switch">
+              <input type="checkbox" />
+              <span>عرض الأسهم المطابقة للشريعة فقط</span>
+            </label>
+          </section>
+
+          <section class="settings-card">
+            <div class="settings-card-head">
+              <span>Security</span>
+              <strong>الأمان</strong>
+            </div>
+            <div class="settings-info-row">
+              <span>حفظ البيانات</span>
+              <strong>محلي على جهازك</strong>
+            </div>
+            <div class="settings-info-row">
+              <span>حالة الجلسة</span>
+              <strong>نشطة</strong>
+            </div>
+          </section>
+
+          <section class="settings-card">
+            <div class="settings-card-head">
+              <span>Plan</span>
+              <strong>الاشتراك والخطة</strong>
+            </div>
+            <div class="settings-plan-badge">Private Trader</div>
+            <p>نسخة خاصة للتطوير والمتابعة قبل النشر العام.</p>
+          </section>
+
+          <section class="settings-card settings-card-wide">
+            <div class="settings-card-head">
+              <span>Support</span>
+              <strong>الدعم وعن التطبيق</strong>
+            </div>
+            <div class="settings-info-row">
+              <span>التطبيق</span>
+              <strong>the-sfm trader</strong>
+            </div>
+            <div class="settings-info-row">
+              <span>الحقوق</span>
+              <strong>Powered by M.ALQ</strong>
+            </div>
+            <div class="settings-actions-row">
+              <button id="settings-save-button" class="primary-button" type="submit">حفظ الإعدادات</button>
+            </div>
+          </section>
         </form>
       </aside>
 
