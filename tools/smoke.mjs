@@ -40,6 +40,13 @@ for (const check of checks) {
   }
 }
 
+try {
+  await validateDuplicateSymbolConsistency();
+} catch (error) {
+  failed = true;
+  console.error(`[failed] duplicate symbol consistency: ${error.message}`);
+}
+
 if (failed) {
   console.error(`Smoke failed against ${baseUrl}`);
   process.exit(1);
@@ -69,4 +76,47 @@ async function fetchWithTimeout(url, ms) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function fetchJson(path) {
+  const response = await fetchWithTimeout(`${baseUrl}${path}`, timeoutMs);
+  const text = await response.text();
+  const data = JSON.parse(text || "{}");
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${data.error || "request failed"}`);
+  }
+
+  return data;
+}
+
+async function validateDuplicateSymbolConsistency() {
+  const [kuwait, gcc] = await Promise.all([
+    fetchJson("/api/recommendations?market=kuwait"),
+    fetchJson("/api/recommendations?market=gcc")
+  ]);
+  const kuwaitZain = findRecommendation(kuwait, "ZAIN.KW");
+  const gccZain = findRecommendation(gcc, "ZAIN.KW");
+
+  if (!kuwaitZain || !gccZain) {
+    throw new Error("ZAIN.KW was not present in both Kuwait and GCC payloads");
+  }
+
+  const kuwaitSetup = kuwaitZain.setupAction || kuwaitZain.action;
+  const gccSetup = gccZain.setupAction || gccZain.action;
+  const sameDecision = kuwaitZain.action === gccZain.action && kuwaitSetup === gccSetup;
+  const sameExecutionMarket = kuwaitZain.executionMarketId === gccZain.executionMarketId;
+
+  if (!sameDecision || !sameExecutionMarket) {
+    throw new Error(
+      `ZAIN.KW mismatch: kuwait=${kuwaitZain.action}/${kuwaitSetup}/${kuwaitZain.executionMarketId}, ` +
+      `gcc=${gccZain.action}/${gccSetup}/${gccZain.executionMarketId}`
+    );
+  }
+
+  console.log(`[ok] duplicate symbol consistency ZAIN.KW (${kuwaitZain.action}/${kuwaitSetup})`);
+}
+
+function findRecommendation(payload, symbol) {
+  return (payload.recommendations || []).find((item) => item.symbol === symbol);
 }

@@ -29,6 +29,27 @@ const SHARIA_API_URL = (process.env.SHARIA_API_URL || "").replace(/\/$/, "");
 const SHARIA_API_KEY = process.env.SHARIA_API_KEY || "";
 let ollamaUnavailableUntil = 0;
 const shariaCache = new Map();
+const aggregateMarketIds = new Set(["gcc", "world"]);
+const canonicalMarketPriority = [
+  "kuwait",
+  "saudi",
+  "uae",
+  "qatar",
+  "bahrain",
+  "oman",
+  "us",
+  "forex",
+  "commodities",
+  "crypto",
+  "healthcare",
+  "tech",
+  "ai",
+  "dividends",
+  "food",
+  "europe",
+  "asia"
+];
+const symbolExecutionMarketCache = new Map();
 const symbolAliases = {
   APPLE: "AAPL",
   APPL: "AAPL",
@@ -346,12 +367,11 @@ function buildRecommendationsPayload(marketId, market, settled = [], options = {
 
 function finalizeRecommendationsPayloadForSession(payload, marketId) {
   const session = getExecutionSessionState(marketId);
-  if (!session) return payload;
-
-  const closed = session.isOpen === false;
-  const recommendations = closed
-    ? (payload.recommendations || []).map((item) => applyClosedMarketGuard(item, session))
-    : payload.recommendations || [];
+  const marketWideSession = session && !isAggregateMarket(marketId);
+  const closed = marketWideSession && session.isOpen === false;
+  const recommendations = (payload.recommendations || []).map((item) => (
+    finalizeRecommendationForExecutionSession(item, marketId, session)
+  ));
   const note = closed
     ? `${payload.market?.note || ""} السوق مغلق الآن؛ الإشارات المعروضة للمراقبة وليست أوامر دخول فورية.`
     : payload.market?.note;
@@ -372,6 +392,23 @@ function finalizeRecommendationsPayloadForSession(payload, marketId) {
     backtestSummary: buildBacktestSummary(recommendations),
     disclaimer
   };
+}
+
+function finalizeRecommendationForExecutionSession(item, marketId, marketSession) {
+  const aggregate = isAggregateMarket(marketId);
+  const executionMarketId = aggregate ? resolveSymbolExecutionMarketId(item.symbol, marketId) : marketId;
+  const session = aggregate ? getExecutionSessionState(executionMarketId) : marketSession;
+  const enriched = {
+    ...item,
+    executionMarketId,
+    executionSession: session || null
+  };
+
+  if (session?.isOpen === false) {
+    return applyClosedMarketGuard(enriched, session);
+  }
+
+  return enriched;
 }
 
 function applyClosedMarketGuard(item, session) {
@@ -454,6 +491,42 @@ function getExecutionSessionConfig(marketId) {
   };
   const alias = aliases[marketId];
   return alias ? voiceSessionKnowledge[alias] : null;
+}
+
+function isAggregateMarket(marketId) {
+  return aggregateMarketIds.has(marketId);
+}
+
+function resolveSymbolExecutionMarketId(symbol, fallbackMarketId = "") {
+  const clean = String(symbol || "").trim().toUpperCase();
+  if (!clean) return fallbackMarketId;
+  if (symbolExecutionMarketCache.has(clean)) return symbolExecutionMarketCache.get(clean);
+
+  for (const marketId of canonicalMarketPriority) {
+    const marketSymbols = markets[marketId]?.symbols || [];
+    if (marketSymbols.some((asset) => String(asset.symbol || "").trim().toUpperCase() === clean)) {
+      symbolExecutionMarketCache.set(clean, marketId);
+      return marketId;
+    }
+  }
+
+  const inferred = inferExecutionMarketFromSymbol(clean) || fallbackMarketId;
+  symbolExecutionMarketCache.set(clean, inferred);
+  return inferred;
+}
+
+function inferExecutionMarketFromSymbol(symbol) {
+  if (symbol.endsWith(".KW")) return "kuwait";
+  if (symbol.endsWith(".SR")) return "saudi";
+  if (symbol.endsWith(".AE")) return "uae";
+  if (symbol.endsWith(".QA")) return "qatar";
+  if (symbol.endsWith(".BH")) return "bahrain";
+  if (symbol.endsWith(".OM")) return "oman";
+  if (/^[A-Z]{6}=X$/.test(symbol)) return "forex";
+  if (symbol.endsWith("-USD")) return "crypto";
+  if (["GC=F", "SI=F", "CL=F", "BZ=F", "NG=F", "HG=F", "KC=F", "CC=F"].includes(symbol)) return "commodities";
+  if (symbol.startsWith("^") || /^[A-Z]{1,5}$/.test(symbol)) return "us";
+  return "";
 }
 
 function refreshMarketCache(cacheKey, marketId, market) {
