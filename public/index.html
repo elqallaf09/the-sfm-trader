@@ -11,7 +11,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
     <link rel="icon" type="image/png" sizes="256x256" href="/the-sfm-trader-icon-256.png" />
-    <link rel="stylesheet" href="/styles.css?v=20260621-lucide-market-icons-1" />
+    <link rel="stylesheet" href="/styles.css?v=20260621-sidebar-lucide-icons-1" />
   </head>
   <body>
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
@@ -93,32 +93,87 @@
       </header>
 
       <aside class="desktop-trading-rail" aria-label="تنقل غرفة التداول">
+        <div class="rail-top-mark" aria-hidden="true">
+          <svg class="rail-lucide-icon" viewBox="0 0 24 24">
+            <path d="M4 18v3"></path>
+            <path d="M8 14v7"></path>
+            <path d="M12 16v5"></path>
+            <path d="M16 10v11"></path>
+            <path d="M20 6v15"></path>
+            <path d="m22 3-8.5 8.5-4-4L2 15"></path>
+          </svg>
+        </div>
         <a href="#sfm-live-floor" class="rail-link active" aria-label="الرئيسية">
-          <span class="rail-icon rail-home" aria-hidden="true"></span>
+          <span class="rail-icon rail-home" aria-hidden="true">
+            <svg class="rail-lucide-icon" viewBox="0 0 24 24">
+              <path d="m3 10 9-7 9 7"></path>
+              <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+              <path d="M9 21v-6a3 3 0 0 1 6 0v6"></path>
+            </svg>
+          </span>
           <b>الرئيسية</b>
         </a>
         <a href="#markets-section" class="rail-link" aria-label="الأسواق">
-          <span class="rail-icon rail-globe" aria-hidden="true"></span>
+          <span class="rail-icon rail-globe" aria-hidden="true">
+            <svg class="rail-lucide-icon" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+              <path d="M2 12h20"></path>
+            </svg>
+          </span>
           <b>الأسواق</b>
         </a>
         <a href="#recommendations-section" class="rail-link" aria-label="التوصيات">
-          <span class="rail-icon rail-bars" aria-hidden="true"></span>
+          <span class="rail-icon rail-bars" aria-hidden="true">
+            <svg class="rail-lucide-icon" viewBox="0 0 24 24">
+              <path d="m3 17 2 2 4-4"></path>
+              <path d="m3 7 2 2 4-4"></path>
+              <path d="M13 6h8"></path>
+              <path d="M13 12h8"></path>
+              <path d="M13 18h8"></path>
+            </svg>
+          </span>
           <b>التوصيات</b>
         </a>
-        <a href="#history-section" class="rail-link" aria-label="المتابعات">
-          <span class="rail-icon rail-bookmark" aria-hidden="true"></span>
-          <b>المتابعات</b>
+        <a href="#watchlist-section" class="rail-link" aria-label="المفضلات">
+          <span class="rail-icon rail-bookmark" aria-hidden="true">
+            <svg class="rail-lucide-icon" viewBox="0 0 24 24">
+              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"></path>
+            </svg>
+          </span>
+          <b>المفضلات</b>
         </a>
         <a href="#notification-panel" class="rail-link" aria-label="التنبيهات">
-          <span class="rail-icon rail-bell" aria-hidden="true"></span>
+          <span class="rail-icon rail-bell" aria-hidden="true">
+            <svg class="rail-lucide-icon" viewBox="0 0 24 24">
+              <path d="M10.268 21a2 2 0 0 0 3.464 0"></path>
+              <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .738-1.674C19.41 13.956 18 12.499 18 8a6 6 0 0 0-12 0c0 4.499-1.411 5.956-2.738 7.326"></path>
+            </svg>
+          </span>
           <b>التنبيهات</b>
         </a>
-        <a href="#scalping-section" class="rail-link" aria-label="الأوامر">
-          <span class="rail-icon rail-orders" aria-hidden="true"></span>
-          <b>الأوامر</b>
+        <a href="#economic-news-section" class="rail-link" aria-label="الأخبار">
+          <span class="rail-icon rail-news" aria-hidden="true">
+            <svg class="rail-lucide-icon" viewBox="0 0 24 24">
+              <path d="M15 18h-5"></path>
+              <path d="M18 14h-8"></path>
+              <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"></path>
+              <rect width="8" height="4" x="10" y="6" rx="1"></rect>
+            </svg>
+          </span>
+          <b>الأخبار</b>
         </a>
         <a href="#voice-section" class="rail-link rail-voice" aria-label="الصوت">
-          <span class="rail-icon rail-wave" aria-hidden="true"></span>
+          <span class="rail-icon rail-wave" aria-hidden="true">
+            <svg class="rail-lucide-icon" viewBox="0 0 24 24">
+              <path d="M2 10v3"></path>
+              <path d="M6 6v11"></path>
+              <path d="M10 3v18"></path>
+              <path d="M14 8v7"></path>
+              <path d="M18 5v13"></path>
+              <path d="M22 10v3"></path>
+            </svg>
+          </span>
           <b>Voice</b>
         </a>
       </aside>
@@ -743,23 +798,61 @@
 
       <nav class="ios-tabbar" aria-label="تنقل سريع للتطبيق">
         <a class="ios-tab-link" href="#sfm-live-floor" data-tab="pulse">
-          <span aria-hidden="true"></span>
+          <span aria-hidden="true">
+            <svg class="tab-lucide-icon" viewBox="0 0 24 24">
+              <path d="m3 10 9-7 9 7"></path>
+              <path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10"></path>
+              <path d="M9 21v-6a3 3 0 0 1 6 0v6"></path>
+            </svg>
+          </span>
           <strong>نبض</strong>
         </a>
         <a class="ios-tab-link" href="#markets-section" data-tab="markets">
-          <span aria-hidden="true"></span>
+          <span aria-hidden="true">
+            <svg class="tab-lucide-icon" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+              <path d="M2 12h20"></path>
+            </svg>
+          </span>
           <strong>أسواق</strong>
         </a>
         <a class="ios-tab-link" href="#voice-section" data-tab="voice">
-          <span aria-hidden="true"></span>
+          <span aria-hidden="true">
+            <svg class="tab-lucide-icon" viewBox="0 0 24 24">
+              <path d="M2 10v3"></path>
+              <path d="M6 6v11"></path>
+              <path d="M10 3v18"></path>
+              <path d="M14 8v7"></path>
+              <path d="M18 5v13"></path>
+              <path d="M22 10v3"></path>
+            </svg>
+          </span>
           <strong>صوت</strong>
         </a>
         <a class="ios-tab-link" href="#scalping-section" data-tab="scalp">
-          <span aria-hidden="true"></span>
+          <span aria-hidden="true">
+            <svg class="tab-lucide-icon" viewBox="0 0 24 24">
+              <path d="M4 18v3"></path>
+              <path d="M8 14v7"></path>
+              <path d="M12 16v5"></path>
+              <path d="M16 10v11"></path>
+              <path d="M20 6v15"></path>
+              <path d="m22 3-8.5 8.5-4-4L2 15"></path>
+            </svg>
+          </span>
           <strong>مضاربة</strong>
         </a>
         <a class="ios-tab-link" href="#recommendations-section" data-tab="signals">
-          <span aria-hidden="true"></span>
+          <span aria-hidden="true">
+            <svg class="tab-lucide-icon" viewBox="0 0 24 24">
+              <path d="m3 17 2 2 4-4"></path>
+              <path d="m3 7 2 2 4-4"></path>
+              <path d="M13 6h8"></path>
+              <path d="M13 12h8"></path>
+              <path d="M13 18h8"></path>
+            </svg>
+          </span>
           <strong>توصيات</strong>
         </a>
       </nav>
@@ -841,7 +934,7 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260621-lucide-market-icons-1" type="module"></script>
+    <script src="/app.js?v=20260621-sidebar-lucide-icons-1" type="module"></script>
   </body>
 </html>
 

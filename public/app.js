@@ -147,6 +147,8 @@ const DEFAULT_USER_DISPLAY_NAME = "محمد";
 const DEFAULT_APP_LANGUAGE = "ar";
 const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
 const UI_TEXT_TRANSLATIONS = {
+  "المفضلات": "Favorites",
+  "الأخبار": "News",
   "أهلاً سيدي محمد": "Welcome Sir Mohammed",
   "مساعدك SFM جاهز للتحليل ومتابعة الأسهم.": "Your SFM assistant is ready for analysis and stock monitoring.",
   "جاري فتح منصة التحليل": "Opening the analysis platform",
@@ -481,6 +483,8 @@ const UI_TEXT_TRANSLATIONS = {
 };
 const UI_TEXT_TRANSLATION_ENTRIES = Object.entries(UI_TEXT_TRANSLATIONS).sort((a, b) => b[0].length - a[0].length);
 const COMMON_UI_TERM_TRANSLATIONS = [
+  ["المفضلات", "Favorites"],
+  ["الأخبار", "News"],
   ["بورصة الكويت", "Kuwait Exchange"],
   ["بورصة السعودية", "Saudi Exchange"],
   ["أسواق الإمارات", "UAE markets"],
@@ -1037,7 +1041,7 @@ function getAppViewFromHash(hash) {
   if (value.includes("notification-panel")) return "alerts";
   if (value.includes("recommendations-section") || value.includes("view-recommendations")) return "recommendations";
   if (value.includes("history-section") || value.includes("watchlist-section") || value.includes("portfolio-section") || value.includes("view-history")) return "history";
-  if (value.includes("markets-section") || value.includes("market-hours") || value.includes("view-markets")) return "markets";
+  if (value.includes("markets-section") || value.includes("market-hours") || value.includes("economic-news-section") || value.includes("view-markets")) return "markets";
   if (value.includes("voice-section") || value.includes("view-voice")) return "voice";
   if (value.includes("scalping-section") || value.includes("view-scalp")) return "scalp";
   if (value.includes("sfm-live-floor") || value.includes("view-home")) return "home";
