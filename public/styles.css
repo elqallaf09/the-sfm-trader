@@ -8655,3 +8655,159 @@ html[dir="ltr"] .notification-item {
     height: 19px;
   }
 }
+
+/* Command center reference clarity layer */
+.command-center-band {
+  overflow: visible !important;
+}
+
+.command-center-grid {
+  grid-template-columns: repeat(5, minmax(142px, 1fr)) !important;
+  gap: 10px !important;
+  align-items: stretch !important;
+}
+
+.command-dashboard-card {
+  min-height: 132px !important;
+  padding: 14px !important;
+  border-radius: 8px !important;
+  isolation: isolate;
+}
+
+.command-dashboard-card > span {
+  display: block;
+  max-width: 100%;
+  color: #f7f3ea;
+  font-size: 13px !important;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  z-index: 2;
+}
+
+.command-dashboard-card > strong {
+  display: block;
+  margin-top: 5px;
+  color: #9eadb9;
+  font-size: 11px !important;
+  line-height: 1.2;
+  position: relative;
+  z-index: 2;
+}
+
+.command-dashboard-card > em {
+  inset-inline-start: 14px !important;
+  bottom: 11px !important;
+  max-width: calc(100% - 28px);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 3;
+}
+
+.command-radar-visual {
+  bottom: 13px !important;
+  width: 78px !important;
+  height: 78px !important;
+  opacity: 0.86 !important;
+}
+
+.command-radar-visual i {
+  width: 7px !important;
+  height: 7px !important;
+}
+
+.command-radar-visual i:nth-child(1) { left: 15px !important; top: 47px !important; }
+.command-radar-visual i:nth-child(2) { right: 14px !important; top: 22px !important; }
+.command-radar-visual i:nth-child(3) { left: 41px !important; bottom: 14px !important; }
+
+.command-number-row {
+  margin-top: 15px !important;
+  position: relative;
+  z-index: 2;
+}
+
+.command-number-row b {
+  font-size: 30px !important;
+  line-height: 1 !important;
+}
+
+.command-number-row i {
+  width: 18px !important;
+  height: 21px !important;
+  border-width: 2px !important;
+  border-bottom-width: 4px !important;
+}
+
+.command-mini-chart {
+  inset-inline: 14px !important;
+  bottom: 13px !important;
+  width: calc(100% - 28px) !important;
+  height: 40px !important;
+  opacity: 0.82;
+  z-index: 1;
+}
+
+.command-mini-chart polyline {
+  stroke-width: 2.4px !important;
+}
+
+.command-gauge {
+  bottom: 11px !important;
+  width: min(112px, calc(100% - 26px)) !important;
+  height: 70px !important;
+  border-radius: 112px 112px 0 0 !important;
+  background:
+    radial-gradient(circle at 50% 100%, rgba(3, 9, 14, 1) 0 34px, transparent 35px),
+    conic-gradient(from 270deg at 50% 100%, #7de49b 0 30%, #f2c264 30% 62%, #ff744d 62% var(--risk), rgba(255, 255, 255, 0.12) var(--risk) 100%) !important;
+}
+
+.command-gauge b {
+  margin-top: 16px !important;
+  font-size: 25px !important;
+  line-height: 1 !important;
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 0 14px rgba(3, 9, 14, 0.85);
+}
+
+.command-gauge em {
+  font-size: 11px !important;
+  line-height: 1.1 !important;
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 0 12px rgba(3, 9, 14, 0.85);
+}
+
+.command-performance-value {
+  margin-top: 18px !important;
+  color: #38e889;
+  font-size: clamp(25px, 2.35vw, 34px) !important;
+  line-height: 1 !important;
+  white-space: nowrap;
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 0 18px rgba(56, 232, 137, 0.22);
+}
+
+.command-performance .command-mini-chart-large {
+  bottom: 8px !important;
+  height: 28px !important;
+  opacity: 0.74;
+}
+
+.command-globe {
+  bottom: 13px !important;
+  width: 76px !important;
+  height: 76px !important;
+  opacity: 0.88;
+}
+
+@media (max-width: 1180px) and (min-width: 761px) {
+  .command-center-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
