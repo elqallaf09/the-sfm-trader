@@ -147,8 +147,15 @@ const DEFAULT_USER_DISPLAY_NAME = "محمد";
 const DEFAULT_APP_LANGUAGE = "ar";
 const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
 const UI_TEXT_TRANSLATIONS = {
+  "الرئيسية": "Home",
+  "الأسواق": "Markets",
+  "التوصيات": "Recommendations",
   "المفضلات": "Favorites",
+  "المتابعات": "Favorites",
+  "التنبيهات": "Alerts",
   "الأخبار": "News",
+  "الأوامر": "News",
+  "الصوت": "Voice",
   "أهلاً سيدي محمد": "Welcome Sir Mohammed",
   "مساعدك SFM جاهز للتحليل ومتابعة الأسهم.": "Your SFM assistant is ready for analysis and stock monitoring.",
   "جاري فتح منصة التحليل": "Opening the analysis platform",
@@ -613,6 +620,20 @@ const COMMON_UI_TERM_TRANSLATIONS = [
   ["غلق", "Close"]
 ].sort((a, b) => b[0].length - a[0].length);
 const UI_TRANSLATABLE_ATTRS = ["placeholder", "title", "aria-label"];
+const NAVIGATION_LABELS = {
+  home: { ar: "الرئيسية", en: "Home" },
+  markets: { ar: "الأسواق", en: "Markets" },
+  recommendations: { ar: "التوصيات", en: "Signals" },
+  favorites: { ar: "المفضلات", en: "Favorites" },
+  alerts: { ar: "التنبيهات", en: "Alerts" },
+  news: { ar: "الأخبار", en: "News" },
+  voice: { ar: "Voice", en: "Voice" },
+  pulse: { ar: "نبض", en: "Pulse" },
+  "markets-short": { ar: "أسواق", en: "Markets" },
+  "voice-short": { ar: "صوت", en: "Voice" },
+  scalp: { ar: "مضاربة", en: "Scalping" },
+  signals: { ar: "توصيات", en: "Signals" }
+};
 const originalTextByNode = new WeakMap();
 let uiTranslationObserver = null;
 let isTranslatingInterface = false;
@@ -1297,12 +1318,28 @@ function updateSettingsPanelLanguage() {
   updateSettingsPreview();
 }
 
+function syncNavigationLanguage() {
+  const languageKey = isEnglishLanguage() ? "en" : "ar";
+
+  for (const link of document.querySelectorAll("[data-nav-key]")) {
+    const label = NAVIGATION_LABELS[link.dataset.navKey]?.[languageKey];
+    if (!label) continue;
+
+    const labelTarget = link.querySelector("b, strong");
+    if (labelTarget && labelTarget.textContent !== label) {
+      labelTarget.textContent = label;
+    }
+    link.setAttribute("aria-label", label);
+  }
+}
+
 function applyAppSettings(options = {}) {
   const english = isEnglishLanguage();
   document.documentElement.lang = english ? "en" : "ar";
   document.documentElement.dir = english ? "ltr" : "rtl";
   document.body?.classList.toggle("language-en", english);
   updateSettingsPanelLanguage();
+  syncNavigationLanguage();
   queueTranslateInterface();
 
   if (options.updateIntro !== false && introOverlay && !introOverlay.classList.contains("is-closing")) {
@@ -1369,6 +1406,7 @@ function queueTranslateInterface() {
   window.requestAnimationFrame(() => {
     queuedInterfaceTranslation = false;
     translateInterface();
+    syncNavigationLanguage();
   });
 }
 
