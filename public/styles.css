@@ -9311,3 +9311,452 @@ main > section {
     min-height: 70px !important;
   }
 }
+
+/* iPhone layout repair: prevent horizontal drift and keep opportunity cards readable. */
+@media (max-width: 760px) {
+  html,
+  body {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  .app-shell,
+  .app-shell > main,
+  main > section,
+  .sfm-live-floor,
+  .market-band,
+  .home-deck-section,
+  .home-deck-panel,
+  .recommendations-band,
+  .history-band,
+  .voice-band,
+  .scalping-band {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin-inline: 0 !important;
+    box-sizing: border-box !important;
+    transform: none !important;
+  }
+
+  .app-shell {
+    padding-inline: 12px !important;
+    padding-bottom: calc(132px + var(--ios-safe-bottom)) !important;
+  }
+
+  .home-deck-section {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    justify-items: stretch !important;
+    overflow: visible !important;
+  }
+
+  .home-deck-panel {
+    display: grid !important;
+    gap: 12px !important;
+    padding: 14px !important;
+    overflow: hidden !important;
+  }
+
+  .home-deck-panel:last-child {
+    display: none !important;
+  }
+
+  .home-deck-head {
+    width: 100% !important;
+    text-align: right !important;
+  }
+
+  .home-deck-head h2 {
+    font-size: 20px !important;
+    line-height: 1.25 !important;
+  }
+
+  .home-deck-head .eyebrow {
+    font-size: 11px !important;
+    letter-spacing: 0 !important;
+  }
+
+  .home-recommendations {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    direction: rtl !important;
+    overflow: visible !important;
+  }
+
+  .home-rec-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    gap: 12px !important;
+    padding: 13px !important;
+    overflow: hidden !important;
+    direction: rtl !important;
+    text-align: right !important;
+    box-sizing: border-box !important;
+  }
+
+  .home-rec-top {
+    display: grid !important;
+    grid-template-columns: 42px minmax(0, 1fr) auto !important;
+    gap: 9px !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .asset-logo {
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 13px !important;
+    font-size: 18px !important;
+  }
+
+  .home-rec-top > div {
+    min-width: 0 !important;
+  }
+
+  .home-rec-top strong {
+    display: block !important;
+    max-width: 100% !important;
+    color: #f5f8fb !important;
+    font-size: 20px !important;
+    line-height: 1.05 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .home-rec-top em {
+    max-width: 100% !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .home-rec-top b {
+    max-width: 82px !important;
+    padding: 6px 9px !important;
+    font-size: 12px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .home-rec-metrics {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .home-rec-metrics div {
+    min-width: 0 !important;
+  }
+
+  .home-rec-metrics span {
+    display: block !important;
+    font-size: 10px !important;
+    line-height: 1.25 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .home-rec-metrics strong {
+    display: block !important;
+    font-size: 12px !important;
+    line-height: 1.25 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .home-rec-confidence {
+    grid-template-columns: auto minmax(42px, 1fr) auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .site-footer {
+    position: relative !important;
+    z-index: 1 !important;
+    margin-bottom: calc(104px + var(--ios-safe-bottom)) !important;
+    padding-bottom: 12px !important;
+  }
+
+  .mobile-voice-orb {
+    bottom: calc(78px + var(--ios-safe-bottom)) !important;
+    z-index: 64 !important;
+  }
+
+  .ios-tabbar {
+    z-index: 60 !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .home-rec-top {
+    grid-template-columns: 38px minmax(0, 1fr) auto !important;
+  }
+
+  .asset-logo {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 16px !important;
+  }
+
+  .home-rec-top strong {
+    font-size: 18px !important;
+  }
+
+  .home-rec-top b {
+    max-width: 72px !important;
+    font-size: 11px !important;
+  }
+
+  .home-rec-metrics {
+    gap: 5px !important;
+  }
+}
+
+/* iPhone recommendation card containment */
+@media (max-width: 760px) {
+  .recommendations-band .cards,
+  #cards.cards {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .signal-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    padding: 14px !important;
+    border-radius: 14px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+    direction: rtl !important;
+    text-align: right !important;
+  }
+
+  .signal-card .card-top {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: start !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .signal-card .card-top > div:first-child,
+  .signal-card .action-stack,
+  .signal-card .card-body,
+  .signal-card .price-row,
+  .signal-card .trade-plan-row,
+  .signal-card .indicator-grid,
+  .signal-card .timeframe-grid,
+  .signal-card .meta-row,
+  .signal-card .reasons {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .signal-card .asset-name {
+    max-width: 100% !important;
+    margin: 0 0 4px !important;
+    color: #f7f2e7 !important;
+    font-size: clamp(18px, 5.5vw, 22px) !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    letter-spacing: 0 !important;
+  }
+
+  .signal-card .asset-symbol {
+    max-width: 100% !important;
+    margin: 0 !important;
+    color: rgba(207, 218, 226, 0.72) !important;
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .signal-card .action-stack {
+    justify-items: end !important;
+    gap: 6px !important;
+  }
+
+  .signal-card .action-badge,
+  .signal-card .sharia-badge {
+    min-width: 0 !important;
+    max-width: 96px !important;
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .signal-card .card-toggle {
+    min-width: 0 !important;
+    width: 96px !important;
+    min-height: 32px !important;
+    padding: 0 8px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .signal-card .sparkline {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 70px !important;
+    margin: 14px 0 8px !important;
+  }
+
+  .signal-card .price-row,
+  .signal-card .trade-plan-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin: 12px 0 !important;
+  }
+
+  .signal-card .price-row > div,
+  .signal-card .trade-plan-row > div,
+  .signal-card .indicator-grid > div,
+  .signal-card .timeframe-grid > div {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 9px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .signal-card .price-row span,
+  .signal-card .trade-plan-row span,
+  .signal-card .indicator-grid span,
+  .signal-card .timeframe-grid span,
+  .signal-card .confidence-wrap span,
+  .signal-card .meta-row span {
+    display: block !important;
+    max-width: 100% !important;
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .signal-card .price-row strong,
+  .signal-card .trade-plan-row strong,
+  .signal-card .indicator-grid strong,
+  .signal-card .timeframe-grid strong,
+  .signal-card .current-price,
+  .signal-card .expected-price,
+  .signal-card .target-one,
+  .signal-card .target-two,
+  .signal-card .stop-loss,
+  .signal-card .risk-reward {
+    display: block !important;
+    max-width: 100% !important;
+    margin-top: 5px !important;
+    color: #f8fafc !important;
+    font-size: clamp(12px, 3.3vw, 14px) !important;
+    line-height: 1.25 !important;
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+    word-break: keep-all !important;
+    letter-spacing: 0 !important;
+  }
+
+  .signal-card .confidence-wrap {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 12px 0 !important;
+  }
+
+  .signal-card .confidence-wrap > div:first-child {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+  }
+
+  .signal-card .confidence-wrap strong {
+    margin: 0 !important;
+    color: #65d98d !important;
+    font-size: 16px !important;
+    white-space: nowrap !important;
+  }
+
+  .signal-card .confidence-track {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 8px !important;
+    margin: 0 !important;
+  }
+
+  .signal-card .indicator-grid,
+  .signal-card .timeframe-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin: 12px 0 !important;
+  }
+
+  .signal-card .meta-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  .signal-card .reasons {
+    margin: 12px 0 0 !important;
+    padding-inline-start: 18px !important;
+    overflow-wrap: anywhere !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .signal-card {
+    padding: 12px !important;
+  }
+
+  .signal-card .card-top {
+    grid-template-columns: minmax(0, 1fr) 84px !important;
+  }
+
+  .signal-card .action-badge,
+  .signal-card .sharia-badge,
+  .signal-card .card-toggle {
+    width: 84px !important;
+    max-width: 84px !important;
+    font-size: 11px !important;
+  }
+}
