@@ -145,6 +145,13 @@ const RECOMMENDATIONS_FORCE_REFRESH_GRACE_MS = 600;
 const INTRO_DURATION_MS = 8_000;
 const DEFAULT_USER_DISPLAY_NAME = "محمد";
 const DEFAULT_APP_LANGUAGE = "ar";
+const SUPPORTED_APP_LANGUAGES = new Set(["ar", "en", "fr"]);
+const LTR_APP_LANGUAGES = new Set(["en", "fr"]);
+const TRANSLATION_LANGUAGE_FALLBACK = {
+  ar: "ar",
+  en: "en",
+  fr: "en"
+};
 const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
 const UI_TEXT_TRANSLATIONS = {
   "الرئيسية": "Home",
@@ -636,6 +643,66 @@ const NAVIGATION_LABELS = {
   scalp: { ar: "مضاربة", en: "Scalping" },
   signals: { ar: "توصيات", en: "Signals" }
 };
+const SETTINGS_PANEL_TEXT = {
+  ar: {
+    ".settings-card-profile .settings-card-head span": "Profile",
+    ".settings-card-profile .settings-card-head strong": "الملف الشخصي",
+    ".settings-card-profile .settings-preview small": "تستخدم هذه العبارة في شاشة الدخول والتحية الصوتية.",
+    "#settings-form > .settings-card:nth-of-type(2) .settings-card-head span": "Preferences",
+    "#settings-form > .settings-card:nth-of-type(2) .settings-card-head strong": "تفضيلات الحساب",
+    "#settings-form > .settings-card:nth-of-type(2) .settings-switch span": "استخدام الأرقام الإنجليزية داخل الواجهة",
+    "#settings-form > .settings-card:nth-of-type(3) .settings-card-head span": "Notifications",
+    "#settings-form > .settings-card:nth-of-type(3) .settings-card-head strong": "التنبيهات",
+    "#settings-form > .settings-card:nth-of-type(3) .settings-switch:nth-of-type(1) span": "تنبيه عند وصول الصفقة إلى الهدف",
+    "#settings-form > .settings-card:nth-of-type(3) .settings-switch:nth-of-type(2) span": "تنبيه صوتي للفرص عالية الثقة",
+    "#settings-form > .settings-card:nth-of-type(4) .settings-card-head span": "Trading",
+    "#settings-form > .settings-card:nth-of-type(4) .settings-card-head strong": "تفضيلات التداول",
+    "#settings-form > .settings-card:nth-of-type(4) .settings-field span": "نمط التحليل الافتراضي",
+    "#settings-form > .settings-card:nth-of-type(4) .settings-switch span": "عرض الأسهم المطابقة للشريعة فقط",
+    "#settings-form > .settings-card:nth-of-type(5) .settings-card-head span": "Security",
+    "#settings-form > .settings-card:nth-of-type(5) .settings-card-head strong": "الأمان",
+    "#settings-form > .settings-card:nth-of-type(5) .settings-info-row:nth-of-type(2) span": "حفظ البيانات",
+    "#settings-form > .settings-card:nth-of-type(5) .settings-info-row:nth-of-type(2) strong": "محلي على جهازك",
+    "#settings-form > .settings-card:nth-of-type(5) .settings-info-row:nth-of-type(3) span": "حالة الجلسة",
+    "#settings-form > .settings-card:nth-of-type(5) .settings-info-row:nth-of-type(3) strong": "نشطة",
+    "#settings-form > .settings-card:nth-of-type(6) .settings-card-head span": "Plan",
+    "#settings-form > .settings-card:nth-of-type(6) .settings-card-head strong": "الاشتراك والخطة",
+    "#settings-form > .settings-card:nth-of-type(6) p": "نسخة خاصة للتطوير والمتابعة قبل النشر العام.",
+    "#settings-form > .settings-card:nth-of-type(7) .settings-card-head span": "Support",
+    "#settings-form > .settings-card:nth-of-type(7) .settings-card-head strong": "الدعم وعن التطبيق",
+    "#settings-form > .settings-card:nth-of-type(7) .settings-info-row:nth-of-type(2) span": "التطبيق",
+    "#settings-form > .settings-card:nth-of-type(7) .settings-info-row:nth-of-type(3) span": "الحقوق"
+  },
+  en: {
+    ".settings-card-profile .settings-card-head span": "Profile",
+    ".settings-card-profile .settings-card-head strong": "Profile",
+    ".settings-card-profile .settings-preview small": "This phrase is used on the welcome screen and voice greeting.",
+    "#settings-form > .settings-card:nth-of-type(2) .settings-card-head span": "Preferences",
+    "#settings-form > .settings-card:nth-of-type(2) .settings-card-head strong": "Account preferences",
+    "#settings-form > .settings-card:nth-of-type(2) .settings-switch span": "Use English numerals across the interface",
+    "#settings-form > .settings-card:nth-of-type(3) .settings-card-head span": "Notifications",
+    "#settings-form > .settings-card:nth-of-type(3) .settings-card-head strong": "Notifications",
+    "#settings-form > .settings-card:nth-of-type(3) .settings-switch:nth-of-type(1) span": "Alert when a trade reaches its target",
+    "#settings-form > .settings-card:nth-of-type(3) .settings-switch:nth-of-type(2) span": "Voice alert for high confidence opportunities",
+    "#settings-form > .settings-card:nth-of-type(4) .settings-card-head span": "Trading",
+    "#settings-form > .settings-card:nth-of-type(4) .settings-card-head strong": "Trading preferences",
+    "#settings-form > .settings-card:nth-of-type(4) .settings-field span": "Default analysis mode",
+    "#settings-form > .settings-card:nth-of-type(4) .settings-switch span": "Show Sharia-compliant stocks only",
+    "#settings-form > .settings-card:nth-of-type(5) .settings-card-head span": "Security",
+    "#settings-form > .settings-card:nth-of-type(5) .settings-card-head strong": "Security",
+    "#settings-form > .settings-card:nth-of-type(5) .settings-info-row:nth-of-type(2) span": "Data storage",
+    "#settings-form > .settings-card:nth-of-type(5) .settings-info-row:nth-of-type(2) strong": "Local on your device",
+    "#settings-form > .settings-card:nth-of-type(5) .settings-info-row:nth-of-type(3) span": "Session status",
+    "#settings-form > .settings-card:nth-of-type(5) .settings-info-row:nth-of-type(3) strong": "Active",
+    "#settings-form > .settings-card:nth-of-type(6) .settings-card-head span": "Plan",
+    "#settings-form > .settings-card:nth-of-type(6) .settings-card-head strong": "Subscription / plan",
+    "#settings-form > .settings-card:nth-of-type(6) p": "Private build for development and monitoring before public release.",
+    "#settings-form > .settings-card:nth-of-type(7) .settings-card-head span": "Support",
+    "#settings-form > .settings-card:nth-of-type(7) .settings-card-head strong": "Support / about",
+    "#settings-form > .settings-card:nth-of-type(7) .settings-info-row:nth-of-type(2) span": "App",
+    "#settings-form > .settings-card:nth-of-type(7) .settings-info-row:nth-of-type(3) span": "Credits"
+  }
+};
 const originalTextByNode = new WeakMap();
 let uiTranslationObserver = null;
 let isTranslatingInterface = false;
@@ -866,6 +933,7 @@ let recommendationRequestController = null;
 let recommendationRequestId = 0;
 let lastRecommendationRefreshAt = 0;
 let lastData = null;
+let lastMarkets = [];
 const recommendationResponseCache = new Map();
 let activeFilter = "all";
 let activeShariaFilter = "all";
@@ -1229,8 +1297,37 @@ function getUserDisplayName() {
   return appSettings.displayName || DEFAULT_USER_DISPLAY_NAME;
 }
 
+function normalizeLocaleCode(value, fallback = DEFAULT_APP_LANGUAGE) {
+  const raw = String(value || "").trim().toLowerCase();
+  const normalizedFallback = SUPPORTED_APP_LANGUAGES.has(String(fallback || "").trim().toLowerCase())
+    ? String(fallback).trim().toLowerCase()
+    : DEFAULT_APP_LANGUAGE;
+
+  if (raw.startsWith("ar") || raw === "arabic" || raw === "العربية" || raw === "عربي") return "ar";
+  if (raw.startsWith("en") || raw === "english" || raw === "انجليزي" || raw === "الإنجليزية") return "en";
+  if (raw.startsWith("fr") || raw === "french" || raw === "français" || raw === "francais") return "fr";
+
+  return normalizedFallback;
+}
+
+function getAppLanguage() {
+  return normalizeLocaleCode(appSettings.language);
+}
+
+function getTranslationLanguageKey(language = getAppLanguage()) {
+  return TRANSLATION_LANGUAGE_FALLBACK[normalizeLocaleCode(language)] || DEFAULT_APP_LANGUAGE;
+}
+
+function getAppDirection(language = getAppLanguage()) {
+  return LTR_APP_LANGUAGES.has(normalizeLocaleCode(language)) ? "ltr" : "rtl";
+}
+
+function isArabicLanguage() {
+  return getAppLanguage() === "ar";
+}
+
 function isEnglishLanguage() {
-  return appSettings.language === "en";
+  return getTranslationLanguageKey() === "en";
 }
 
 function isLikelyMobileDevice() {
@@ -1281,7 +1378,7 @@ function initSettingsPanel() {
 
   settingsButton.addEventListener("click", () => setSettingsPanelOpen(settingsPanel.hidden));
   settingsCloseButton?.addEventListener("click", () => setSettingsPanelOpen(false));
-  settingsLanguage?.addEventListener("change", updateSettingsPreview);
+  settingsLanguage?.addEventListener("change", handleSettingsLanguageChange);
   settingsDisplayName?.addEventListener("input", updateSettingsPreview);
   settingsForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -1291,6 +1388,7 @@ function initSettingsPanel() {
     });
     saveStored(APP_SETTINGS_STORAGE_KEY, appSettings);
     applyAppSettings();
+    refreshLocalizedDynamicInterface();
     setSettingsPanelOpen(false);
     showToast(
       isEnglishLanguage() ? "Settings saved" : "تم حفظ الإعدادات",
@@ -1301,6 +1399,24 @@ function initSettingsPanel() {
 
   syncSettingsForm();
   updateSettingsPanelLanguage();
+}
+
+function handleSettingsLanguageChange() {
+  const nextLanguage = normalizeLocaleCode(settingsLanguage?.value, getAppLanguage());
+  if (settingsLanguage) settingsLanguage.value = nextLanguage;
+
+  if (nextLanguage === getAppLanguage()) {
+    updateSettingsPreview();
+    return;
+  }
+
+  appSettings = normalizeAppSettings({
+    ...appSettings,
+    language: nextLanguage
+  });
+  saveStored(APP_SETTINGS_STORAGE_KEY, appSettings);
+  applyAppSettings();
+  refreshLocalizedDynamicInterface();
 }
 
 function setSettingsPanelOpen(open) {
@@ -1320,7 +1436,7 @@ function setSettingsPanelOpen(open) {
 }
 
 function syncSettingsForm() {
-  if (settingsLanguage) settingsLanguage.value = appSettings.language;
+  if (settingsLanguage) settingsLanguage.value = getAppLanguage();
   if (settingsDisplayName) settingsDisplayName.value = getUserDisplayName();
   updateSettingsPreview();
 }
@@ -1328,13 +1444,14 @@ function syncSettingsForm() {
 function updateSettingsPreview() {
   if (!settingsPreview) return;
 
-  const language = settingsLanguage?.value === "en" ? "en" : "ar";
+  const language = normalizeLocaleCode(settingsLanguage?.value, getAppLanguage());
+  const english = getTranslationLanguageKey(language) === "en";
   const name = sanitizeDisplayName(settingsDisplayName?.value || getUserDisplayName());
   const hour = new Date().getHours();
-  const greeting = language === "en"
+  const greeting = english
     ? hour >= 5 && hour < 12 ? "Good morning" : "Good evening"
     : hour >= 5 && hour < 12 ? "صباح الخير" : "مساء الخير";
-  const honorific = language === "en" ? `Sir ${name}` : `سيدي ${name}`;
+  const honorific = english ? `Sir ${name}` : `سيدي ${name}`;
   settingsPreview.textContent = `${greeting} ${honorific}`;
 }
 
@@ -1351,11 +1468,30 @@ function updateSettingsPanelLanguage() {
   if (settingsSaveButton) settingsSaveButton.textContent = english ? "Save settings" : "حفظ الإعدادات";
   if (settingsCloseButton) settingsCloseButton.setAttribute("aria-label", english ? "Close settings" : "إغلاق الإعدادات");
   if (settingsDisplayName) settingsDisplayName.placeholder = english ? "Mohammed" : "محمد";
+  updateSettingsStaticLanguage();
   updateSettingsPreview();
 }
 
+function updateSettingsStaticLanguage() {
+  if (!settingsPanel) return;
+
+  const languageKey = getTranslationLanguageKey();
+  const texts = SETTINGS_PANEL_TEXT[languageKey] || SETTINGS_PANEL_TEXT.ar;
+  for (const [selector, text] of Object.entries(texts)) {
+    const element = settingsPanel.querySelector(selector);
+    if (element && element.textContent !== text) element.textContent = text;
+  }
+
+  const arabicOption = settingsLanguage?.querySelector('option[value="ar"]');
+  const englishOption = settingsLanguage?.querySelector('option[value="en"]');
+  const frenchOption = settingsLanguage?.querySelector('option[value="fr"]');
+  if (arabicOption) arabicOption.textContent = languageKey === "en" ? "Arabic" : "العربية";
+  if (englishOption) englishOption.textContent = languageKey === "en" ? "English" : "English";
+  if (frenchOption) frenchOption.textContent = languageKey === "en" ? "French" : "Français";
+}
+
 function syncNavigationLanguage() {
-  const languageKey = isEnglishLanguage() ? "en" : "ar";
+  const languageKey = getTranslationLanguageKey();
 
   for (const link of document.querySelectorAll("[data-nav-key]")) {
     const label = NAVIGATION_LABELS[link.dataset.navKey]?.[languageKey];
@@ -1370,10 +1506,13 @@ function syncNavigationLanguage() {
 }
 
 function applyAppSettings(options = {}) {
-  const english = isEnglishLanguage();
-  document.documentElement.lang = english ? "en" : "ar";
-  document.documentElement.dir = english ? "ltr" : "rtl";
+  const language = getAppLanguage();
+  const english = getTranslationLanguageKey(language) === "en";
+  document.documentElement.lang = language;
+  document.documentElement.dir = getAppDirection(language);
   document.body?.classList.toggle("language-en", english);
+  document.body?.classList.toggle("language-ar", language === "ar");
+  document.body?.classList.toggle("language-fr", language === "fr");
   updateSettingsPanelLanguage();
   syncNavigationLanguage();
   queueTranslateInterface();
@@ -1389,10 +1528,20 @@ function applyAppSettings(options = {}) {
   }
 }
 
+function refreshLocalizedDynamicInterface() {
+  if (lastMarkets.length) renderMarketTabs(lastMarkets);
+  if (lastData) renderRecommendations(lastData);
+  renderHistory();
+  renderWatchlist();
+  renderPortfolio(lastData?.recommendations || []);
+  renderNotificationCenter();
+  renderVoiceMonitor();
+}
+
 function normalizeAppSettings(value) {
   const settings = value && typeof value === "object" ? value : {};
   return {
-    language: settings.language === "en" ? "en" : DEFAULT_APP_LANGUAGE,
+    language: normalizeLocaleCode(settings.language),
     displayName: sanitizeDisplayName(settings.displayName || DEFAULT_USER_DISPLAY_NAME)
   };
 }
@@ -1406,7 +1555,7 @@ function applyUrlSettingsOverride(settings) {
 
   const nextSettings = normalizeAppSettings({
     ...settings,
-    language: language === "en" ? "en" : language === "ar" ? "ar" : settings.language,
+    language: language ? normalizeLocaleCode(language, settings.language) : settings.language,
     displayName: displayName || settings.displayName
   });
   saveStored(APP_SETTINGS_STORAGE_KEY, nextSettings);
@@ -1758,9 +1907,14 @@ async function loadMarkets() {
   const data = await fetchJson("/api/markets", {
     fallbackMessage: "تعذر تحميل الأسواق. تأكد أن السيرفر يعمل ثم حدث الصفحة."
   });
+  lastMarkets = Array.isArray(data.markets) ? data.markets : [];
+  renderMarketTabs(lastMarkets);
+}
+
+function renderMarketTabs(markets = []) {
   marketTabs.innerHTML = "";
 
-  const orderedMarkets = [...data.markets].sort((a, b) => getMarketSortIndex(a) - getMarketSortIndex(b));
+  const orderedMarkets = [...markets].sort((a, b) => getMarketSortIndex(a) - getMarketSortIndex(b));
 
   for (const market of orderedMarkets) {
     const button = document.createElement("button");
@@ -4561,15 +4715,18 @@ async function loadOllamaStatus() {
 }
 
 function getVoiceSpeechLocale() {
-  return isEnglishLanguage() ? "en-US" : "ar-SA";
+  const language = getAppLanguage();
+  if (language === "fr") return "fr-FR";
+  return language === "en" ? "en-US" : "ar-SA";
 }
 
 function getPreferredSpeechVoice() {
   if (!("speechSynthesis" in window)) return null;
 
   const voices = window.speechSynthesis.getVoices?.() || [];
-  const primaryPrefix = isEnglishLanguage() ? "en" : "ar";
-  const fallbackPrefix = isEnglishLanguage() ? "ar" : "en";
+  const language = getAppLanguage();
+  const primaryPrefix = language === "fr" ? "fr" : language === "en" ? "en" : "ar";
+  const fallbackPrefix = language === "ar" ? "en" : "ar";
   return (
     voices.find((voice) => voice.lang?.toLowerCase().startsWith(primaryPrefix)) ||
     voices.find((voice) => voice.lang?.toLowerCase().startsWith(fallbackPrefix)) ||
@@ -4937,7 +5094,9 @@ function handleSpeechNetworkError(message = "خدمة التعرف الصوتي 
 }
 
 function getVoiceRecognitionLanguages() {
-  return isEnglishLanguage()
+  const language = getAppLanguage();
+  if (language === "fr") return ["fr-FR", "en-US", "ar-SA", "ar-KW", "ar"];
+  return language === "en"
     ? ["en-US", "ar-SA", "ar-KW", "ar"]
     : VOICE_RECOGNITION_LANGUAGES;
 }
