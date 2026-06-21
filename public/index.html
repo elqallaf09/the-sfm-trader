@@ -12,7 +12,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
     <link rel="icon" type="image/png" sizes="256x256" href="/the-sfm-trader-icon-256.png" />
-    <link rel="stylesheet" href="/styles.css?v=20260621-approved-dashboard-8" />
+    <link rel="stylesheet" href="/styles.css?v=20260621-reference-rebuild-2" />
   </head>
   <body class="notranslate" translate="no">
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
@@ -184,26 +184,30 @@
           <div>
             <p class="eyebrow" id="settings-eyebrow">SFM SETTINGS</p>
             <h2 id="settings-title">الإعدادات</h2>
+            <span class="settings-panel-subtitle">اضبط لغة الواجهة واسم التحية بدون مغادرة شاشة التداول.</span>
           </div>
           <button id="settings-close-button" class="icon-button" type="button" aria-label="إغلاق الإعدادات">×</button>
         </div>
         <form id="settings-form" class="settings-form">
-          <label>
+          <label class="settings-field settings-field-language">
             <span id="settings-language-label">اللغة</span>
             <select id="settings-language">
               <option value="ar">العربية</option>
               <option value="en">English</option>
             </select>
           </label>
-          <label>
+          <label class="settings-field settings-field-name">
             <span id="settings-name-label">الاسم في الصفحة الترحيبية</span>
             <input id="settings-display-name" type="text" maxlength="32" autocomplete="name" placeholder="محمد" />
           </label>
           <div class="settings-preview">
             <span id="settings-preview-label">المعاينة</span>
             <strong id="settings-preview">مساء الخير سيدي محمد</strong>
+            <small>ستظهر هذه العبارة في شاشة الدخول والتحية الصوتية.</small>
           </div>
-          <button id="settings-save-button" class="primary-button" type="submit">حفظ الإعدادات</button>
+          <div class="settings-actions-row">
+            <button id="settings-save-button" class="primary-button" type="submit">حفظ الإعدادات</button>
+          </div>
         </form>
       </aside>
 
@@ -935,7 +939,7 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260621-approved-dashboard-8" type="module"></script>
+    <script src="/app.js?v=20260621-reference-rebuild-2" type="module"></script>
   </body>
 </html>
 

@@ -178,6 +178,8 @@ const UI_TEXT_TRANSLATIONS = {
   "مساء الخير سيدي محمد": "Good evening Sir Mohammed",
   "صباح الخير سيدي محمد": "Good morning Sir Mohammed",
   "حفظ الإعدادات": "Save settings",
+  "اضبط لغة الواجهة واسم التحية بدون مغادرة شاشة التداول.": "Adjust interface language and greeting name without leaving the trading screen.",
+  "ستظهر هذه العبارة في شاشة الدخول والتحية الصوتية.": "This phrase appears on the welcome screen and voice greeting.",
   "مركز الإشعارات": "Notification Center",
   "مسح الكل": "Clear all",
   "إغلاق الإشعارات": "Close notifications",
@@ -2196,13 +2198,6 @@ function renderCommandCenter(data, filteredRecommendations = []) {
   const accuracy = calculateAccuracyStats(recommendationHistory);
   const modeLabel = getAnalysisModeLabel(activeAnalysisMode);
   const modeNote = getAnalysisModeNote(activeAnalysisMode);
-  const bestMode = filteredRecommendations[0] || getTopItem(all, "confidence");
-  const shariaBest = getBestBy(all.filter((item) => item.shariaStatus === "compliant" && item.action === "buy"), getAnalysisModeScore);
-  const fastSignal = getBestBy(all.filter((item) => item.action !== "hold"), (item) => getFastFrameAgreement(item) + item.confidence);
-  const saferSignal = getBestBy(
-    all.filter((item) => isLowRisk(item) && getDataHealthScore(item) >= 55),
-    (item) => calculateFinalScore(item).score + getDataHealthScore(item)
-  );
 
   if (commandCenterMode) commandCenterMode.textContent = modeLabel;
   if (commandCenterBrief) {
@@ -2210,18 +2205,6 @@ function renderCommandCenter(data, filteredRecommendations = []) {
   }
 
   commandCenterGrid.innerHTML = renderTradingCommandDashboard(data, filteredRecommendations, all, accuracy);
-  attachDetailOpeners(commandCenterGrid);
-  return;
-
-  commandCenterGrid.innerHTML = [
-    renderCommandOpportunityCard("قرار الوضع الحالي", bestMode, "primary", "أفضل بطاقة حسب وضع التحليل المختار"),
-    renderCommandOpportunityCard("أفضل فرصة شرعية", shariaBest, "sharia", "مطابقة للشريعة مع فلترة ثقة وجودة"),
-    renderCommandOpportunityCard("إشارة سريعة", fastSignal, "fast", "توافق فريمات الدقيقة و 15 دقيقة و 30 دقيقة"),
-    renderCommandOpportunityCard("أقل مخاطرة", saferSignal, "safe", "بيانات أوضح ومخاطر أقل من المتوسط"),
-    renderCommandMetricCard("دقة السجل", accuracy.closed ? `${formatNumber(accuracy.winRate)}%` : "--", `${formatNumber(accuracy.wins)} رابحة · ${formatNumber(accuracy.losses)} خاسرة`, "accuracy"),
-    renderCommandMetricCard("تنبيهات محفوظة", formatNumber(notificationLog.length), `${formatNumber(followedTradeKeys.size)} صفقات مختارة للمتابعة`, "alerts")
-  ].join("");
-
   attachDetailOpeners(commandCenterGrid);
 }
 
