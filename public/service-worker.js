@@ -1,10 +1,10 @@
-const CACHE_NAME = "the-sfm-trader-ios-shell-v20260621-rail-label-fix-1";
+const CACHE_NAME = "the-sfm-trader-ios-shell-v20260621-data-restore-1";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/detail.html",
-  "/styles.css?v=20260621-rail-label-fix-1",
-  "/app.js?v=20260621-rail-label-fix-1",
+  "/styles.css?v=20260621-data-restore-1",
+  "/app.js?v=20260621-data-restore-1",
   "/detail.js?v=20260621-detail-arabic-1",
   "/manifest.webmanifest",
   "/the-sfm-trader-icon-256.png",

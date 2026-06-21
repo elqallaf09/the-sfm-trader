@@ -824,12 +824,12 @@ const STORAGE_PREFIX = "the-sfm-trader-";
 const LEGACY_STORAGE_PREFIX = "the-sfm-";
 const APP_VIEW_GROUPS = {
   home: ["#sfm-live-floor", "#markets-section", "#command-center-section", "#home-heatmap-section", "#home-deck-section"],
-  markets: ["#markets-section", ".market-hours-band", "#economic-news-section", "#radar-section"],
-  recommendations: ["#recommendations-section", "#us-dashboard-section", "#us-outlook-section"],
-  history: ["#history-section", "#watchlist-section", "#portfolio-section"],
-  alerts: ["#history-section"],
-  scalp: ["#scalping-section"],
-  voice: ["#voice-section"]
+  markets: ["#sfm-live-floor", "#markets-section", "#command-center-section", "#home-heatmap-section", "#home-deck-section", ".market-hours-band", "#economic-news-section", "#radar-section"],
+  recommendations: ["#markets-section", "#command-center-section", "#recommendations-section", "#us-dashboard-section", "#us-outlook-section"],
+  history: ["#markets-section", "#history-section", "#watchlist-section", "#portfolio-section"],
+  alerts: ["#markets-section", "#history-section"],
+  scalp: ["#markets-section", "#scalping-section"],
+  voice: ["#markets-section", "#voice-section"]
 };
 
 const PRIMARY_MARKET_KEYS = new Set(["forex", "us", "crypto", "commodities", "gcc"]);
@@ -1858,29 +1858,29 @@ function renderRecommendations(data) {
   setInsight(bestBuy, getTopItem(buys, "confidence"), "لا توجد إشارة شراء");
   setInsight(bestSell, getTopItem(sells, "confidence"), "لا توجد إشارة بيع");
   setInsight(largestMove, getTopItem(all, "move"), "لا توجد بيانات");
-  updateTicker(all);
-  renderLivePulseStrip(data);
-  renderEconomicNews(data.economicCalendar);
-  renderTradingAtmosphere(data);
-  renderCommandCenter(data, recommendations);
-  renderHomeDeck(data, recommendations);
-  renderHomeHeatmap(data);
-  renderOpportunityRadar(data);
-  renderSmartAlerts(data);
-  renderUsDashboard(data);
-  renderUsOutlook(data);
-  renderGoldenOpportunities(data);
-  renderScalpQuickList(data);
+  safeRenderPanel("شريط الأسعار", () => updateTicker(all));
+  safeRenderPanel("نبض السوق", () => renderLivePulseStrip(data), livePulseGrid);
+  safeRenderPanel("رزنامة الأخبار", () => renderEconomicNews(data.economicCalendar), economicNewsGrid);
+  safeRenderPanel("لوحة النبض", () => renderTradingAtmosphere(data), floorHeatmap);
+  safeRenderPanel("غرفة القيادة", () => renderCommandCenter(data, recommendations), commandCenterGrid);
+  safeRenderPanel("أفضل الفرص", () => renderHomeDeck(data, recommendations), homeRecommendations);
+  safeRenderPanel("خريطة حرارة الفرص", () => renderHomeHeatmap(data), homeHeatmapGrid);
+  safeRenderPanel("رادار الفرص", () => renderOpportunityRadar(data), radarGrid);
+  safeRenderPanel("التنبيهات الذكية", () => renderSmartAlerts(data), smartAlertsList);
+  safeRenderPanel("لوحة السوق الأمريكي", () => renderUsDashboard(data), usDashboardGrid);
+  safeRenderPanel("توقعات السوق الأمريكي", () => renderUsOutlook(data), usOutlookGrid);
+  safeRenderPanel("الفرص الذهبية", () => renderGoldenOpportunities(data), goldenGrid);
+  safeRenderPanel("المضاربة", () => renderScalpQuickList(data), scalpQuickList);
   if (data.market?.id === "watchlist") {
     watchlistData = data;
     watchlistLastLoadedAt = Date.now();
   }
-  renderWatchlist();
-  renderPortfolio(all);
-  renderHistory();
-  checkFollowedTrades(all);
-  checkSmartMarketNotifications(all);
-  checkVoiceMonitors(all);
+  safeRenderPanel("قائمة المراقبة", () => renderWatchlist(), watchlistCards);
+  safeRenderPanel("المحفظة", () => renderPortfolio(all), portfolioList);
+  safeRenderPanel("آخر إشارات الوكيل", () => renderHistory(), historyList);
+  safeRenderPanel("متابعة الصفقات", () => checkFollowedTrades(all));
+  safeRenderPanel("إشعارات السوق", () => checkSmartMarketNotifications(all));
+  safeRenderPanel("المراقبة الصوتية", () => checkVoiceMonitors(all));
 
   cards.innerHTML = "";
 
@@ -1949,6 +1949,18 @@ function renderRecommendations(data) {
       .join("، ")}`;
   } else {
     unavailable.innerHTML = "";
+  }
+}
+
+function safeRenderPanel(label, render, fallbackElement = null) {
+  try {
+    return render();
+  } catch (error) {
+    console.error(`[SFM render] ${label}`, error);
+    if (fallbackElement) {
+      fallbackElement.innerHTML = `<div class="empty">${escapeHtml(localizeUiText(`تعذر عرض ${label} مؤقتاً. البيانات الرئيسية لا تزال متاحة.`))}</div>`;
+    }
+    return null;
   }
 }
 
