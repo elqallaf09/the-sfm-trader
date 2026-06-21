@@ -1,12 +1,13 @@
-const CACHE_NAME = "the-sfm-trader-ios-shell-v20260622-language-fix-1";
+const CACHE_NAME = "the-sfm-trader-ios-shell-v20260622-reference-icons-1";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/detail.html",
-  "/styles.css?v=20260621-terminal-refactor-1",
-  "/app.js?v=20260622-language-fix-1",
+  "/styles.css?v=20260622-reference-icons-1",
+  "/app.js?v=20260622-reference-icons-1",
   "/detail.js?v=20260621-detail-arabic-1",
   "/manifest.webmanifest",
+  "/assets/sfm-trader-logo.svg",
   "/the-sfm-trader-icon-256.png",
   "/the-sfm-trader-icon-512.png"
 ];

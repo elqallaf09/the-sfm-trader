@@ -1858,10 +1858,11 @@ const MARKET_ICON_CONFIG = {
 function getMarketVisual(market = {}) {
   const id = String(market.id || "").toLowerCase();
   const label = String(market.label || "").toLowerCase();
-  const config = MARKET_ICON_CONFIG[id] || getMarketIconConfigFromLabel(label);
+  const primaryKey = getPrimaryMarketKey(market);
+  const config = MARKET_ICON_CONFIG[primaryKey || id] || getMarketIconConfigFromLabel(label);
   return {
-    className: config[1],
-    html: renderLucideMarketIcon(config[0])
+    className: `${config[1]} ${primaryKey ? `market-icon-premium market-icon-${primaryKey}` : ""}`.trim(),
+    html: renderPremiumMarketIcon(primaryKey || id, config[0])
   };
 }
 
@@ -1883,6 +1884,41 @@ function getMarketIconConfigFromLabel(label) {
 function renderLucideMarketIcon(name) {
   const paths = LUCIDE_MARKET_ICONS[name] || LUCIDE_MARKET_ICONS.ChartCandlestick;
   return `<svg class="lucide-market-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths}</svg>`;
+}
+
+function renderPremiumMarketIcon(key, fallbackIconName) {
+  const normalized = String(key || "").toLowerCase();
+  if (normalized === "forex") {
+    return `<span class="market-premium-glyph market-premium-dollar" aria-hidden="true">&#36;</span>`;
+  }
+  if (normalized === "us") {
+    return `
+      <span class="market-premium-flag market-premium-us" aria-hidden="true">
+        <i></i><i></i><i></i><b></b>
+      </span>
+    `;
+  }
+  if (normalized === "crypto") {
+    return `<span class="market-premium-glyph market-premium-bitcoin" aria-hidden="true">&#8383;</span>`;
+  }
+  if (normalized === "commodities") {
+    return `
+      <span class="market-premium-commodity" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+          <path d="M12 3c4.2 4.6 7 8.2 7 12.1A7 7 0 1 1 5 15.1C5 11.2 7.8 7.6 12 3Z"></path>
+          <path d="M8.2 16.1h7.6M9.5 13.1h5M10.7 10.2h2.6"></path>
+        </svg>
+      </span>
+    `;
+  }
+  if (normalized === "gcc") {
+    return `
+      <span class="market-premium-flag market-premium-gcc" aria-hidden="true">
+        <i></i><i></i><i></i><b>GCC</b>
+      </span>
+    `;
+  }
+  return renderLucideMarketIcon(fallbackIconName);
 }
 
 function getPrimaryMarketKey(market) {
@@ -2470,6 +2506,76 @@ function getAssetVisual(item = {}) {
   return { className: "asset-logo-default", text: symbol.slice(0, 2) || "S" };
 }
 
+function getPremiumAssetVisual(item = {}) {
+  const symbol = String(item.symbol || "").toUpperCase();
+  const name = String(item.name || "").toLowerCase();
+  const base = symbol.replace(/[-.=].*$/, "");
+
+  if (symbol.includes("GC=F") || symbol.includes("XAU") || name.includes("gold")) {
+    return { className: "asset-logo-gold", html: renderAssetIcon("gold", "Au") };
+  }
+  if (symbol.includes("BTC") || name.includes("bitcoin")) {
+    return { className: "asset-logo-crypto", html: renderAssetIcon("bitcoin", "B") };
+  }
+  if (symbol.includes("EUR") || symbol.includes("GBP") || symbol.includes("USD") || symbol.includes("JPY")) {
+    return { className: "asset-logo-fx", html: renderAssetIcon("fx", "FX") };
+  }
+  if (["AAPL", "APPLE"].some((value) => symbol.includes(value) || name.includes(value.toLowerCase()))) {
+    return { className: "asset-logo-apple", html: renderAssetIcon("apple", "") };
+  }
+  if (["GOOGL", "GOOG"].includes(base)) return { className: "asset-logo-google", html: renderAssetIcon("text", "G") };
+  if (symbol.includes("AMZN")) return { className: "asset-logo-amazon", html: renderAssetIcon("text", "AM") };
+  if (symbol.includes("TSLA")) return { className: "asset-logo-tesla", html: renderAssetIcon("text", "TS") };
+  if (symbol.includes("MSFT")) return { className: "asset-logo-microsoft", html: renderAssetIcon("microsoft", "MS") };
+  if (symbol.includes("NVDA")) return { className: "asset-logo-ai", html: renderAssetIcon("text", "AI") };
+  if (symbol.includes("AMD")) return { className: "asset-logo-ai", html: renderAssetIcon("text", "AM") };
+  if (symbol.includes("LLY")) return { className: "asset-logo-health", html: renderAssetIcon("text", "LL") };
+  if (symbol.includes("BAC")) return { className: "asset-logo-bank", html: renderAssetIcon("text", "BA") };
+  if (symbol.endsWith(".KW")) return { className: "asset-logo-gulf", html: renderAssetIcon("text", "KW") };
+  if (symbol.startsWith("SR.") || symbol.includes(".SR")) return { className: "asset-logo-gulf", html: renderAssetIcon("text", "SR") };
+  return { className: "asset-logo-default", html: renderAssetIcon("text", (base || symbol).slice(0, 2) || "S") };
+}
+
+function renderAssetIcon(kind, label) {
+  if (kind === "apple") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-apple" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M17.3 12.4c0-2.2 1.8-3.3 1.9-3.4-1-1.5-2.6-1.7-3.1-1.8-1.3-.1-2.6.8-3.3.8-.7 0-1.8-.8-2.9-.8-1.5 0-2.9.9-3.7 2.2-1.6 2.8-.4 7 1.1 9.3.8 1.1 1.7 2.4 2.9 2.3 1.1 0 1.6-.7 2.9-.7 1.4 0 1.8.7 3 .7 1.2 0 2-1.1 2.8-2.3.9-1.3 1.2-2.5 1.2-2.6 0 0-2.4-.9-2.4-3.7Z"></path>
+        <path d="M15.2 5.9c.6-.8 1.1-1.9.9-2.9-1 .1-2 .7-2.7 1.5-.6.7-1.1 1.8-.9 2.8 1 .1 2-.6 2.7-1.4Z"></path>
+      </svg>
+    `;
+  }
+  if (kind === "gold") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-gold" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M5.2 15.4h6.6l1.2 4.2H4Z"></path>
+        <path d="M12.2 15.4h6.6l1.2 4.2h-9Z"></path>
+        <path d="M8.7 8.1h6.6l1.2 4.2h-9Z"></path>
+      </svg>
+    `;
+  }
+  if (kind === "bitcoin") {
+    return `<span class="asset-logo-text asset-logo-text-bitcoin">&#8383;</span>`;
+  }
+  if (kind === "fx") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-fx" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M7 9h10M7 15h10M12 5.5c2.2 2.1 2.2 10.9 0 13M12 5.5c-2.2 2.1-2.2 10.9 0 13"></path>
+      </svg>
+    `;
+  }
+  if (kind === "microsoft") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-microsoft" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M4 4h7.3v7.3H4Z"></path><path d="M12.7 4H20v7.3h-7.3Z"></path>
+        <path d="M4 12.7h7.3V20H4Z"></path><path d="M12.7 12.7H20V20h-7.3Z"></path>
+      </svg>
+    `;
+  }
+  return `<span class="asset-logo-text">${escapeHtml(label)}</span>`;
+}
+
 function renderHomeDeck(data, rankedRecommendations = []) {
   if (!homeRecommendations && !homeFollowedTrades) return;
 
@@ -2542,13 +2648,13 @@ function renderHomeHeatmap(data) {
 }
 
 function renderHomeRecommendationCard(item) {
-  const visual = getAssetVisual(item);
+  const visual = getPremiumAssetVisual(item);
   const actionClass = item.action === "sell" ? "sell" : item.action === "hold" ? "hold" : "buy";
   const target = item.target1 || item.expectedPrice;
   return `
     <article class="home-rec-card ${actionClass}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">
       <div class="home-rec-top">
-        <span class="asset-logo ${visual.className}" aria-hidden="true">${escapeHtml(visual.text)}</span>
+        <span class="asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span>
         <div>
           <strong>${escapeHtml(item.symbol)}</strong>
           <em>${escapeHtml(item.name || item.exchangeName || "")}</em>
