@@ -1,10 +1,10 @@
-const CACHE_NAME = "the-sfm-trader-ios-shell-v20260621-mobile-card-fix-2";
+const CACHE_NAME = "the-sfm-trader-ios-shell-v20260621-approved-dashboard-8";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/detail.html",
-  "/styles.css?v=20260621-mobile-card-fix-2",
-  "/app.js?v=20260621-mobile-card-fix-2",
+  "/styles.css?v=20260621-approved-dashboard-8",
+  "/app.js?v=20260621-approved-dashboard-8",
   "/detail.js?v=20260621-detail-arabic-1",
   "/manifest.webmanifest",
   "/the-sfm-trader-icon-256.png",
