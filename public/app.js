@@ -909,10 +909,44 @@ let floorBoardSignature = "";
 let livePulseSignature = "";
 
 applyAppSettings({ updateIntro: false });
+initAdaptiveViewport();
 initMarketBackground();
 initIntroCeremony();
 registerPwaServiceWorker();
 init();
+
+function initAdaptiveViewport() {
+  const root = document.documentElement;
+  let frame = 0;
+
+  const syncViewport = () => {
+    frame = 0;
+    const viewport = window.visualViewport;
+    const width = Math.max(320, Math.round(viewport?.width || window.innerWidth || 320));
+    const height = Math.max(480, Math.round(viewport?.height || window.innerHeight || 480));
+
+    root.style.setProperty("--app-vw", `${width}px`);
+    root.style.setProperty("--app-vh", `${height}px`);
+    root.dataset.viewport =
+      width <= 480 ? "phone-small" :
+      width <= 760 ? "phone" :
+      width <= 1024 ? "tablet" :
+      width <= 1366 ? "laptop" :
+      width <= 1800 ? "desktop" :
+      "wide";
+  };
+
+  const requestSync = () => {
+    if (frame) return;
+    frame = window.requestAnimationFrame(syncViewport);
+  };
+
+  syncViewport();
+  window.addEventListener("resize", requestSync, { passive: true });
+  window.addEventListener("orientationchange", requestSync, { passive: true });
+  window.visualViewport?.addEventListener("resize", requestSync, { passive: true });
+  window.visualViewport?.addEventListener("scroll", requestSync, { passive: true });
+}
 
 function registerPwaServiceWorker() {
   if (!("serviceWorker" in navigator)) return;

@@ -8931,3 +8931,383 @@ html[dir="ltr"] .notification-item {
     height: 40px !important;
   }
 }
+
+/* Adaptive viewport layer: keeps the dashboard proportional on phones, iPad, laptops, desktop, and TV screens. */
+:root {
+  --app-vw: 100vw;
+  --app-vh: 100vh;
+  --adaptive-shell-max: 1440px;
+  --adaptive-page-pad: clamp(12px, 2vw, 34px);
+  --adaptive-rail-space: clamp(96px, 7vw, 128px);
+  --adaptive-section-gap: clamp(10px, 1.1vw, 16px);
+  --adaptive-card-pad: clamp(10px, 1vw, 16px);
+  --adaptive-radius: clamp(12px, 1.1vw, 18px);
+}
+
+@supports (width: 100dvw) {
+  :root {
+    --app-vw: 100dvw;
+    --app-vh: 100dvh;
+  }
+}
+
+html {
+  font-size: clamp(13px, 0.32vw + 9px, 17px) !important;
+}
+
+body {
+  min-height: var(--app-vh) !important;
+}
+
+.app-shell {
+  width: min(calc(var(--app-vw) - (var(--adaptive-page-pad) * 2)), var(--adaptive-shell-max)) !important;
+  max-width: var(--adaptive-shell-max) !important;
+  min-height: calc(var(--app-vh) - 52px) !important;
+  margin-inline: auto !important;
+  padding-inline-start: var(--adaptive-rail-space) !important;
+  padding-inline-end: 0 !important;
+}
+
+.app-shell > main {
+  display: grid !important;
+  gap: var(--adaptive-section-gap) !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+main > section {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin-block-end: var(--adaptive-section-gap) !important;
+  scroll-margin-top: clamp(76px, 8vh, 120px) !important;
+}
+
+.topbar,
+.sfm-live-floor,
+.market-band,
+.command-center-band,
+.home-heatmap-section,
+.home-deck-panel,
+.recommendations-band,
+.history-band,
+.market-hours-band,
+.economic-news-band,
+.voice-band,
+.scalping-band,
+.radar-band,
+.smart-alerts-band,
+.golden-band,
+.watchlist-band,
+.portfolio-band,
+.us-dashboard-band,
+.us-outlook-band {
+  border-radius: var(--adaptive-radius) !important;
+}
+
+.topbar {
+  min-height: clamp(78px, 7vh, 104px) !important;
+  padding: clamp(12px, 1.1vw, 20px) !important;
+}
+
+.brand-lockup h1 {
+  font-size: clamp(22px, 1.55vw, 36px) !important;
+}
+
+.brand-lockup h1::before {
+  width: clamp(44px, 3.2vw, 58px) !important;
+  height: clamp(44px, 3.2vw, 58px) !important;
+  flex-basis: clamp(44px, 3.2vw, 58px) !important;
+}
+
+.desktop-trading-rail {
+  width: clamp(72px, 5vw, 92px) !important;
+  min-width: clamp(72px, 5vw, 92px) !important;
+  max-width: clamp(72px, 5vw, 92px) !important;
+  top: clamp(94px, 8vh, 122px) !important;
+  max-height: calc(var(--app-vh) - clamp(118px, 12vh, 150px)) !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  scrollbar-width: none !important;
+}
+
+.desktop-trading-rail::-webkit-scrollbar {
+  display: none !important;
+}
+
+.desktop-trading-rail .rail-link {
+  width: clamp(56px, 4.15vw, 68px) !important;
+  min-width: clamp(56px, 4.15vw, 68px) !important;
+  max-width: clamp(56px, 4.15vw, 68px) !important;
+  min-height: clamp(56px, 6.5vh, 70px) !important;
+}
+
+.rail-voice {
+  min-height: clamp(78px, 9vh, 98px) !important;
+}
+
+.live-pulse-strip {
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 0.18fr) !important;
+}
+
+.live-pulse-grid {
+  grid-template-columns: repeat(auto-fit, minmax(clamp(118px, 10vw, 156px), 1fr)) !important;
+}
+
+.market-tabs {
+  grid-template-columns: repeat(auto-fit, minmax(clamp(132px, 12vw, 190px), 1fr)) !important;
+}
+
+.command-center-grid {
+  grid-template-columns: repeat(auto-fit, minmax(clamp(138px, 13vw, 178px), 1fr)) !important;
+}
+
+.home-heatmap-grid {
+  grid-template-columns: repeat(auto-fit, minmax(clamp(116px, 10vw, 160px), 1fr)) !important;
+}
+
+.home-deck-section {
+  grid-template-columns: minmax(0, 1.45fr) minmax(clamp(260px, 24vw, 360px), 0.9fr) !important;
+}
+
+.home-recommendations,
+.us-dashboard-grid,
+.golden-grid,
+.mini-grid,
+.cards {
+  grid-template-columns: repeat(auto-fit, minmax(clamp(220px, 21vw, 320px), 1fr)) !important;
+}
+
+.summary-grid,
+.accuracy-grid,
+.radar-grid,
+.radar-monthly-grid,
+.us-outlook-grid {
+  grid-template-columns: repeat(auto-fit, minmax(clamp(132px, 14vw, 220px), 1fr)) !important;
+}
+
+.history-item,
+.portfolio-row,
+.position-row {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+}
+
+.settings-panel,
+.notification-panel {
+  max-width: min(420px, calc(var(--app-vw) - 28px)) !important;
+  max-height: calc(var(--app-vh) - 32px) !important;
+}
+
+.intro-card {
+  width: min(920px, calc(var(--app-vw) - 32px)) !important;
+  max-height: calc(var(--app-vh) - 32px) !important;
+  overflow: auto !important;
+}
+
+@media (min-width: 1801px) {
+  :root {
+    --adaptive-shell-max: 1680px;
+    --adaptive-page-pad: clamp(24px, 4vw, 80px);
+    --adaptive-rail-space: 132px;
+  }
+
+  .app-shell {
+    margin-top: clamp(26px, 3vh, 54px) !important;
+  }
+
+  .live-pulse-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+  }
+
+  .command-center-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+
+  .home-heatmap-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 1366px) and (min-width: 1025px) {
+  :root {
+    --adaptive-shell-max: 1240px;
+    --adaptive-page-pad: clamp(14px, 1.8vw, 28px);
+    --adaptive-rail-space: 108px;
+  }
+
+  .top-actions {
+    right: clamp(220px, 24vw, 300px) !important;
+  }
+
+  .live-pulse-strip,
+  .home-deck-section {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 1024px) and (min-width: 761px) {
+  :root {
+    --adaptive-shell-max: 100%;
+    --adaptive-page-pad: clamp(10px, 2vw, 20px);
+    --adaptive-rail-space: clamp(84px, 9vw, 104px);
+  }
+
+  html {
+    font-size: 14px !important;
+  }
+
+  .app-shell {
+    width: calc(var(--app-vw) - (var(--adaptive-page-pad) * 2)) !important;
+  }
+
+  .topbar {
+    grid-template-columns: minmax(220px, 1fr) auto !important;
+  }
+
+  .top-actions {
+    position: static !important;
+    grid-column: 1 / -1 !important;
+    justify-content: flex-start !important;
+  }
+
+  .live-pulse-strip,
+  .home-deck-section {
+    grid-template-columns: 1fr !important;
+  }
+
+  .live-pulse-grid,
+  .command-center-grid,
+  .home-heatmap-grid,
+  .home-recommendations {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --adaptive-page-pad: 12px;
+    --adaptive-section-gap: 12px;
+    --adaptive-radius: 14px;
+  }
+
+  html {
+    font-size: 14px !important;
+  }
+
+  body {
+    min-height: var(--app-vh) !important;
+  }
+
+  .app-shell {
+    width: 100% !important;
+    min-height: var(--app-vh) !important;
+    padding-inline: var(--adaptive-page-pad) !important;
+  }
+
+  .topbar {
+    min-height: 64px !important;
+  }
+
+  .live-pulse-strip {
+    grid-template-columns: 1fr !important;
+  }
+
+  .live-pulse-grid {
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    overflow-x: hidden !important;
+  }
+
+  .live-pulse-card {
+    min-width: 0 !important;
+  }
+
+  .pulse-status-card {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .market-tabs {
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    overflow-x: hidden !important;
+  }
+
+  .market-button {
+    min-width: 0 !important;
+  }
+
+  .summary-grid,
+  .accuracy-grid,
+  .radar-grid,
+  .radar-monthly-grid,
+  .us-outlook-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .home-recommendations,
+  .us-dashboard-grid,
+  .golden-grid,
+  .mini-grid,
+  .cards {
+    grid-template-columns: 1fr !important;
+  }
+
+  .settings-panel,
+  .notification-panel {
+    max-width: none !important;
+    max-height: calc(var(--app-vh) - 92px - var(--ios-safe-top)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  :root {
+    --adaptive-page-pad: 10px;
+  }
+
+  .brand-lockup h1 {
+    font-size: 16px !important;
+  }
+
+  .live-pulse-grid,
+  .market-tabs {
+    grid-auto-flow: row !important;
+    grid-auto-columns: initial !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    overflow-x: hidden !important;
+  }
+
+  .pulse-status-card {
+    padding-inline: 14px !important;
+  }
+
+  .pulse-status-card::after {
+    opacity: 0.34 !important;
+  }
+}
+
+@media (max-height: 760px) and (min-width: 761px) {
+  .topbar {
+    min-height: 72px !important;
+    padding-block: 10px !important;
+  }
+
+  .desktop-trading-rail {
+    top: 84px !important;
+    max-height: calc(var(--app-vh) - 96px) !important;
+    padding-block: 8px !important;
+  }
+
+  .desktop-trading-rail .rail-link {
+    min-height: 50px !important;
+    padding-block: 5px !important;
+  }
+
+  .rail-voice {
+    margin-top: 12px !important;
+    min-height: 70px !important;
+  }
+}
