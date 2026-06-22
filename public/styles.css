@@ -11978,3 +11978,209 @@ body:not(.intro-running) .intro-overlay {
     overflow: hidden !important;
   }
 }
+
+/* Asset logo system for recommendation and instrument cards. */
+.card-identity {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  direction: ltr;
+}
+
+.asset-title-stack {
+  min-width: 0;
+  text-align: start;
+}
+
+.signal-asset-logo {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 14px !important;
+}
+
+.asset-logo {
+  position: relative !important;
+  isolation: isolate !important;
+  flex: 0 0 auto !important;
+  border: 1px solid rgba(255, 255, 255, 0.13) !important;
+  background:
+    linear-gradient(145deg, rgba(18, 31, 43, 0.94), rgba(5, 12, 18, 0.9)),
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.16), transparent 42%) !important;
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+.asset-logo::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  z-index: -1;
+  border-radius: inherit;
+  background: radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.1), transparent 62%);
+}
+
+.asset-logo-svg {
+  width: 68% !important;
+  height: 68% !important;
+  fill: currentColor !important;
+  stroke: currentColor !important;
+  stroke-width: 1.5 !important;
+  stroke-linejoin: round !important;
+  stroke-linecap: round !important;
+}
+
+.asset-logo-svg-apple,
+.asset-logo-svg-gold,
+.asset-logo-svg-microsoft {
+  stroke: none !important;
+}
+
+.asset-logo-text {
+  color: currentColor !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  direction: ltr !important;
+}
+
+.asset-logo-smile {
+  position: absolute;
+  left: 50%;
+  bottom: 6px;
+  width: 24px;
+  height: 8px;
+  transform: translateX(-50%);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+}
+
+.asset-logo-apple {
+  color: #f7fbff !important;
+  background:
+    radial-gradient(circle at 34% 20%, rgba(255, 255, 255, 0.32), transparent 34%),
+    linear-gradient(145deg, rgba(130, 143, 158, 0.26), rgba(8, 14, 20, 0.92)) !important;
+}
+
+.asset-logo-google {
+  color: #8db8ff !important;
+  background:
+    conic-gradient(from 25deg, #4285f4 0 28%, #34a853 28% 52%, #fbbc05 52% 75%, #ea4335 75% 100%) !important;
+}
+
+.asset-logo-google .asset-logo-text {
+  width: 72%;
+  height: 72%;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #eaf2ff !important;
+  background: rgba(5, 12, 18, 0.84);
+}
+
+.asset-logo-amazon {
+  color: #ffd27a !important;
+  background:
+    radial-gradient(circle at 35% 20%, rgba(255, 210, 122, 0.26), transparent 42%),
+    linear-gradient(145deg, rgba(35, 42, 56, 0.96), rgba(5, 12, 18, 0.92)) !important;
+}
+
+.asset-logo-gold {
+  color: #ffd66e !important;
+  background:
+    radial-gradient(circle at 36% 20%, rgba(255, 230, 140, 0.36), transparent 38%),
+    linear-gradient(145deg, rgba(103, 70, 17, 0.95), rgba(28, 19, 7, 0.92)) !important;
+  border-color: rgba(255, 214, 110, 0.35) !important;
+}
+
+.asset-logo-silver {
+  color: #e5edf7 !important;
+  background:
+    radial-gradient(circle at 34% 20%, rgba(255, 255, 255, 0.32), transparent 40%),
+    linear-gradient(145deg, rgba(88, 101, 116, 0.95), rgba(12, 19, 27, 0.92)) !important;
+}
+
+.asset-logo-oil {
+  color: #8cf0bd !important;
+  background:
+    radial-gradient(circle at 36% 20%, rgba(140, 240, 189, 0.22), transparent 38%),
+    linear-gradient(145deg, rgba(7, 54, 44, 0.95), rgba(4, 11, 16, 0.92)) !important;
+}
+
+.asset-logo-crypto {
+  color: #ffcf75 !important;
+  background:
+    radial-gradient(circle at 38% 24%, rgba(255, 190, 85, 0.38), transparent 42%),
+    linear-gradient(145deg, rgba(160, 91, 18, 0.95), rgba(42, 24, 6, 0.94)) !important;
+  border-color: rgba(255, 190, 85, 0.34) !important;
+}
+
+.asset-logo-fx,
+.asset-logo-eu {
+  color: #9ab9ff !important;
+  background:
+    radial-gradient(circle at 38% 22%, rgba(80, 135, 255, 0.28), transparent 42%),
+    linear-gradient(145deg, rgba(12, 28, 64, 0.96), rgba(5, 12, 22, 0.94)) !important;
+}
+
+.asset-logo-eu {
+  color: #ffd85f !important;
+}
+
+.asset-logo-microsoft,
+.asset-logo-tesla,
+.asset-logo-ai,
+.asset-logo-health,
+.asset-logo-bank,
+.asset-logo-index,
+.asset-logo-default {
+  color: #dce8f2 !important;
+  background:
+    radial-gradient(circle at 34% 20%, rgba(143, 184, 255, 0.2), transparent 42%),
+    linear-gradient(145deg, rgba(19, 31, 48, 0.96), rgba(5, 12, 18, 0.92)) !important;
+}
+
+.asset-logo-gulf {
+  color: #f9fbff !important;
+  background:
+    linear-gradient(90deg, rgba(0, 122, 70, 0.95) 0 33%, rgba(255, 255, 255, 0.82) 33% 66%, rgba(205, 36, 48, 0.95) 66% 100%) !important;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.65);
+}
+
+.asset-logo-sa {
+  background:
+    radial-gradient(circle at 36% 20%, rgba(255, 255, 255, 0.17), transparent 40%),
+    linear-gradient(145deg, rgba(0, 108, 56, 0.98), rgba(2, 45, 30, 0.96)) !important;
+}
+
+.asset-logo-ae {
+  background:
+    linear-gradient(90deg, #bd1f2d 0 26%, transparent 26% 100%),
+    linear-gradient(180deg, #0b8c4c 0 33%, #f7f7f7 33% 66%, #151a20 66% 100%) !important;
+}
+
+.asset-logo-kw {
+  background:
+    linear-gradient(90deg, #171a1f 0 25%, transparent 25%),
+    linear-gradient(180deg, #0d8f57 0 33%, #f5f6f7 33% 66%, #d82438 66% 100%) !important;
+}
+
+@media (max-width: 760px) {
+  .card-identity {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 9px;
+  }
+
+  .signal-asset-logo {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 13px !important;
+  }
+}

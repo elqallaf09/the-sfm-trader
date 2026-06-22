@@ -2119,9 +2119,15 @@ function renderRecommendations(data) {
     const actionBadge = card.querySelector(".action-badge");
     const shariaBadge = card.querySelector(".sharia-badge");
     const confidenceFill = card.querySelector(".confidence-fill");
+    const visual = getPremiumAssetVisual(item);
+    const logo = card.querySelector(".signal-asset-logo");
 
     card.querySelector(".asset-name").textContent = item.name;
     card.querySelector(".asset-symbol").textContent = `${item.symbol}${item.exchangeName ? ` · ${item.exchangeName}` : ""}`;
+    if (logo) {
+      logo.className = `asset-logo signal-asset-logo ${visual.className}`;
+      logo.innerHTML = visual.html;
+    }
     card.dataset.symbol = item.symbol;
     card.setAttribute("role", "link");
     card.tabIndex = 0;
@@ -2509,31 +2515,65 @@ function getAssetVisual(item = {}) {
 function getPremiumAssetVisual(item = {}) {
   const symbol = String(item.symbol || "").toUpperCase();
   const name = String(item.name || "").toLowerCase();
-  const base = symbol.replace(/[-.=].*$/, "");
+  const base = getAssetBaseSymbol(symbol);
 
   if (symbol.includes("GC=F") || symbol.includes("XAU") || name.includes("gold")) {
     return { className: "asset-logo-gold", html: renderAssetIcon("gold", "Au") };
   }
+  if (symbol.includes("XAG") || name.includes("silver")) {
+    return { className: "asset-logo-silver", html: renderAssetIcon("text", "Ag") };
+  }
+  if (symbol.includes("CL=F") || symbol.includes("BZ=F") || symbol.includes("USOIL") || symbol.includes("UKOIL") || name.includes("oil")) {
+    return { className: "asset-logo-oil", html: renderAssetIcon("oil", "Oil") };
+  }
   if (symbol.includes("BTC") || name.includes("bitcoin")) {
     return { className: "asset-logo-crypto", html: renderAssetIcon("bitcoin", "B") };
   }
-  if (symbol.includes("EUR") || symbol.includes("GBP") || symbol.includes("USD") || symbol.includes("JPY")) {
+  if (symbol.includes("EUR")) {
+    return { className: "asset-logo-eu", html: renderAssetIcon("eu", "EU") };
+  }
+  if (symbol.includes("GBP") || symbol.includes("USD") || symbol.includes("JPY") || symbol.includes("CHF") || symbol.includes("CAD") || symbol.includes("AUD") || symbol.includes("NZD")) {
     return { className: "asset-logo-fx", html: renderAssetIcon("fx", "FX") };
   }
   if (["AAPL", "APPLE"].some((value) => symbol.includes(value) || name.includes(value.toLowerCase()))) {
     return { className: "asset-logo-apple", html: renderAssetIcon("apple", "") };
   }
-  if (["GOOGL", "GOOG"].includes(base)) return { className: "asset-logo-google", html: renderAssetIcon("text", "G") };
-  if (symbol.includes("AMZN")) return { className: "asset-logo-amazon", html: renderAssetIcon("text", "AM") };
+  if (["GOOGL", "GOOG"].includes(base)) return { className: "asset-logo-google", html: renderAssetIcon("google", "G") };
+  if (symbol.includes("AMZN")) return { className: "asset-logo-amazon", html: renderAssetIcon("amazon", "AM") };
   if (symbol.includes("TSLA")) return { className: "asset-logo-tesla", html: renderAssetIcon("text", "TS") };
   if (symbol.includes("MSFT")) return { className: "asset-logo-microsoft", html: renderAssetIcon("microsoft", "MS") };
   if (symbol.includes("NVDA")) return { className: "asset-logo-ai", html: renderAssetIcon("text", "AI") };
   if (symbol.includes("AMD")) return { className: "asset-logo-ai", html: renderAssetIcon("text", "AM") };
   if (symbol.includes("LLY")) return { className: "asset-logo-health", html: renderAssetIcon("text", "LL") };
   if (symbol.includes("BAC")) return { className: "asset-logo-bank", html: renderAssetIcon("text", "BA") };
-  if (symbol.endsWith(".KW")) return { className: "asset-logo-gulf", html: renderAssetIcon("text", "KW") };
-  if (symbol.startsWith("SR.") || symbol.includes(".SR")) return { className: "asset-logo-gulf", html: renderAssetIcon("text", "SR") };
+  const gulf = getGulfAssetMark(symbol);
+  if (gulf) return gulf;
+  if (["US30", "US100", "NAS100", "SPX", "SP500", "S&P500"].some((value) => symbol.includes(value))) {
+    return { className: "asset-logo-index", html: renderAssetIcon("index", "IDX") };
+  }
   return { className: "asset-logo-default", html: renderAssetIcon("text", (base || symbol).slice(0, 2) || "S") };
+}
+
+function getAssetBaseSymbol(symbol = "") {
+  return String(symbol || "")
+    .toUpperCase()
+    .replace(/=X$/, "")
+    .replace(/[-.].*$/, "")
+    .replace(/=.*/, "");
+}
+
+function getGulfAssetMark(symbol = "") {
+  const upper = String(symbol || "").toUpperCase();
+  const rules = [
+    { test: upper.endsWith(".KW"), className: "asset-logo-gulf asset-logo-kw", label: "KW" },
+    { test: upper.startsWith("SR.") || upper.endsWith(".SR"), className: "asset-logo-gulf asset-logo-sa", label: "SA" },
+    { test: upper.endsWith(".AD") || upper.endsWith(".DU") || upper.endsWith(".AE"), className: "asset-logo-gulf asset-logo-ae", label: "AE" },
+    { test: upper.endsWith(".OM"), className: "asset-logo-gulf asset-logo-om", label: "OM" },
+    { test: upper.endsWith(".BH"), className: "asset-logo-gulf asset-logo-bh", label: "BH" },
+    { test: upper.endsWith(".QA"), className: "asset-logo-gulf asset-logo-qa", label: "QA" }
+  ];
+  const match = rules.find((rule) => rule.test);
+  return match ? { className: match.className, html: renderAssetIcon("text", match.label) } : null;
 }
 
 function renderAssetIcon(kind, label) {
@@ -2557,11 +2597,48 @@ function renderAssetIcon(kind, label) {
   if (kind === "bitcoin") {
     return `<span class="asset-logo-text asset-logo-text-bitcoin">&#8383;</span>`;
   }
+  if (kind === "google") {
+    return `<span class="asset-logo-text asset-logo-text-google">G</span>`;
+  }
+  if (kind === "amazon") {
+    return `
+      <span class="asset-logo-text">AM</span>
+      <svg class="asset-logo-smile" viewBox="0 0 24 8" aria-hidden="true" focusable="false">
+        <path d="M4 2.3c4.2 3.2 11.2 3.3 16 .1"></path>
+        <path d="M17.5 1.8 20.2 2l-.8 2.3"></path>
+      </svg>
+    `;
+  }
   if (kind === "fx") {
     return `
       <svg class="asset-logo-svg asset-logo-svg-fx" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <circle cx="12" cy="12" r="9"></circle>
         <path d="M7 9h10M7 15h10M12 5.5c2.2 2.1 2.2 10.9 0 13M12 5.5c-2.2 2.1-2.2 10.9 0 13"></path>
+      </svg>
+    `;
+  }
+  if (kind === "eu") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-eu" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="9"></circle>
+        <path d="M12 5.7v2.1M12 16.2v2.1M5.7 12h2.1M16.2 12h2.1M7.6 7.6l1.5 1.5M14.9 14.9l1.5 1.5M16.4 7.6l-1.5 1.5M9.1 14.9l-1.5 1.5"></path>
+      </svg>
+    `;
+  }
+  if (kind === "oil") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-oil" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 3.8c3.6 4.2 5.4 7.2 5.4 10a5.4 5.4 0 1 1-10.8 0c0-2.8 1.8-5.8 5.4-10Z"></path>
+        <path d="M10 17.2c1.7 1.1 4 .5 4.8-1.5"></path>
+      </svg>
+    `;
+  }
+  if (kind === "index") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-index" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M4 17h16"></path>
+        <path d="M5 15 9 9l4 3 5-7"></path>
+        <path d="M16 5h2.8v2.8"></path>
       </svg>
     `;
   }
