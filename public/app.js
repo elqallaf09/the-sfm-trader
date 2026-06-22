@@ -2513,6 +2513,7 @@ function getAssetVisual(item = {}) {
   const symbol = String(item.symbol || "").toUpperCase();
   const name = String(item.name || "").toLowerCase();
   if (symbol.includes("GC=F") || symbol.includes("XAU") || name.includes("gold")) return { className: "asset-logo-gold", text: "Au" };
+  if (symbol.includes("BNB") || name.includes("bnb")) return { className: "asset-logo-bnb", text: "BNB" };
   if (symbol.includes("BTC") || name.includes("bitcoin")) return { className: "asset-logo-crypto", text: "₿" };
   if (symbol.includes("EUR") || symbol.includes("GBP") || symbol.includes("USD") || symbol.includes("JPY")) return { className: "asset-logo-fx", text: "FX" };
   if (["AAPL", "APPLE"].some((value) => symbol.includes(value) || name.includes(value.toLowerCase()))) return { className: "asset-logo-apple", text: "" };
@@ -2535,6 +2536,9 @@ function getPremiumAssetVisual(item = {}) {
   }
   if (symbol.includes("CL=F") || symbol.includes("BZ=F") || symbol.includes("USOIL") || symbol.includes("UKOIL") || name.includes("oil")) {
     return { className: "asset-logo-oil", html: renderAssetIcon("oil", "Oil") };
+  }
+  if (symbol.includes("BNB") || name.includes("bnb")) {
+    return { className: "asset-logo-bnb", html: renderAssetIcon("text", "BNB") };
   }
   if (symbol.includes("BTC") || name.includes("bitcoin")) {
     return { className: "asset-logo-crypto", html: renderAssetIcon("bitcoin", "B") };
