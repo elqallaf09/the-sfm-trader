@@ -13995,3 +13995,266 @@ main > section {
     line-height: 1.2 !important;
   }
 }
+
+/* Full market system and readable terminal scale. */
+:root {
+  --reference-terminal-max: 1840px;
+  --terminal-max: 1840px;
+}
+
+@media (min-width: 1181px) {
+  body:not(.intro-running) .app-shell,
+  body[data-app-view="home"] .app-shell {
+    width: min(1840px, calc(100vw - 24px)) !important;
+    max-width: 1840px !important;
+    transform: none !important;
+    transform-origin: top center !important;
+  }
+
+  body:not(.intro-running) .app-shell > main,
+  body[data-app-view="home"] .app-shell > main {
+    gap: 13px !important;
+  }
+
+  body:not(.intro-running) .sfm-live-floor {
+    min-height: 178px !important;
+  }
+
+  body:not(.intro-running) .live-pulse-card {
+    min-width: 128px !important;
+  }
+
+  body:not(.intro-running) .command-center-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 1600px) {
+  body:not(.intro-running) .app-shell,
+  body[data-app-view="home"] .app-shell {
+    transform: none !important;
+  }
+}
+
+@media (min-width: 761px) {
+  body:not(.intro-running) .market-band {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body:not(.intro-running) .market-tabs {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    grid-template-columns: none !important;
+    flex-wrap: nowrap !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 2px 2px 9px !important;
+    scroll-snap-type: x proximity !important;
+    scrollbar-color: rgba(216, 172, 80, 0.42) rgba(255, 255, 255, 0.045) !important;
+  }
+
+  body:not(.intro-running) .market-tabs::-webkit-scrollbar {
+    height: 8px !important;
+  }
+
+  body:not(.intro-running) .market-tabs::-webkit-scrollbar-track {
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.045) !important;
+  }
+
+  body:not(.intro-running) .market-tabs::-webkit-scrollbar-thumb {
+    border-radius: 999px !important;
+    background: linear-gradient(90deg, rgba(54, 232, 137, 0.45), rgba(216, 172, 80, 0.68)) !important;
+  }
+
+  body:not(.intro-running) .market-button {
+    flex: 0 0 clamp(156px, 10.8vw, 210px) !important;
+    width: auto !important;
+    min-width: 156px !important;
+    height: 60px !important;
+    padding: 0 12px !important;
+    scroll-snap-align: start !important;
+  }
+
+  body:not(.intro-running) .market-button-copy {
+    min-width: 0 !important;
+  }
+
+  body:not(.intro-running) .market-button-copy strong {
+    max-width: 100% !important;
+    font-size: 13px !important;
+    line-height: 1.15 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  body:not(.intro-running) .market-button-copy span {
+    font-size: 10.5px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body:not(.intro-running) .market-tabs {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    overflow: visible !important;
+    max-height: none !important;
+  }
+}
+
+.market-button-icon.market-icon-premium,
+.market-button-icon.market-icon-kuwait,
+.market-button-icon.market-icon-saudi,
+.market-button-icon.market-icon-uae,
+.market-button-icon.market-icon-qatar,
+.market-button-icon.market-icon-bahrain,
+.market-button-icon.market-icon-oman,
+.market-button-icon.market-icon-europe,
+.market-button-icon.market-icon-asia,
+.market-button-icon.market-icon-tech,
+.market-button-icon.market-icon-food,
+.market-button-icon.market-icon-health,
+.market-button-icon.market-icon-banking,
+.market-button-icon.market-icon-energy,
+.market-button-icon.market-icon-ai,
+.market-button-icon.market-icon-semiconductor,
+.market-button-icon.market-icon-semiconductors {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+  background:
+    radial-gradient(circle at 28% 22%, rgba(255, 255, 255, 0.22), transparent 30%),
+    linear-gradient(145deg, rgba(13, 31, 44, 0.95), rgba(2, 9, 15, 0.96)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.045),
+    0 10px 22px rgba(0, 0, 0, 0.28) !important;
+}
+
+.market-button-icon .market-premium-flag,
+.market-button-icon .market-premium-glyph {
+  position: relative !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 14px rgba(255, 255, 255, 0.08) !important;
+}
+
+.market-button-icon .market-premium-flag i {
+  display: none !important;
+}
+
+.market-button-icon .market-premium-flag b,
+.market-button-icon .market-premium-glyph b {
+  position: relative !important;
+  z-index: 2 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  color: #fff !important;
+  font-size: 8px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85) !important;
+}
+
+.market-button-icon .market-premium-flag::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+}
+
+.market-button-icon .market-premium-us {
+  background:
+    linear-gradient(180deg, #b22234 0 12%, #fff 12% 24%, #b22234 24% 36%, #fff 36% 48%, #b22234 48% 60%, #fff 60% 72%, #b22234 72% 84%, #fff 84% 100%) !important;
+}
+
+.market-button-icon .market-premium-us::before {
+  width: 48% !important;
+  height: 56% !important;
+  inset: 0 auto auto 0 !important;
+  background: #3c3b6e !important;
+}
+
+.market-button-icon .market-premium-saudi {
+  background: linear-gradient(145deg, #0a8f4d, #035e34) !important;
+}
+
+.market-button-icon .market-premium-kuwait {
+  background:
+    linear-gradient(90deg, #111 0 25%, transparent 25%),
+    linear-gradient(180deg, #007a3d 0 33%, #fff 33% 66%, #ce1126 66%) !important;
+}
+
+.market-button-icon .market-premium-uae {
+  background:
+    linear-gradient(90deg, #ce1126 0 25%, transparent 25%),
+    linear-gradient(180deg, #009a44 0 33%, #fff 33% 66%, #000 66%) !important;
+}
+
+.market-button-icon .market-premium-qatar {
+  background: linear-gradient(90deg, #fff 0 32%, #8a1538 32%) !important;
+}
+
+.market-button-icon .market-premium-bahrain {
+  background: linear-gradient(90deg, #fff 0 30%, #ce1126 30%) !important;
+}
+
+.market-button-icon .market-premium-oman {
+  background:
+    linear-gradient(90deg, #db161b 0 24%, transparent 24%),
+    linear-gradient(180deg, #fff 0 33%, #db161b 33% 66%, #00843d 66%) !important;
+}
+
+.market-button-icon .market-premium-europe {
+  color: #ffe27b !important;
+  background: radial-gradient(circle at 50% 40%, rgba(255, 221, 80, 0.25), transparent 45%), linear-gradient(145deg, #1452a8, #08245d) !important;
+}
+
+.market-button-icon .market-premium-asia,
+.market-button-icon .market-premium-world {
+  color: #9feaff !important;
+  background: radial-gradient(circle at 50% 45%, rgba(73, 221, 255, 0.28), transparent 46%), linear-gradient(145deg, #0b6d78, #063044) !important;
+}
+
+.market-button-icon .market-premium-tech,
+.market-button-icon .market-premium-semiconductors {
+  color: #bff5ff !important;
+  background: linear-gradient(145deg, #144e7d, #091827) !important;
+}
+
+.market-button-icon .market-premium-ai {
+  color: #dfd4ff !important;
+  background: radial-gradient(circle at 35% 25%, rgba(207, 172, 255, 0.38), transparent 32%), linear-gradient(145deg, #5a37a5, #101a3f) !important;
+}
+
+.market-button-icon .market-premium-food {
+  color: #fff2c8 !important;
+  background: linear-gradient(145deg, #b78122, #194f34) !important;
+}
+
+.market-button-icon .market-premium-healthcare {
+  color: #ffffff !important;
+  background: linear-gradient(145deg, #1c77c3, #7d2638) !important;
+}
+
+.market-button-icon .market-premium-banking,
+.market-button-icon .market-premium-dividends {
+  color: #ffe5a0 !important;
+  background: linear-gradient(145deg, #b68a2c, #1d2418) !important;
+}
+
+.market-button-icon .market-premium-energy {
+  color: #fff0c6 !important;
+  background: linear-gradient(145deg, #ef8a20, #4a1c0b) !important;
+}

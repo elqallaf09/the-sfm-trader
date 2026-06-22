@@ -734,6 +734,11 @@ const MARKET_TIME_ZONES = {
   food: ["America/New_York", "Food & Agriculture"],
   watchlist: ["Asia/Kuwait", "Kuwait"]
 };
+Object.assign(MARKET_TIME_ZONES, {
+  banking: ["America/New_York", "Banking"],
+  energy: ["America/New_York", "Energy"],
+  semiconductors: ["America/New_York", "Semiconductors"]
+});
 const WEEKDAYS = {
   Sun: 0,
   Mon: 1,
@@ -765,6 +770,11 @@ const MARKET_SESSIONS = {
   food: { type: "weekly", timeZone: "America/New_York", label: "Commodity/Food", openDay: 0, open: "18:00", closeDay: 5, close: "17:00" },
   watchlist: { type: "regular", timeZone: "Asia/Kuwait", label: "Kuwait", days: [0, 1, 2, 3, 4], open: "09:00", close: "15:00" }
 };
+Object.assign(MARKET_SESSIONS, {
+  banking: MARKET_SESSIONS.us,
+  energy: MARKET_SESSIONS.us,
+  semiconductors: MARKET_SESSIONS.us
+});
 const EXCHANGE_SESSION_KNOWLEDGE = {
   kuwait: { name: "بورصة الكويت", session: MARKET_SESSIONS.kuwait },
   saudi: { name: "بورصة السعودية", session: MARKET_SESSIONS.saudi },
@@ -923,6 +933,86 @@ const MARKET_PRIMARY_LABELS_EN = {
   commodities: "Commodities",
   gcc: "Gulf markets"
 };
+
+const MARKET_CATEGORY_ORDER = [
+  "forex",
+  "us",
+  "crypto",
+  "commodities",
+  "gcc",
+  "saudi",
+  "kuwait",
+  "uae",
+  "qatar",
+  "bahrain",
+  "oman",
+  "europe",
+  "asia",
+  "tech",
+  "food",
+  "healthcare",
+  "banking",
+  "energy",
+  "ai",
+  "semiconductors",
+  "dividends",
+  "world"
+];
+
+MARKET_CATEGORY_ORDER.forEach((key, index) => {
+  PRIMARY_MARKET_KEYS.add(key);
+  PRIMARY_MARKET_ORDER[key] = index;
+});
+
+Object.assign(MARKET_PRIMARY_LABELS_AR, {
+  forex: "الفوركس",
+  us: "الأسهم الأمريكية",
+  crypto: "العملات الرقمية",
+  commodities: "السلع",
+  gcc: "أسواق الخليج",
+  saudi: "السوق السعودي",
+  kuwait: "بورصة الكويت",
+  uae: "السوق الإماراتي",
+  qatar: "السوق القطري",
+  bahrain: "السوق البحريني",
+  oman: "السوق العماني",
+  europe: "الأسهم الأوروبية",
+  asia: "الأسهم الآسيوية",
+  tech: "أسهم التقنية",
+  food: "الأسهم الغذائية",
+  healthcare: "الأسهم الدوائية",
+  banking: "أسهم البنوك",
+  energy: "أسهم الطاقة",
+  ai: "أسهم الذكاء الاصطناعي",
+  semiconductors: "أسهم أشباه الموصلات",
+  dividends: "أسهم توزيعات الأرباح",
+  world: "جميع الأسواق"
+});
+
+Object.assign(MARKET_PRIMARY_LABELS_EN, {
+  forex: "Forex",
+  us: "US stocks",
+  crypto: "Crypto",
+  commodities: "Commodities",
+  gcc: "Gulf markets",
+  saudi: "Saudi market",
+  kuwait: "Kuwait market",
+  uae: "UAE market",
+  qatar: "Qatar market",
+  bahrain: "Bahrain market",
+  oman: "Oman market",
+  europe: "European stocks",
+  asia: "Asian stocks",
+  tech: "Technology stocks",
+  food: "Food / staples",
+  healthcare: "Pharma / healthcare",
+  banking: "Banking stocks",
+  energy: "Energy stocks",
+  ai: "AI stocks",
+  semiconductors: "Semiconductors",
+  dividends: "Dividend stocks",
+  world: "All markets"
+});
 
 let activeMarket = "us";
 let activeAppView = "home";
@@ -1855,6 +1945,26 @@ const MARKET_ICON_CONFIG = {
   food: ["Coins", "market-icon-food"]
 };
 
+Object.assign(MARKET_ICON_CONFIG, {
+  kuwait: ["Landmark", "market-icon-kuwait"],
+  saudi: ["Landmark", "market-icon-saudi"],
+  uae: ["Building2", "market-icon-uae"],
+  qatar: ["Landmark", "market-icon-qatar"],
+  bahrain: ["Landmark", "market-icon-bahrain"],
+  oman: ["Landmark", "market-icon-oman"],
+  europe: ["Euro", "market-icon-europe"],
+  asia: ["Globe2", "market-icon-asia"],
+  tech: ["ChartCandlestick", "market-icon-tech"],
+  food: ["Coins", "market-icon-food"],
+  healthcare: ["Activity", "market-icon-health"],
+  banking: ["Landmark", "market-icon-banking"],
+  energy: ["Activity", "market-icon-energy"],
+  ai: ["Activity", "market-icon-ai"],
+  semiconductors: ["ChartCandlestick", "market-icon-semiconductor"],
+  dividends: ["Coins", "market-icon-dividend"],
+  world: ["Globe2", "market-icon-global"]
+});
+
 function getMarketVisual(market = {}) {
   const id = String(market.id || "").toLowerCase();
   const label = String(market.label || "").toLowerCase();
@@ -1886,8 +1996,44 @@ function renderLucideMarketIcon(name) {
   return `<svg class="lucide-market-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${paths}</svg>`;
 }
 
+function renderMarketFlagIcon(key, code) {
+  return `
+    <span class="market-premium-flag market-premium-${key}" aria-hidden="true">
+      <i></i><i></i><i></i><b>${code}</b>
+    </span>
+  `;
+}
+
+function renderMarketGlyphIcon(key, label) {
+  return `<span class="market-premium-glyph market-premium-${key}" aria-hidden="true"><b>${label}</b></span>`;
+}
+
 function renderPremiumMarketIcon(key, fallbackIconName) {
   const normalized = String(key || "").toLowerCase();
+  const flagCodes = {
+    us: "US",
+    kuwait: "KW",
+    saudi: "SA",
+    uae: "AE",
+    qatar: "QA",
+    bahrain: "BH",
+    oman: "OM"
+  };
+  if (flagCodes[normalized]) return renderMarketFlagIcon(normalized, flagCodes[normalized]);
+  const glyphLabels = {
+    europe: "EU",
+    asia: "AS",
+    tech: "TC",
+    food: "FD",
+    healthcare: "RX",
+    banking: "BK",
+    energy: "EN",
+    ai: "AI",
+    semiconductors: "CH",
+    dividends: "DV",
+    world: "GL"
+  };
+  if (glyphLabels[normalized]) return renderMarketGlyphIcon(normalized, glyphLabels[normalized]);
   if (normalized === "forex") {
     return `<span class="market-premium-glyph market-premium-dollar" aria-hidden="true">&#36;</span>`;
   }
@@ -5665,6 +5811,13 @@ function normalizeArabicText(value) {
 }
 
 function resolveMarketIdFromText(text) {
+  const sectorMarketTests = [
+    ["banking", /(بنوك|مصارف|مصرف|bank|banks|banking|financials)/],
+    ["energy", /(اسهم الطاقة|أسهم الطاقة|قطاع الطاقة|oil stocks|energy stocks|energy|xom|cvx|slb)/],
+    ["semiconductors", /(اشباه الموصلات|أشباه الموصلات|رقائق|شرائح|chip|chips|semiconductor|semiconductors)/]
+  ];
+  const sectorMarketMatch = sectorMarketTests.find(([, pattern]) => pattern.test(text));
+  if (sectorMarketMatch) return sectorMarketMatch[0];
   const tests = [
     ["kuwait", /(كويت|الكويتي|xkuw|kuwait)/],
     ["saudi", /(سعود|تداول|tadawul|saudi)/],
@@ -5689,6 +5842,14 @@ function resolveMarketIdFromText(text) {
 }
 
 function getMarketSessionName(marketId) {
+  const overrideMarketNames = {
+    banking: "أسهم البنوك",
+    energy: "أسهم الطاقة",
+    semiconductors: "أسهم أشباه الموصلات",
+    food: "الأسهم الغذائية",
+    healthcare: "الأسهم الدوائية"
+  };
+  if (overrideMarketNames[marketId]) return overrideMarketNames[marketId];
   const names = {
     forex: "سوق الفوركس",
     crypto: "سوق العملات الرقمية",
