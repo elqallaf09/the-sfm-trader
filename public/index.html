@@ -12,7 +12,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
     <link rel="icon" type="image/png" sizes="256x256" href="/the-sfm-trader-icon-256.png" />
-    <link rel="stylesheet" href="/styles.css?v=20260622-acceptance-lock-1" />
+    <link rel="stylesheet" href="/styles.css?v=20260622-gcc-icon-1" />
   </head>
   <body class="notranslate" translate="no">
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
@@ -487,7 +487,19 @@
             </button>
             <button class="market-button is-primary-market" type="button" data-market="gcc">
               <span class="market-button-icon market-icon-gcc market-icon-premium market-icon-gcc" aria-hidden="true">
-                <span class="market-premium-flag market-premium-gcc"><i></i><i></i><i></i><b>GCC</b></span>
+                <span class="market-premium-gcc-badge">
+                  <svg viewBox="0 0 32 32" focusable="false">
+                    <circle class="gcc-node" cx="16" cy="5.8" r="1.5"></circle>
+                    <circle class="gcc-node" cx="24.8" cy="10.5" r="1.5"></circle>
+                    <circle class="gcc-node" cx="24.8" cy="21.5" r="1.5"></circle>
+                    <circle class="gcc-node" cx="16" cy="26.2" r="1.5"></circle>
+                    <circle class="gcc-node" cx="7.2" cy="21.5" r="1.5"></circle>
+                    <circle class="gcc-node" cx="7.2" cy="10.5" r="1.5"></circle>
+                    <path class="gcc-ring" d="M16 5.8 24.8 10.5v11L16 26.2 7.2 21.5v-11Z"></path>
+                    <path class="gcc-market-line" d="M9.5 20.5h3.2v-6.2h3.1v3.8h3.1V10h3.6v10.5"></path>
+                    <text class="gcc-label" x="16" y="25.3" text-anchor="middle">GCC</text>
+                  </svg>
+                </span>
               </span>
               <span class="market-button-copy"><strong>أسواق الخليج</strong><span>8 رمز</span></span>
             </button>
@@ -1047,7 +1059,7 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260622-acceptance-lock-1" type="module"></script>
+    <script src="/app.js?v=20260622-gcc-icon-1" type="module"></script>
   </body>
 </html>
 

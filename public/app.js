@@ -1913,8 +1913,18 @@ function renderPremiumMarketIcon(key, fallbackIconName) {
   }
   if (normalized === "gcc") {
     return `
-      <span class="market-premium-flag market-premium-gcc" aria-hidden="true">
-        <i></i><i></i><i></i><b>GCC</b>
+      <span class="market-premium-gcc-badge" aria-hidden="true">
+        <svg viewBox="0 0 32 32" focusable="false">
+          <circle class="gcc-node" cx="16" cy="5.8" r="1.5"></circle>
+          <circle class="gcc-node" cx="24.8" cy="10.5" r="1.5"></circle>
+          <circle class="gcc-node" cx="24.8" cy="21.5" r="1.5"></circle>
+          <circle class="gcc-node" cx="16" cy="26.2" r="1.5"></circle>
+          <circle class="gcc-node" cx="7.2" cy="21.5" r="1.5"></circle>
+          <circle class="gcc-node" cx="7.2" cy="10.5" r="1.5"></circle>
+          <path class="gcc-ring" d="M16 5.8 24.8 10.5v11L16 26.2 7.2 21.5v-11Z"></path>
+          <path class="gcc-market-line" d="M9.5 20.5h3.2v-6.2h3.1v3.8h3.1V10h3.6v10.5"></path>
+          <text class="gcc-label" x="16" y="25.3" text-anchor="middle">GCC</text>
+        </svg>
       </span>
     `;
   }
