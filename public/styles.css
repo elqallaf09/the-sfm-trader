@@ -12184,3 +12184,228 @@ body:not(.intro-running) .intro-overlay {
     border-radius: 13px !important;
   }
 }
+
+/* Premium market category icons: matches the approved terminal reference. */
+.market-band {
+  overflow: visible !important;
+}
+
+.market-tabs {
+  align-items: center !important;
+  gap: 9px !important;
+}
+
+.market-button {
+  position: relative !important;
+  height: 43px !important;
+  padding: 0 13px !important;
+  gap: 10px !important;
+  border-radius: 13px !important;
+  border: 1px solid rgba(124, 157, 183, 0.24) !important;
+  background:
+    linear-gradient(145deg, rgba(9, 19, 29, 0.92), rgba(3, 9, 14, 0.84)),
+    radial-gradient(circle at 16% 50%, rgba(255, 255, 255, 0.045), transparent 38%) !important;
+  box-shadow:
+    0 12px 22px rgba(0, 0, 0, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045) !important;
+}
+
+.market-button:hover {
+  border-color: rgba(216, 172, 80, 0.38) !important;
+  background:
+    linear-gradient(145deg, rgba(12, 24, 34, 0.95), rgba(5, 12, 18, 0.9)),
+    radial-gradient(circle at 18% 50%, rgba(216, 172, 80, 0.09), transparent 42%) !important;
+}
+
+.market-button.active {
+  border-color: rgba(54, 232, 137, 0.66) !important;
+  background:
+    linear-gradient(145deg, rgba(54, 232, 137, 0.16), rgba(4, 11, 16, 0.92)),
+    radial-gradient(circle at 15% 50%, rgba(216, 172, 80, 0.16), transparent 42%) !important;
+  box-shadow:
+    0 0 0 1px rgba(54, 232, 137, 0.1),
+    0 0 24px rgba(54, 232, 137, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+.market-button-icon {
+  position: relative !important;
+  flex: 0 0 32px !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 999px !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: hidden !important;
+  color: #f8fbff !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  background: rgba(255, 255, 255, 0.055) !important;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -8px 18px rgba(0, 0, 0, 0.18) !important;
+  isolation: isolate !important;
+}
+
+.market-button-icon::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 2px 2px auto auto !important;
+  width: 9px !important;
+  height: 9px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.28) !important;
+  filter: blur(0.2px) !important;
+  z-index: 2 !important;
+}
+
+.market-premium-glyph,
+.market-premium-commodity,
+.market-premium-flag {
+  width: 100% !important;
+  height: 100% !important;
+  display: grid !important;
+  place-items: center !important;
+}
+
+.market-premium-dollar {
+  color: #eafff4 !important;
+  background:
+    radial-gradient(circle at 38% 28%, rgba(255, 255, 255, 0.26), transparent 30%),
+    radial-gradient(circle, rgba(54, 232, 137, 0.58), rgba(4, 46, 29, 0.98) 70%) !important;
+  font-size: 18px !important;
+  font-weight: 950 !important;
+  text-shadow: 0 0 12px rgba(54, 232, 137, 0.58) !important;
+}
+
+.market-premium-bitcoin {
+  color: #fff6df !important;
+  background:
+    radial-gradient(circle at 35% 24%, rgba(255, 255, 255, 0.3), transparent 32%),
+    radial-gradient(circle, #ffb24c 0 44%, #b76513 66%, #56320c 100%) !important;
+  font-size: 18px !important;
+  font-weight: 950 !important;
+  text-shadow: 0 1px 8px rgba(86, 50, 12, 0.72) !important;
+}
+
+.market-premium-commodity {
+  background:
+    radial-gradient(circle at 35% 22%, rgba(255, 255, 255, 0.3), transparent 32%),
+    radial-gradient(circle, rgba(255, 210, 94, 0.6), rgba(93, 60, 10, 0.98) 74%) !important;
+}
+
+.market-premium-commodity svg {
+  width: 20px !important;
+  height: 20px !important;
+  fill: rgba(255, 214, 110, 0.3) !important;
+  stroke: #ffe29a !important;
+  stroke-width: 1.9 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+  filter: drop-shadow(0 0 8px rgba(255, 204, 85, 0.42)) !important;
+}
+
+.market-premium-flag {
+  position: relative !important;
+  border-radius: inherit !important;
+}
+
+.market-premium-flag i {
+  display: block !important;
+  width: 100% !important;
+  height: 33.334% !important;
+}
+
+.market-premium-us {
+  background: #f8fafc !important;
+}
+
+.market-premium-us i:nth-child(1),
+.market-premium-us i:nth-child(3) {
+  background: #c83445 !important;
+}
+
+.market-premium-us i:nth-child(2) {
+  background: #fff !important;
+}
+
+.market-premium-us b {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 48% !important;
+  height: 56% !important;
+  border-radius: 999px 0 6px 0 !important;
+  background:
+    radial-gradient(circle at 25% 30%, #fff 0 1px, transparent 1.6px),
+    radial-gradient(circle at 54% 55%, #fff 0 1px, transparent 1.6px),
+    #24427e !important;
+}
+
+.market-premium-gcc {
+  background:
+    linear-gradient(90deg, #11161c 0 25%, transparent 25% 100%),
+    linear-gradient(180deg, #0e8f58 0 33%, #f7faf9 33% 66%, #cf2d3e 66% 100%) !important;
+}
+
+.market-premium-gcc b {
+  position: relative !important;
+  z-index: 1 !important;
+  min-width: 20px !important;
+  padding: 2px 3px !important;
+  border-radius: 999px !important;
+  color: #062015 !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  font-size: 7px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+.market-button-copy {
+  min-width: 0 !important;
+}
+
+.market-button-copy strong {
+  color: #eef6fb !important;
+  font-size: 12.5px !important;
+  font-weight: 900 !important;
+  letter-spacing: 0 !important;
+}
+
+.market-button.active .market-button-copy strong {
+  color: #ffffff !important;
+}
+
+.market-button-copy span {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  .market-tabs {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .market-button {
+    height: 54px !important;
+    padding: 0 !important;
+    border-radius: 14px !important;
+  }
+
+  .market-button-icon {
+    flex-basis: 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .market-premium-dollar,
+  .market-premium-bitcoin {
+    font-size: 20px !important;
+  }
+
+  .market-premium-commodity svg {
+    width: 23px !important;
+    height: 23px !important;
+  }
+}

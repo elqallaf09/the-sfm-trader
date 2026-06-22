@@ -12,7 +12,7 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
     <link rel="icon" type="image/png" sizes="256x256" href="/the-sfm-trader-icon-256.png" />
-    <link rel="stylesheet" href="/styles.css?v=20260622-asset-logos-1" />
+    <link rel="stylesheet" href="/styles.css?v=20260622-market-icons-1" />
   </head>
   <body class="notranslate" translate="no">
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
@@ -457,23 +457,38 @@
           </div>
           <div id="market-tabs" class="market-tabs">
             <button class="market-button is-primary-market active" type="button" data-market="forex">
-              <span class="market-button-icon market-icon-fx" aria-hidden="true">$</span>
+              <span class="market-button-icon market-icon-fx market-icon-premium market-icon-forex" aria-hidden="true">
+                <span class="market-premium-glyph market-premium-dollar">$</span>
+              </span>
               <span class="market-button-copy"><strong>الفوركس</strong><span>8 رمز</span></span>
             </button>
             <button class="market-button is-primary-market" type="button" data-market="us">
-              <span class="market-button-icon market-icon-flag flag-us" aria-hidden="true"></span>
+              <span class="market-button-icon market-icon-flag flag-us market-icon-premium market-icon-us" aria-hidden="true">
+                <span class="market-premium-flag market-premium-us"><i></i><i></i><i></i><b></b></span>
+              </span>
               <span class="market-button-copy"><strong>الأسهم الأمريكية</strong><span>20 رمز</span></span>
             </button>
             <button class="market-button is-primary-market" type="button" data-market="crypto">
-              <span class="market-button-icon market-icon-crypto" aria-hidden="true">₿</span>
+              <span class="market-button-icon market-icon-crypto market-icon-premium market-icon-crypto" aria-hidden="true">
+                <span class="market-premium-glyph market-premium-bitcoin">₿</span>
+              </span>
               <span class="market-button-copy"><strong>العملات الرقمية</strong><span>10 رمز</span></span>
             </button>
             <button class="market-button is-primary-market" type="button" data-market="commodities">
-              <span class="market-button-icon market-icon-gold" aria-hidden="true">Au</span>
+              <span class="market-button-icon market-icon-gold market-icon-premium market-icon-commodities" aria-hidden="true">
+                <span class="market-premium-commodity">
+                  <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M12 3c4.2 4.6 7 8.2 7 12.1A7 7 0 1 1 5 15.1C5 11.2 7.8 7.6 12 3Z"></path>
+                    <path d="M8.2 16.1h7.6M9.5 13.1h5M10.7 10.2h2.6"></path>
+                  </svg>
+                </span>
+              </span>
               <span class="market-button-copy"><strong>السلع</strong><span>7 رمز</span></span>
             </button>
             <button class="market-button is-primary-market" type="button" data-market="gcc">
-              <span class="market-button-icon market-icon-gcc" aria-hidden="true">GCC</span>
+              <span class="market-button-icon market-icon-gcc market-icon-premium market-icon-gcc" aria-hidden="true">
+                <span class="market-premium-flag market-premium-gcc"><i></i><i></i><i></i><b>GCC</b></span>
+              </span>
               <span class="market-button-copy"><strong>أسواق الخليج</strong><span>8 رمز</span></span>
             </button>
           </div>
@@ -1032,7 +1047,7 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260622-asset-logos-1" type="module"></script>
+    <script src="/app.js?v=20260622-market-icons-1" type="module"></script>
   </body>
 </html>
 
