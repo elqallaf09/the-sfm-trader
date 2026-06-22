@@ -11643,3 +11643,338 @@ body:not(.intro-running) .intro-overlay {
     align-self: start !important;
   }
 }
+
+/* Dashboard card refinement: premium compact terminal card system. */
+@media (min-width: 761px) {
+  .sfm-live-floor,
+  .market-band,
+  .command-center-band,
+  .home-heatmap-section,
+  .home-deck-panel {
+    border-color: rgba(111, 144, 172, 0.22) !important;
+    background:
+      linear-gradient(145deg, rgba(8, 18, 26, 0.86), rgba(3, 9, 14, 0.78)),
+      radial-gradient(circle at 92% 0%, rgba(216, 172, 80, 0.045), transparent 34%) !important;
+    box-shadow:
+      0 10px 30px rgba(0, 0, 0, 0.22),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.022) !important;
+    backdrop-filter: blur(10px) saturate(1.06) !important;
+  }
+
+  .command-center-band {
+    height: 148px !important;
+    min-height: 148px !important;
+    padding: 9px 12px !important;
+    grid-template-rows: 22px minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .command-center-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 9px !important;
+    align-items: stretch !important;
+  }
+
+  .command-card,
+  .command-dashboard-card {
+    height: 109px !important;
+    min-height: 109px !important;
+    max-height: 109px !important;
+    padding: 9px 10px !important;
+    gap: 3px !important;
+    border-radius: 13px !important;
+    border: 1px solid rgba(116, 150, 178, 0.24) !important;
+    background:
+      linear-gradient(150deg, rgba(9, 21, 30, 0.9), rgba(4, 10, 16, 0.86)),
+      radial-gradient(circle at 84% 0%, rgba(54, 232, 137, 0.065), transparent 42%) !important;
+    box-shadow:
+      0 8px 20px rgba(0, 0, 0, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+  }
+
+  .command-card > span {
+    font-size: 12px !important;
+    line-height: 1.05 !important;
+    letter-spacing: 0 !important;
+  }
+
+  .command-card > strong {
+    font-size: 10.5px !important;
+    line-height: 1.12 !important;
+    color: #afbfca !important;
+  }
+
+  .command-radar-visual {
+    width: 64px !important;
+    height: 50px !important;
+    margin: 0 auto !important;
+  }
+
+  .command-gauge {
+    width: 102px !important;
+    height: 56px !important;
+    margin: 0 auto !important;
+  }
+
+  .command-gauge b {
+    font-size: 22px !important;
+  }
+
+  .command-number-row {
+    margin-top: 4px !important;
+  }
+
+  .command-number-row b,
+  .command-performance-value {
+    font-size: 26px !important;
+  }
+
+  .command-mini-chart {
+    height: 34px !important;
+  }
+
+  .command-globe {
+    width: 62px !important;
+    height: 62px !important;
+    margin: -2px auto 0 !important;
+  }
+
+  .home-heatmap-section {
+    height: 108px !important;
+    min-height: 108px !important;
+    padding: 9px 11px !important;
+    grid-template-rows: 20px minmax(0, 1fr) !important;
+    gap: 7px !important;
+  }
+
+  .home-heatmap-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
+    grid-auto-rows: 34px !important;
+    gap: 6px !important;
+  }
+
+  .home-heat-cell {
+    padding: 5px 7px !important;
+    border-radius: 10px !important;
+    border-color: rgba(54, 232, 137, 0.3) !important;
+    background:
+      linear-gradient(145deg, rgba(54, 232, 137, 0.11), rgba(6, 18, 21, 0.84)) !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.018) !important;
+  }
+
+  .home-heat-cell.sell,
+  .home-heat-cell.hold {
+    border-color: rgba(255, 93, 108, 0.34) !important;
+    background:
+      linear-gradient(145deg, rgba(255, 93, 108, 0.13), rgba(18, 8, 13, 0.82)) !important;
+  }
+
+  .home-heat-cell strong {
+    font-size: 11.5px !important;
+  }
+
+  .home-heat-cell span {
+    font-size: 12px !important;
+  }
+
+  .home-heat-cell em {
+    font-size: 9.5px !important;
+  }
+
+  .home-deck-section {
+    min-height: 174px !important;
+    grid-template-columns: minmax(0, 2.08fr) minmax(252px, 0.92fr) !important;
+    gap: 10px !important;
+  }
+
+  .home-deck-panel {
+    height: 174px !important;
+    min-height: 174px !important;
+    padding: 10px 11px !important;
+    grid-template-rows: 22px minmax(0, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .home-recommendations {
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  .home-rec-card {
+    height: 124px !important;
+    min-height: 124px !important;
+    max-height: 124px !important;
+    padding: 9px !important;
+    gap: 6px !important;
+    grid-template-rows: 34px 44px 14px !important;
+    border-radius: 13px !important;
+    border-color: rgba(54, 232, 137, 0.34) !important;
+    background:
+      linear-gradient(145deg, rgba(9, 22, 30, 0.91), rgba(4, 10, 16, 0.86)),
+      radial-gradient(circle at 0% 0%, rgba(54, 232, 137, 0.08), transparent 46%) !important;
+    box-shadow:
+      0 9px 22px rgba(0, 0, 0, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+  }
+
+  .home-rec-card.sell {
+    border-color: rgba(255, 93, 108, 0.42) !important;
+    background:
+      linear-gradient(145deg, rgba(25, 12, 18, 0.9), rgba(5, 10, 16, 0.86)),
+      radial-gradient(circle at 0% 0%, rgba(255, 93, 108, 0.07), transparent 46%) !important;
+  }
+
+  .home-rec-card.hold {
+    border-color: rgba(145, 168, 255, 0.42) !important;
+  }
+
+  .home-rec-top {
+    grid-template-columns: 34px minmax(0, 1fr) auto !important;
+    gap: 8px !important;
+  }
+
+  .asset-logo {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 10px !important;
+  }
+
+  .asset-logo-svg {
+    width: 23px !important;
+    height: 23px !important;
+  }
+
+  .asset-logo-text {
+    font-size: 13px !important;
+  }
+
+  .home-rec-top strong {
+    font-size: 18px !important;
+    line-height: 1 !important;
+  }
+
+  .home-rec-top em {
+    max-width: 126px !important;
+    font-size: 9.5px !important;
+    line-height: 1.1 !important;
+  }
+
+  .home-rec-top b,
+  .action-buy,
+  .action-sell,
+  .action-hold {
+    min-width: 44px !important;
+    height: 22px !important;
+    padding-inline: 8px !important;
+    border-radius: 8px !important;
+    font-size: 10.5px !important;
+  }
+
+  .home-rec-metrics {
+    gap: 5px !important;
+    align-content: center !important;
+  }
+
+  .home-rec-metrics span {
+    font-size: 9px !important;
+    line-height: 1.05 !important;
+    white-space: nowrap !important;
+  }
+
+  .home-rec-metrics strong {
+    font-size: 10.5px !important;
+    line-height: 1.12 !important;
+  }
+
+  .home-rec-confidence {
+    gap: 6px !important;
+  }
+
+  .home-rec-confidence span {
+    font-size: 9.5px !important;
+  }
+
+  .home-rec-confidence strong {
+    font-size: 12px !important;
+  }
+
+  .home-followed-trades {
+    gap: 6px !important;
+  }
+
+  .home-follow-row {
+    height: 30px !important;
+    padding: 0 8px !important;
+    grid-template-columns: minmax(54px, 1fr) auto auto auto !important;
+    gap: 7px !important;
+    border-radius: 9px !important;
+    border-color: rgba(116, 150, 178, 0.2) !important;
+    background:
+      linear-gradient(145deg, rgba(6, 15, 22, 0.86), rgba(3, 9, 14, 0.78)) !important;
+  }
+
+  .home-follow-row span,
+  .home-follow-row b,
+  .home-follow-row strong,
+  .home-follow-row em {
+    font-size: 10.5px !important;
+    line-height: 1 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .home-rec-card {
+    min-height: 156px !important;
+    height: 156px !important;
+    max-height: 156px !important;
+    padding: 12px !important;
+    gap: 8px !important;
+    border-radius: 15px !important;
+  }
+
+  .home-rec-metrics strong {
+    line-height: 1.14 !important;
+  }
+
+  .home-follow-row {
+    min-height: 34px !important;
+    border-radius: 10px !important;
+  }
+}
+
+/* Final card overflow correction after compact terminal pass. */
+@media (min-width: 761px) {
+  body[data-app-view="home"] .home-deck-section {
+    min-height: 178px !important;
+  }
+
+  body[data-app-view="home"] .home-deck-panel {
+    height: 178px !important;
+    min-height: 178px !important;
+    max-height: 178px !important;
+  }
+
+  body[data-app-view="home"] .home-recommendations .home-rec-card {
+    height: 126px !important;
+    min-height: 126px !important;
+    max-height: 126px !important;
+    grid-template-rows: 34px 46px 14px !important;
+  }
+
+  body[data-app-view="home"] .home-recommendations .home-rec-metrics strong {
+    font-size: 10px !important;
+  }
+
+  body[data-app-view="home"] .home-followed-trades .home-follow-row {
+    height: 31px !important;
+    min-height: 31px !important;
+    max-height: 31px !important;
+  }
+
+  body[data-app-view="home"] .command-card .command-mini-chart {
+    width: calc(100% - 14px) !important;
+    max-width: calc(100% - 14px) !important;
+    justify-self: center !important;
+    overflow: hidden !important;
+  }
+}
