@@ -1,10 +1,10 @@
-const CACHE_NAME = "the-sfm-trader-ios-shell-v20260622-gcc-icon-1";
+const CACHE_NAME = "the-sfm-trader-ios-shell-v20260623-desktop-terminal-2";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/detail.html",
-  "/styles.css?v=20260622-gcc-icon-1",
-  "/app.js?v=20260622-gcc-icon-1",
+  "/styles.css?v=20260623-desktop-terminal-2",
+  "/app.js?v=20260623-desktop-terminal-2",
   "/detail.js?v=20260621-detail-arabic-1",
   "/manifest.webmanifest",
   "/assets/sfm-trader-logo.svg",

@@ -14277,7 +14277,7 @@ main > section {
   body[data-app-view="home"] .app-shell {
     width: calc(100vw - (var(--terminal-desktop-gutter) * 2)) !important;
     max-width: none !important;
-    min-height: calc(100svh - (var(--terminal-desktop-gutter) * 2)) !important;
+    min-height: max(calc(100svh - (var(--terminal-desktop-gutter) * 2)), 940px) !important;
     height: auto !important;
     margin: var(--terminal-desktop-gutter) auto !important;
     padding: clamp(11px, 0.85vw, 16px) !important;
@@ -14387,13 +14387,13 @@ main > section {
   }
 
   body[data-app-view="home"] .home-heatmap-section {
-    flex: 0.78 1 118px !important;
-    min-height: clamp(116px, 12.2svh, 148px) !important;
+    flex: 0 0 148px !important;
+    min-height: 148px !important;
     padding: clamp(12px, 0.9vw, 16px) !important;
   }
 
   body[data-app-view="home"] .home-heatmap-grid {
-    grid-auto-rows: minmax(42px, 1fr) !important;
+    grid-auto-rows: minmax(28px, 1fr) !important;
   }
 
   body[data-app-view="home"] .home-deck-section {
@@ -14411,6 +14411,292 @@ main > section {
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
+  }
+
+  body:not(.intro-running) .site-footer,
+  body[data-app-view="home"] .site-footer {
+    min-height: 0 !important;
+    height: 100% !important;
+    padding: 0 !important;
+    align-self: stretch !important;
+  }
+}
+
+@media (min-width: 1181px) {
+  body[data-app-view="home"] .home-heatmap-grid {
+    grid-auto-rows: minmax(28px, 1fr) !important;
+  }
+
+  body[data-app-view="home"] .home-heat-cell {
+    min-height: 0 !important;
+    padding: 3px 7px !important;
+    grid-template-rows: auto auto !important;
+    align-content: center !important;
+  }
+
+  body[data-app-view="home"] .home-heat-cell strong {
+    font-size: 11px !important;
+  }
+
+  body[data-app-view="home"] .home-heat-cell span {
+    font-size: 12px !important;
+    line-height: 1 !important;
+  }
+
+  body[data-app-view="home"] .home-heat-cell em {
+    font-size: 9px !important;
+    line-height: 1 !important;
+  }
+}
+
+@media (min-width: 1181px) {
+  body:not(.intro-running) .app-shell,
+  body[data-app-view="home"] .app-shell {
+    min-height: max(calc(100svh - (var(--terminal-desktop-gutter) * 2)), 940px) !important;
+  }
+
+  body[data-app-view="home"] .home-heatmap-section {
+    flex: 0 0 148px !important;
+    min-height: 148px !important;
+  }
+}
+
+/* Desktop compression and overlay hard lock. Keep the trading terminal full-size and uncovered. */
+@media (min-width: 1181px) {
+  :root {
+    --terminal-desktop-gutter: clamp(12px, 1.15vw, 24px) !important;
+    --terminal-desktop-gap: clamp(10px, 0.82vw, 14px) !important;
+    --terminal-desktop-rail: clamp(88px, 4.75vw, 102px) !important;
+  }
+
+  body:not(.intro-running),
+  body[data-app-view="home"] {
+    width: 100vw !important;
+    min-width: 0 !important;
+    min-height: 100svh !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  body:not(.intro-running)::before,
+  body:not(.intro-running)::after {
+    z-index: 0 !important;
+    opacity: 0.2 !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    pointer-events: none !important;
+  }
+
+  body:not(.intro-running) #intro-overlay,
+  body:not(.intro-running) .intro-overlay,
+  body:not(.intro-running) .intro-overlay.is-closing,
+  body:not(.intro-running) .intro-overlay[hidden] {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  body:not(.intro-running) .app-shell,
+  body[data-app-view="home"] .app-shell {
+    width: calc(100vw - (var(--terminal-desktop-gutter) * 2)) !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    min-height: max(calc(100svh - (var(--terminal-desktop-gutter) * 2)), 940px) !important;
+    height: auto !important;
+    margin: var(--terminal-desktop-gutter) auto !important;
+    padding: clamp(11px, 0.85vw, 16px) !important;
+    transform: none !important;
+    scale: 1 !important;
+    zoom: 1 !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    isolation: isolate !important;
+    grid-template-columns: var(--terminal-desktop-rail) minmax(0, 1fr) !important;
+    grid-template-rows: clamp(62px, 5.5svh, 78px) minmax(0, 1fr) clamp(32px, 3.2svh, 42px) !important;
+    gap: var(--terminal-desktop-gap) clamp(12px, 1vw, 18px) !important;
+    overflow: hidden !important;
+  }
+
+  body:not(.intro-running) .app-shell::before,
+  body:not(.intro-running) .app-shell::after,
+  body:not(.intro-running) .topbar::before,
+  body:not(.intro-running) .topbar::after,
+  body:not(.intro-running) .desktop-trading-rail::before,
+  body:not(.intro-running) .desktop-trading-rail::after,
+  body[data-app-view="home"] .sfm-live-floor::before,
+  body[data-app-view="home"] .sfm-live-floor::after,
+  body[data-app-view="home"] .market-band::before,
+  body[data-app-view="home"] .market-band::after,
+  body[data-app-view="home"] .command-center-band::before,
+  body[data-app-view="home"] .command-center-band::after,
+  body[data-app-view="home"] .home-heatmap-section::before,
+  body[data-app-view="home"] .home-heatmap-section::after,
+  body[data-app-view="home"] .home-deck-panel::before,
+  body[data-app-view="home"] .home-deck-panel::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  body:not(.intro-running) .topbar,
+  body:not(.intro-running) .desktop-trading-rail,
+  body[data-app-view="home"] .sfm-live-floor,
+  body[data-app-view="home"] .market-band,
+  body[data-app-view="home"] .command-center-band,
+  body[data-app-view="home"] .home-heatmap-section,
+  body[data-app-view="home"] .home-deck-panel {
+    opacity: 1 !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  body:not(.intro-running) .app-shell > main,
+  body[data-app-view="home"] .app-shell > main {
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: var(--terminal-desktop-gap) !important;
+    overflow: hidden !important;
+  }
+
+  body[data-app-view="home"] main > section {
+    min-width: 0 !important;
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  body[data-app-view="home"] .sfm-live-floor,
+  body[data-app-view="home"] .command-center-band,
+  body[data-app-view="home"] .home-heatmap-section,
+  body[data-app-view="home"] .home-deck-section,
+  body[data-app-view="home"] .home-deck-panel {
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  body[data-app-view="home"] .sfm-live-floor {
+    flex: 1.08 1 178px !important;
+    min-height: clamp(178px, 18.5svh, 216px) !important;
+    padding: clamp(13px, 1vw, 18px) !important;
+  }
+
+  body[data-app-view="home"] .live-pulse-strip {
+    height: 100% !important;
+    grid-template-rows: clamp(22px, 2.6svh, 28px) minmax(0, 1fr) !important;
+  }
+
+  body[data-app-view="home"] .live-pulse-grid {
+    grid-template-columns: repeat(6, minmax(132px, 1fr)) minmax(170px, 0.95fr) !important;
+    gap: clamp(8px, 0.72vw, 12px) !important;
+  }
+
+  body[data-app-view="home"] .live-pulse-card,
+  body[data-app-view="home"] .pulse-status-card {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  body[data-app-view="home"] .live-pulse-sparkline {
+    height: clamp(42px, 5.4svh, 62px) !important;
+    min-height: 0 !important;
+  }
+
+  body[data-app-view="home"] .market-band {
+    flex: 0 0 auto !important;
+    min-height: clamp(60px, 6.2svh, 72px) !important;
+    padding: clamp(10px, 0.8vw, 14px) !important;
+  }
+
+  body[data-app-view="home"] .market-tabs {
+    display: flex !important;
+    align-items: stretch !important;
+    gap: clamp(8px, 0.72vw, 12px) !important;
+    padding-bottom: 10px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    scrollbar-width: thin !important;
+  }
+
+  body[data-app-view="home"] .market-button {
+    flex: 0 0 clamp(168px, 11.25vw, 230px) !important;
+    height: clamp(58px, 6.3svh, 72px) !important;
+    min-width: clamp(168px, 11.25vw, 230px) !important;
+  }
+
+  body[data-app-view="home"] .command-center-band {
+    flex: 0.98 1 158px !important;
+    min-height: clamp(158px, 16.2svh, 192px) !important;
+    padding: clamp(12px, 0.95vw, 16px) !important;
+  }
+
+  body[data-app-view="home"] .command-center-grid {
+    height: 100% !important;
+    grid-template-columns: repeat(5, minmax(150px, 1fr)) !important;
+    gap: clamp(8px, 0.72vw, 12px) !important;
+  }
+
+  body[data-app-view="home"] .command-card,
+  body[data-app-view="home"] .command-dashboard-card {
+    height: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: hidden !important;
+  }
+
+  body[data-app-view="home"] .home-heatmap-section {
+    flex: 0 0 148px !important;
+    min-height: 148px !important;
+    padding: clamp(12px, 0.9vw, 16px) !important;
+  }
+
+  body[data-app-view="home"] .home-heatmap-grid {
+    grid-template-columns: repeat(8, minmax(96px, 1fr)) !important;
+    grid-auto-rows: minmax(28px, 1fr) !important;
+    gap: clamp(7px, 0.6vw, 10px) !important;
+  }
+
+  body[data-app-view="home"] .home-deck-section {
+    flex: 1.12 1 192px !important;
+    min-height: clamp(188px, 20svh, 238px) !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 2.2fr) minmax(300px, 0.82fr) !important;
+    align-items: stretch !important;
+    gap: var(--terminal-desktop-gap) !important;
+  }
+
+  body[data-app-view="home"] .home-deck-panel {
+    min-height: 0 !important;
+    padding: clamp(12px, 0.95vw, 16px) !important;
+  }
+
+  body[data-app-view="home"] .home-recommendations {
+    grid-template-columns: repeat(3, minmax(210px, 1fr)) !important;
+    gap: clamp(9px, 0.72vw, 12px) !important;
+  }
+
+  body[data-app-view="home"] .home-rec-card {
+    height: auto !important;
+    min-height: clamp(132px, 14svh, 158px) !important;
+    max-height: none !important;
+    padding: clamp(10px, 0.82vw, 14px) !important;
+    background:
+      linear-gradient(145deg, rgba(8, 20, 30, 0.94), rgba(3, 9, 14, 0.96)) !important;
+    border-color: rgba(92, 120, 156, 0.42) !important;
+  }
+
+  body[data-app-view="home"] .home-rec-metrics {
+    gap: 8px !important;
+  }
+
+  body[data-app-view="home"] .followed-trades-list,
+  body[data-app-view="home"] #home-followed-trades {
+    min-width: 0 !important;
   }
 
   body:not(.intro-running) .site-footer,
