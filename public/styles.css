@@ -12409,3 +12409,97 @@ body:not(.intro-running) .intro-overlay {
     height: 23px !important;
   }
 }
+
+/* Premium thesfm trader brand lockup: one badge, one wordmark, one system. */
+.brand-lockup {
+  gap: 10px !important;
+}
+
+.brand-lockup h1 {
+  position: relative !important;
+  gap: 10px !important;
+  color: var(--terminal-gold) !important;
+  letter-spacing: 0 !important;
+  font-weight: 950 !important;
+  text-transform: lowercase !important;
+  text-shadow:
+    0 1px 0 rgba(255, 240, 184, 0.18),
+    0 0 18px rgba(216, 172, 80, 0.26) !important;
+  background: linear-gradient(180deg, #fff0b8 0%, #d8ac50 48%, #b9842d 100%) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+.brand-lockup h1::before,
+.rail-top-mark {
+  content: "" !important;
+  position: relative !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  flex: 0 0 44px !important;
+  display: inline-block !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(216, 172, 80, 0.88) !important;
+  background:
+    radial-gradient(circle at 65% 22%, rgba(36, 210, 180, 0.22), transparent 36%),
+    linear-gradient(145deg, rgba(216, 172, 80, 0.1), rgba(2, 8, 12, 0.96)),
+    url("assets/sfm-trader-logo.svg") center / 82% 82% no-repeat !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 240, 184, 0.1) inset,
+    0 0 0 4px rgba(216, 172, 80, 0.035),
+    0 12px 28px rgba(0, 0, 0, 0.32),
+    0 0 24px rgba(216, 172, 80, 0.24) !important;
+}
+
+.brand-lockup h1::after {
+  display: none !important;
+}
+
+.rail-top-mark {
+  display: grid !important;
+  place-items: center !important;
+  margin-bottom: 6px !important;
+}
+
+.rail-top-mark::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 5px !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(255, 240, 184, 0.1) !important;
+  pointer-events: none !important;
+}
+
+.rail-top-mark .rail-lucide-icon {
+  display: none !important;
+}
+
+@media (min-width: 761px) {
+  .desktop-trading-rail .rail-top-mark {
+    display: grid !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .brand-lockup h1 {
+    gap: 8px !important;
+    font-size: 17px !important;
+    line-height: 1 !important;
+  }
+
+  .brand-lockup h1::before {
+    display: inline-block !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    flex-basis: 32px !important;
+    border-radius: 11px !important;
+    background-size: 84% 84% !important;
+  }
+
+  .brand-lockup h1::after {
+    display: none !important;
+  }
+}

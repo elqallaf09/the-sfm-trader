@@ -1,28 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
-  <title>the-sfm trader mark</title>
+  <title>the-sfm trader premium mark</title>
   <defs>
-    <linearGradient id="gold" x1="12" y1="8" x2="54" y2="56" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffe59d"/>
-      <stop offset=".48" stop-color="#d9a94c"/>
-      <stop offset="1" stop-color="#8d6422"/>
+    <linearGradient id="badgeFill" x1="9" y1="7" x2="56" y2="58" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#122333"/>
+      <stop offset=".48" stop-color="#071119"/>
+      <stop offset="1" stop-color="#02070c"/>
     </linearGradient>
-    <linearGradient id="aqua" x1="10" y1="18" x2="56" y2="48" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#1e8cff"/>
+    <linearGradient id="goldStroke" x1="8" y1="6" x2="58" y2="57" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff0b8"/>
+      <stop offset=".34" stop-color="#d8ac50"/>
+      <stop offset=".68" stop-color="#b9842d"/>
+      <stop offset="1" stop-color="#ffe59d"/>
+    </linearGradient>
+    <linearGradient id="signalLine" x1="13" y1="48" x2="53" y2="16" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#178dff"/>
       <stop offset=".52" stop-color="#24d2b4"/>
       <stop offset="1" stop-color="#ffd56f"/>
     </linearGradient>
-    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="1.8" result="blur"/>
-      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.15 0 0 0 0 0.83 0 0 0 0 0.72 0 0 0 .65 0"/>
+    <radialGradient id="innerGlow" cx="35%" cy="28%" r="72%">
+      <stop offset="0" stop-color="#24d2b4" stop-opacity=".34"/>
+      <stop offset=".48" stop-color="#0d2a37" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#02070c" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="softGlow" x="-45%" y="-45%" width="190%" height="190%">
+      <feGaussianBlur stdDeviation="1.6" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.15 0 0 0 0 0.82 0 0 0 0 0.70 0 0 0 .62 0"/>
       <feMerge>
         <feMergeNode/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
   </defs>
-  <rect x="5.5" y="5.5" width="53" height="53" rx="13" fill="#061017" stroke="url(#gold)" stroke-width="2"/>
-  <path d="M19 43V32M27 43V25M35 43V19" stroke="url(#gold)" stroke-width="3.8" stroke-linecap="round"/>
-  <path d="M18.5 44.5c8.2 8.4 22.7 7.5 29.4-1.9 5.3-7.4 4.6-18.6-1.9-25.1" fill="none" stroke="url(#aqua)" stroke-width="3.3" stroke-linecap="round" filter="url(#glow)"/>
-  <path d="M44.7 18.3c-5.4-5.5-14.7-6.5-21.7-2.1-8.5 5.3-11.2 16.5-6.4 25.5" fill="none" stroke="url(#gold)" stroke-width="2.9" stroke-linecap="round"/>
-  <path d="M42.4 18.6l.2 9.8 8-5.2" fill="none" stroke="url(#gold)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <rect x="4.75" y="4.75" width="54.5" height="54.5" rx="14.5" fill="url(#badgeFill)" stroke="#332712" stroke-width="1"/>
+  <rect x="7" y="7" width="50" height="50" rx="12.5" fill="url(#innerGlow)" stroke="url(#goldStroke)" stroke-width="2"/>
+  <path d="M15 47.5h35" stroke="#d8ac50" stroke-width="1.4" stroke-linecap="round" opacity=".38"/>
+  <path d="M19.5 42V32.5M27.5 42V25.5M35.5 42V19.5" stroke="url(#goldStroke)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M18.3 45.1c6.2 6.4 17 7.5 24.6 2.2 8.5-5.9 10.5-18.2 4.3-26.7" fill="none" stroke="url(#signalLine)" stroke-width="3.6" stroke-linecap="round" filter="url(#softGlow)"/>
+  <path d="M17.2 41.2c-4.3-8.7-.7-19.4 8.1-23.8 6.9-3.4 15.2-2.2 20.8 3.1" fill="none" stroke="url(#goldStroke)" stroke-width="2.7" stroke-linecap="round"/>
+  <path d="M45.4 18.1l.7 10.5 7.4-5.8" fill="none" stroke="url(#goldStroke)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M13.3 14.2h7.8M42.7 49.7h7.8" stroke="#24d2b4" stroke-width="1.4" stroke-linecap="round" opacity=".62"/>
 </svg>
