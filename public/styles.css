@@ -13454,3 +13454,177 @@ body[data-app-view="home"] .home-deck-panel {
   font-weight: 950 !important;
   letter-spacing: 0.2px !important;
 }
+
+/* Scaling, overlap, and single-risk-radar acceptance fix. */
+:root {
+  --reference-terminal-max: 1680px;
+  --terminal-max: 1480px;
+}
+
+.app-shell,
+.app-shell > main,
+.app-shell > footer,
+.app-shell > aside,
+main,
+main > section {
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+main > section {
+  max-width: 100% !important;
+}
+
+@media (min-width: 1181px) {
+  body:not(.intro-running) .app-shell {
+    width: min(1480px, calc(100vw - 28px)) !important;
+    max-width: 1480px !important;
+    transform: none !important;
+    transform-origin: top center !important;
+  }
+
+  body[data-app-view="home"] .app-shell {
+    width: clamp(1188px, calc(100vw - 28px), var(--reference-terminal-max)) !important;
+    max-width: var(--reference-terminal-max) !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1180px) {
+  body:not(.intro-running) .app-shell,
+  body[data-app-view="home"] .app-shell {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    transform: none !important;
+  }
+}
+
+@media (min-width: 761px) {
+  body[data-app-view="home"] .sfm-live-floor,
+  body[data-app-view="home"] .market-band,
+  body[data-app-view="home"] .command-center-band,
+  body[data-app-view="home"] .home-heatmap-section,
+  body[data-app-view="home"] .home-deck-section,
+  body[data-app-view="home"] .home-deck-panel {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body[data-app-view="home"] .command-center-band {
+    height: 154px !important;
+    min-height: 154px !important;
+    max-height: 154px !important;
+  }
+
+  body[data-app-view="home"] .command-center-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    align-items: stretch !important;
+  }
+
+  body[data-app-view="home"] .command-card,
+  body[data-app-view="home"] .command-dashboard-card {
+    position: relative !important;
+    isolation: isolate !important;
+    height: 112px !important;
+    min-height: 112px !important;
+    max-height: 112px !important;
+    overflow: hidden !important;
+  }
+
+  body[data-app-view="home"] .command-risk-radar::before,
+  body[data-app-view="home"] .command-risk-radar::after,
+  body[data-app-view="home"] .command-risk-radar .command-gauge::before {
+    content: none !important;
+    display: none !important;
+  }
+
+  body[data-app-view="home"] .command-risk-radar {
+    display: grid !important;
+    grid-template-rows: auto auto minmax(0, 1fr) !important;
+    align-content: start !important;
+  }
+
+  body[data-app-view="home"] .command-risk-radar .command-gauge {
+    width: min(112px, calc(100% - 14px)) !important;
+    height: 62px !important;
+    min-height: 62px !important;
+    max-height: 62px !important;
+    margin: 0 auto !important;
+    padding: 0 0 8px !important;
+    inset: auto !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    justify-self: center !important;
+    align-self: end !important;
+    transform: none !important;
+    transform-origin: center bottom !important;
+    border-radius: 112px 112px 0 0 !important;
+    position: relative !important;
+    overflow: hidden !important;
+    display: grid !important;
+    grid-template-rows: 1fr auto !important;
+    place-items: end center !important;
+    background:
+      conic-gradient(from 270deg, #76df88 0 34%, #ffd867 34% 62%, #ff755f 62% 84%, rgba(255,255,255,.08) 84% 100%) !important;
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.08),
+      0 10px 24px rgba(0,0,0,.28) !important;
+  }
+
+  body[data-app-view="home"] .command-risk-radar .command-gauge::after {
+    content: "" !important;
+    display: block !important;
+    position: absolute !important;
+    left: 18px !important;
+    right: 18px !important;
+    bottom: -1px !important;
+    height: 42px !important;
+    border-radius: 90px 90px 0 0 !important;
+    background: #071018 !important;
+    z-index: 0 !important;
+  }
+
+  body[data-app-view="home"] .command-risk-radar .command-gauge b,
+  body[data-app-view="home"] .command-risk-radar .command-gauge em {
+    position: relative !important;
+    z-index: 1 !important;
+    text-align: center !important;
+    text-shadow: none !important;
+  }
+
+  body[data-app-view="home"] .command-risk-radar .command-gauge b {
+    align-self: end !important;
+    color: #f7fbff !important;
+    font-size: 22px !important;
+    line-height: 1 !important;
+  }
+
+  body[data-app-view="home"] .command-risk-radar .command-gauge em {
+    align-self: start !important;
+    color: #dfe8ef !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+  }
+
+  body[data-app-view="home"] .home-deck-section {
+    overflow: hidden !important;
+  }
+
+  body[data-app-view="home"] .home-rec-card,
+  body[data-app-view="home"] .home-follow-row,
+  body[data-app-view="home"] .home-heat-cell {
+    min-width: 0 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body[data-app-view="home"] .app-shell,
+  body[data-app-view="home"] main,
+  body[data-app-view="home"] main > section {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    transform: none !important;
+  }
+}

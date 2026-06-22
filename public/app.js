@@ -6212,11 +6212,34 @@ function formatMoney(value, currency) {
     return "--";
   }
 
+  const normalizedCurrency = normalizeCurrencyCode(currency);
   const digits = Math.abs(number) < 1 ? 4 : 2;
   return `${formatNumber(number, {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits
-  })}${currency ? ` ${currency}` : ""}`;
+  })}${normalizedCurrency ? ` ${normalizedCurrency}` : ""}`;
+}
+
+function normalizeCurrencyCode(currency) {
+  const code = String(currency || "").trim().toUpperCase();
+  const currencyMap = {
+    KWF: "KWD",
+    KW: "KWD",
+    KWD: "KWD",
+    SAR: "SAR",
+    SA: "SAR",
+    AED: "AED",
+    AE: "AED",
+    QAR: "QAR",
+    QA: "QAR",
+    BHD: "BHD",
+    BH: "BHD",
+    OMR: "OMR",
+    OM: "OMR",
+    USD: "USD",
+    EUR: "EUR"
+  };
+  return currencyMap[code] || code;
 }
 
 function formatPercent(value) {

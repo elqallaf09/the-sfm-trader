@@ -50,7 +50,7 @@ export async function analyzeSymbol(asset, options = {}) {
     shariaSource: asset.shariaSource || getDefaultShariaSource(asset.shariaStatus),
     shariaCheckedAt: asset.shariaCheckedAt || "2026-06",
     exchangeName: meta.exchangeName || meta.fullExchangeName || "",
-    currency: meta.currency || "",
+    currency: normalizeCurrencyCode(meta.currency || inferCurrencyFromSymbol(asset.symbol)),
     dataProvider: meta.dataProvider || "Yahoo Finance",
     currentPrice,
     expectedPrice,
@@ -126,6 +126,34 @@ export async function analyzeSymbol(asset, options = {}) {
       volumePower: indicators.relativeVolume >= 1.4 ? "مرتفع" : indicators.relativeVolume >= 0.8 ? "طبيعي" : "ضعيف"
     }
   };
+}
+
+function normalizeCurrencyCode(currency) {
+  const code = String(currency || "").trim().toUpperCase();
+  return {
+    KWF: "KWD",
+    KW: "KWD",
+    KWD: "KWD",
+    SAR: "SAR",
+    AED: "AED",
+    QAR: "QAR",
+    BHD: "BHD",
+    OMR: "OMR",
+    USD: "USD",
+    EUR: "EUR"
+  }[code] || code;
+}
+
+function inferCurrencyFromSymbol(symbol) {
+  const upper = String(symbol || "").toUpperCase();
+  if (upper.endsWith(".KW")) return "KWD";
+  if (upper.endsWith(".SR")) return "SAR";
+  if (upper.endsWith(".AE")) return "AED";
+  if (upper.endsWith(".QA")) return "QAR";
+  if (upper.endsWith(".BH")) return "BHD";
+  if (upper.endsWith(".OM")) return "OMR";
+  if (upper.endsWith(".AS") || upper.endsWith(".DE") || upper.endsWith(".PA") || upper.endsWith(".SW")) return "EUR";
+  return "USD";
 }
 
 async function fetchTimeframeAnalyses(symbol, options = {}) {

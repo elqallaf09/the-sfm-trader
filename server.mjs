@@ -370,7 +370,7 @@ function finalizeRecommendationsPayloadForSession(payload, marketId) {
   const marketWideSession = session && !isAggregateMarket(marketId);
   const closed = marketWideSession && session.isOpen === false;
   const recommendations = (payload.recommendations || []).map((item) => (
-    finalizeRecommendationForExecutionSession(item, marketId, session)
+    finalizeRecommendationForExecutionSession(normalizeRecommendationCurrency(item), marketId, session)
   ));
   const note = closed
     ? `${payload.market?.note || ""} السوق مغلق الآن؛ الإشارات المعروضة للمراقبة وليست أوامر دخول فورية.`
@@ -400,6 +400,7 @@ function finalizeRecommendationForExecutionSession(item, marketId, marketSession
   const session = aggregate ? getExecutionSessionState(executionMarketId) : marketSession;
   const enriched = {
     ...item,
+    currency: normalizeCurrencyCode(item.currency || inferCurrencyFromSymbol(item.symbol)),
     executionMarketId,
     executionSession: session || null
   };
@@ -409,6 +410,41 @@ function finalizeRecommendationForExecutionSession(item, marketId, marketSession
   }
 
   return enriched;
+}
+
+function normalizeRecommendationCurrency(item = {}) {
+  return {
+    ...item,
+    currency: normalizeCurrencyCode(item.currency || inferCurrencyFromSymbol(item.symbol))
+  };
+}
+
+function normalizeCurrencyCode(currency) {
+  const code = String(currency || "").trim().toUpperCase();
+  return {
+    KWF: "KWD",
+    KW: "KWD",
+    KWD: "KWD",
+    SAR: "SAR",
+    AED: "AED",
+    QAR: "QAR",
+    BHD: "BHD",
+    OMR: "OMR",
+    USD: "USD",
+    EUR: "EUR"
+  }[code] || code;
+}
+
+function inferCurrencyFromSymbol(symbol) {
+  const upper = String(symbol || "").toUpperCase();
+  if (upper.endsWith(".KW")) return "KWD";
+  if (upper.endsWith(".SR")) return "SAR";
+  if (upper.endsWith(".AE")) return "AED";
+  if (upper.endsWith(".QA")) return "QAR";
+  if (upper.endsWith(".BH")) return "BHD";
+  if (upper.endsWith(".OM")) return "OMR";
+  if (upper.endsWith(".AS") || upper.endsWith(".DE") || upper.endsWith(".PA") || upper.endsWith(".SW")) return "EUR";
+  return "USD";
 }
 
 function applyClosedMarketGuard(item, session) {

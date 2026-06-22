@@ -281,7 +281,7 @@ function mapTwelveDataSymbol(symbol) {
 }
 
 function inferCurrency(symbol, meta = {}) {
-  if (meta.currency) return meta.currency;
+  if (meta.currency) return normalizeCurrencyCode(meta.currency);
   if (symbol.endsWith("-USD")) return "USD";
   if (symbol.endsWith("=X")) return symbol.slice(3, 6);
   if (symbol.endsWith(".KW")) return "KWD";
@@ -289,6 +289,22 @@ function inferCurrency(symbol, meta = {}) {
   if (symbol.endsWith(".AE")) return "AED";
   if (symbol.endsWith(".QA")) return "QAR";
   return "USD";
+}
+
+function normalizeCurrencyCode(currency) {
+  const code = String(currency || "").trim().toUpperCase();
+  return {
+    KWF: "KWD",
+    KW: "KWD",
+    KWD: "KWD",
+    SAR: "SAR",
+    AED: "AED",
+    QAR: "QAR",
+    BHD: "BHD",
+    OMR: "OMR",
+    USD: "USD",
+    EUR: "EUR"
+  }[code] || code;
 }
 
 function getRangeSeconds(range) {
