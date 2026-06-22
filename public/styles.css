@@ -13299,3 +13299,94 @@ body[data-app-view="home"] .home-deck-panel {
     overflow: hidden !important;
   }
 }
+
+/* Acceptance lock: remove legacy glass overlays and keep the approved bottom row uncropped. */
+body[data-app-view="home"] .sfm-live-floor::before,
+body[data-app-view="home"] .sfm-live-floor::after,
+body[data-app-view="home"] .market-band::before,
+body[data-app-view="home"] .market-band::after,
+body[data-app-view="home"] .command-center-band::before,
+body[data-app-view="home"] .command-center-band::after,
+body[data-app-view="home"] .home-heatmap-section::before,
+body[data-app-view="home"] .home-heatmap-section::after,
+body[data-app-view="home"] .home-deck-panel::before,
+body[data-app-view="home"] .home-deck-panel::after {
+  content: none !important;
+  display: none !important;
+}
+
+body[data-app-view="home"] .sfm-live-floor,
+body[data-app-view="home"] .market-band,
+body[data-app-view="home"] .command-center-band,
+body[data-app-view="home"] .home-heatmap-section,
+body[data-app-view="home"] .home-deck-panel {
+  backdrop-filter: none !important;
+}
+
+@media (min-width: 761px) {
+  body[data-app-view="home"] .home-deck-section {
+    height: 166px !important;
+    min-height: 166px !important;
+    max-height: 166px !important;
+    align-items: stretch !important;
+  }
+
+  body[data-app-view="home"] .home-deck-panel {
+    height: 166px !important;
+    min-height: 166px !important;
+    max-height: 166px !important;
+    padding: 9px 11px !important;
+    grid-template-rows: 20px minmax(0, 1fr) !important;
+    gap: 7px !important;
+    overflow: hidden !important;
+  }
+
+  body[data-app-view="home"] .home-recommendations {
+    height: 122px !important;
+    min-height: 122px !important;
+    align-items: stretch !important;
+  }
+
+  body[data-app-view="home"] .home-rec-card {
+    height: 122px !important;
+    min-height: 122px !important;
+    max-height: 122px !important;
+    padding: 8px !important;
+    grid-template-rows: 31px 42px 14px !important;
+    gap: 5px !important;
+    overflow: hidden !important;
+  }
+
+  body[data-app-view="home"] .home-rec-metrics {
+    align-content: center !important;
+  }
+
+  body[data-app-view="home"] .home-followed-trades {
+    height: 122px !important;
+    align-content: start !important;
+  }
+
+  body[data-app-view="home"] .home-follow-row {
+    height: 29px !important;
+    min-height: 29px !important;
+    max-height: 29px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .intro-overlay,
+  .intro-overlay.is-closing {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    overflow: hidden !important;
+  }
+
+  .intro-scanline {
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
