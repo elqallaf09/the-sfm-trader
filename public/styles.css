@@ -14258,3 +14258,166 @@ main > section {
   color: #fff0c6 !important;
   background: linear-gradient(145deg, #ef8a20, #4a1c0b) !important;
 }
+
+/* Desktop viewport fill: the terminal must feel like a full trading floor, not a scaled preview. */
+@media (min-width: 1181px) {
+  :root {
+    --terminal-desktop-gutter: clamp(16px, 1.45vw, 32px);
+    --terminal-desktop-gap: clamp(12px, 1vw, 16px);
+    --terminal-desktop-rail: clamp(86px, 5vw, 104px);
+  }
+
+  body:not(.intro-running) {
+    min-height: 100svh !important;
+    padding: 0 !important;
+    overflow-x: hidden !important;
+  }
+
+  body:not(.intro-running) .app-shell,
+  body[data-app-view="home"] .app-shell {
+    width: calc(100vw - (var(--terminal-desktop-gutter) * 2)) !important;
+    max-width: none !important;
+    min-height: calc(100svh - (var(--terminal-desktop-gutter) * 2)) !important;
+    height: auto !important;
+    margin: var(--terminal-desktop-gutter) auto !important;
+    padding: clamp(11px, 0.85vw, 16px) !important;
+    grid-template-columns: var(--terminal-desktop-rail) minmax(0, 1fr) !important;
+    grid-template-rows: clamp(62px, 5.5svh, 78px) minmax(0, 1fr) clamp(32px, 3.2svh, 42px) !important;
+    gap: var(--terminal-desktop-gap) clamp(12px, 1vw, 18px) !important;
+    transform: none !important;
+    zoom: 1 !important;
+    overflow: hidden !important;
+  }
+
+  body:not(.intro-running) .desktop-trading-rail,
+  body[data-app-view="home"] .desktop-trading-rail {
+    width: var(--terminal-desktop-rail) !important;
+    min-width: var(--terminal-desktop-rail) !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    align-self: stretch !important;
+  }
+
+  body:not(.intro-running) .topbar,
+  body[data-app-view="home"] .topbar {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  body:not(.intro-running) .app-shell > main,
+  body[data-app-view="home"] .app-shell > main {
+    height: 100% !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: var(--terminal-desktop-gap) !important;
+    overflow: hidden !important;
+  }
+
+  body[data-app-view="home"] .sfm-live-floor,
+  body[data-app-view="home"] .command-center-band,
+  body[data-app-view="home"] .home-heatmap-section,
+  body[data-app-view="home"] .home-deck-section,
+  body[data-app-view="home"] .home-deck-panel {
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  body[data-app-view="home"] .sfm-live-floor {
+    flex: 1.08 1 172px !important;
+    min-height: clamp(172px, 17.6svh, 204px) !important;
+    padding: clamp(13px, 1vw, 18px) !important;
+  }
+
+  body[data-app-view="home"] .live-pulse-strip {
+    height: 100% !important;
+    grid-template-rows: clamp(22px, 2.6svh, 28px) minmax(0, 1fr) !important;
+  }
+
+  body[data-app-view="home"] .live-pulse-card {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  body[data-app-view="home"] .live-pulse-sparkline {
+    height: clamp(42px, 5.4svh, 62px) !important;
+    min-height: 0 !important;
+  }
+
+  body[data-app-view="home"] .pulse-status-card {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  body[data-app-view="home"] .market-band {
+    flex: 0 0 auto !important;
+    min-height: clamp(60px, 6.2svh, 72px) !important;
+    padding: clamp(10px, 0.8vw, 14px) !important;
+  }
+
+  body[data-app-view="home"] .market-tabs {
+    padding-bottom: 10px !important;
+  }
+
+  body[data-app-view="home"] .market-button {
+    height: clamp(58px, 6.3svh, 72px) !important;
+    min-width: clamp(166px, 10.6vw, 238px) !important;
+  }
+
+  body[data-app-view="home"] .command-center-band {
+    flex: 0.98 1 154px !important;
+    min-height: clamp(156px, 16.2svh, 190px) !important;
+    padding: clamp(12px, 0.95vw, 16px) !important;
+  }
+
+  body[data-app-view="home"] .command-center-grid {
+    height: 100% !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+
+  body[data-app-view="home"] .command-card,
+  body[data-app-view="home"] .command-dashboard-card {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  body[data-app-view="home"] .home-heatmap-section {
+    flex: 0.78 1 118px !important;
+    min-height: clamp(116px, 12.2svh, 148px) !important;
+    padding: clamp(12px, 0.9vw, 16px) !important;
+  }
+
+  body[data-app-view="home"] .home-heatmap-grid {
+    grid-auto-rows: minmax(42px, 1fr) !important;
+  }
+
+  body[data-app-view="home"] .home-deck-section {
+    flex: 1.12 1 192px !important;
+    min-height: clamp(188px, 20svh, 238px) !important;
+    gap: var(--terminal-desktop-gap) !important;
+  }
+
+  body[data-app-view="home"] .home-deck-panel {
+    min-height: 0 !important;
+    padding: clamp(12px, 0.95vw, 16px) !important;
+  }
+
+  body[data-app-view="home"] .home-rec-card {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  body:not(.intro-running) .site-footer,
+  body[data-app-view="home"] .site-footer {
+    min-height: 0 !important;
+    height: 100% !important;
+    padding: 0 !important;
+    align-self: stretch !important;
+  }
+}
