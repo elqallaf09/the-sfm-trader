@@ -2128,7 +2128,7 @@ function renderMarketTabs(markets = []) {
       activeShariaFilter = "all";
       setActiveMarketButton();
       setActiveShariaFilterButton();
-      loadRecommendations({ force: true });
+      loadRecommendations({ force: true, marketChanged: true });
     });
     marketTabs.appendChild(button);
   }
@@ -2145,10 +2145,11 @@ function getMarketSortIndex(market) {
 async function loadRecommendations(options = {}) {
   const force = Boolean(options.force);
   const background = Boolean(options.background);
+  const skipGrace = Boolean(options.marketChanged || options.skipGrace);
   const now = Date.now();
 
   if (isLoading && !force) return;
-  if (force && now - lastRecommendationRefreshAt < RECOMMENDATIONS_FORCE_REFRESH_GRACE_MS) return;
+  if (force && !skipGrace && now - lastRecommendationRefreshAt < RECOMMENDATIONS_FORCE_REFRESH_GRACE_MS) return;
   if (background && document.hidden) return;
 
   const requestId = recommendationRequestId + 1;
@@ -2660,6 +2661,7 @@ function getAssetVisual(item = {}) {
   const name = String(item.name || "").toLowerCase();
   if (symbol.includes("GC=F") || symbol.includes("XAU") || name.includes("gold")) return { className: "asset-logo-gold", text: "Au" };
   if (symbol.includes("BNB") || name.includes("bnb")) return { className: "asset-logo-bnb", text: "BNB" };
+  if (symbol.includes("ETH") || name.includes("ethereum")) return { className: "asset-logo-eth", text: "ETH" };
   if (symbol.includes("BTC") || name.includes("bitcoin")) return { className: "asset-logo-crypto", text: "₿" };
   if (symbol.includes("EUR") || symbol.includes("GBP") || symbol.includes("USD") || symbol.includes("JPY")) return { className: "asset-logo-fx", text: "FX" };
   if (["AAPL", "APPLE"].some((value) => symbol.includes(value) || name.includes(value.toLowerCase()))) return { className: "asset-logo-apple", text: "" };
@@ -2685,6 +2687,9 @@ function getPremiumAssetVisual(item = {}) {
   }
   if (symbol.includes("BNB") || name.includes("bnb")) {
     return { className: "asset-logo-bnb", html: renderAssetIcon("text", "BNB") };
+  }
+  if (symbol.includes("ETH") || name.includes("ethereum")) {
+    return { className: "asset-logo-eth", html: renderAssetIcon("text", "ETH") };
   }
   if (symbol.includes("BTC") || name.includes("bitcoin")) {
     return { className: "asset-logo-crypto", html: renderAssetIcon("bitcoin", "B") };
@@ -2872,8 +2877,10 @@ function renderHomeHeatmap(data) {
   homeHeatmapGrid.innerHTML = items.length
     ? items.map(({ item, score }) => {
         const tone = item.action === "sell" ? "sell" : item.action === "buy" ? "buy" : "hold";
+        const visual = getPremiumAssetVisual(item);
         return `
           <article class="home-heat-cell ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">
+            <span class="asset-logo heat-asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span>
             <strong>${escapeHtml(item.symbol)}</strong>
             <span>${formatPercent(item.expectedMovePct)}</span>
             <em>${formatNumber(score)}%</em>
@@ -2917,8 +2924,10 @@ function renderHomeFollowedTrade(entry) {
   const actionClass = entry.action === "sell" ? "sell" : entry.action === "buy" ? "buy" : "hold";
   const returnPct = Number(entry.observedReturnPct || 0);
   const price = Number(entry.lastPrice ?? entry.currentPrice);
+  const visual = getPremiumAssetVisual(entry);
   return `
     <article class="home-follow-row ${actionClass}" data-symbol="${escapeHtml(entry.symbol)}" tabindex="0" role="link">
+      <span class="asset-logo follow-asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span>
       <span>${escapeHtml(entry.symbol)}</span>
       <b>${escapeHtml(localizeUiText(entry.actionLabel || entry.action || "--"))}</b>
       <strong>${Number.isFinite(price) ? formatMoney(price, entry.currency || "USD") : "--"}</strong>
@@ -3369,11 +3378,12 @@ function renderLivePulseCard(item) {
   const tone = item.action === "sell" || move < 0 ? "down" : "up";
   const price = formatMoney(item.currentPrice, item.currency);
   const badge = localizeUiText(item.actionLabel || (item.action === "buy" ? "شراء" : item.action === "sell" ? "بيع" : "انتظار"));
+  const visual = getPremiumAssetVisual(item);
 
   return `
     <article class="live-pulse-card is-${tone}" data-symbol="${escapeHtml(item.symbol)}" role="link" tabindex="0" aria-label="${escapeHtml(item.symbol)} ${escapeHtml(badge)}">
       <div class="pulse-symbol-row">
-        <strong>${escapeHtml(item.symbol)}</strong>
+        <strong><span class="asset-logo pulse-asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span>${escapeHtml(item.symbol)}</strong>
         <span>${escapeHtml(formatPercent(move))}</span>
       </div>
       ${renderLivePulseSparkline(item.sparkline, tone, move)}

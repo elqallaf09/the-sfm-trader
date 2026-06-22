@@ -25,6 +25,283 @@
   font-family: "Segoe UI", Tahoma, Arial, sans-serif;
 }
 
+/* 2026-06-23 market UI, sizing, mobile spacing, and icon identity fix.
+   This block intentionally sits last so older experimental locks cannot hide
+   markets, shrink the terminal, or place decorative layers over real content. */
+body:not(.intro-running) .app-shell,
+body:not(.intro-running) .app-shell * {
+  filter: none;
+}
+
+@media (min-width: 761px) {
+  body:not(.intro-running) .app-shell {
+    width: min(1880px, calc(100vw - 28px)) !important;
+    max-width: none !important;
+    margin: clamp(10px, 1vw, 18px) auto !important;
+    transform: none !important;
+    scale: 1 !important;
+    zoom: 1 !important;
+  }
+
+  body:not(.intro-running) .app-shell::before,
+  body:not(.intro-running) .app-shell::after,
+  body:not(.intro-running) main::before,
+  body:not(.intro-running) main::after,
+  body:not(.intro-running) section::before,
+  body:not(.intro-running) section::after {
+    pointer-events: none !important;
+  }
+
+  body:not(.intro-running) .market-band {
+    height: auto !important;
+    min-height: 78px !important;
+    overflow: visible !important;
+  }
+
+  body:not(.intro-running) .market-tabs {
+    display: flex !important;
+    grid-template-columns: none !important;
+    flex-wrap: nowrap !important;
+    gap: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 2px 2px 10px !important;
+    scroll-snap-type: x proximity !important;
+  }
+
+  body:not(.intro-running) .market-tabs::-webkit-scrollbar {
+    height: 8px !important;
+  }
+
+  body:not(.intro-running) .market-tabs::-webkit-scrollbar-thumb {
+    border-radius: 999px !important;
+    background: linear-gradient(90deg, rgba(54, 232, 137, 0.55), rgba(216, 172, 80, 0.72)) !important;
+  }
+
+  body:not(.intro-running) .market-tabs::-webkit-scrollbar-track {
+    border-radius: 999px !important;
+    background: rgba(255, 255, 255, 0.045) !important;
+  }
+
+  body:not(.intro-running) .market-button,
+  body[data-app-view="home"] .market-button,
+  body[data-app-view="home"] .market-button.is-secondary-market,
+  body[data-app-view="home"] .market-button:not(.is-primary-market) {
+    display: flex !important;
+    flex: 0 0 clamp(168px, 10.75vw, 224px) !important;
+    min-width: clamp(168px, 10.75vw, 224px) !important;
+    width: auto !important;
+    height: 60px !important;
+    padding: 0 12px !important;
+    scroll-snap-align: start !important;
+  }
+
+  body:not(.intro-running) .market-button-copy {
+    display: flex !important;
+    min-width: 0 !important;
+  }
+
+  body:not(.intro-running) .market-button-copy strong {
+    max-width: 100% !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  body:not(.intro-running) .command-center-grid {
+    grid-template-columns: repeat(5, minmax(136px, 1fr)) !important;
+    gap: clamp(8px, 0.7vw, 12px) !important;
+  }
+
+  body:not(.intro-running) .command-card,
+  body:not(.intro-running) .command-dashboard-card {
+    min-height: 122px !important;
+    overflow: hidden !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body:not(.intro-running) {
+    padding-top: max(8px, env(safe-area-inset-top)) !important;
+    padding-bottom: calc(92px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body:not(.intro-running) .app-shell {
+    min-height: 100dvh !important;
+    padding-top: max(10px, env(safe-area-inset-top)) !important;
+  }
+
+  body:not(.intro-running) .topbar {
+    position: sticky !important;
+    top: max(6px, env(safe-area-inset-top)) !important;
+    z-index: 80 !important;
+    margin-bottom: 12px !important;
+  }
+
+  body:not(.intro-running) main {
+    padding-bottom: calc(178px + env(safe-area-inset-bottom)) !important;
+    scroll-padding-top: calc(76px + env(safe-area-inset-top)) !important;
+  }
+
+  body:not(.intro-running) main > section {
+    scroll-margin-top: calc(76px + env(safe-area-inset-top)) !important;
+  }
+
+  body:not(.intro-running) .market-band {
+    overflow: visible !important;
+  }
+
+  body:not(.intro-running) .market-tabs {
+    display: flex !important;
+    grid-template-columns: none !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 2px 2px 8px !important;
+    scroll-snap-type: x proximity !important;
+  }
+
+  body:not(.intro-running) .market-button,
+  body[data-app-view="home"] .market-button,
+  body[data-app-view="home"] .market-button.is-secondary-market,
+  body[data-app-view="home"] .market-button:not(.is-primary-market) {
+    display: flex !important;
+    flex: 0 0 68px !important;
+    min-width: 68px !important;
+    width: 68px !important;
+    height: 58px !important;
+    padding: 0 !important;
+    scroll-snap-align: start !important;
+  }
+
+  body:not(.intro-running) .market-button-copy {
+    display: none !important;
+  }
+
+  body:not(.intro-running) .command-center-band,
+  body[data-app-view="home"] .command-center-band {
+    display: grid !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  body:not(.intro-running) .command-center-grid,
+  body[data-app-view="home"] .command-center-grid {
+    display: flex !important;
+    grid-template-columns: none !important;
+    gap: 10px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 0 2px 8px !important;
+    scroll-snap-type: x proximity !important;
+  }
+
+  body:not(.intro-running) .command-card,
+  body:not(.intro-running) .command-dashboard-card,
+  body[data-app-view="home"] .command-card,
+  body[data-app-view="home"] .command-dashboard-card {
+    flex: 0 0 min(78vw, 276px) !important;
+    width: min(78vw, 276px) !important;
+    min-width: min(78vw, 276px) !important;
+    height: 142px !important;
+    min-height: 142px !important;
+    scroll-snap-align: start !important;
+  }
+
+  body:not(.intro-running) .command-card > span,
+  body:not(.intro-running) .command-card > strong {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  body:not(.intro-running) .command-risk-radar .command-gauge {
+    width: min(128px, calc(100% - 18px)) !important;
+    height: 68px !important;
+    margin-inline: auto !important;
+  }
+
+  body:not(.intro-running) .mobile-voice-orb {
+    bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+    z-index: 72 !important;
+  }
+}
+
+.pulse-asset-logo,
+.heat-asset-logo,
+.follow-asset-logo {
+  border-radius: 999px !important;
+  flex: 0 0 auto !important;
+}
+
+.pulse-symbol-row strong {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+
+.pulse-asset-logo {
+  width: 22px !important;
+  height: 22px !important;
+  font-size: 9px !important;
+}
+
+.heat-asset-logo {
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 8px !important;
+  grid-row: 1 / span 2 !important;
+  align-self: center !important;
+}
+
+.home-heat-cell {
+  grid-template-columns: auto minmax(0, 1fr) auto !important;
+}
+
+.home-heat-cell strong {
+  grid-column: 2 !important;
+}
+
+.home-heat-cell span:not(.asset-logo) {
+  grid-column: 2 !important;
+}
+
+.home-heat-cell em {
+  grid-column: 3 !important;
+}
+
+.follow-asset-logo {
+  width: 22px !important;
+  height: 22px !important;
+  font-size: 8px !important;
+}
+
+.home-follow-row {
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto !important;
+}
+
+.asset-logo-eth {
+  color: #dbe7ff !important;
+  background: radial-gradient(circle at 50% 20%, rgba(226, 232, 255, 0.38), rgba(53, 73, 120, 0.86)) !important;
+}
+
+.asset-logo-oil,
+.asset-logo-silver,
+.asset-logo-gold,
+.asset-logo-bnb,
+.asset-logo-crypto,
+.asset-logo-fx,
+.asset-logo-gulf {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 16px rgba(0, 0, 0, 0.22) !important;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -14419,6 +14696,314 @@ main > section {
     height: 100% !important;
     padding: 0 !important;
     align-self: stretch !important;
+  }
+}
+
+/* Final market/layout lock: keep all categories visible and keep mobile content clear of fixed controls. */
+body:not(.intro-running) {
+  overflow-x: hidden !important;
+}
+
+body:not(.intro-running) .page-glow,
+body:not(.intro-running) .trading-orbit,
+body:not(.intro-running) .command-center-band::before,
+body:not(.intro-running) .home-heatmap-section::before,
+body:not(.intro-running) .market-band::before {
+  pointer-events: none !important;
+  z-index: 0 !important;
+}
+
+body:not(.intro-running) .market-band,
+body:not(.intro-running) .command-center-band,
+body:not(.intro-running) .home-heatmap-section,
+body:not(.intro-running) .home-deck-section {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+body:not(.intro-running) .market-tabs,
+body[data-app-view="home"] .market-tabs {
+  display: flex !important;
+  grid-template-columns: none !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  scrollbar-width: thin !important;
+}
+
+body:not(.intro-running) .market-button,
+body[data-app-view="home"] .market-button,
+body[data-app-view="home"] .market-button.is-secondary-market,
+body[data-app-view="home"] .market-button:not(.is-primary-market) {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+body:not(.intro-running) .market-icon-badge {
+  flex: 0 0 auto !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 0 18px rgba(0, 0, 0, 0.22) !important;
+}
+
+body:not(.intro-running) .market-icon-badge.market-icon-gcc {
+  color: #f8d982 !important;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.28), transparent 28%),
+    conic-gradient(from 20deg, #007a3d, #ce1126, #ffffff, #000000, #007a3d) !important;
+}
+
+@media (min-width: 761px) {
+  body:not(.intro-running) .app-shell {
+    width: min(1880px, calc(100vw - 28px)) !important;
+    max-width: none !important;
+    min-height: calc(100svh - 28px) !important;
+    margin: clamp(10px, 1vw, 18px) auto !important;
+    transform: none !important;
+    scale: 1 !important;
+    zoom: 1 !important;
+  }
+
+  body:not(.intro-running) main {
+    min-width: 0 !important;
+    overflow: visible !important;
+  }
+
+  body:not(.intro-running) .market-tabs,
+  body[data-app-view="home"] .market-tabs {
+    gap: 10px !important;
+    padding: 2px 2px 10px !important;
+    scroll-snap-type: x proximity !important;
+  }
+
+  body:not(.intro-running) .market-button,
+  body[data-app-view="home"] .market-button,
+  body[data-app-view="home"] .market-button.is-secondary-market,
+  body[data-app-view="home"] .market-button:not(.is-primary-market) {
+    flex: 0 0 clamp(168px, 10.8vw, 226px) !important;
+    min-width: clamp(168px, 10.8vw, 226px) !important;
+    width: auto !important;
+    height: 60px !important;
+    scroll-snap-align: start !important;
+  }
+
+  body:not(.intro-running) .market-button-copy {
+    display: flex !important;
+    min-width: 0 !important;
+  }
+
+  body:not(.intro-running) .market-button-copy strong,
+  body:not(.intro-running) .market-button-copy span {
+    max-width: 100% !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  body:not(.intro-running) .command-center-grid,
+  body[data-app-view="home"] .command-center-grid {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(136px, 1fr)) !important;
+    gap: clamp(8px, 0.72vw, 12px) !important;
+  }
+
+  body:not(.intro-running) .command-card,
+  body:not(.intro-running) .command-dashboard-card,
+  body[data-app-view="home"] .command-card,
+  body[data-app-view="home"] .command-dashboard-card {
+    min-width: 0 !important;
+    min-height: 122px !important;
+    overflow: hidden !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body:not(.intro-running) {
+    padding-top: env(safe-area-inset-top, 0px) !important;
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  body:not(.intro-running) .app-shell {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100dvh !important;
+    padding-top: calc(10px + env(safe-area-inset-top, 0px)) !important;
+    transform: none !important;
+    scale: 1 !important;
+    zoom: 1 !important;
+  }
+
+  body:not(.intro-running) .topbar {
+    position: sticky !important;
+    top: calc(6px + env(safe-area-inset-top, 0px)) !important;
+    z-index: 90 !important;
+    margin-bottom: 12px !important;
+  }
+
+  body:not(.intro-running) main {
+    padding-bottom: calc(178px + env(safe-area-inset-bottom, 0px)) !important;
+    scroll-padding-top: calc(82px + env(safe-area-inset-top, 0px)) !important;
+    overflow-x: hidden !important;
+  }
+
+  body:not(.intro-running) main > section {
+    scroll-margin-top: calc(82px + env(safe-area-inset-top, 0px)) !important;
+  }
+
+  body:not(.intro-running) .market-tabs,
+  body[data-app-view="home"] .market-tabs {
+    gap: 8px !important;
+    padding: 2px 2px 8px !important;
+    scroll-snap-type: x proximity !important;
+  }
+
+  body:not(.intro-running) .market-button,
+  body[data-app-view="home"] .market-button,
+  body[data-app-view="home"] .market-button.is-secondary-market,
+  body[data-app-view="home"] .market-button:not(.is-primary-market) {
+    flex: 0 0 68px !important;
+    min-width: 68px !important;
+    width: 68px !important;
+    height: 58px !important;
+    padding: 0 !important;
+    scroll-snap-align: start !important;
+  }
+
+  body:not(.intro-running) .market-button-copy,
+  body[data-app-view="home"] .market-button-copy {
+    display: none !important;
+  }
+
+  body:not(.intro-running) .command-center-band,
+  body[data-app-view="home"] .command-center-band {
+    display: grid !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  body:not(.intro-running) .command-center-grid,
+  body[data-app-view="home"] .command-center-grid {
+    display: flex !important;
+    grid-template-columns: none !important;
+    gap: 10px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 0 2px 8px !important;
+    scroll-snap-type: x proximity !important;
+  }
+
+  body:not(.intro-running) .command-card,
+  body:not(.intro-running) .command-dashboard-card,
+  body[data-app-view="home"] .command-card,
+  body[data-app-view="home"] .command-dashboard-card {
+    flex: 0 0 min(78vw, 276px) !important;
+    width: min(78vw, 276px) !important;
+    min-width: min(78vw, 276px) !important;
+    height: 142px !important;
+    min-height: 142px !important;
+    scroll-snap-align: start !important;
+  }
+
+  body:not(.intro-running) .command-card > span,
+  body:not(.intro-running) .command-card > strong,
+  body:not(.intro-running) .command-card h3 {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  body:not(.intro-running) .command-risk-radar .command-gauge {
+    width: min(128px, calc(100% - 18px)) !important;
+    height: 68px !important;
+    margin-inline: auto !important;
+  }
+
+  body:not(.intro-running) .mobile-voice-orb {
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
+    z-index: 72 !important;
+  }
+
+  body:not(.intro-running) .ios-tabbar {
+    z-index: 88 !important;
+  }
+}
+
+/* Fixed viewport correction: never let app-shell transform properties contain mobile fixed controls. */
+body:not(.intro-running) .app-shell {
+  transform: none !important;
+  scale: none !important;
+  translate: none !important;
+  rotate: none !important;
+  filter: none !important;
+  perspective: none !important;
+  zoom: normal !important;
+}
+
+@media (min-width: 761px) {
+  body:not(.intro-running) .home-heatmap-section {
+    display: grid !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    gap: 10px !important;
+    overflow: hidden !important;
+  }
+
+  body:not(.intro-running) .home-heatmap-section .home-deck-head {
+    position: relative !important;
+    z-index: 4 !important;
+    min-height: 24px !important;
+  }
+
+  body:not(.intro-running) .home-heatmap-grid {
+    grid-row: 2 !important;
+    min-height: 0 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  body:not(.intro-running) .ios-tabbar {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    inset-block-end: 0 !important;
+    transform: none !important;
+    z-index: 94 !important;
+  }
+
+  body:not(.intro-running) .mobile-voice-orb {
+    display: grid !important;
+    position: fixed !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
+    transform: translateX(-50%) !important;
+    z-index: 92 !important;
+  }
+
+  body:not(.intro-running):not([data-app-view="voice"]) .mobile-voice-orb {
+    display: none !important;
+  }
+
+  body:not(.intro-running)[data-app-view="voice"] .mobile-voice-orb {
+    display: grid !important;
+  }
+
+  body:not(.intro-running) .pulse-status-card {
+    height: 128px !important;
+    min-height: 128px !important;
+    padding: 16px !important;
+  }
+
+  body:not(.intro-running) .pulse-status-card strong {
+    font-size: 30px !important;
+  }
+
+  body:not(.intro-running) .pulse-status-card::after {
+    width: 74px !important;
+    height: 74px !important;
   }
 }
 

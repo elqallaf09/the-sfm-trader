@@ -580,22 +580,32 @@ function getDetailSettings() {
   try {
     const saved = JSON.parse(localStorage.getItem(APP_SETTINGS_STORAGE_KEY) || "{}");
     return {
-      language: saved?.language === "en" ? "en" : "ar"
+      language: normalizeDetailLocale(saved?.language)
     };
   } catch {
     return { language: "ar" };
   }
 }
 
+function normalizeDetailLocale(value) {
+  const locale = String(value || "").trim().toLowerCase().slice(0, 2);
+  return ["ar", "en", "fr"].includes(locale) ? locale : "ar";
+}
+
+function getDetailLanguage() {
+  return normalizeDetailLocale(getDetailSettings().language);
+}
+
 function isDetailEnglishLanguage() {
-  return getDetailSettings().language === "en";
+  return ["en", "fr"].includes(getDetailLanguage());
 }
 
 function applyDetailLanguage() {
-  const english = isDetailEnglishLanguage();
-  document.documentElement.lang = english ? "en" : "ar";
-  document.documentElement.dir = english ? "ltr" : "rtl";
-  document.body?.classList.toggle("language-en", english);
+  const language = getDetailLanguage();
+  const ltr = ["en", "fr"].includes(language);
+  document.documentElement.lang = language;
+  document.documentElement.dir = ltr ? "ltr" : "rtl";
+  document.body?.classList.toggle("language-en", ltr);
   translateDetailInterface();
 }
 
@@ -791,11 +801,35 @@ function formatMoney(value, currency) {
   if (value === null || value === undefined || value === "") return "--";
   const number = Number(value);
   if (!Number.isFinite(number)) return "--";
+  const normalizedCurrency = normalizeCurrencyCode(currency);
   const digits = Math.abs(number) < 1 ? 4 : 2;
   return `${formatNumber(number, {
     minimumFractionDigits: digits,
     maximumFractionDigits: digits
-  })}${currency ? ` ${currency}` : ""}`;
+  })}${normalizedCurrency ? ` ${normalizedCurrency}` : ""}`;
+}
+
+function normalizeCurrencyCode(currency) {
+  const code = String(currency || "").trim().toUpperCase();
+  const currencyMap = {
+    KWF: "KWD",
+    KW: "KWD",
+    KWD: "KWD",
+    SAR: "SAR",
+    SA: "SAR",
+    AED: "AED",
+    AE: "AED",
+    QAR: "QAR",
+    QA: "QAR",
+    BHD: "BHD",
+    BH: "BHD",
+    OMR: "OMR",
+    OM: "OMR",
+    USD: "USD",
+    EUR: "EUR",
+    GBP: "GBP"
+  };
+  return currencyMap[code] || code;
 }
 
 function formatPercent(value) {
