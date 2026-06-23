@@ -12,8 +12,8 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
     <link rel="icon" type="image/png" sizes="256x256" href="/the-sfm-trader-icon-256.png" />
-    <link rel="stylesheet" href="/styles.css?v=20260623-language-hover-1" />
-    <link rel="stylesheet" href="/desktop-balance.css?v=20260623-language-hover-1" />
+    <link rel="stylesheet" href="/styles.css?v=20260623-premium-terminal-1" />
+    <link rel="stylesheet" href="/desktop-balance.css?v=20260623-premium-terminal-1" />
   </head>
   <body class="notranslate" translate="no">
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
@@ -65,6 +65,11 @@
           <h1>the-sfm trader</h1>
           <p class="brand-subtitle">منصة تداول وتحليل ذكية</p>
         </div>
+        <form class="terminal-search" role="search" action="javascript:void(0)">
+          <span aria-hidden="true">⌕</span>
+          <input id="terminal-symbol-search" type="search" autocomplete="off" inputmode="search" placeholder="ابحث عن أصل، سهم، رمز أو سوق..." aria-label="بحث عن رمز أو سوق">
+          <kbd>Ctrl K</kbd>
+        </form>
         <div class="header-session-mini" aria-live="polite">
           <span></span>
           <em id="header-session-zone">London FX</em>
@@ -145,6 +150,39 @@
           </span>
           <b>المفضلات</b>
         </a>
+        <a href="#portfolio-section" class="rail-link" data-nav-key="portfolio" aria-label="المحفظة">
+          <span class="rail-icon rail-portfolio" aria-hidden="true">
+            <svg class="rail-lucide-icon" viewBox="0 0 24 24">
+              <path d="M4 7h16v13H4Z"></path>
+              <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <path d="M4 12h16"></path>
+            </svg>
+          </span>
+          <b>المحفظة</b>
+        </a>
+        <a href="#history-section" class="rail-link" data-nav-key="trades" aria-label="الصفقات">
+          <span class="rail-icon rail-trades" aria-hidden="true">
+            <svg class="rail-lucide-icon" viewBox="0 0 24 24">
+              <path d="M7 7h10"></path>
+              <path d="M7 12h10"></path>
+              <path d="M7 17h6"></path>
+              <rect x="4" y="3" width="16" height="18" rx="2"></rect>
+            </svg>
+          </span>
+          <b>الصفقات</b>
+        </a>
+        <a href="#home-heatmap-section" class="rail-link" data-nav-key="opportunities" aria-label="الفرص">
+          <span class="rail-icon rail-opportunities" aria-hidden="true">
+            <svg class="rail-lucide-icon" viewBox="0 0 24 24">
+              <path d="M12 2v4"></path>
+              <path d="M12 18v4"></path>
+              <path d="m4.9 4.9 2.8 2.8"></path>
+              <path d="m16.3 16.3 2.8 2.8"></path>
+              <circle cx="12" cy="12" r="4"></circle>
+            </svg>
+          </span>
+          <b>الفرص</b>
+        </a>
         <a href="#notification-panel" class="rail-link" data-nav-key="alerts" aria-label="التنبيهات">
           <span class="rail-icon rail-bell" aria-hidden="true">
             <svg class="rail-lucide-icon" viewBox="0 0 24 24">
@@ -165,6 +203,36 @@
           </span>
           <b>الأخبار</b>
         </a>
+        <a href="#economic-news-section" class="rail-link" data-nav-key="calendar" aria-label="التقويم">
+          <span class="rail-icon rail-calendar" aria-hidden="true">
+            <svg class="rail-lucide-icon" viewBox="0 0 24 24">
+              <path d="M8 2v4"></path>
+              <path d="M16 2v4"></path>
+              <rect x="3" y="4" width="18" height="18" rx="2"></rect>
+              <path d="M3 10h18"></path>
+            </svg>
+          </span>
+          <b>التقويم</b>
+        </a>
+        <a href="#command-center-section" class="rail-link" data-nav-key="tools" aria-label="الأدوات">
+          <span class="rail-icon rail-tools" aria-hidden="true">
+            <svg class="rail-lucide-icon" viewBox="0 0 24 24">
+              <path d="m14.7 6.3 3 3"></path>
+              <path d="M5 19 19 5"></path>
+              <path d="M9 5h10v10"></path>
+            </svg>
+          </span>
+          <b>الأدوات</b>
+        </a>
+        <button class="rail-link rail-settings" id="rail-settings-button" type="button" aria-label="الإعدادات">
+          <span class="rail-icon rail-cog" aria-hidden="true">
+            <svg class="rail-lucide-icon" viewBox="0 0 24 24">
+              <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"></path>
+              <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2 3.4-.2-.1a1.7 1.7 0 0 0-1.9.3l-.4.2-3.3-1.9-.1-.4a1.7 1.7 0 0 0-1.6-1.1h-.5l-3.3 1.9-.4-.2a1.7 1.7 0 0 0-1.9-.3l-.2.1-2-3.4.1-.1a1.7 1.7 0 0 0 .3-1.9l-.2-.4V9l.2-.4a1.7 1.7 0 0 0-.3-1.9l-.1-.1 2-3.4.2.1a1.7 1.7 0 0 0 1.9-.3l.4-.2 3.3 1.9.1.4a1.7 1.7 0 0 0 1.6 1.1h.5l3.3-1.9.4.2a1.7 1.7 0 0 0 1.9.3l.2-.1 2 3.4-.1.1a1.7 1.7 0 0 0-.3 1.9l.2.4v4.2Z"></path>
+            </svg>
+          </span>
+          <b>الإعدادات</b>
+        </button>
         <a href="#voice-section" class="rail-link rail-voice" data-nav-key="voice" aria-label="الصوت">
           <span class="rail-icon rail-wave" aria-hidden="true">
             <svg class="rail-lucide-icon" viewBox="0 0 24 24">
@@ -178,6 +246,10 @@
           </span>
           <b>Voice</b>
         </a>
+        <div class="rail-ai-card" aria-label="AI Assistant">
+          <span></span>
+          <strong>AI Assistant</strong>
+        </div>
       </aside>
 
       <aside id="settings-panel" class="settings-panel" hidden>
