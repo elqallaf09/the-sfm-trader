@@ -12,8 +12,8 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
     <link rel="icon" type="image/png" sizes="256x256" href="/the-sfm-trader-icon-256.png" />
-    <link rel="stylesheet" href="/styles.css?v=20260623-asset-logos-1" />
-    <link rel="stylesheet" href="/desktop-balance.css?v=20260623-asset-logos-1" />
+    <link rel="stylesheet" href="/styles.css?v=20260623-language-hover-1" />
+    <link rel="stylesheet" href="/desktop-balance.css?v=20260623-language-hover-1" />
   </head>
   <body class="notranslate" translate="no">
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
@@ -211,13 +211,49 @@
               <span>Preferences</span>
               <strong>تفضيلات الحساب</strong>
             </div>
-            <label class="settings-field settings-field-language">
+            <div class="settings-field settings-field-language" role="group" aria-labelledby="settings-language-label">
               <span id="settings-language-label">اللغة</span>
-              <select id="settings-language">
+              <select id="settings-language" class="settings-language-native" aria-labelledby="settings-language-label" tabindex="-1">
                 <option value="ar">العربية</option>
                 <option value="en">English</option>
               </select>
-            </label>
+              <div class="language-choice-grid" aria-label="خيارات اللغة">
+                <button
+                  class="language-choice"
+                  type="button"
+                  data-language-option="ar"
+                  lang="ar"
+                  dir="rtl"
+                  translate="no"
+                  title="تغيير اللغة إلى العربية"
+                  aria-label="تغيير اللغة إلى العربية"
+                  aria-pressed="false"
+                >
+                  <span class="language-choice-check" aria-hidden="true">✓</span>
+                  <span class="language-choice-copy">
+                    <strong>العربية</strong>
+                    <small>واجهة عربية RTL</small>
+                  </span>
+                </button>
+                <button
+                  class="language-choice"
+                  type="button"
+                  data-language-option="en"
+                  lang="en"
+                  dir="ltr"
+                  translate="no"
+                  title="Switch language to English"
+                  aria-label="Switch language to English"
+                  aria-pressed="false"
+                >
+                  <span class="language-choice-check" aria-hidden="true">✓</span>
+                  <span class="language-choice-copy">
+                    <strong>English</strong>
+                    <small>LTR interface</small>
+                  </span>
+                </button>
+              </div>
+            </div>
             <label class="settings-switch">
               <input type="checkbox" checked />
               <span>استخدام الأرقام الإنجليزية داخل الواجهة</span>
@@ -1060,7 +1096,7 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260623-asset-logos-1" type="module"></script>
+    <script src="/app.js?v=20260623-language-hover-1" type="module"></script>
   </body>
 </html>
 

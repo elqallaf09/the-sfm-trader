@@ -41,6 +41,7 @@ const settingsPanel = document.querySelector("#settings-panel");
 const settingsCloseButton = document.querySelector("#settings-close-button");
 const settingsForm = document.querySelector("#settings-form");
 const settingsLanguage = document.querySelector("#settings-language");
+const settingsLanguageChoices = Array.from(document.querySelectorAll("[data-language-option]"));
 const settingsDisplayName = document.querySelector("#settings-display-name");
 const settingsPreview = document.querySelector("#settings-preview");
 const settingsEyebrow = document.querySelector("#settings-eyebrow");
@@ -1469,6 +1470,9 @@ function initSettingsPanel() {
   settingsButton.addEventListener("click", () => setSettingsPanelOpen(settingsPanel.hidden));
   settingsCloseButton?.addEventListener("click", () => setSettingsPanelOpen(false));
   settingsLanguage?.addEventListener("change", handleSettingsLanguageChange);
+  for (const choice of settingsLanguageChoices) {
+    choice.addEventListener("click", () => selectSettingsLanguage(choice.dataset.languageOption));
+  }
   settingsDisplayName?.addEventListener("input", updateSettingsPreview);
   settingsForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -1491,9 +1495,17 @@ function initSettingsPanel() {
   updateSettingsPanelLanguage();
 }
 
+function selectSettingsLanguage(language) {
+  if (!settingsLanguage) return;
+
+  settingsLanguage.value = normalizeLocaleCode(language, getAppLanguage());
+  handleSettingsLanguageChange();
+}
+
 function handleSettingsLanguageChange() {
   const nextLanguage = normalizeLocaleCode(settingsLanguage?.value, getAppLanguage());
   if (settingsLanguage) settingsLanguage.value = nextLanguage;
+  syncLanguageChoices(nextLanguage);
 
   if (nextLanguage === getAppLanguage()) {
     updateSettingsPreview();
@@ -1528,6 +1540,7 @@ function setSettingsPanelOpen(open) {
 function syncSettingsForm() {
   if (settingsLanguage) settingsLanguage.value = getAppLanguage();
   if (settingsDisplayName) settingsDisplayName.value = getUserDisplayName();
+  syncLanguageChoices();
   updateSettingsPreview();
 }
 
@@ -1559,6 +1572,8 @@ function updateSettingsPanelLanguage() {
   if (settingsCloseButton) settingsCloseButton.setAttribute("aria-label", english ? "Close settings" : "إغلاق الإعدادات");
   if (settingsDisplayName) settingsDisplayName.placeholder = english ? "Mohammed" : "محمد";
   updateSettingsStaticLanguage();
+  syncLanguageChoiceLabels();
+  syncLanguageChoices();
   updateSettingsPreview();
 }
 
@@ -1578,6 +1593,56 @@ function updateSettingsStaticLanguage() {
   if (arabicOption) arabicOption.textContent = languageKey === "en" ? "Arabic" : "العربية";
   if (englishOption) englishOption.textContent = languageKey === "en" ? "English" : "English";
   if (frenchOption) frenchOption.textContent = languageKey === "en" ? "French" : "Français";
+}
+
+function syncLanguageChoiceLabels() {
+  const languageKey = getTranslationLanguageKey();
+  const english = languageKey === "en";
+
+  for (const choice of settingsLanguageChoices) {
+    const language = normalizeLocaleCode(choice.dataset.languageOption, "ar");
+    const name = choice.querySelector("strong");
+    const helper = choice.querySelector("small");
+
+    if (language === "ar") {
+      if (name) name.textContent = english ? "Arabic" : "العربية";
+      if (helper) helper.textContent = english ? "RTL interface" : "واجهة عربية RTL";
+      choice.title = "تغيير اللغة إلى العربية";
+      choice.setAttribute("aria-label", "تغيير اللغة إلى العربية");
+      choice.lang = "ar";
+      choice.dir = "rtl";
+    } else if (language === "en") {
+      if (name) name.textContent = "English";
+      if (helper) helper.textContent = english ? "LTR interface" : "واجهة إنجليزية LTR";
+      choice.title = "Switch language to English";
+      choice.setAttribute("aria-label", "Switch language to English");
+      choice.lang = "en";
+      choice.dir = "ltr";
+    } else if (language === "fr") {
+      if (name) name.textContent = english ? "French" : "Français";
+      if (helper) helper.textContent = english ? "LTR interface" : "واجهة فرنسية LTR";
+      choice.title = "Switch language to French";
+      choice.setAttribute("aria-label", "Switch language to French");
+      choice.lang = "fr";
+      choice.dir = "ltr";
+    }
+  }
+}
+
+function syncLanguageChoices(language = settingsLanguage?.value || getAppLanguage()) {
+  const currentLanguage = normalizeLocaleCode(language, getAppLanguage());
+
+  for (const choice of settingsLanguageChoices) {
+    const choiceLanguage = normalizeLocaleCode(choice.dataset.languageOption, "ar");
+    const selected = choiceLanguage === currentLanguage;
+    choice.classList.toggle("is-selected", selected);
+    choice.setAttribute("aria-pressed", String(selected));
+    if (selected) {
+      choice.setAttribute("aria-current", "true");
+    } else {
+      choice.removeAttribute("aria-current");
+    }
+  }
 }
 
 function syncNavigationLanguage() {
@@ -1718,7 +1783,8 @@ function translateInterface(root = document.body) {
 }
 
 function shouldSkipTranslation(element) {
-  return ["SCRIPT", "STYLE", "NOSCRIPT", "CANVAS", "CODE"].includes(element.tagName);
+  return ["SCRIPT", "STYLE", "NOSCRIPT", "CANVAS", "CODE"].includes(element.tagName)
+    || Boolean(element.closest?.("[data-language-option]"));
 }
 
 function translateTextNode(node) {

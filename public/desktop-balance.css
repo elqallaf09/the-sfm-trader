@@ -12,6 +12,157 @@ body[data-app-view="home"] .market-band {
   z-index: 12 !important;
 }
 
+/* Premium Settings language selector: hover, selected, and keyboard focus states. */
+body:not(.intro-running) .settings-field-language {
+  position: relative !important;
+  gap: 9px !important;
+}
+
+body:not(.intro-running) .settings-language-native {
+  position: absolute !important;
+  inline-size: 1px !important;
+  block-size: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+body:not(.intro-running) .language-choice-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+body:not(.intro-running) .language-choice {
+  min-width: 0 !important;
+  min-height: 58px !important;
+  display: grid !important;
+  grid-template-columns: 24px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 10px 12px !important;
+  border: 1px solid rgba(124, 157, 183, 0.18) !important;
+  border-radius: 13px !important;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(216, 172, 80, 0.08), transparent 38%),
+    linear-gradient(145deg, rgba(7, 17, 25, 0.9), rgba(2, 8, 13, 0.86)) !important;
+  color: #eaf4fb !important;
+  cursor: pointer !important;
+  text-align: start !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+  transition:
+    border-color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease,
+    transform 0.16s ease,
+    color 0.16s ease !important;
+}
+
+body:not(.intro-running) .language-choice:hover {
+  border-color: rgba(216, 172, 80, 0.62) !important;
+  background:
+    radial-gradient(circle at 14% 12%, rgba(216, 172, 80, 0.18), transparent 42%),
+    linear-gradient(145deg, rgba(216, 172, 80, 0.13), rgba(54, 232, 137, 0.075) 58%, rgba(2, 8, 13, 0.88)) !important;
+  box-shadow:
+    0 0 0 1px rgba(216, 172, 80, 0.16),
+    0 12px 26px rgba(0, 0, 0, 0.22),
+    0 0 24px rgba(216, 172, 80, 0.11) !important;
+  transform: translateY(-1px) !important;
+}
+
+body:not(.intro-running) .language-choice:focus-visible {
+  outline: 0 !important;
+  border-color: rgba(54, 232, 137, 0.76) !important;
+  background:
+    radial-gradient(circle at 14% 12%, rgba(54, 232, 137, 0.18), transparent 42%),
+    linear-gradient(145deg, rgba(54, 232, 137, 0.13), rgba(216, 172, 80, 0.06), rgba(2, 8, 13, 0.9)) !important;
+  box-shadow:
+    0 0 0 3px rgba(54, 232, 137, 0.18),
+    0 0 26px rgba(54, 232, 137, 0.14) !important;
+}
+
+body:not(.intro-running) .language-choice.is-selected {
+  border-color: rgba(54, 232, 137, 0.68) !important;
+  background:
+    radial-gradient(circle at 14% 14%, rgba(54, 232, 137, 0.2), transparent 42%),
+    linear-gradient(145deg, rgba(54, 232, 137, 0.16), rgba(216, 172, 80, 0.08), rgba(3, 10, 15, 0.9)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(54, 232, 137, 0.16),
+    0 0 22px rgba(54, 232, 137, 0.1) !important;
+}
+
+body:not(.intro-running) .language-choice-check {
+  width: 24px !important;
+  height: 24px !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 1px solid rgba(124, 157, 183, 0.22) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.035) !important;
+  color: transparent !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+}
+
+body:not(.intro-running) .language-choice.is-selected .language-choice-check {
+  border-color: rgba(54, 232, 137, 0.84) !important;
+  background: var(--terminal-green, #36e889) !important;
+  color: #04110a !important;
+  box-shadow: 0 0 16px rgba(54, 232, 137, 0.3) !important;
+}
+
+body:not(.intro-running) .language-choice-copy {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 3px !important;
+}
+
+body:not(.intro-running) .language-choice-copy strong {
+  min-width: 0 !important;
+  color: #f7fbff !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  line-height: 1.12 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+body:not(.intro-running) .language-choice-copy small {
+  min-width: 0 !important;
+  color: #a7b8c5 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+body:not(.intro-running) .language-choice:hover .language-choice-copy small {
+  color: #d7c38a !important;
+}
+
+@media (max-width: 520px) {
+  body:not(.intro-running) .language-choice-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  body:not(.intro-running) .language-choice {
+    min-height: 54px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body:not(.intro-running) .language-choice {
+    transition: none !important;
+  }
+
+  body:not(.intro-running) .language-choice:hover {
+    transform: none !important;
+  }
+}
+
 /* Unified sharp asset identity layer: stocks, crypto, commodities, GCC, and cards. */
 body:not(.intro-running) .asset-logo {
   position: relative !important;
