@@ -1,11 +1,12 @@
-const CACHE_NAME = "the-sfm-trader-ios-shell-v20260623-market-ui-layout-1";
+const CACHE_NAME = "the-sfm-trader-ios-shell-v20260623-desktop-balance-risk-2";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/detail.html",
-  "/styles.css?v=20260623-market-ui-layout-1",
-  "/app.js?v=20260623-market-ui-layout-1",
-  "/detail.js?v=20260623-market-ui-layout-1",
+  "/styles.css?v=20260623-desktop-balance-risk-2",
+  "/desktop-balance.css?v=20260623-desktop-balance-risk-2",
+  "/app.js?v=20260623-desktop-balance-risk-2",
+  "/detail.js?v=20260623-desktop-balance-risk-2",
   "/manifest.webmanifest",
   "/assets/sfm-trader-logo.svg",
   "/the-sfm-trader-icon-256.png",
