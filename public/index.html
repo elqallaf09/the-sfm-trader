@@ -13,50 +13,10 @@
     <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
     <link rel="icon" type="image/png" sizes="256x256" href="/the-sfm-trader-icon-256.png" />
     <link rel="stylesheet" href="/desktop-balance.css?v=20260623-premium-terminal-1" />
-    <link rel="stylesheet" href="/styles.css?v=20260623-ai-terminal-final" />
+    <link rel="stylesheet" href="/styles.css?v=20260624-no-welcome-hero" />
   </head>
   <body class="notranslate" translate="no">
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
-
-    <section id="intro-overlay" class="intro-overlay" aria-live="polite">
-      <div class="intro-scanline" aria-hidden="true"></div>
-      <div class="intro-card">
-        <div class="intro-copy">
-          <p class="eyebrow">the-sfm trader startup</p>
-          <h2 id="intro-greeting">أهلاً سيدي محمد</h2>
-          <p id="intro-message">مساعدك SFM جاهز للتحليل ومتابعة الأسهم.</p>
-          <div class="intro-status">
-            <span></span>
-            <strong>جاري فتح منصة التحليل</strong>
-          </div>
-          <button id="intro-audio-button" class="intro-audio-button" type="button">تشغيل التحية الصوتية</button>
-          <button id="intro-skip" class="intro-skip" type="button">دخول سريع</button>
-        </div>
-        <div class="intro-agent-wrap" aria-hidden="true">
-          <div class="intro-agent">
-            <div class="agent-cap"></div>
-            <div class="agent-head">
-              <span class="agent-visor"></span>
-              <span class="agent-face-light"></span>
-            </div>
-            <div class="agent-neck"></div>
-            <div class="agent-body">
-              <span class="agent-badge">SFM</span>
-              <span class="agent-tie"></span>
-            </div>
-            <div class="agent-arm agent-arm-left"></div>
-            <div class="agent-arm agent-arm-right"></div>
-            <div class="agent-hand"></div>
-            <div class="agent-base"></div>
-          </div>
-          <div class="intro-rings">
-            <i></i>
-            <i></i>
-            <i></i>
-          </div>
-        </div>
-      </div>
-    </section>
 
     <div class="app-shell">
       <header class="topbar">
@@ -436,22 +396,6 @@
 
       <main>
         <section id="sfm-live-floor" class="sfm-live-floor" aria-label="لوحة التداول الحية">
-          <div class="floor-aurora" aria-hidden="true"></div>
-          <div class="floor-head">
-            <div>
-              <p class="eyebrow">SFM LIVE FLOOR</p>
-              <h2>AI Trading Agent</h2>
-              <p id="sfm-floor-brief">وكيل ذكي لتحليل الأسواق العالمية وإصدار مؤشرات شراء وبيع مبنية على البيانات المتاحة.</p>
-            </div>
-            <div class="floor-agent" aria-live="polite">
-              <span class="floor-agent-core" aria-hidden="true"></span>
-              <div>
-                <span>حالة المساعد</span>
-                <strong id="floor-agent-mood">جاهز يراقب السوق</strong>
-                <em id="trading-mood">--</em>
-              </div>
-            </div>
-          </div>
 
           <div class="ai-agent-kpi-strip" aria-label="ملخص حالة وكيل التداول">
             <article>
@@ -1234,7 +1178,7 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260623-ai-terminal-final" type="module"></script>
+    <script src="/app.js?v=20260624-no-welcome-hero" type="module"></script>
   </body>
 </html>
 

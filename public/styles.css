@@ -19293,6 +19293,26 @@ body[data-app-view="home"] main > section#recommendations-section#recommendation
   display: grid !important;
 }
 
+/* Remove the welcome/hero greeting so the trading page starts with live data. */
+#intro-overlay,
+body[data-app-view="home"] #sfm-live-floor .floor-aurora,
+body[data-app-view="home"] #sfm-live-floor .floor-head {
+  display: none !important;
+}
+
+body[data-app-view="home"] #sfm-live-floor.sfm-live-floor {
+  min-height: 0 !important;
+  height: auto !important;
+  grid-template-rows: none !important;
+  grid-auto-rows: auto !important;
+  align-content: start !important;
+  padding-top: 14px !important;
+}
+
+body[data-app-view="home"] #sfm-live-floor.sfm-live-floor > :first-child {
+  margin-top: 0 !important;
+}
+
 @media (max-width: 760px) {
   body[data-app-view="home"]:not(.intro-running) #sfm-live-floor.sfm-live-floor {
     gap: 10px !important;
