@@ -1,5 +1,323 @@
 /* Final desktop-only balance layer for thesfm trader.
    Loaded after styles.css so it wins over legacy layout locks. */
+/* Final market-icon visibility layer.
+   Keeps decorative terminal light behind the tabs, never over icons or labels. */
+body:not(.intro-running) .market-band,
+body[data-app-view="home"] .market-band {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: visible !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  z-index: 12 !important;
+}
+
+body:not(.intro-running) .market-band::before,
+body:not(.intro-running) .market-band::after,
+body:not(.intro-running) .market-tabs::before,
+body:not(.intro-running) .market-tabs::after,
+body:not(.intro-running) .market-button::before,
+body:not(.intro-running) .market-button::after,
+body[data-app-view="home"] .market-band::before,
+body[data-app-view="home"] .market-band::after,
+body[data-app-view="home"] .market-tabs::before,
+body[data-app-view="home"] .market-tabs::after,
+body[data-app-view="home"] .market-button::before,
+body[data-app-view="home"] .market-button::after {
+  content: none !important;
+  display: none !important;
+}
+
+body:not(.intro-running) .market-tabs,
+body[data-app-view="home"] .market-tabs {
+  position: relative !important;
+  z-index: 4 !important;
+  isolation: isolate !important;
+  overflow-y: visible !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  mask-image: none !important;
+  -webkit-mask-image: none !important;
+}
+
+body:not(.intro-running) .market-button,
+body[data-app-view="home"] .market-button {
+  position: relative !important;
+  isolation: isolate !important;
+  overflow: visible !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  background:
+    linear-gradient(145deg, rgba(8, 18, 27, 0.98), rgba(2, 8, 13, 0.94)) !important;
+  border-color: rgba(126, 157, 184, 0.32) !important;
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045) !important;
+}
+
+body:not(.intro-running) .market-button.active,
+body[data-app-view="home"] .market-button.active {
+  border-color: rgba(54, 232, 137, 0.78) !important;
+  background:
+    linear-gradient(145deg, rgba(9, 42, 31, 0.98), rgba(3, 10, 15, 0.95)) !important;
+  box-shadow:
+    0 0 0 1px rgba(216, 172, 80, 0.18),
+    0 0 18px rgba(54, 232, 137, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+body:not(.intro-running) .market-button-icon,
+body[data-app-view="home"] .market-button-icon {
+  position: relative !important;
+  z-index: 5 !important;
+  opacity: 1 !important;
+  flex: 0 0 36px !important;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 999px !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: visible !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  color: #f9fbff !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  background:
+    radial-gradient(circle at 32% 24%, rgba(255, 255, 255, 0.24), transparent 30%),
+    linear-gradient(145deg, rgba(14, 32, 45, 0.96), rgba(2, 9, 15, 0.98)) !important;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -8px 18px rgba(0, 0, 0, 0.16) !important;
+}
+
+body:not(.intro-running) .market-button-icon::before,
+body:not(.intro-running) .market-button-icon::after,
+body[data-app-view="home"] .market-button-icon::before,
+body[data-app-view="home"] .market-button-icon::after {
+  pointer-events: none !important;
+}
+
+body:not(.intro-running) .market-button-icon::after,
+body[data-app-view="home"] .market-button-icon::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  inset: 3px 3px auto auto !important;
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.22) !important;
+  filter: none !important;
+  opacity: 0.55 !important;
+  z-index: 1 !important;
+}
+
+body:not(.intro-running) .market-button-icon > *,
+body[data-app-view="home"] .market-button-icon > *,
+body:not(.intro-running) .market-button-copy,
+body[data-app-view="home"] .market-button-copy {
+  position: relative !important;
+  z-index: 6 !important;
+  opacity: 1 !important;
+  filter: none !important;
+  text-shadow: none !important;
+}
+
+body:not(.intro-running) .market-button-copy strong,
+body[data-app-view="home"] .market-button-copy strong {
+  color: #f2f7fb !important;
+  font-weight: 900 !important;
+}
+
+body:not(.intro-running) .market-button-copy span,
+body[data-app-view="home"] .market-button-copy span {
+  color: #9eb0bd !important;
+}
+
+body:not(.intro-running) .market-button.active .market-button-copy strong,
+body[data-app-view="home"] .market-button.active .market-button-copy strong {
+  color: #ffffff !important;
+}
+
+body:not(.intro-running) .market-premium-flag,
+body:not(.intro-running) .market-premium-glyph,
+body:not(.intro-running) .market-premium-commodity,
+body:not(.intro-running) .market-premium-gcc-badge,
+body[data-app-view="home"] .market-premium-flag,
+body[data-app-view="home"] .market-premium-glyph,
+body[data-app-view="home"] .market-premium-commodity,
+body[data-app-view="home"] .market-premium-gcc-badge {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 999px !important;
+  display: grid !important;
+  place-items: center !important;
+  overflow: hidden !important;
+  opacity: 1 !important;
+  filter: none !important;
+  transform: none !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.13),
+    0 0 12px rgba(0, 0, 0, 0.24) !important;
+}
+
+body:not(.intro-running) .market-premium-flag i,
+body[data-app-view="home"] .market-premium-flag i {
+  display: none !important;
+}
+
+body:not(.intro-running) .market-premium-flag b,
+body:not(.intro-running) .market-premium-glyph b,
+body[data-app-view="home"] .market-premium-flag b,
+body[data-app-view="home"] .market-premium-glyph b {
+  position: relative !important;
+  z-index: 3 !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  color: #ffffff !important;
+  font-size: 8px !important;
+  line-height: 1 !important;
+  font-weight: 950 !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.82) !important;
+}
+
+body:not(.intro-running) .market-premium-us,
+body[data-app-view="home"] .market-premium-us {
+  background:
+    radial-gradient(circle at 24% 27%, #ffffff 0 1px, transparent 1.5px),
+    radial-gradient(circle at 36% 47%, #ffffff 0 1px, transparent 1.5px),
+    linear-gradient(90deg, #334a91 0 44%, transparent 44%),
+    repeating-linear-gradient(180deg, #b22234 0 3px, #ffffff 3px 6px) !important;
+}
+
+body:not(.intro-running) .market-premium-kuwait,
+body[data-app-view="home"] .market-premium-kuwait {
+  background:
+    linear-gradient(90deg, #111111 0 28%, transparent 28%),
+    linear-gradient(180deg, #007a3d 0 33%, #ffffff 33% 66%, #ce1126 66%) !important;
+}
+
+body:not(.intro-running) .market-premium-saudi,
+body[data-app-view="home"] .market-premium-saudi {
+  background:
+    radial-gradient(circle at 50% 52%, rgba(255, 255, 255, 0.24), transparent 26%),
+    linear-gradient(145deg, #0a8f4d, #035e34) !important;
+}
+
+body:not(.intro-running) .market-premium-uae,
+body[data-app-view="home"] .market-premium-uae {
+  background:
+    linear-gradient(90deg, #ce1126 0 27%, transparent 27%),
+    linear-gradient(180deg, #009a44 0 33%, #ffffff 33% 66%, #000000 66%) !important;
+}
+
+body:not(.intro-running) .market-premium-qatar,
+body[data-app-view="home"] .market-premium-qatar {
+  background: linear-gradient(90deg, #ffffff 0 34%, #8a1538 34%) !important;
+}
+
+body:not(.intro-running) .market-premium-bahrain,
+body[data-app-view="home"] .market-premium-bahrain {
+  background: linear-gradient(90deg, #ffffff 0 32%, #ce1126 32%) !important;
+}
+
+body:not(.intro-running) .market-premium-oman,
+body[data-app-view="home"] .market-premium-oman {
+  background:
+    linear-gradient(90deg, #db161b 0 26%, transparent 26%),
+    linear-gradient(180deg, #ffffff 0 33%, #db161b 33% 66%, #00843d 66%) !important;
+}
+
+body:not(.intro-running) .market-premium-gcc-badge,
+body[data-app-view="home"] .market-premium-gcc-badge {
+  color: #ffe79d !important;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.28), transparent 29%),
+    radial-gradient(circle at 60% 56%, rgba(54, 232, 137, 0.4), transparent 36%),
+    conic-gradient(from 35deg, #d8ac50, #057a4b, #102a39, #ce1126, #d8ac50) !important;
+}
+
+body:not(.intro-running) .market-premium-gcc-badge::before,
+body[data-app-view="home"] .market-premium-gcc-badge::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 5px !important;
+  border-radius: 999px !important;
+  background: rgba(2, 12, 14, 0.26) !important;
+  border: 1px solid rgba(255, 231, 157, 0.22) !important;
+}
+
+body:not(.intro-running) .market-premium-gcc-badge svg,
+body[data-app-view="home"] .market-premium-gcc-badge svg {
+  position: relative !important;
+  z-index: 2 !important;
+  width: 29px !important;
+  height: 29px !important;
+  overflow: visible !important;
+  filter: none !important;
+}
+
+body:not(.intro-running) .market-premium-dollar,
+body[data-app-view="home"] .market-premium-dollar {
+  color: #eafff4 !important;
+  background:
+    radial-gradient(circle at 36% 26%, rgba(255, 255, 255, 0.28), transparent 30%),
+    radial-gradient(circle, #36e889 0 36%, #08683e 70%, #062115 100%) !important;
+  font-size: 20px !important;
+  font-weight: 950 !important;
+}
+
+body:not(.intro-running) .market-premium-bitcoin,
+body[data-app-view="home"] .market-premium-bitcoin {
+  color: #fff6df !important;
+  background:
+    radial-gradient(circle at 35% 24%, rgba(255, 255, 255, 0.3), transparent 32%),
+    radial-gradient(circle, #ffb24c 0 44%, #b76513 66%, #56320c 100%) !important;
+  font-size: 20px !important;
+  font-weight: 950 !important;
+}
+
+body:not(.intro-running) .market-premium-commodity,
+body[data-app-view="home"] .market-premium-commodity {
+  background:
+    radial-gradient(circle at 35% 22%, rgba(255, 255, 255, 0.3), transparent 32%),
+    radial-gradient(circle, rgba(255, 210, 94, 0.72), rgba(93, 60, 10, 0.98) 74%) !important;
+}
+
+body:not(.intro-running) .market-premium-commodity svg,
+body[data-app-view="home"] .market-premium-commodity svg {
+  width: 22px !important;
+  height: 22px !important;
+  fill: rgba(255, 214, 110, 0.28) !important;
+  stroke: #ffe29a !important;
+  stroke-width: 1.9 !important;
+  filter: none !important;
+}
+
+@media (max-width: 760px) {
+  body:not(.intro-running) .market-button-icon,
+  body[data-app-view="home"] .market-button-icon {
+    flex-basis: 40px !important;
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  body:not(.intro-running) .market-premium-flag,
+  body:not(.intro-running) .market-premium-glyph,
+  body:not(.intro-running) .market-premium-commodity,
+  body:not(.intro-running) .market-premium-gcc-badge,
+  body[data-app-view="home"] .market-premium-flag,
+  body[data-app-view="home"] .market-premium-glyph,
+  body[data-app-view="home"] .market-premium-commodity,
+  body[data-app-view="home"] .market-premium-gcc-badge {
+    width: 34px !important;
+    height: 34px !important;
+  }
+}
+
 @media (min-width: 1181px) {
   :root {
     --terminal-desktop-gutter: clamp(8px, 0.72vw, 16px) !important;
