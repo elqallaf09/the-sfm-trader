@@ -12,8 +12,8 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
     <link rel="icon" type="image/png" sizes="256x256" href="/the-sfm-trader-icon-256.png" />
-    <link rel="stylesheet" href="/styles.css?v=20260623-premium-terminal-1" />
     <link rel="stylesheet" href="/desktop-balance.css?v=20260623-premium-terminal-1" />
+    <link rel="stylesheet" href="/styles.css?v=20260623-ai-terminal-final" />
   </head>
   <body class="notranslate" translate="no">
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
@@ -440,8 +440,8 @@
           <div class="floor-head">
             <div>
               <p class="eyebrow">SFM LIVE FLOOR</p>
-              <h2>لوحة النبض الحية</h2>
-              <p id="sfm-floor-brief">SFM يقرأ السوق الآن ويحوّل الإشارات إلى قرارات واضحة.</p>
+              <h2>AI Trading Agent</h2>
+              <p id="sfm-floor-brief">وكيل ذكي لتحليل الأسواق العالمية وإصدار مؤشرات شراء وبيع مبنية على البيانات المتاحة.</p>
             </div>
             <div class="floor-agent" aria-live="polite">
               <span class="floor-agent-core" aria-hidden="true"></span>
@@ -451,6 +451,39 @@
                 <em id="trading-mood">--</em>
               </div>
             </div>
+          </div>
+
+          <div class="ai-agent-kpi-strip" aria-label="ملخص حالة وكيل التداول">
+            <article>
+              <span>حالة الوكيل</span>
+              <strong id="ai-agent-status">نشط</strong>
+              <em>Scanning markets</em>
+            </article>
+            <article>
+              <span>الأسواق المتابعة</span>
+              <strong id="ai-market-count">--</strong>
+              <em>Connected markets</em>
+            </article>
+            <article>
+              <span>الأصول المحللة</span>
+              <strong id="ai-asset-count">--</strong>
+              <em>Analyzed assets</em>
+            </article>
+            <article class="is-buy">
+              <span>توصيات الشراء</span>
+              <strong id="ai-buy-count">--</strong>
+              <em>Buy signals</em>
+            </article>
+            <article class="is-sell">
+              <span>توصيات البيع</span>
+              <strong id="ai-sell-count">--</strong>
+              <em>Sell signals</em>
+            </article>
+            <article>
+              <span>متوسط الثقة</span>
+              <strong id="ai-average-confidence">--</strong>
+              <em>AI confidence</em>
+            </article>
           </div>
 
           <div class="live-pulse-strip" aria-label="Live Market Pulse">
@@ -501,6 +534,39 @@
               </small>
               <em id="pulse-session-event">العد التنازلي</em>
             </div>
+          </div>
+
+          <div class="ai-global-overview" aria-label="خريطة الأسواق العالمية">
+            <div class="ai-world-map" aria-hidden="true">
+              <span class="market-node node-new-york"><b>New York</b></span>
+              <span class="market-node node-london"><b>London</b></span>
+              <span class="market-node node-frankfurt"><b>Frankfurt</b></span>
+              <span class="market-node node-kuwait"><b>Kuwait</b></span>
+              <span class="market-node node-riyadh"><b>Riyadh</b></span>
+              <span class="market-node node-dubai"><b>Dubai</b></span>
+              <span class="market-node node-tokyo"><b>Tokyo</b></span>
+              <span class="market-node node-hongkong"><b>Hong Kong</b></span>
+              <svg viewBox="0 0 900 360" preserveAspectRatio="none">
+                <path d="M95 170 C220 80 325 210 458 132 S690 45 810 155"></path>
+                <path d="M120 235 C250 250 345 188 468 220 S650 300 800 230"></path>
+                <path d="M432 160 C470 195 520 215 590 202 S690 185 762 244"></path>
+              </svg>
+            </div>
+            <aside class="ai-analysis-console" aria-live="polite">
+              <p class="eyebrow">AI AGENT WORKFLOW</p>
+              <h3>تحليل السوق الآن</h3>
+              <ul>
+                <li><span></span>Scanning Markets</li>
+                <li><span></span>Analyzing Volume</li>
+                <li><span></span>Evaluating Sentiment</li>
+                <li><span></span>Generating Signals</li>
+              </ul>
+              <div class="ai-market-bias">
+                <span>اتجاه السوق العام</span>
+                <strong id="ai-market-bias">--</strong>
+                <em id="ai-market-update">آخر تحديث --</em>
+              </div>
+            </aside>
           </div>
 
           <div class="floor-stage">
@@ -1168,7 +1234,7 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260623-language-hover-1" type="module"></script>
+    <script src="/app.js?v=20260623-ai-terminal-final" type="module"></script>
   </body>
 </html>
 

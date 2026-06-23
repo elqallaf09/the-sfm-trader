@@ -13,6 +13,14 @@ const opportunityCount = document.querySelector("#opportunity-count");
 const buyCount = document.querySelector("#buy-count");
 const sellCount = document.querySelector("#sell-count");
 const avgConfidence = document.querySelector("#avg-confidence");
+const aiAgentStatus = document.querySelector("#ai-agent-status");
+const aiMarketCount = document.querySelector("#ai-market-count");
+const aiAssetCount = document.querySelector("#ai-asset-count");
+const aiBuyCount = document.querySelector("#ai-buy-count");
+const aiSellCount = document.querySelector("#ai-sell-count");
+const aiAverageConfidence = document.querySelector("#ai-average-confidence");
+const aiMarketBias = document.querySelector("#ai-market-bias");
+const aiMarketUpdate = document.querySelector("#ai-market-update");
 const dataProvider = document.querySelector("#data-provider");
 const bestBuy = document.querySelector("#best-buy");
 const bestSell = document.querySelector("#best-sell");
@@ -906,7 +914,7 @@ const SYMBOL_ALIASES = {
 const STORAGE_PREFIX = "the-sfm-trader-";
 const LEGACY_STORAGE_PREFIX = "the-sfm-";
 const APP_VIEW_GROUPS = {
-  home: ["#sfm-live-floor", "#markets-section", "#command-center-section", "#home-heatmap-section", "#home-deck-section"],
+  home: ["#sfm-live-floor", "#markets-section", "#command-center-section", "#home-heatmap-section", "#home-deck-section", "#economic-news-section", "#recommendations-section"],
   markets: ["#sfm-live-floor", "#markets-section", "#command-center-section", "#home-heatmap-section", "#home-deck-section", ".market-hours-band", "#economic-news-section", "#radar-section"],
   recommendations: ["#markets-section", "#command-center-section", "#recommendations-section", "#us-dashboard-section", "#us-outlook-section"],
   history: ["#markets-section", "#history-section", "#watchlist-section", "#portfolio-section"],
@@ -2388,6 +2396,36 @@ function getConnectionStatusText(data) {
   return localizeUiText("متصل - بيانات جديدة");
 }
 
+function updateAiTradingAgentSummary(data, all = [], buys = [], sells = [], avg = 0) {
+  const marketsCount = buildCompleteMarketList(lastMarkets).length || REQUIRED_MARKET_CATEGORY_DEFINITIONS.length;
+  const analyzed = Number(data?.analyzedCount || all.length || 0);
+  const total = Number(data?.market?.totalSymbols || data?.market?.count || all.length || 0);
+  const marketMove = all.length
+    ? all.reduce((sum, item) => sum + Number(item.expectedMovePct || 0), 0) / all.length
+    : 0;
+  const bias =
+    buys.length > sells.length && marketMove >= 0 ? "Bullish" :
+    sells.length > buys.length && marketMove < 0 ? "Bearish" :
+    "Mixed";
+
+  if (aiAgentStatus) aiAgentStatus.textContent = isEnglishLanguage() ? "Active" : "نشط";
+  if (aiMarketCount) aiMarketCount.textContent = formatNumber(marketsCount);
+  if (aiAssetCount) aiAssetCount.textContent = total ? `${formatNumber(analyzed)}/${formatNumber(total)}` : formatNumber(analyzed);
+  if (aiBuyCount) aiBuyCount.textContent = formatNumber(buys.length);
+  if (aiSellCount) aiSellCount.textContent = formatNumber(sells.length);
+  if (aiAverageConfidence) aiAverageConfidence.textContent = all.length ? `${formatNumber(avg)}%` : "--";
+  if (aiMarketBias) {
+    aiMarketBias.textContent = isEnglishLanguage()
+      ? bias
+      : bias === "Bullish" ? "صاعد" : bias === "Bearish" ? "هابط" : "مختلط";
+    aiMarketBias.className = bias.toLowerCase();
+  }
+  if (aiMarketUpdate) {
+    const generated = data?.generatedAt ? formatDateTime(data.generatedAt) : "--";
+    aiMarketUpdate.textContent = isEnglishLanguage() ? `Last update ${generated}` : `آخر تحديث ${generated}`;
+  }
+}
+
 function renderRecommendations(data) {
   if (!data) return;
 
@@ -2404,6 +2442,7 @@ function renderRecommendations(data) {
   buyCount.textContent = buys.length;
   sellCount.textContent = sells.length;
   avgConfidence.textContent = all.length ? `${avg}%` : "--";
+  updateAiTradingAgentSummary(data, all, buys, sells, avg);
   const providerLabel = data.dataProvider?.active || all[0]?.dataProvider || "--";
   dataProvider.textContent = data.partial || Number(data.pendingCount || 0) > 0
     ? `${providerLabel} · ${formatNumber(data.analyzedCount || all.length)}/${formatNumber(data.market.totalSymbols || all.length)}`
