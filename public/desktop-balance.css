@@ -12,6 +12,177 @@ body[data-app-view="home"] .market-band {
   z-index: 12 !important;
 }
 
+/* Unified sharp asset identity layer: stocks, crypto, commodities, GCC, and cards. */
+body:not(.intro-running) .asset-logo {
+  position: relative !important;
+  isolation: isolate !important;
+  display: grid !important;
+  place-items: center !important;
+  flex: 0 0 auto !important;
+  overflow: hidden !important;
+  opacity: 1 !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  color: #f7fbff !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  background:
+    radial-gradient(circle at 32% 22%, rgba(255, 255, 255, 0.22), transparent 30%),
+    linear-gradient(145deg, rgba(16, 31, 45, 0.98), rgba(3, 9, 15, 0.96)) !important;
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+body:not(.intro-running) .asset-logo > *,
+body:not(.intro-running) .asset-logo svg,
+body:not(.intro-running) .asset-logo span {
+  position: relative !important;
+  z-index: 3 !important;
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+body:not(.intro-running) .asset-logo-svg {
+  width: 70% !important;
+  height: 70% !important;
+  fill: currentColor !important;
+  stroke: currentColor !important;
+  stroke-width: 1.55 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+body:not(.intro-running) .asset-logo-svg-apple,
+body:not(.intro-running) .asset-logo-svg-gold,
+body:not(.intro-running) .asset-logo-svg-microsoft,
+body:not(.intro-running) .asset-logo-svg-bnb,
+body:not(.intro-running) .asset-logo-svg-solana,
+body:not(.intro-running) .asset-logo-svg-avalanche {
+  stroke: none !important;
+}
+
+body:not(.intro-running) .asset-logo-text {
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  direction: ltr !important;
+}
+
+body:not(.intro-running) .asset-logo-mini {
+  position: absolute !important;
+  right: 4px !important;
+  bottom: 3px !important;
+  z-index: 4 !important;
+  padding: 1px 3px !important;
+  border-radius: 5px !important;
+  font-size: 7px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  background: rgba(2, 8, 13, 0.64) !important;
+}
+
+body:not(.intro-running) .asset-logo-apple {
+  color: #f8fbff !important;
+  background: linear-gradient(145deg, #44505c, #080e14) !important;
+}
+
+body:not(.intro-running) .asset-logo-google {
+  color: #ffffff !important;
+  background: conic-gradient(from 25deg, #4285f4 0 28%, #34a853 28% 52%, #fbbc05 52% 75%, #ea4335 75% 100%) !important;
+}
+
+body:not(.intro-running) .asset-logo-google .asset-logo-text {
+  width: 72% !important;
+  height: 72% !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  color: #4285f4 !important;
+  background: #fff !important;
+  font-size: 16px !important;
+}
+
+body:not(.intro-running) .asset-logo-microsoft { color: #f5fbff !important; background: linear-gradient(135deg, #f35325 0 48%, #81bc06 48% 52%, #05a6f0 52% 76%, #ffba08 76% 100%) !important; }
+body:not(.intro-running) .asset-logo-amazon { color: #ffce6b !important; background: linear-gradient(145deg, #273246, #060c13) !important; }
+body:not(.intro-running) .asset-logo-meta { color: #56a8ff !important; background: linear-gradient(145deg, #0f315d, #050b12) !important; }
+body:not(.intro-running) .asset-logo-tesla { color: #ff6b78 !important; background: linear-gradient(145deg, #3c1018, #070b11) !important; }
+body:not(.intro-running) .asset-logo-nvidia { color: #90f86e !important; background: linear-gradient(145deg, #17360f, #050b10) !important; }
+body:not(.intro-running) .asset-logo-amd { color: #ff7a7a !important; background: linear-gradient(145deg, #40121a, #050b10) !important; }
+body:not(.intro-running) .asset-logo-intel { color: #8ed7ff !important; background: linear-gradient(145deg, #0d3558, #050b10) !important; }
+body:not(.intro-running) .asset-logo-netflix { color: #ff4554 !important; background: linear-gradient(145deg, #3a0710, #05080d) !important; }
+body:not(.intro-running) .asset-logo-salesforce { color: #b8eaff !important; background: linear-gradient(145deg, #0a4b76, #050b10) !important; }
+body:not(.intro-running) .asset-logo-oracle { color: #ff6f61 !important; background: linear-gradient(145deg, #4a0c0a, #050b10) !important; }
+
+body:not(.intro-running) .asset-logo-bank { color: #f5d17a !important; background: linear-gradient(145deg, #3d2b0c, #050b10) !important; }
+body:not(.intro-running) .asset-logo-jpm { color: #ffd777 !important; }
+body:not(.intro-running) .asset-logo-bac { color: #9ab9ff !important; background: linear-gradient(145deg, #10224e, #050b10) !important; }
+body:not(.intro-running) .asset-logo-health { color: #9ff7db !important; background: linear-gradient(145deg, #0e4038, #050b10) !important; }
+body:not(.intro-running) .asset-logo-food { color: #ffe08a !important; background: linear-gradient(145deg, #49320d, #050b10) !important; }
+body:not(.intro-running) .asset-logo-energy { color: #84f4ba !important; background: linear-gradient(145deg, #064034, #050b10) !important; }
+body:not(.intro-running) .asset-logo-ai { color: #b8c8ff !important; background: linear-gradient(145deg, #222b68, #050b10) !important; }
+body:not(.intro-running) .asset-logo-semiconductor { color: #84f4ff !important; background: linear-gradient(145deg, #123a48, #050b10) !important; }
+
+body:not(.intro-running) .asset-logo-crypto { color: #1c1200 !important; background: linear-gradient(145deg, #ffca57, #f59e0b 52%, #7a4203) !important; }
+body:not(.intro-running) .asset-logo-eth { color: #d9e2ff !important; background: linear-gradient(145deg, #6375ff, #151b45) !important; }
+body:not(.intro-running) .asset-logo-bnb { color: #231700 !important; background: linear-gradient(145deg, #ffe68d, #f3ba2f 50%, #8d5f02) !important; }
+body:not(.intro-running) .asset-logo-sol { color: #ffffff !important; background: linear-gradient(145deg, #14f195, #9945ff 52%, #080d16) !important; }
+body:not(.intro-running) .asset-logo-xrp { color: #e8f1ff !important; background: linear-gradient(145deg, #2a3746, #060c13) !important; }
+body:not(.intro-running) .asset-logo-ada { color: #dcecff !important; background: linear-gradient(145deg, #1f65d6, #061833) !important; }
+body:not(.intro-running) .asset-logo-avax { color: #ffffff !important; background: linear-gradient(145deg, #e84142, #5b1016) !important; }
+
+body:not(.intro-running) .asset-logo-gold { color: #ffe082 !important; background: linear-gradient(145deg, #80510a, #191006) !important; }
+body:not(.intro-running) .asset-logo-silver { color: #eef5ff !important; background: linear-gradient(145deg, #8a98a8, #111923) !important; }
+body:not(.intro-running) .asset-logo-oil { color: #8cf0bd !important; background: linear-gradient(145deg, #06392f, #050b10) !important; }
+body:not(.intro-running) .asset-logo-copper { color: #ffb27f !important; background: linear-gradient(145deg, #6e3515, #100907) !important; }
+body:not(.intro-running) .asset-logo-fx { color: #9af3c7 !important; background: linear-gradient(145deg, #0d3e35, #050b10) !important; }
+body:not(.intro-running) .asset-logo-eu { color: #ffdf61 !important; background: linear-gradient(145deg, #143a88, #06132c) !important; }
+body:not(.intro-running) .asset-logo-index { color: #9db8ff !important; background: linear-gradient(145deg, #162449, #050b10) !important; }
+
+body:not(.intro-running) .asset-logo-gulf { color: #ffffff !important; }
+body:not(.intro-running) .asset-logo-sa { background: linear-gradient(145deg, #006c38, #022d1e) !important; }
+body:not(.intro-running) .asset-logo-kw { background: linear-gradient(90deg, #171a1f 0 25%, transparent 25%), linear-gradient(180deg, #0d8f57 0 33%, #f5f6f7 33% 66%, #d82438 66% 100%) !important; color: #071014 !important; }
+body:not(.intro-running) .asset-logo-ae { background: linear-gradient(90deg, #bd1f2d 0 26%, transparent 26% 100%), linear-gradient(180deg, #0b8c4c 0 33%, #f7f7f7 33% 66%, #151a20 66% 100%) !important; color: #071014 !important; }
+body:not(.intro-running) .asset-logo-qa { background: linear-gradient(90deg, #f7f7f7 0 32%, #8a1538 32% 100%) !important; color: #8a1538 !important; }
+body:not(.intro-running) .asset-logo-bh { background: linear-gradient(90deg, #f7f7f7 0 34%, #ce1126 34% 100%) !important; color: #ce1126 !important; }
+body:not(.intro-running) .asset-logo-om { background: linear-gradient(90deg, #d62612 0 28%, transparent 28% 100%), linear-gradient(180deg, #fff 0 33%, #d62612 33% 66%, #007a3d 66% 100%) !important; color: #071014 !important; }
+
+body:not(.intro-running) .asset-title-row {
+  min-width: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+body:not(.intro-running) .floor-asset-logo,
+body:not(.intro-running) .market-board-asset-logo,
+body:not(.intro-running) .radar-asset-logo,
+body:not(.intro-running) .smart-alert-asset-logo,
+body:not(.intro-running) .golden-asset-logo,
+body:not(.intro-running) .mini-asset-logo,
+body:not(.intro-running) .portfolio-asset-logo {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 10px !important;
+}
+
+body:not(.intro-running) .radar-card-top,
+body:not(.intro-running) .market-board-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+body:not(.intro-running) .radar-card-top strong,
+body:not(.intro-running) .asset-title-row strong,
+body:not(.intro-running) .asset-title-row span:not(.asset-logo) {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
 body:not(.intro-running) .market-band::before,
 body:not(.intro-running) .market-band::after,
 body:not(.intro-running) .market-tabs::before,

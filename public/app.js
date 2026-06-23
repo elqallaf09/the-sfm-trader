@@ -2656,69 +2656,6 @@ function renderCommandMetricCard(title, value, note, tone) {
   `;
 }
 
-function getAssetVisual(item = {}) {
-  const symbol = String(item.symbol || "").toUpperCase();
-  const name = String(item.name || "").toLowerCase();
-  if (symbol.includes("GC=F") || symbol.includes("XAU") || name.includes("gold")) return { className: "asset-logo-gold", text: "Au" };
-  if (symbol.includes("BNB") || name.includes("bnb")) return { className: "asset-logo-bnb", text: "BNB" };
-  if (symbol.includes("ETH") || name.includes("ethereum")) return { className: "asset-logo-eth", text: "ETH" };
-  if (symbol.includes("BTC") || name.includes("bitcoin")) return { className: "asset-logo-crypto", text: "₿" };
-  if (symbol.includes("EUR") || symbol.includes("GBP") || symbol.includes("USD") || symbol.includes("JPY")) return { className: "asset-logo-fx", text: "FX" };
-  if (["AAPL", "APPLE"].some((value) => symbol.includes(value) || name.includes(value.toLowerCase()))) return { className: "asset-logo-apple", text: "" };
-  if (["GOOGL", "GOOG"].includes(symbol)) return { className: "asset-logo-google", text: "G" };
-  if (symbol.includes("MSFT")) return { className: "asset-logo-microsoft", text: "MS" };
-  if (symbol.includes("NVDA")) return { className: "asset-logo-ai", text: "AI" };
-  return { className: "asset-logo-default", text: symbol.slice(0, 2) || "S" };
-}
-
-function getPremiumAssetVisual(item = {}) {
-  const symbol = String(item.symbol || "").toUpperCase();
-  const name = String(item.name || "").toLowerCase();
-  const base = getAssetBaseSymbol(symbol);
-
-  if (symbol.includes("GC=F") || symbol.includes("XAU") || name.includes("gold")) {
-    return { className: "asset-logo-gold", html: renderAssetIcon("gold", "Au") };
-  }
-  if (symbol.includes("XAG") || name.includes("silver")) {
-    return { className: "asset-logo-silver", html: renderAssetIcon("text", "Ag") };
-  }
-  if (symbol.includes("CL=F") || symbol.includes("BZ=F") || symbol.includes("USOIL") || symbol.includes("UKOIL") || name.includes("oil")) {
-    return { className: "asset-logo-oil", html: renderAssetIcon("oil", "Oil") };
-  }
-  if (symbol.includes("BNB") || name.includes("bnb")) {
-    return { className: "asset-logo-bnb", html: renderAssetIcon("text", "BNB") };
-  }
-  if (symbol.includes("ETH") || name.includes("ethereum")) {
-    return { className: "asset-logo-eth", html: renderAssetIcon("text", "ETH") };
-  }
-  if (symbol.includes("BTC") || name.includes("bitcoin")) {
-    return { className: "asset-logo-crypto", html: renderAssetIcon("bitcoin", "B") };
-  }
-  if (symbol.includes("EUR")) {
-    return { className: "asset-logo-eu", html: renderAssetIcon("eu", "EU") };
-  }
-  if (symbol.includes("GBP") || symbol.includes("USD") || symbol.includes("JPY") || symbol.includes("CHF") || symbol.includes("CAD") || symbol.includes("AUD") || symbol.includes("NZD")) {
-    return { className: "asset-logo-fx", html: renderAssetIcon("fx", "FX") };
-  }
-  if (["AAPL", "APPLE"].some((value) => symbol.includes(value) || name.includes(value.toLowerCase()))) {
-    return { className: "asset-logo-apple", html: renderAssetIcon("apple", "") };
-  }
-  if (["GOOGL", "GOOG"].includes(base)) return { className: "asset-logo-google", html: renderAssetIcon("google", "G") };
-  if (symbol.includes("AMZN")) return { className: "asset-logo-amazon", html: renderAssetIcon("amazon", "AM") };
-  if (symbol.includes("TSLA")) return { className: "asset-logo-tesla", html: renderAssetIcon("text", "TS") };
-  if (symbol.includes("MSFT")) return { className: "asset-logo-microsoft", html: renderAssetIcon("microsoft", "MS") };
-  if (symbol.includes("NVDA")) return { className: "asset-logo-ai", html: renderAssetIcon("text", "AI") };
-  if (symbol.includes("AMD")) return { className: "asset-logo-ai", html: renderAssetIcon("text", "AM") };
-  if (symbol.includes("LLY")) return { className: "asset-logo-health", html: renderAssetIcon("text", "LL") };
-  if (symbol.includes("BAC")) return { className: "asset-logo-bank", html: renderAssetIcon("text", "BA") };
-  const gulf = getGulfAssetMark(symbol);
-  if (gulf) return gulf;
-  if (["US30", "US100", "NAS100", "SPX", "SP500", "S&P500"].some((value) => symbol.includes(value))) {
-    return { className: "asset-logo-index", html: renderAssetIcon("index", "IDX") };
-  }
-  return { className: "asset-logo-default", html: renderAssetIcon("text", (base || symbol).slice(0, 2) || "S") };
-}
-
 function getAssetBaseSymbol(symbol = "") {
   return String(symbol || "")
     .toUpperCase()
@@ -2727,7 +2664,91 @@ function getAssetBaseSymbol(symbol = "") {
     .replace(/=.*/, "");
 }
 
-function getGulfAssetMark(symbol = "") {
+const ASSET_VISUAL_RULES = [
+  { symbols: ["XAUUSD", "GC=F"], contains: ["XAU"], names: ["gold"], className: "asset-logo-gold", kind: "gold", label: "Au" },
+  { symbols: ["XAGUSD", "SI=F"], contains: ["XAG"], names: ["silver"], className: "asset-logo-silver", kind: "silver", label: "Ag" },
+  { symbols: ["USOIL", "UKOIL", "CL=F", "BZ=F"], names: ["oil", "brent", "wti"], className: "asset-logo-oil", kind: "oil", label: "Oil" },
+  { symbols: ["NATGAS", "NG=F"], names: ["natural gas", "natgas"], className: "asset-logo-energy", kind: "gas", label: "Gas" },
+  { symbols: ["COPPER", "HG=F"], names: ["copper"], className: "asset-logo-copper", kind: "copper", label: "Cu" },
+  { symbols: ["BTC", "BTCUSD", "BTC-USD"], contains: ["BTC"], names: ["bitcoin"], className: "asset-logo-crypto", kind: "bitcoin", label: "BTC" },
+  { symbols: ["ETH", "ETHUSD", "ETH-USD"], contains: ["ETH"], names: ["ethereum"], className: "asset-logo-eth", kind: "ethereum", label: "ETH" },
+  { symbols: ["BNB", "BNBUSD", "BNB-USD"], contains: ["BNB"], names: ["bnb"], className: "asset-logo-bnb", kind: "bnb", label: "BNB" },
+  { symbols: ["SOL", "SOLUSD", "SOL-USD"], contains: ["SOL"], names: ["solana"], className: "asset-logo-sol", kind: "solana", label: "SOL" },
+  { symbols: ["XRP", "XRPUSD", "XRP-USD"], contains: ["XRP"], names: ["xrp"], className: "asset-logo-xrp", kind: "xrp", label: "XRP" },
+  { symbols: ["ADA", "ADAUSD", "ADA-USD"], contains: ["ADA"], names: ["cardano"], className: "asset-logo-ada", kind: "cardano", label: "ADA" },
+  { symbols: ["AVAX", "AVAXUSD", "AVAX-USD"], contains: ["AVAX"], names: ["avalanche"], className: "asset-logo-avax", kind: "avalanche", label: "AVAX" },
+  { symbols: ["AAPL", "APPLE"], names: ["apple"], className: "asset-logo-apple", kind: "apple", label: "AAPL" },
+  { symbols: ["GOOGL", "GOOG"], names: ["alphabet", "google"], className: "asset-logo-google", kind: "google", label: "G" },
+  { symbols: ["MSFT"], names: ["microsoft"], className: "asset-logo-microsoft", kind: "microsoft", label: "MS" },
+  { symbols: ["AMZN"], names: ["amazon"], className: "asset-logo-amazon", kind: "amazon", label: "AM" },
+  { symbols: ["META"], names: ["meta"], className: "asset-logo-meta", kind: "meta", label: "ME" },
+  { symbols: ["TSLA"], names: ["tesla"], className: "asset-logo-tesla", kind: "tesla", label: "TS" },
+  { symbols: ["NVDA"], names: ["nvidia"], className: "asset-logo-nvidia", kind: "text", label: "NV" },
+  { symbols: ["AMD"], names: ["amd"], className: "asset-logo-amd", kind: "text", label: "AMD" },
+  { symbols: ["INTC"], names: ["intel"], className: "asset-logo-intel", kind: "text", label: "IN" },
+  { symbols: ["NFLX"], names: ["netflix"], className: "asset-logo-netflix", kind: "text", label: "N" },
+  { symbols: ["CRM"], names: ["salesforce"], className: "asset-logo-salesforce", kind: "text", label: "CRM" },
+  { symbols: ["ORCL"], names: ["oracle"], className: "asset-logo-oracle", kind: "text", label: "OR" },
+  { symbols: ["JPM"], names: ["jpmorgan", "jpmorgan chase"], className: "asset-logo-bank asset-logo-jpm", kind: "bank", label: "JPM" },
+  { symbols: ["BAC"], names: ["bank of america"], className: "asset-logo-bank asset-logo-bac", kind: "bank", label: "BAC" },
+  { symbols: ["WFC", "GS", "MS", "HSBC"], names: ["wells fargo", "goldman", "morgan stanley", "hsbc"], className: "asset-logo-bank", kind: "bank", label: "BK" },
+  { symbols: ["LLY"], names: ["eli lilly"], className: "asset-logo-health asset-logo-lly", kind: "pharma", label: "LL" },
+  { symbols: ["PFE"], names: ["pfizer"], className: "asset-logo-health asset-logo-pfe", kind: "pharma", label: "PF" },
+  { symbols: ["JNJ", "MRK", "ABBV", "NVO", "UNH", "AMGN"], names: ["johnson", "merck", "abbvie", "novo", "unitedhealth", "amgen"], className: "asset-logo-health", kind: "pharma", label: "Rx" },
+  { symbols: ["KO", "PEP", "MCD", "COST", "WMT", "PG", "MDLZ", "KHC", "SBUX"], names: ["coca-cola", "pepsico", "mcdonald", "costco", "walmart", "starbucks"], className: "asset-logo-food", kind: "food", label: "FD" },
+  { symbols: ["XOM", "CVX", "COP", "SLB", "BP", "SHEL", "TTE"], names: ["exxon", "chevron", "conocophillips", "schlumberger", "shell"], className: "asset-logo-energy", kind: "oil", label: "EN" },
+  { symbols: ["PLTR"], names: ["palantir"], className: "asset-logo-ai", kind: "text", label: "AI" },
+  { symbols: ["AVGO", "TSM", "QCOM", "ASML", "MU"], names: ["broadcom", "taiwan semiconductor", "qualcomm", "asml", "micron"], className: "asset-logo-semiconductor", kind: "chip", label: "CH" },
+  { symbols: ["EURUSD", "EURGBP", "EURJPY", "EURCHF", "EURCAD", "EURAUD", "EURNZD"], contains: ["EUR"], className: "asset-logo-eu", kind: "eu", label: "EU" },
+  { symbols: ["GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD"], className: "asset-logo-fx", kind: "fx", label: "FX" }
+];
+
+function getAssetVisual(item = {}) {
+  const visual = resolveAssetVisual(item);
+  return { className: visual.className, text: visual.label };
+}
+
+function getPremiumAssetVisual(item = {}) {
+  const visual = resolveAssetVisual(item);
+  return { className: visual.className, html: renderAssetIcon(visual.kind, visual.label) };
+}
+
+function resolveAssetVisual(item = {}) {
+  const symbol = String(item.symbol || "").toUpperCase();
+  const name = String(item.name || "").toLowerCase();
+  const base = getAssetBaseSymbol(symbol);
+  const rule = ASSET_VISUAL_RULES.find((entry) => assetRuleMatches(entry, symbol, base, name));
+  if (rule) return rule;
+
+  const gulf = resolveGulfAssetVisual(symbol);
+  if (gulf) return gulf;
+
+  if (["US30", "US100", "NAS100", "SPX", "SP500", "S&P500"].some((value) => symbol.includes(value))) {
+    return { className: "asset-logo-index", kind: "index", label: "IDX" };
+  }
+
+  return { className: "asset-logo-default", kind: "text", label: (base || symbol).slice(0, 3) || "S" };
+}
+
+function assetRuleMatches(rule, symbol, base, name) {
+  const compact = symbol.replace(/[^A-Z0-9]/g, "");
+  const exact = rule.symbols || [];
+  if (exact.some((value) => {
+    const key = String(value).toUpperCase();
+    return key === symbol || key === base || key === compact;
+  })) return true;
+
+  const contains = rule.contains || [];
+  if (contains.some((value) => {
+    const key = String(value).toUpperCase();
+    return symbol.includes(key) || compact.includes(key);
+  })) return true;
+
+  const names = rule.names || [];
+  return names.some((value) => name.includes(String(value).toLowerCase()));
+}
+
+function resolveGulfAssetVisual(symbol = "") {
   const upper = String(symbol || "").toUpperCase();
   const rules = [
     { test: upper.endsWith(".KW"), className: "asset-logo-gulf asset-logo-kw", label: "KW" },
@@ -2738,7 +2759,7 @@ function getGulfAssetMark(symbol = "") {
     { test: upper.endsWith(".QA"), className: "asset-logo-gulf asset-logo-qa", label: "QA" }
   ];
   const match = rules.find((rule) => rule.test);
-  return match ? { className: match.className, html: renderAssetIcon("text", match.label) } : null;
+  return match ? { className: match.className, kind: "text", label: match.label } : null;
 }
 
 function renderAssetIcon(kind, label) {
@@ -2759,12 +2780,58 @@ function renderAssetIcon(kind, label) {
       </svg>
     `;
   }
-  if (kind === "bitcoin") {
-    return `<span class="asset-logo-text asset-logo-text-bitcoin">&#8383;</span>`;
+  if (kind === "bitcoin") return `<span class="asset-logo-text asset-logo-text-bitcoin">&#8383;</span>`;
+  if (kind === "ethereum") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-ethereum" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 3 6.8 12.1 12 15.2l5.2-3.1Z"></path>
+        <path d="m6.8 13.2 5.2 7.8 5.2-7.8-5.2 3.1Z"></path>
+      </svg>
+    `;
   }
-  if (kind === "google") {
-    return `<span class="asset-logo-text asset-logo-text-google">G</span>`;
+  if (kind === "bnb") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-bnb" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="m12 3.4 3 3-3 3-3-3Z"></path><path d="m6.4 9 3 3-3 3-3-3Z"></path>
+        <path d="m17.6 9 3 3-3 3-3-3Z"></path><path d="m12 14.6 3 3-3 3-3-3Z"></path>
+        <path d="m12 9.2 2.8 2.8-2.8 2.8-2.8-2.8Z"></path>
+      </svg>
+    `;
   }
+  if (kind === "solana") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-solana" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M6 6.5h12l-2.2 2.4H3.8Z"></path><path d="M5.8 10.8h14.4L18 13.2H3.6Z"></path>
+        <path d="M6 15.1h12l-2.2 2.4H3.8Z"></path>
+      </svg>
+    `;
+  }
+  if (kind === "xrp") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-xrp" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M6 6.2c2.6 2.7 4.1 4 6 4s3.4-1.3 6-4"></path>
+        <path d="M6 17.8c2.6-2.7 4.1-4 6-4s3.4 1.3 6 4"></path>
+      </svg>
+    `;
+  }
+  if (kind === "cardano") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-cardano" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="2.2"></circle><circle cx="12" cy="4.8" r="1.1"></circle><circle cx="12" cy="19.2" r="1.1"></circle>
+        <circle cx="4.8" cy="12" r="1.1"></circle><circle cx="19.2" cy="12" r="1.1"></circle>
+        <circle cx="6.9" cy="6.9" r=".9"></circle><circle cx="17.1" cy="6.9" r=".9"></circle>
+        <circle cx="6.9" cy="17.1" r=".9"></circle><circle cx="17.1" cy="17.1" r=".9"></circle>
+      </svg>
+    `;
+  }
+  if (kind === "avalanche") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-avalanche" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 4 21 20h-6.1L12 14.8 9.1 20H3Z"></path><path d="M14.5 13.3 17 9l2.5 4.3Z"></path>
+      </svg>
+    `;
+  }
+  if (kind === "google") return `<span class="asset-logo-text asset-logo-text-google">G</span>`;
   if (kind === "amazon") {
     return `
       <span class="asset-logo-text">AM</span>
@@ -2790,7 +2857,7 @@ function renderAssetIcon(kind, label) {
       </svg>
     `;
   }
-  if (kind === "oil") {
+  if (kind === "oil" || kind === "gas") {
     return `
       <svg class="asset-logo-svg asset-logo-svg-oil" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M12 3.8c3.6 4.2 5.4 7.2 5.4 10a5.4 5.4 0 1 1-10.8 0c0-2.8 1.8-5.8 5.4-10Z"></path>
@@ -2801,9 +2868,7 @@ function renderAssetIcon(kind, label) {
   if (kind === "index") {
     return `
       <svg class="asset-logo-svg asset-logo-svg-index" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M4 17h16"></path>
-        <path d="M5 15 9 9l4 3 5-7"></path>
-        <path d="M16 5h2.8v2.8"></path>
+        <path d="M4 17h16"></path><path d="M5 15 9 9l4 3 5-7"></path><path d="M16 5h2.8v2.8"></path>
       </svg>
     `;
   }
@@ -2815,6 +2880,54 @@ function renderAssetIcon(kind, label) {
       </svg>
     `;
   }
+  if (kind === "meta") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-meta" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M4.2 15.5c1.5-5.6 3.6-8.3 6.1-8.3 2.9 0 3.9 8.3 7 8.3 1.8 0 2.8-1.5 2.8-3.2 0-2.6-1.7-5.1-4.2-5.1-3.1 0-5.3 8.3-8.4 8.3-1.9 0-3.2-1.4-3.3-3.2-.1-2.8 1.7-5.1 4.2-5.1"></path>
+      </svg>
+    `;
+  }
+  if (kind === "tesla") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-tesla" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M4.2 5.4c5.1-1.8 10.5-1.8 15.6 0"></path><path d="M8 7.4h8"></path>
+        <path d="M12 7.4V20"></path><path d="M9.7 10.2 12 7.4l2.3 2.8"></path>
+      </svg>
+    `;
+  }
+  if (kind === "bank") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-bank" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M4 9.2 12 4l8 5.2Z"></path><path d="M6 10.8V18M10 10.8V18M14 10.8V18M18 10.8V18M4 20h16"></path>
+      </svg>
+      <span class="asset-logo-mini">${escapeHtml(label.slice(0, 3))}</span>
+    `;
+  }
+  if (kind === "pharma") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-pharma" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M12 4v16M4 12h16"></path><circle cx="12" cy="12" r="8"></circle>
+      </svg>
+      <span class="asset-logo-mini">${escapeHtml(label.slice(0, 3))}</span>
+    `;
+  }
+  if (kind === "food") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-food" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M7 4v7M10 4v7M8.5 11v9"></path><path d="M16 4c2 2.6 2 6.2 0 8v8"></path>
+      </svg>
+    `;
+  }
+  if (kind === "chip") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-chip" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <rect x="7" y="7" width="10" height="10" rx="2"></rect>
+        <path d="M4 9h3M4 15h3M17 9h3M17 15h3M9 4v3M15 4v3M9 17v3M15 17v3"></path>
+      </svg>
+    `;
+  }
+  if (kind === "silver") return `<span class="asset-logo-text">Ag</span>`;
+  if (kind === "copper") return `<span class="asset-logo-text">Cu</span>`;
   return `<span class="asset-logo-text">${escapeHtml(label)}</span>`;
 }
 
@@ -3590,10 +3703,14 @@ function markLiveFloorRendered() {
 function renderFloorHeatCell(item, score, index) {
   const tone = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : "hold";
   const width = clamp(score, 12, 100);
+  const visual = getPremiumAssetVisual(item);
   return `
     <article class="floor-heat-cell ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" style="--heat-width: ${width}%; --heat-delay: ${index * 0.06}s">
       <div>
-        <strong>${escapeHtml(item.symbol)}</strong>
+        <span class="asset-title-row">
+          <span class="asset-logo floor-asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span>
+          <strong>${escapeHtml(item.symbol)}</strong>
+        </span>
         <span>${escapeHtml(item.actionLabel)} · ${formatNumber(item.confidence)}%</span>
       </div>
       <b>${score}%</b>
@@ -3602,10 +3719,16 @@ function renderFloorHeatCell(item, score, index) {
 }
 
 function renderMarketBoardCard(item) {
+  const visual = getPremiumAssetVisual(item);
   return `
     <article class="market-board-card ${escapeHtml(item.action)}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0">
-      <span>${escapeHtml(item.exchangeName || "MARKET")}</span>
-      <strong>${escapeHtml(item.symbol)}</strong>
+      <div class="asset-title-row market-board-title">
+        <span class="asset-logo market-board-asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span>
+        <div>
+          <span>${escapeHtml(item.exchangeName || "MARKET")}</span>
+          <strong>${escapeHtml(item.symbol)}</strong>
+        </div>
+      </div>
       <b>${formatMoney(item.currentPrice, item.currency)} · ${formatPercent(item.expectedMovePct)}</b>
       <em>${escapeHtml(item.actionLabel)} · ${item.confidence}%</em>
     </article>
@@ -3645,11 +3768,13 @@ function renderRadarCard(item, tone = "") {
   if (!item) return "";
   const actionClass = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : "hold";
   const dangerClass = tone === "avoid" || item.decision?.kind === "avoid" ? " radar-card-avoid" : "";
+  const visual = getPremiumAssetVisual(item);
 
   return `
     <article class="radar-card ${actionClass}${dangerClass}" data-symbol="${escapeHtml(item.symbol)}" role="link" tabindex="0">
       <span>${escapeHtml(item.label || item.actionLabel || "فرصة")}</span>
       <div class="radar-card-top">
+        <span class="asset-logo radar-asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span>
         <strong>${escapeHtml(item.symbol)}</strong>
         <em>${escapeHtml(item.actionLabel || item.decision?.badge || "--")}</em>
       </div>
@@ -3680,11 +3805,13 @@ function renderMonthlyRadarCard(item) {
       </article>
     `;
   }
+  const visual = getPremiumAssetVisual(item);
 
   return `
     <article class="radar-card buy" data-symbol="${escapeHtml(item.symbol)}" role="link" tabindex="0">
       <span>${escapeHtml(item.label)}</span>
       <div class="radar-card-top">
+        <span class="asset-logo radar-asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span>
         <strong>${escapeHtml(item.symbol)}</strong>
         <em>${item.confidence}%</em>
       </div>
@@ -3714,15 +3841,23 @@ function renderSmartAlerts(data) {
     return;
   }
 
-  smartAlertsList.innerHTML = alerts.map((alert) => `
+  smartAlertsList.innerHTML = alerts.map((alert) => {
+    const visual = getPremiumAssetVisual(alert);
+    return `
     <article class="smart-alert-card" data-symbol="${escapeHtml(alert.symbol)}" role="link" tabindex="0">
-      <span>${escapeHtml(alert.name)}</span>
-      <strong>${escapeHtml(alert.symbol)}</strong>
+      <div class="asset-title-row">
+        <span class="asset-logo smart-alert-asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span>
+        <div>
+          <span>${escapeHtml(alert.name)}</span>
+          <strong>${escapeHtml(alert.symbol)}</strong>
+        </div>
+      </div>
       <span>الحالي ${formatMoney(alert.currentPrice, alert.currency)}</span>
       <span>الهدف ${formatMoney(alert.expectedPrice, alert.currency)} · ${formatPercent(alert.expectedMovePct)}</span>
       <em>${alert.confidence}% ثقة</em>
     </article>
-  `).join("");
+  `;
+  }).join("");
   attachDetailOpeners(smartAlertsList);
 }
 
@@ -3749,10 +3884,17 @@ function renderGoldenOpportunities(data) {
     return;
   }
 
-  goldenGrid.innerHTML = golden.map(({ item, score }) => `
+  goldenGrid.innerHTML = golden.map(({ item, score }) => {
+    const visual = getPremiumAssetVisual(item);
+    return `
     <article class="golden-card" data-symbol="${escapeHtml(item.symbol)}" role="link" tabindex="0">
-      <span>${escapeHtml(item.name)}</span>
-      <strong>${escapeHtml(item.symbol)}</strong>
+      <div class="asset-title-row">
+        <span class="asset-logo golden-asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span>
+        <div>
+          <span>${escapeHtml(item.name)}</span>
+          <strong>${escapeHtml(item.symbol)}</strong>
+        </div>
+      </div>
       <div class="golden-meta">
         <em class="score-pill">Score ${score.score}%</em>
         <em class="status-pill-mini">${escapeHtml(item.actionLabel)}</em>
@@ -3762,7 +3904,8 @@ function renderGoldenOpportunities(data) {
         الهدف ${formatMoney(item.expectedPrice, item.currency)} خلال ${escapeHtml(item.duration)}
       </div>
     </article>
-  `).join("");
+  `;
+  }).join("");
 
   attachDetailOpeners(goldenGrid);
 }
@@ -3905,11 +4048,15 @@ function renderPortfolio(currentItems = []) {
     const profit = hasPrice ? value - cost : null;
     const profitPct = hasPrice && cost > 0 ? (profit / cost) * 100 : null;
     const resultClass = profit >= 0 ? "profit" : "loss";
+    const visual = getPremiumAssetVisual({ symbol: position.symbol, name: item?.name || position.symbol });
 
     return `
       <article class="portfolio-item">
         <div>
-          <span>السهم</span>
+          <span class="asset-title-row">
+            <span class="asset-logo portfolio-asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span>
+            <span>السهم</span>
+          </span>
           <strong>${escapeHtml(position.symbol)}</strong>
         </div>
         <div>
@@ -4891,11 +5038,17 @@ function renderOutlookItem(candidate) {
 function renderMiniSignalCard(item) {
   const score = calculateFinalScore(item);
   const statusClass = item.action === "sell" ? "sell" : item.action === "hold" ? "hold" : "";
+  const visual = getPremiumAssetVisual(item);
 
   return `
     <article class="mini-card" data-symbol="${escapeHtml(item.symbol)}" role="link" tabindex="0">
-      <span>${escapeHtml(item.name)}</span>
-      <strong>${escapeHtml(item.symbol)}</strong>
+      <div class="asset-title-row">
+        <span class="asset-logo mini-asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span>
+        <div>
+          <span>${escapeHtml(item.name)}</span>
+          <strong>${escapeHtml(item.symbol)}</strong>
+        </div>
+      </div>
       <div class="mini-meta">
         <em class="status-pill-mini ${statusClass}">${escapeHtml(item.actionLabel)}</em>
         <em class="score-pill">Score ${score.score}%</em>
