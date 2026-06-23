@@ -95,9 +95,174 @@ const DETAIL_TEXT_TRANSLATIONS = {
   "متوسط": "Medium",
   "ضعيف": "Weak"
 };
+const DETAIL_EXTRA_TEXT_TRANSLATIONS = {
+  "تحديث الصفحة الآن": "Refresh page now",
+  "النفط والطاقة": "Oil and energy",
+  "يحتاج تدقيق شرعي": "Requires Sharia review",
+  "يحتاج مراجعة شرعية": "Requires Sharia review",
+  "عقد سلعي يحتاج تحقق شرعي": "Commodity contract requires Sharia review",
+  "لا يوجد تصنيف شرعي مؤكد لهذا الرمز داخل التطبيق حالياً": "No confirmed Sharia classification is available for this symbol in the app right now",
+  "لا يوجد تصنيف شرعي مؤكد لهذا الرمز داخل التطبيق حالياً.": "No confirmed Sharia classification is available for this symbol in the app right now.",
+  "التصنيف الداخلي قابل للتحديث": "Internal classification may be updated",
+  "تصنيف داخلي قابل للتحديث": "Internal classification may be updated",
+  "تصنيف محلي مبني على مراجع فحص شرعي عامة، ويحتاج تحديث دوري": "Local classification based on general Sharia screening references and requiring periodic updates",
+  "مصنف داخلياً كمتوافق مع الشريعة حسب البيانات المتاحة في التطبيق.": "Internally classified as Sharia compliant based on the data available in the app.",
+  "مصنف داخلياً كغير متوافق مع الشريعة، ويفضل تجنبه إذا كان شرطك الالتزام الشرعي.": "Internally classified as not Sharia compliant; it is better to avoid it if Sharia compliance is required.",
+  "التصنيف الشرعي غير محسوم في بيانات التطبيق ويحتاج مراجعة جهة فحص شرعي.": "The Sharia classification is not conclusive in the app data and requires review by a Sharia screening provider.",
+  "مختلف عليه": "Disputed",
+  "مختلف عليه شرعياً": "Disputed Sharia status",
+  "مخاطرة مرتفعة": "High risk",
+  "مخاطرة عالية": "High risk",
+  "مخاطرة متوسطة": "Medium risk",
+  "مخاطرة منخفضة": "Low risk",
+  "صاعد": "Bullish",
+  "صاعدة": "Bullish",
+  "هابط": "Bearish",
+  "هابطة": "Bearish",
+  "مختلط": "Mixed",
+  "عرضي": "Sideways",
+  "محايد": "Neutral",
+  "ممتازة": "Excellent",
+  "قوية": "Strong",
+  "متوسطة": "Medium",
+  "طبيعية": "Normal",
+  "طبيعي": "Normal",
+  "مرتفع": "High",
+  "منخفض": "Low",
+  "منخفضة": "Low",
+  "ضعيفة": "Weak",
+  "بيانات غير كافية": "Insufficient data",
+  "تجنب الصفقة الآن": "Avoid this trade now",
+  "فرصة شراء مشروطة": "Conditional buy opportunity",
+  "ضغط بيعي واضح": "Clear selling pressure",
+  "انتظار تأكيد": "Wait for confirmation",
+  "اشتر": "Buy",
+  "لا تتداول": "Do not trade",
+  "لا توجد صفقة واضحة؛ انتظار توافق الفريمات.": "No clear trade is available; wait for timeframe agreement.",
+  "لا توجد صفقة واضحة؛ انتظار توافق الفريمات": "No clear trade is available; wait for timeframe agreement",
+  "الإشارة غير كافية للدخول. الأفضل انتظار توافق الفريمات السريعة مع اليومي.": "The signal is not strong enough for entry. It is better to wait for the fast timeframes to align with the daily.",
+  "المخاطرة عالية مقارنة بجودة الإشارة.": "Risk is high compared with signal quality.",
+  "المخاطرة عالية مقارنة بجودة الإشارة": "Risk is high compared with signal quality",
+  "انتظار حتى يتوافق 15 دقيقة + الساعة + اليوم": "Wait until the 15-minute, hourly, and daily timeframes align",
+  "15 دقيقة إلى 4 أسابيع": "15 minutes to 4 weeks",
+  "1 يوم إلى 6 أسابيع": "1 day to 6 weeks",
+  "3 إلى 10 أيام": "3 to 10 days",
+  "العائد إلى المخاطرة غير مكتمل": "Risk/reward ratio is incomplete",
+  "لا توجد أخبار اقتصادية مؤثرة قريبة على هذا الرمز.": "No nearby high-impact economic events are affecting this symbol.",
+  "انتظار حتى يهدأ تأثير الخبر ثم إعادة قراءة الشارت": "Wait until the news impact settles, then reread the chart",
+  "انتظار حتى تتحسن جودة البيانات ويتوافق اليومي مع الفريمات السريعة": "Wait until data quality improves and the daily timeframe aligns with the fast timeframes",
+  "خطة الصفقة غير مكتملة لأن العائد مقابل المخاطرة غير واضح.": "The trade plan is incomplete because the risk/reward ratio is unclear.",
+  "العائد مقابل المخاطرة ضعيف؛ تم إلغاء إشارة الدخول.": "The risk/reward ratio is weak, so the entry signal was cancelled.",
+  "العائد مقابل المخاطرة مقبول بصعوبة، لذلك الثقة محدودة.": "The risk/reward ratio is barely acceptable, so confidence is limited.",
+  "تفاوت السعر بين الفريمات مرتفع؛ تم تحويل القرار إلى انتظار حتى تتطابق البيانات.": "Price variance across timeframes is high, so the decision was changed to wait until the data aligns.",
+  "جودة البيانات منخفضة؛ لا توجد ثقة كافية لإصدار شراء أو بيع الآن.": "Data quality is low; there is not enough confidence to issue a buy or sell signal now.",
+  "الفريم اليومي يعاكس قرار الفريمات الأخرى؛ الأفضل انتظار تأكيد أوضح.": "The daily timeframe conflicts with the other timeframes, so it is better to wait for clearer confirmation.",
+  "السعر أعلى من متوسط 20 يوم": "Price is above the 20-day average",
+  "السعر أدنى من متوسط 20 يوم": "Price is below the 20-day average",
+  "الاتجاه فوق متوسط 50 يوم": "Trend is above the 50-day average",
+  "الاتجاه تحت متوسط 50 يوم": "Trend is below the 50-day average",
+  "متوسط 20 يوم أعلى من متوسط 50 يوم": "The 20-day average is above the 50-day average",
+  "متوسط 20 يوم أقل من متوسط 50 يوم": "The 20-day average is below the 50-day average",
+  "MACD إيجابي": "MACD is positive",
+  "MACD سلبي": "MACD is negative",
+  "السعر فوق VWAP: المشترون أقوى": "Price is above VWAP: buyers are stronger",
+  "السعر تحت VWAP: ضغط بيعي": "Price is below VWAP: selling pressure",
+  "زخم شهر إيجابي": "One-month momentum is positive",
+  "زخم شهر سلبي": "One-month momentum is negative",
+  "RSI منخفض: احتمال ارتداد": "RSI is low: possible rebound",
+  "RSI مرتفع: احتمال جني أرباح": "RSI is high: possible profit-taking",
+  "RSI في نطاق محايد": "RSI is in a neutral range",
+  "النشاط أعلى من المعتاد": "Activity is above normal",
+  "حجم تداول لحظي أعلى من المتوسط": "Intraday volume is above average",
+  "حجم التداول ضعيف": "Trading volume is weak",
+  "التذبذب مرتفع نسبيا": "Volatility is relatively high",
+  "الإشارات متقاربة ولا تعطي أفضلية واضحة": "Signals are close and do not provide a clear edge",
+  "لا يوجد تضارب قوي بين الفريمات الأساسية والسريعة": "No strong conflict between core and fast timeframes",
+  "فريمات الدخول تدعم القرار": "Entry timeframes support the decision",
+  "تذبذب منخفض": "Low volatility",
+  "تذبذب متوسط": "Medium volatility",
+  "تذبذب مرتفع": "High volatility",
+  "الإشارة ليست حادة": "The signal is not sharp",
+  "توافق الفريمات متوسط": "Medium timeframe agreement",
+  "النشاط أقل من المعتاد": "Activity is below normal",
+  "RSI عند طرف قوي": "RSI is at a strong edge",
+  "الفريمات السريعة": "Fast timeframes",
+  "الفريمات الطويلة": "Long timeframes",
+  "يوجد تضارب": "Conflict detected",
+  "دقيقة": "1 minute",
+  "15 دقيقة": "15 minutes",
+  "30 دقيقة": "30 minutes",
+  "ساعة": "1 hour",
+  "يومي": "Daily",
+  "أسبوعي": "Weekly",
+  "شهري": "Monthly",
+  "سنوي": "Yearly",
+  "زوج عملات فوركس": "Forex currency pair",
+  "أصل رقمي مشفر": "Crypto asset",
+  "سلعة أو عقد آجل": "Commodity or futures contract",
+  "مؤشر سوق": "Market index",
+  "أداة مالية مدرجة": "Listed financial instrument",
+  "عملة رقمية ومخزن قيمة رقمي": "Digital currency and digital store of value",
+  "شبكة عقود ذكية وتطبيقات لامركزية": "Smart-contract network and decentralized applications",
+  "أصل رقمي لمنظومة تداول وبلوكتشين": "Digital asset for a trading and blockchain ecosystem",
+  "شبكة بلوك تشين عالية السرعة": "High-speed blockchain network",
+  "مدفوعات وتحويلات رقمية": "Digital payments and transfers",
+  "شبكة عقود ذكية": "Smart-contract network",
+  "شبكة تطبيقات لامركزية": "Decentralized applications network",
+  "أوراكل بيانات للبلوكتشين": "Blockchain data oracle",
+  "شبكة ربط بين سلاسل البلوكتشين": "Interoperability network for blockchains",
+  "ذهب - عقد آجل": "Gold futures",
+  "فضة - عقد آجل": "Silver futures",
+  "نفط خام WTI - عقد آجل": "WTI crude oil futures",
+  "نفط برنت - عقد آجل": "Brent crude oil futures",
+  "غاز طبيعي - عقد آجل": "Natural gas futures",
+  "نحاس - عقد آجل": "Copper futures",
+  "تقنية استهلاكية وأجهزة ذكية": "Consumer technology and smart devices",
+  "برمجيات وحوسبة سحابية وذكاء اصطناعي": "Software, cloud computing, and AI",
+  "رقائق رسومية وذكاء اصطناعي": "Graphics chips and AI",
+  "معالجات ورقائق حوسبة": "Processors and computing chips",
+  "إعلانات رقمية وبحث وسحابة": "Digital advertising, search, and cloud",
+  "تجارة إلكترونية وحوسبة سحابية": "E-commerce and cloud computing",
+  "سيارات كهربائية وطاقة": "Electric vehicles and energy",
+  "شبكات اجتماعية وإعلانات رقمية": "Social networks and digital advertising",
+  "مصرفية إسلامية": "Islamic banking",
+  "مصرفية تقليدية": "Traditional banking",
+  "اتصالات وخدمات رقمية": "Telecom and digital services",
+  "أزواج عملات رئيسية. أسعار Yahoo قد تكون متأخرة حسب الزوج.": "Major currency pairs. Yahoo prices may be delayed depending on the pair.",
+  "ذهب وفضة ونفط وغاز ونحاس. رموز العقود الآجلة قد تكون متأخرة حسب المزود.": "Gold, silver, oil, gas, and copper. Futures symbols may be delayed depending on the provider.",
+  "أسهم أمريكية عالية السيولة من قطاعات التقنية والاستهلاك والصحة والبنوك.": "Highly liquid US stocks from technology, consumer, healthcare, and banking sectors.",
+  "Alphabet / Google تعمل في البحث، الإعلانات، YouTube، Android، Google Cloud، وتقنيات الذكاء الاصطناعي.": "Alphabet / Google operates in search, advertising, YouTube, Android, Google Cloud, and AI technologies.",
+  "Apple تعمل في iPhone وMac وiPad والخدمات الرقمية ومتجر التطبيقات، وتتداول في السوق الأمريكي.": "Apple operates in iPhone, Mac, iPad, digital services, and the App Store, and trades in the US market.",
+  "Microsoft تعمل في أنظمة التشغيل، Azure، Office، الألعاب، وخدمات الذكاء الاصطناعي، وتتداول في السوق الأمريكي.": "Microsoft operates in operating systems, Azure, Office, gaming, and AI services, and trades in the US market.",
+  "NVIDIA تقود سوق معالجات الرسوم ومسرعات الذكاء الاصطناعي ومراكز البيانات، وتتداول في السوق الأمريكي.": "NVIDIA leads graphics processors, AI accelerators, and data centers, and trades in the US market.",
+  "AMD تعمل في معالجات الحواسيب والخوادم والبطاقات الرسومية ومسرعات الذكاء الاصطناعي، وتتداول في السوق الأمريكي.": "AMD operates in PC and server processors, graphics cards, and AI accelerators, and trades in the US market.",
+  "الأسهم الأمريكية": "US stocks",
+  "الفوركس": "Forex",
+  "العملات الرقمية": "Crypto",
+  "السلع": "Commodities",
+  "أسواق الخليج": "Gulf markets",
+  "السوق السعودي": "Saudi market",
+  "بورصة الكويت": "Kuwait market",
+  "السوق الإماراتي": "UAE market",
+  "السوق القطري": "Qatar market",
+  "السوق البحريني": "Bahrain market",
+  "السوق العماني": "Oman market",
+  "الأسهم الأوروبية": "European stocks",
+  "الأسهم الآسيوية": "Asian stocks",
+  "أسهم التقنية": "Technology stocks",
+  "الأسهم الغذائية": "Food / consumer staples",
+  "الأسهم الدوائية": "Pharmaceutical / healthcare",
+  "أسهم البنوك": "Banking stocks",
+  "أسهم الطاقة": "Energy stocks",
+  "أسهم الذكاء الاصطناعي": "AI stocks",
+  "أسهم أشباه الموصلات": "Semiconductor stocks",
+  "قائمة مخصصة": "Custom list",
+  "رمز مضاف من قائمة المراقبة، وقد يحتاج مزود بيانات يدعمه بشكل مباشر.": "A watchlist symbol that may require a provider with direct support.",
+  "السوق مغلق الآن؛ راقب الإشارة عند الافتتاح ولا تدخل قبل ظهور أسعار حية.": "The market is closed now; monitor the signal at the open and do not enter before live prices appear."
+};
 const detailOriginalTextByNode = new WeakMap();
 const DETAIL_TRANSLATABLE_ATTRS = ["placeholder", "title", "aria-label"];
-const DETAIL_TEXT_TRANSLATION_ENTRIES = Object.entries(DETAIL_TEXT_TRANSLATIONS)
+const DETAIL_TEXT_TRANSLATION_ENTRIES = Object.entries({ ...DETAIL_TEXT_TRANSLATIONS, ...DETAIL_EXTRA_TEXT_TRANSLATIONS })
   .sort((a, b) => b[0].length - a[0].length);
 const DETAIL_COMMON_TERM_TRANSLATIONS = [
   ["غير مطابق", "Not compliant"],
@@ -218,6 +383,108 @@ const DETAIL_ENGLISH_TERM_TO_ARABIC = [
   ["Trend", "الاتجاه"],
   ["trend", "الاتجاه"]
 ].sort((a, b) => b[0].length - a[0].length);
+const DETAIL_ACTION_LABELS = {
+  buy: { ar: "شراء", en: "Buy" },
+  sell: { ar: "بيع", en: "Sell" },
+  hold: { ar: "انتظار", en: "Wait" }
+};
+const DETAIL_SHARIA_LABELS = {
+  compliant: { ar: "مطابق للشريعة", en: "Sharia compliant" },
+  not_compliant: { ar: "غير مطابق للشريعة", en: "Not Sharia compliant" },
+  doubtful: { ar: "يحتاج مراجعة شرعية", en: "Requires Sharia review" },
+  unknown: { ar: "غير معروف", en: "Unknown" }
+};
+const DETAIL_SHARIA_DESCRIPTIONS = {
+  compliant: {
+    ar: "مصنف داخلياً كمتوافق مع الشريعة حسب البيانات المتاحة في التطبيق.",
+    en: "Internally classified as Sharia compliant based on the data available in the app."
+  },
+  not_compliant: {
+    ar: "مصنف داخلياً كغير متوافق مع الشريعة، ويفضل تجنبه إذا كان شرطك الالتزام الشرعي.",
+    en: "Internally classified as not Sharia compliant; it is better to avoid it if Sharia compliance is required."
+  },
+  doubtful: {
+    ar: "التصنيف الشرعي غير محسوم في بيانات التطبيق ويحتاج مراجعة جهة فحص شرعي.",
+    en: "The Sharia classification is not conclusive in the app data and requires review by a Sharia screening provider."
+  },
+  unknown: {
+    ar: "لا يوجد تصنيف شرعي مؤكد لهذا الرمز داخل التطبيق حالياً.",
+    en: "No confirmed Sharia classification is available for this symbol in the app right now."
+  }
+};
+const DETAIL_RISK_LABELS = {
+  low: { ar: "مخاطرة منخفضة", en: "Low risk" },
+  medium: { ar: "مخاطرة متوسطة", en: "Medium risk" },
+  high: { ar: "مخاطرة عالية", en: "High risk" }
+};
+const DETAIL_SCORE_LABELS = {
+  veryStrong: { ar: "قوي جداً", en: "Very strong" },
+  strong: { ar: "قوي", en: "Strong" },
+  medium: { ar: "متوسط", en: "Medium" },
+  weak: { ar: "ضعيف", en: "Weak" }
+};
+const DETAIL_TIMEFRAME_LABELS = {
+  "1m": { ar: "دقيقة", en: "1 minute" },
+  "15m": { ar: "15 دقيقة", en: "15 minutes" },
+  "30m": { ar: "30 دقيقة", en: "30 minutes" },
+  "1h": { ar: "ساعة", en: "1 hour" },
+  "1d": { ar: "يومي", en: "Daily" },
+  "1wk": { ar: "أسبوعي", en: "Weekly" },
+  "1mo": { ar: "شهري", en: "Monthly" },
+  "1y": { ar: "سنوي", en: "Yearly" }
+};
+const DETAIL_REGION_TRANSLATIONS = {
+  Americas: "Americas",
+  America: "America",
+  Europe: "Europe",
+  Asia: "Asia",
+  GCC: "GCC",
+  FX: "FX",
+  Crypto: "Crypto",
+  Commodities: "Commodities",
+  Technology: "Technology",
+  "Consumer Staples": "Consumer staples",
+  Healthcare: "Healthcare",
+  Financials: "Financials",
+  Energy: "Energy",
+  "AI / Cloud": "AI / Cloud",
+  Semiconductors: "Semiconductors",
+  Global: "Global",
+  Custom: "Custom"
+};
+const DETAIL_ARABIC_PHRASE_PATTERNS = [
+  [/راقب دخول قريب من\s+([\d.,]+)\.\s+الهدف الأول\s+([\d.,]+)\s+ووقف\s+(?:الخطر|الخسارة)\s+([\d.,]+)\./g, (_, entry, target, stop) => `Watch for an entry near ${entry}. First target ${target} and stop loss ${stop}.`],
+  [/الإشارة تميل للبيع\. الهدف الأول\s+([\d.,]+)\s+ووقف الخطر\s+([\d.,]+)\./g, (_, target, stop) => `The signal leans sell. First target ${target} and risk stop ${stop}.`],
+  [/^(.+?)\s+زوج عملات في سوق\s+(?:الفوركس|Forex)، ويتأثر بأسعار الفائدة، السيولة، وقوة العملات بين البلدين\.$/g, (_, name) => `${name} is a forex currency pair affected by interest rates, liquidity, and the relative strength of both currencies.`],
+  [/^(.+?)\s+عقد آجل أو أصل سلعي يتداول في أسواق\s+(?:السلع|Commodities)\. يحتاج متابعة وقت الجلسة، السيولة، الأخبار الاقتصادية، وإدارة مخاطرة صارمة لأن الحركة قد تكون سريعة\.$/g, (_, name) => `${name} is a futures or commodity instrument traded in commodity markets. It requires monitoring session timing, liquidity, economic news, and strict risk management because moves can be fast.`],
+  [/^(.+?)\s+أصل رقمي يتداول مقابل الدولار في سوق العملات الرقمية\. يتحرك عادة بتذبذب مرتفع ويتأثر بالسيولة، اتجاه Bitcoin، شهية المخاطرة، وأخبار التنظيم والمنصات\.$/g, (_, name) => `${name} is a digital asset traded against the US dollar in the crypto market. It usually moves with high volatility and is affected by liquidity, Bitcoin direction, risk appetite, and regulation or exchange news.`],
+  [/^(.+?)\s+مؤشر يقيس حركة مجموعة من الأسهم داخل سوق أو قطاع محدد\. المؤشرات لا تمثل سهماً واحداً، لذلك تحليلها يعتمد على اتجاه السوق العام، السيولة، الأخبار الاقتصادية، وحركة الشركات القيادية داخل المؤشر\.$/g, (_, name) => `${name} is an index that tracks a group of stocks inside a market or sector. Index analysis depends on broad market direction, liquidity, economic news, and leading constituents.`],
+  [/^(.+?)\s+رمز مالي يتداول في السوق المرتبط به\. للحصول على وصف تفصيلي أدق، اربطه بمزود بيانات أساسي أو ملف معلومات شركات\.$/g, (_, name) => `${name} is a listed financial instrument traded in its related market. For a more detailed description, connect it to a fundamental data provider or company profile source.`],
+  [/القرار النهائي\s+(شراء|بيع|انتظار)\s+بعد دمج\s+(\d+)\s+فريمات من أصل\s+(\d+)/g, (_, action, used, total) => `Final decision: ${localizeActionLabel(action)} after combining ${used} of ${total} timeframes`],
+  [/الفريمات السريعة:\s*([^؛.\n]+)/g, (_, value) => `Fast timeframes: ${localizeDetailText(value)}`],
+  [/الفريمات الطويلة:\s*([^؛.\n]+)/g, (_, value) => `Long timeframes: ${localizeDetailText(value)}`],
+  [/الأساسية:\s*([^.\n]+)/g, (_, value) => `Core timeframes: ${localizeDetailText(value).replaceAll("،", ",")}`],
+  [/فريمات الدخول السريع:\s*([^.\n]+)/g, (_, value) => `Fast entry timeframes: ${localizeDetailText(value).replaceAll("،", ",")}`],
+  [/يوجد تضارب:\s*([^؛.\n]+)/g, (_, value) => `Conflict detected: ${localizeDetailText(value)}`],
+  [/تضارب بين\s+(?:الفريمات السريعة|Fast timeframes)\s+\(([\u0600-\u06ffA-Za-z]+)\)\s+و(?:الفريمات\s+)?الطويلة\s+\(([\u0600-\u06ffA-Za-z]+)\)/g, (_, fast, long) => `Conflict between fast timeframes (${localizeDetailText(fast)}) and long timeframes (${localizeDetailText(long)})`],
+  [/نسبة\s+(?:توافق الفريمات|Timeframe agreement)\s+(\d+)%\s+و(?:الاتجاه|Trend)\s+العام\s+([\u0600-\u06ffA-Za-z]+)/g, (_, agreement, trend) => `Timeframe agreement is ${agreement}% and the overall trend is ${localizeDetailText(trend)}`],
+  [/توافق الفريمات\s+(\d+)%\s+·\s+تغطية\s+(\d+)\/(\d+)/g, (_, agreement, coverage, total) => `Timeframe agreement ${agreement}% · coverage ${coverage}/${total}`],
+  [/(\d+)%\s+ثقة/g, (_, confidence) => `${confidence}% confidence`],
+  [/(\d+(?:\.\d+)?)%\s+نجاح/g, (_, winRate) => `${winRate}% win rate`],
+  [/العائد إلى المخاطرة\s+([\d.]+)\.\s+انتظار تأكيد فريم 15 أو 30 دقيقة قبل الدخول\./g, (_, ratio) => `Risk/reward ratio ${ratio}. Wait for confirmation on the 15- or 30-minute timeframe before entry.`],
+  [/العائد إلى المخاطرة\s+([\d.]+)\.\s+فريمات الدخول تدعم القرار\./g, (_, ratio) => `Risk/reward ratio ${ratio}. Entry timeframes support the decision.`],
+  [/العائد إلى المخاطرة\s+([\d.]+)/g, (_, ratio) => `Risk/reward ratio ${ratio}`],
+  [/خبر عالي التأثير على\s+([A-Z]{3}):\s+(.+?)\s+\((.+?)\)\. الأفضل انتظار ما بعد الخبر\./g, (_, currency, title, time) => `High-impact event on ${currency}: ${title} (${localizeDetailText(time)}). It is better to wait until after the event.`],
+  [/يوجد خبر عالي على\s+([A-Z]{3}):\s+(.+?)\s+خلال\s+(.+?)؛ تم خفض الثقة ورفع الحذر\./g, (_, currency, title, time) => `High-impact event on ${currency}: ${title} in ${localizeDetailText(time)}; confidence was reduced and caution increased.`],
+  [/يوجد خبر متوسط على\s+([A-Z]{3}):\s+(.+?)\s+خلال\s+(.+?)؛ راقب التذبذب\./g, (_, currency, title, time) => `Medium-impact event on ${currency}: ${title} in ${localizeDetailText(time)}; monitor volatility.`],
+  [/(\d+)\s+إلى\s+(\d+)\s+أيام/g, (_, from, to) => `${from} to ${to} days`],
+  [/(\d+)\s+إلى\s+(\d+)\s+أسابيع/g, (_, from, to) => `${from} to ${to} weeks`],
+  [/(\d+)\s+يوم\s+إلى\s+(\d+)\s+أسابيع/g, (_, from, to) => `${from} day to ${to} weeks`],
+  [/(\d+)\s+دقيقة\s+إلى\s+(\d+)\s+أسابيع/g, (_, from, to) => `${from} minutes to ${to} weeks`],
+  [/خلال\s+(\d+)\s+دقيقة/g, (_, minutes) => `within ${minutes} minutes`],
+  [/خلال\s+(\d+)\s+ساعة/g, (_, hours) => `within ${hours} hours`],
+  [/خلال\s+(\d+)\s+يوم/g, (_, days) => `within ${days} days`]
+];
 
 const elements = {
   status: document.querySelector("#detail-status"),
@@ -292,22 +559,22 @@ function registerPwaServiceWorker() {
 
 async function loadDetail() {
   if (!symbol) {
-    showError("لم يتم تحديد رمز السهم.");
+    showError(detailText("لم يتم تحديد رمز السهم.", "No stock symbol was selected."));
     return;
   }
 
   try {
-    elements.status.textContent = "جاري تحليل السهم";
+    elements.status.textContent = detailText("جاري تحليل السهم", "Analyzing the stock");
     applyDetailLanguage();
     const response = await fetch(`/api/asset?symbol=${encodeURIComponent(symbol)}`);
     const data = await response.json();
 
     if (!response.ok) {
-      throw new Error(data.error || "تعذر تحميل تفاصيل السهم");
+      throw new Error(localizeDetailText(data.error || detailText("تعذر تحميل تفاصيل السهم", "Could not load stock details")));
     }
 
     renderDetail(data);
-    elements.status.textContent = data.cached ? "بيانات مخزنة لحظياً" : "تحليل جديد";
+    elements.status.textContent = data.cached ? detailText("بيانات مخزنة لحظياً", "Live cached data") : detailText("تحليل جديد", "Fresh analysis");
     applyDetailLanguage();
   } catch (error) {
     showError(error.message);
@@ -323,15 +590,15 @@ function renderDetail(data) {
 
   document.title = `${item.symbol} - the-sfm trader`;
   elements.symbol.textContent = item.symbol;
-  elements.name.textContent = item.name;
-  elements.market.textContent = `${market.label || profile.marketLabel || "--"} · ${profile.exchangeName || item.exchangeName || "--"}`;
-  elements.heading.textContent = `${item.name} (${item.symbol})`;
-  elements.summary.textContent = profile.summary || "لا تتوفر معلومات وصفية كافية لهذا الرمز.";
+  elements.name.textContent = localizeInstrumentName(item.name);
+  elements.market.textContent = `${localizeMarketLabel(profile, market)} · ${localizeDetailText(profile.exchangeName || item.exchangeName || "--")}`;
+  elements.heading.textContent = `${localizeInstrumentName(item.name)} (${item.symbol})`;
+  elements.summary.textContent = localizeDetailText(profile.summary || detailText("لا تتوفر معلومات وصفية كافية لهذا الرمز.", "Not enough descriptive information is available for this symbol."));
 
-  elements.action.textContent = item.actionLabel;
+  elements.action.textContent = localizeActionLabel(item.action, item.actionLabel);
   elements.action.className = `action-badge action-${item.action}`;
-  elements.confidence.textContent = `${item.confidence}% ثقة`;
-  elements.agreement.textContent = `توافق الفريمات ${item.timeframeConsensus?.agreementPct || 0}% · تغطية ${item.timeframeConsensus?.coverage || 0}/${item.timeframeConsensus?.total || 0}`;
+  elements.confidence.textContent = localizeConfidenceText(item.confidence);
+  elements.agreement.textContent = localizeAgreementText(item.timeframeConsensus);
 
   elements.currentPrice.textContent = formatMoney(item.currentPrice, item.currency);
   elements.expectedPrice.textContent = formatMoney(item.expectedPrice, item.currency);
@@ -342,16 +609,16 @@ function renderDetail(data) {
   elements.resistance.textContent = formatMoney(item.resistance, item.currency);
   elements.riskReward.textContent = item.riskReward ? `${formatNumber(item.riskReward, { maximumFractionDigits: 2 })}:1` : "--";
   elements.expectedMove.textContent = formatPercent(item.expectedMovePct);
-  elements.duration.textContent = item.duration;
-  elements.score.textContent = `${finalScore.score}% · ${finalScore.label}`;
-  elements.risk.textContent = item.risk?.label || "--";
-  elements.quality.textContent = item.analysisQuality ? `${item.analysisQuality.score}% · ${item.analysisQuality.label}` : "--";
-  elements.dataHealth.textContent = item.dataHealth ? `${item.dataHealth.score}% · ${item.dataHealth.label || "صحة البيانات"}` : "--";
+  elements.duration.textContent = localizeDetailText(item.duration);
+  elements.score.textContent = `${finalScore.score}% · ${localizeScoreLabel(finalScore.label)}`;
+  elements.risk.textContent = localizeRiskLabel(item.risk);
+  elements.quality.textContent = item.analysisQuality ? `${item.analysisQuality.score}% · ${localizeDetailText(item.analysisQuality.label)}` : "--";
+  elements.dataHealth.textContent = item.dataHealth ? `${item.dataHealth.score}% · ${localizeDetailText(item.dataHealth.label || "صحة البيانات")}` : "--";
 
   elements.decisionPanel.className = `decision-panel decision-${decision.kind}`;
-  elements.decisionTitle.textContent = decision.title;
-  elements.decisionMessage.textContent = decision.message;
-  elements.decisionBadge.textContent = decision.badge;
+  elements.decisionTitle.textContent = localizeDetailText(decision.title);
+  elements.decisionMessage.textContent = localizeDetailText(decision.message);
+  elements.decisionBadge.textContent = localizeDetailText(decision.badge);
   elements.decisionBadge.className = `decision-badge decision-${decision.kind}`;
 
   renderGeneralInfo(profile, market, item);
@@ -366,14 +633,14 @@ function renderDetail(data) {
 
 function renderGeneralInfo(profile, market, item) {
   elements.generalInfo.innerHTML = `
-    ${renderInfoRow("الاختصاص", profile.specialty || "--")}
-    ${renderInfoRow("السوق", profile.marketLabel || market.label || "--")}
-    ${renderInfoRow("المنطقة", profile.region || market.region || "--")}
-    ${renderInfoRow("البورصة", profile.exchangeName || item.exchangeName || "--")}
-    ${renderInfoRow("العملة", profile.currency || item.currency || "--")}
-    ${renderInfoRow("حالة السوق", item.marketState || "--")}
-    ${renderInfoRow("ملاحظة المزود", item.providerDelayNote || market.note || "--")}
-    ${renderInfoRow("حجم التداول النسبي", item.relativeVolume ? `${formatNumber(item.relativeVolume, { maximumFractionDigits: 2 })}x` : "--")}
+    ${renderInfoRow(detailText("الاختصاص", "Specialty"), localizeDetailText(profile.specialty || "--"))}
+    ${renderInfoRow(detailText("السوق", "Market"), localizeMarketLabel(profile, market))}
+    ${renderInfoRow(detailText("المنطقة", "Region"), localizeRegion(profile.region || market.region || "--"))}
+    ${renderInfoRow(detailText("البورصة", "Exchange"), localizeDetailText(profile.exchangeName || item.exchangeName || "--"))}
+    ${renderInfoRow(detailText("العملة", "Currency"), profile.currency || item.currency || "--")}
+    ${renderInfoRow(detailText("حالة السوق", "Market status"), localizeDetailText(item.marketState || "--"))}
+    ${renderInfoRow(detailText("ملاحظة المزود", "Provider note"), localizeDetailText(item.providerDelayNote || market.note || "--"))}
+    ${renderInfoRow(detailText("حجم التداول النسبي", "Relative volume"), item.relativeVolume ? `${formatNumber(item.relativeVolume, { maximumFractionDigits: 2 })}x` : "--")}
     ${renderInfoRow("VWAP", item.indicators?.vwap ? formatMoney(item.indicators.vwap, item.currency) : "--")}
   `;
 }
@@ -382,12 +649,12 @@ function renderSharia(profile) {
   const statusClass = profile.shariaStatus === "compliant" ? "buy" : profile.shariaStatus === "not_compliant" ? "sell" : "hold";
   elements.shariaBox.innerHTML = `
     <div class="sharia-status-detail ${statusClass}">
-      <strong>${escapeHtml(profile.shariaLabel || "غير معروف")}</strong>
-      <span>${escapeHtml(profile.shariaDescription || "لا يوجد تصنيف شرعي مؤكد.")}</span>
+      <strong>${escapeHtml(localizeShariaLabel(profile))}</strong>
+      <span>${escapeHtml(localizeShariaDescription(profile))}</span>
     </div>
     <div class="info-list">
-      ${renderInfoRow("المصدر", profile.shariaSource || "تصنيف داخلي قابل للتحديث")}
-      ${renderInfoRow("آخر مراجعة", profile.shariaCheckedAt || "--")}
+      ${renderInfoRow(detailText("المصدر", "Source"), localizeDetailText(profile.shariaSource || "تصنيف داخلي قابل للتحديث"))}
+      ${renderInfoRow(detailText("آخر مراجعة", "Last review"), profile.shariaCheckedAt || "--")}
     </div>
   `;
 }
@@ -397,7 +664,7 @@ function renderTimeframes(timeframes) {
   const frames = timeframes.filter((frame) => wanted.has(frame.id));
 
   if (!frames.length) {
-    elements.timeframes.innerHTML = "<div class=\"empty\">الفريمات غير مكتملة لهذا الرمز حالياً.</div>";
+    elements.timeframes.innerHTML = `<div class="empty">${escapeHtml(detailText("الفريمات غير مكتملة لهذا الرمز حالياً.", "Timeframes are currently incomplete for this symbol."))}</div>`;
     return;
   }
 
@@ -406,11 +673,11 @@ function renderTimeframes(timeframes) {
     return `
       <article class="timeframe-detail ${actionClass}">
         <div>
-          <span>${escapeHtml(frame.label)}</span>
-          <strong>${escapeHtml(frame.actionLabel)}</strong>
+          <span>${escapeHtml(localizeTimeframeLabel(frame))}</span>
+          <strong>${escapeHtml(localizeActionLabel(frame.action, frame.actionLabel))}</strong>
         </div>
         <div>
-          <span>الثقة</span>
+          <span>${escapeHtml(detailText("الثقة", "Confidence"))}</span>
           <strong>${frame.confidence}%</strong>
         </div>
         <div>
@@ -418,12 +685,12 @@ function renderTimeframes(timeframes) {
           <strong>${frame.rsi14}</strong>
         </div>
         <div>
-          <span>الزخم</span>
+          <span>${escapeHtml(detailText("الزخم", "Momentum"))}</span>
           <strong>${formatPercent(frame.momentum20)}</strong>
         </div>
         <div>
-          <span>الاتجاه</span>
-          <strong>${escapeHtml(frame.trend)}</strong>
+          <span>${escapeHtml(detailText("الاتجاه", "Trend"))}</span>
+          <strong>${escapeHtml(localizeDetailText(frame.trend))}</strong>
         </div>
       </article>
     `;
@@ -433,34 +700,34 @@ function renderTimeframes(timeframes) {
 function renderOutlook(item) {
   const outlook = item.upsideOutlook || [];
   if (!outlook.length) {
-    elements.outlook.innerHTML = "<div class=\"empty\">لا توجد أهداف شهرية متاحة لهذا الرمز.</div>";
+    elements.outlook.innerHTML = `<div class="empty">${escapeHtml(detailText("لا توجد أهداف شهرية متاحة لهذا الرمز.", "No monthly targets are available for this symbol."))}</div>`;
     return;
   }
 
   elements.outlook.innerHTML = outlook.map((entry) => `
     <article class="outlook-detail-item">
-      <span>${escapeHtml(entry.label)}</span>
+      <span>${escapeHtml(localizeDetailText(entry.label))}</span>
       <strong>${formatMoney(entry.targetPrice, item.currency)}</strong>
-      <em>${formatPercent(entry.movePct)} · ${entry.confidence}% ثقة</em>
+      <em>${formatPercent(entry.movePct)} · ${localizeConfidenceText(entry.confidence)}</em>
     </article>
   `).join("");
 }
 
 function renderReasons(reasons) {
   elements.reasons.innerHTML = reasons.length
-    ? reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")
-    : "<li>لا توجد أسباب كافية لهذا الرمز حالياً.</li>";
+    ? reasons.map((reason) => `<li>${escapeHtml(localizeDetailText(reason))}</li>`).join("")
+    : `<li>${escapeHtml(detailText("لا توجد أسباب كافية لهذا الرمز حالياً.", "No sufficient reasons are available for this symbol right now."))}</li>`;
 }
 
 function renderBacktest(item) {
   elements.backtest.innerHTML = `
-    ${renderInfoRow("معدل النجاح", item.backtest?.winRate ? `${item.backtest.winRate}%` : item.backtest?.label || "--")}
-    ${renderInfoRow("عدد العينات", item.backtest?.samples ?? "--")}
-    ${renderInfoRow("أفق الاختبار", item.backtest?.horizonDays ? `${item.backtest.horizonDays} يوم` : "--")}
-    ${renderInfoRow("متوسط العائد", Number.isFinite(item.backtest?.avgReturnPct) ? formatPercent(item.backtest.avgReturnPct) : "--")}
-    ${renderInfoRow("جودة التحليل", item.analysisQuality ? `${item.analysisQuality.score}% · ${item.analysisQuality.label}` : "--")}
-    ${renderInfoRow("خطة التنفيذ", item.tradePlan?.note || "--")}
-    ${renderInfoRow("ملاحظات المخاطرة", item.risk?.notes?.join("، ") || "--")}
+    ${renderInfoRow(detailText("معدل النجاح", "Win rate"), item.backtest?.winRate ? `${item.backtest.winRate}%` : localizeDetailText(item.backtest?.label || "--"))}
+    ${renderInfoRow(detailText("عدد العينات", "Samples"), item.backtest?.samples ?? "--")}
+    ${renderInfoRow(detailText("أفق الاختبار", "Test horizon"), item.backtest?.horizonDays ? detailText(`${item.backtest.horizonDays} يوم`, `${item.backtest.horizonDays} days`) : "--")}
+    ${renderInfoRow(detailText("متوسط العائد", "Average return"), Number.isFinite(item.backtest?.avgReturnPct) ? formatPercent(item.backtest.avgReturnPct) : "--")}
+    ${renderInfoRow(detailText("جودة التحليل", "Analysis quality"), item.analysisQuality ? `${item.analysisQuality.score}% · ${localizeDetailText(item.analysisQuality.label)}` : "--")}
+    ${renderInfoRow(detailText("خطة التنفيذ", "Execution plan"), localizeDetailText(item.tradePlan?.note || "--"))}
+    ${renderInfoRow(detailText("ملاحظات المخاطرة", "Risk notes"), localizeJoinedList(item.risk?.notes, "--"))}
   `;
 }
 
@@ -470,26 +737,35 @@ function buildDecision(item) {
   if (item.action === "buy" && item.confidence >= 70 && agreement >= 60 && item.risk?.level !== "high") {
     return {
       kind: "buy",
-      badge: "اشتر الآن",
-      title: "إشارة شراء قوية",
-      message: `الفريمات متوافقة بنسبة ${agreement}% والثقة ${item.confidence}%. راقب السعر والهدف قبل التنفيذ.`
+      badge: detailText("اشتر الآن", "Buy now"),
+      title: detailText("إشارة شراء قوية", "Strong buy signal"),
+      message: detailText(
+        `الفريمات متوافقة بنسبة ${agreement}% والثقة ${item.confidence}%. راقب السعر والهدف قبل التنفيذ.`,
+        `Timeframes agree by ${agreement}% and confidence is ${item.confidence}%. Watch price and target before execution.`
+      )
     };
   }
 
   if (item.action === "sell" && item.confidence >= 65) {
     return {
       kind: "sell",
-      badge: "بيع الآن",
-      title: "إشارة بيع واضحة",
-      message: `الاتجاه يميل للبيع بثقة ${item.confidence}%. تجنب الدخول الشرائي حتى تتغير الفريمات.`
+      badge: detailText("بيع الآن", "Sell now"),
+      title: detailText("إشارة بيع واضحة", "Clear sell signal"),
+      message: detailText(
+        `الاتجاه يميل للبيع بثقة ${item.confidence}%. تجنب الدخول الشرائي حتى تتغير الفريمات.`,
+        `The trend leans sell with ${item.confidence}% confidence. Avoid long entry until the timeframes change.`
+      )
     };
   }
 
   return {
     kind: "hold",
-    badge: "انتظر",
-    title: "لا تتداول هذا السهم الآن",
-    message: "الإشارات غير كافية أو متضاربة. الأفضل الانتظار حتى تتوافق فريمات الدخول مع اليومي."
+    badge: detailText("انتظر", "Wait"),
+    title: detailText("لا تتداول هذا السهم الآن", "Do not trade this instrument now"),
+    message: detailText(
+      "الإشارات غير كافية أو متضاربة. الأفضل الانتظار حتى تتوافق فريمات الدخول مع اليومي.",
+      "Signals are insufficient or conflicting. It is better to wait until entry timeframes align with the daily."
+    )
   };
 }
 
@@ -503,8 +779,8 @@ function renderInfoRow(label, value) {
 }
 
 function showError(message) {
-  elements.status.textContent = "تعذر التحميل";
-  document.querySelector("#detail-content").innerHTML = `<div class="empty">${escapeHtml(message)}</div>`;
+  elements.status.textContent = detailText("تعذر التحميل", "Loading failed");
+  document.querySelector("#detail-content").innerHTML = `<div class="empty">${escapeHtml(localizeDetailText(message))}</div>`;
   applyDetailLanguage();
 }
 
@@ -600,6 +876,99 @@ function isDetailEnglishLanguage() {
   return ["en", "fr"].includes(getDetailLanguage());
 }
 
+function detailText(arabic, english) {
+  return isDetailEnglishLanguage() ? english : arabic;
+}
+
+function localizeDetailText(value, fallback = "--") {
+  if (value === null || value === undefined || value === "") return fallback;
+  const text = String(value);
+  return isDetailEnglishLanguage()
+    ? translateDetailArabicToEnglish(text)
+    : translateDetailEnglishToArabic(text);
+}
+
+function localizeActionLabel(actionOrLabel, fallbackLabel = "") {
+  const key = String(actionOrLabel || "").trim().toLowerCase();
+  const normalized = key === "شراء" || key === "buy" ? "buy" : key === "بيع" || key === "sell" ? "sell" : key === "انتظار" || key === "hold" || key === "wait" ? "hold" : "";
+  const labels = normalized ? DETAIL_ACTION_LABELS[normalized] : null;
+  if (labels) return detailText(labels.ar, labels.en);
+  return localizeDetailText(fallbackLabel || actionOrLabel || DETAIL_ACTION_LABELS.hold.ar);
+}
+
+function localizeRiskLabel(risk) {
+  const level = risk?.level || "";
+  if (DETAIL_RISK_LABELS[level]) return detailText(DETAIL_RISK_LABELS[level].ar, DETAIL_RISK_LABELS[level].en);
+  return localizeDetailText(risk?.label || "--");
+}
+
+function localizeScoreLabel(label) {
+  const text = String(label || "");
+  if (text === DETAIL_SCORE_LABELS.veryStrong.ar || /very strong/i.test(text)) return detailText(DETAIL_SCORE_LABELS.veryStrong.ar, DETAIL_SCORE_LABELS.veryStrong.en);
+  if (text === DETAIL_SCORE_LABELS.strong.ar || /^strong$/i.test(text)) return detailText(DETAIL_SCORE_LABELS.strong.ar, DETAIL_SCORE_LABELS.strong.en);
+  if (text === DETAIL_SCORE_LABELS.medium.ar || /^medium$/i.test(text)) return detailText(DETAIL_SCORE_LABELS.medium.ar, DETAIL_SCORE_LABELS.medium.en);
+  if (text === DETAIL_SCORE_LABELS.weak.ar || /^weak$/i.test(text)) return detailText(DETAIL_SCORE_LABELS.weak.ar, DETAIL_SCORE_LABELS.weak.en);
+  return localizeDetailText(text || DETAIL_SCORE_LABELS.weak.ar);
+}
+
+function localizeTimeframeLabel(frame) {
+  const labels = DETAIL_TIMEFRAME_LABELS[frame?.id];
+  if (labels) return detailText(labels.ar, labels.en);
+  return localizeDetailText(frame?.label || "--");
+}
+
+function localizeShariaLabel(profile) {
+  const status = profile?.shariaStatus || "unknown";
+  if (DETAIL_SHARIA_LABELS[status]) return detailText(DETAIL_SHARIA_LABELS[status].ar, DETAIL_SHARIA_LABELS[status].en);
+  return localizeDetailText(profile?.shariaLabel || DETAIL_SHARIA_LABELS.unknown.ar);
+}
+
+function localizeShariaDescription(profile) {
+  const status = profile?.shariaStatus || "unknown";
+  if (DETAIL_SHARIA_DESCRIPTIONS[status]) {
+    return detailText(DETAIL_SHARIA_DESCRIPTIONS[status].ar, DETAIL_SHARIA_DESCRIPTIONS[status].en);
+  }
+  return localizeDetailText(profile?.shariaDescription || DETAIL_SHARIA_DESCRIPTIONS.unknown.ar);
+}
+
+function localizeMarketLabel(profile, market) {
+  if (isDetailEnglishLanguage()) {
+    return localizeDetailText(market.labelEn || profile.marketLabelEn || profile.marketLabel || market.label || "--");
+  }
+  return localizeDetailText(profile.marketLabel || market.label || "--");
+}
+
+function localizeRegion(value) {
+  if (!value) return "--";
+  const text = String(value);
+  if (isDetailEnglishLanguage() && DETAIL_REGION_TRANSLATIONS[text]) return DETAIL_REGION_TRANSLATIONS[text];
+  return localizeDetailText(text);
+}
+
+function localizeConfidenceText(value) {
+  return detailText(`${value}% ثقة`, `${value}% confidence`);
+}
+
+function localizeAgreementText(consensus = {}) {
+  const agreement = consensus.agreementPct || 0;
+  const coverage = consensus.coverage || 0;
+  const total = consensus.total || 0;
+  return detailText(
+    `توافق الفريمات ${agreement}% · تغطية ${coverage}/${total}`,
+    `Timeframe agreement ${agreement}% · coverage ${coverage}/${total}`
+  );
+}
+
+function localizeJoinedList(values, fallback = "--") {
+  const list = (values || []).map((value) => localizeDetailText(value)).filter(Boolean);
+  if (!list.length) return fallback;
+  return list.join(isDetailEnglishLanguage() ? ", " : "، ");
+}
+
+function localizeInstrumentName(name) {
+  return localizeDetailText(name || "--");
+}
+
 function applyDetailLanguage() {
   const language = getDetailLanguage();
   const ltr = ["en", "fr"].includes(language);
@@ -686,19 +1055,46 @@ function translateDetailArabicToEnglish(text) {
   const leading = text.match(/^\s*/)?.[0] || "";
   const trailing = text.match(/\s*$/)?.[0] || "";
   const coreText = text.trim();
-  let translated = DETAIL_TEXT_TRANSLATIONS[coreText] || coreText;
+  let translated = DETAIL_TEXT_TRANSLATIONS[coreText] || DETAIL_EXTRA_TEXT_TRANSLATIONS[coreText] || coreText;
+
+  for (const [pattern, replacer] of DETAIL_ARABIC_PHRASE_PATTERNS) {
+    translated = translated.replace(pattern, replacer);
+  }
 
   if (translated === coreText) {
     for (const [arabic, english] of DETAIL_TEXT_TRANSLATION_ENTRIES) {
-      if (translated.includes(arabic)) translated = translated.replaceAll(arabic, english);
+      if (translated.includes(arabic)) translated = replaceDetailArabicTerm(translated, arabic, english);
     }
   }
 
-  for (const [arabic, english] of DETAIL_COMMON_TERM_TRANSLATIONS) {
-    if (translated.includes(arabic)) translated = translated.replaceAll(arabic, english);
+  for (const [pattern, replacer] of DETAIL_ARABIC_PHRASE_PATTERNS) {
+    translated = translated.replace(pattern, replacer);
   }
 
+  for (const [arabic, english] of DETAIL_COMMON_TERM_TRANSLATIONS) {
+    if (translated.includes(arabic)) translated = replaceDetailArabicTerm(translated, arabic, english);
+  }
+
+  translated = translated
+    .replace(/\s+\. /g, ". ")
+    .replace(/\s+،\s+/g, ", ")
+    .replace(/;\s*;/g, ";")
+    .replace(/العائد إلى Risk\s+([\d.]+)\.\s+Wait\s+تأكيد فريم 15 أو 30 minutes قبل الدخول\.?/g, "Risk/reward ratio $1. Wait for confirmation on the 15- or 30-minute timeframe before entry.")
+    .replace(/Wait\s+تأكيد فريم 15 أو 30 minutes قبل الدخول\.?/g, "Wait for confirmation on the 15- or 30-minute timeframe before entry.")
+    .replace(/تأكيد فريم 15 أو 30 minutes قبل الدخول\.?/g, "confirmation on the 15- or 30-minute timeframe before entry.")
+    .replace(/لا توجد صفقة واضحة؛\s*Wait\s+Timeframe agreement\.?/g, "No clear trade is available; wait for timeframe agreement.")
+    .replace(/تضارب بين Fast timeframes \(([^)]+)\) والطويلة \(([^)]+)\)/g, (_, fast, long) => `Conflict between fast timeframes (${localizeDetailText(fast)}) and long timeframes (${localizeDetailText(long)})`)
+    .replace(/\bWait\s+حتى\b/g, "Wait until")
+    .replace(/\bBuy\s+ي\b/g, "buying")
+    .replace(/\bSell\s+ي\b/g, "selling");
+
   return `${leading}${translated}${trailing}`;
+}
+
+function replaceDetailArabicTerm(text, arabic, english) {
+  const escaped = escapeDetailRegExp(arabic);
+  const pattern = new RegExp(`(^|[^\\p{Script=Arabic}])${escaped}(?=$|[^\\p{Script=Arabic}])`, "gu");
+  return String(text).replace(pattern, (_, prefix) => `${prefix}${english}`);
 }
 
 function translateDetailEnglishToArabic(text) {
