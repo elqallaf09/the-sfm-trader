@@ -166,6 +166,15 @@ const TRANSLATION_LANGUAGE_FALLBACK = {
 };
 const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
 const UI_TEXT_TRANSLATIONS = {
+  "تنبيهات داخلية مؤقتة": "Temporary internal notices",
+  "تنبيه المخاطر": "Risk notice",
+  "جميع التحليلات والمؤشرات والتوقعات المعروضة داخل SFM Trading Terminal هي لأغراض تعليمية ومعلوماتية فقط ولا تشكل نصيحة استثمارية أو توصية مالية.": "All analysis, indicators, and forecasts shown inside SFM Trading Terminal are for educational and informational purposes only and do not constitute investment advice or a financial recommendation.",
+  "قد يؤدي التداول والاستثمار إلى خسارة جزء أو كامل رأس المال.": "Trading and investing may result in the loss of part or all of your capital.",
+  "تنبيه الذكاء الاصطناعي": "AI notice",
+  "يتم إنشاء بعض التحليلات والتوقعات باستخدام تقنيات الذكاء الاصطناعي.": "Some analysis and forecasts are generated using artificial intelligence technologies.",
+  "قد تحتوي النتائج على أخطاء أو تقديرات غير دقيقة، ويجب عدم الاعتماد عليها وحدها لاتخاذ القرارات الاستثمارية.": "Results may contain errors or inaccurate estimates and should not be relied upon alone when making investment decisions.",
+  "إغلاق تنبيه المخاطر": "Close risk notice",
+  "إغلاق تنبيه الذكاء الاصطناعي": "Close AI notice",
   "الرئيسية": "Home",
   "الأسواق": "Markets",
   "التوصيات": "Recommendations",
@@ -913,10 +922,11 @@ const SYMBOL_ALIASES = {
 
 const STORAGE_PREFIX = "the-sfm-trader-";
 const LEGACY_STORAGE_PREFIX = "the-sfm-";
+const TEMPORARY_LEGAL_NOTICE_STORAGE_KEY = "the-sfm-trader-dismissed-legal-notices";
 const APP_VIEW_GROUPS = {
-  home: ["#sfm-live-floor", "#markets-section", "#command-center-section", "#home-heatmap-section", "#home-deck-section", "#economic-news-section", "#recommendations-section"],
+  home: ["#sfm-live-floor", "#markets-section", "#command-center-section", "#home-heatmap-section", "#home-deck-section", "#economic-news-section", "#recommendations-section", "#temporary-legal-notices"],
   markets: ["#sfm-live-floor", "#markets-section", "#command-center-section", "#home-heatmap-section", "#home-deck-section", ".market-hours-band", "#economic-news-section", "#radar-section"],
-  recommendations: ["#markets-section", "#command-center-section", "#recommendations-section", "#us-dashboard-section", "#us-outlook-section"],
+  recommendations: ["#markets-section", "#command-center-section", "#recommendations-section", "#temporary-legal-notices", "#us-dashboard-section", "#us-outlook-section"],
   history: ["#markets-section", "#history-section", "#watchlist-section", "#portfolio-section"],
   alerts: ["#markets-section", "#history-section"],
   scalp: ["#markets-section", "#scalping-section"],
@@ -1191,6 +1201,7 @@ async function init() {
   initSettingsPanel();
   initTerminalSearch();
   initInterfaceTranslator();
+  initTemporaryLegalNotices();
   initLiveFloor();
   initAppNavigation();
   watchlist = normalizeWatchlist(watchlist);
@@ -1274,6 +1285,56 @@ async function init() {
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden") flushSharedTradeStateOnExit();
   });
+}
+
+// Temporary legal notices for internal SFM Trading Terminal testing.
+// Full legal pages will be added before public release.
+function initTemporaryLegalNotices() {
+  const noticeRegion = document.querySelector("#temporary-legal-notices");
+  if (!noticeRegion) return;
+
+  const dismissed = new Set(loadDismissedLegalNotices());
+  for (const notice of noticeRegion.querySelectorAll("[data-legal-notice]")) {
+    const noticeKey = notice.dataset.legalNotice;
+    if (dismissed.has(noticeKey)) notice.hidden = true;
+  }
+
+  syncTemporaryLegalNoticeRegion(noticeRegion);
+
+  noticeRegion.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-dismiss-legal-notice]");
+    if (!button) return;
+
+    const noticeKey = button.dataset.dismissLegalNotice;
+    const notice = noticeRegion.querySelector(`[data-legal-notice="${CSS.escape(noticeKey)}"]`);
+    if (!notice) return;
+
+    notice.hidden = true;
+    dismissed.add(noticeKey);
+    saveDismissedLegalNotices([...dismissed]);
+    syncTemporaryLegalNoticeRegion(noticeRegion);
+  });
+}
+
+function syncTemporaryLegalNoticeRegion(noticeRegion) {
+  const hasVisibleNotice = Boolean(noticeRegion.querySelector("[data-legal-notice]:not([hidden])"));
+  noticeRegion.hidden = !hasVisibleNotice;
+}
+
+function loadDismissedLegalNotices() {
+  try {
+    const raw = localStorage.getItem(TEMPORARY_LEGAL_NOTICE_STORAGE_KEY);
+    const value = JSON.parse(raw || "[]");
+    return Array.isArray(value) ? value.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveDismissedLegalNotices(values) {
+  try {
+    localStorage.setItem(TEMPORARY_LEGAL_NOTICE_STORAGE_KEY, JSON.stringify(values));
+  } catch {}
 }
 
 function initLiveFloor() {

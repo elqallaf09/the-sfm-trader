@@ -479,7 +479,7 @@ body[data-app-view="home"] .app-shell > main {
   overflow: visible !important;
 }
 
-body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section) {
+body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#temporary-legal-notices) {
   display: none !important;
 }
 
@@ -488,6 +488,7 @@ body[data-app-view="home"] #markets-section { order: 2 !important; }
 body[data-app-view="home"] #command-center-section { order: 3 !important; }
 body[data-app-view="home"] #home-heatmap-section { order: 4 !important; }
 body[data-app-view="home"] #home-deck-section { order: 5 !important; }
+body[data-app-view="home"] #temporary-legal-notices { order: 6 !important; }
 
 .ticker-band,
 .sfm-live-floor .floor-aurora,
@@ -13933,7 +13934,7 @@ body:not(.intro-running) .intro-overlay {
 }
 
 @media (min-width: 761px) {
-  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section) {
+  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#temporary-legal-notices) {
     display: none !important;
   }
 }
@@ -14174,7 +14175,7 @@ body:not(.intro-running) .intro-overlay {
     order: 5 !important;
   }
 
-  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section) {
+  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#temporary-legal-notices) {
     display: none !important;
   }
 
@@ -15102,7 +15103,7 @@ body[data-app-view="home"] .home-deck-panel {
     padding: 0 !important;
   }
 
-  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section) {
+  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#temporary-legal-notices) {
     display: none !important;
   }
 
@@ -17697,7 +17698,7 @@ body:not(.intro-running) .app-shell {
     overflow: visible !important;
   }
 
-  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section) {
+  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#temporary-legal-notices) {
     display: none !important;
   }
 
@@ -18442,7 +18443,7 @@ body:not(.intro-running) .app-shell > main {
   box-shadow: 0 0 34px rgba(39, 135, 255, 0.22) !important;
 }
 
-body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#economic-news-section):not(#recommendations-section) {
+body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#economic-news-section):not(#recommendations-section):not(#temporary-legal-notices) {
   display: none !important;
 }
 
@@ -18453,6 +18454,7 @@ body[data-app-view="home"] #home-heatmap-section { order: 4 !important; }
 body[data-app-view="home"] #home-deck-section { order: 5 !important; }
 body[data-app-view="home"] #economic-news-section { order: 6 !important; display: grid !important; }
 body[data-app-view="home"] #recommendations-section { order: 7 !important; display: grid !important; }
+body[data-app-view="home"] #temporary-legal-notices { order: 8 !important; }
 
 body[data-app-view="home"] .sfm-live-floor,
 body[data-app-view="home"] .market-band,
@@ -19289,7 +19291,8 @@ body[data-app-view="home"]:not(.intro-running) #recommendations-section.recommen
 }
 
 body[data-app-view="home"] main > section#economic-news-section#economic-news-section#economic-news-section#economic-news-section#economic-news-section.economic-news-band,
-body[data-app-view="home"] main > section#recommendations-section#recommendations-section#recommendations-section#recommendations-section#recommendations-section.recommendations-band {
+body[data-app-view="home"] main > section#recommendations-section#recommendations-section#recommendations-section#recommendations-section#recommendations-section.recommendations-band,
+body[data-app-view="home"] main > section#temporary-legal-notices#temporary-legal-notices#temporary-legal-notices.temporary-legal-notices {
   display: grid !important;
 }
 
@@ -19313,7 +19316,134 @@ body[data-app-view="home"] #sfm-live-floor.sfm-live-floor > :first-child {
   margin-top: 0 !important;
 }
 
+.temporary-legal-notices {
+  grid-area: auto !important;
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  margin: 0 !important;
+}
+
+.temporary-legal-notices[hidden] {
+  display: none !important;
+}
+
+.terminal-legal-notice {
+  position: relative !important;
+  min-width: 0 !important;
+  display: grid !important;
+  grid-template-columns: 40px minmax(0, 1fr) 30px !important;
+  gap: 10px !important;
+  align-items: start !important;
+  padding: 12px !important;
+  border: 1px solid rgba(216, 172, 80, 0.32) !important;
+  border-radius: 16px !important;
+  background:
+    linear-gradient(135deg, rgba(8, 20, 32, 0.78), rgba(4, 10, 16, 0.72)),
+    radial-gradient(circle at 0% 0%, rgba(216, 172, 80, 0.16), transparent 32%) !important;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.025) !important;
+  overflow: hidden !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.terminal-legal-notice[hidden] {
+  display: none !important;
+}
+
+.terminal-legal-notice::before {
+  content: "" !important;
+  position: absolute !important;
+  inset-inline-start: 0 !important;
+  top: 10px !important;
+  bottom: 10px !important;
+  width: 2px !important;
+  border-radius: 99px !important;
+  background: linear-gradient(180deg, rgba(216, 172, 80, 0.9), rgba(35, 216, 255, 0.6)) !important;
+  box-shadow: 0 0 14px rgba(216, 172, 80, 0.34) !important;
+}
+
+.notice-icon {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 14px !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 1px solid rgba(216, 172, 80, 0.42) !important;
+  background: rgba(2, 9, 14, 0.72) !important;
+  box-shadow: 0 0 20px rgba(216, 172, 80, 0.12) !important;
+}
+
+.notice-icon svg {
+  width: 22px !important;
+  height: 22px !important;
+  fill: none !important;
+  stroke: currentColor !important;
+  stroke-width: 1.9 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+.notice-icon-shield { color: #f1c96a !important; }
+.notice-icon-ai { color: #23d8ff !important; }
+
+.terminal-legal-notice h3 {
+  margin: 0 0 5px !important;
+  color: #f7fbff !important;
+  font-size: 14px !important;
+  line-height: 1.2 !important;
+  font-weight: 900 !important;
+}
+
+.terminal-legal-notice p {
+  margin: 0 !important;
+  color: rgba(211, 224, 235, 0.82) !important;
+  font-size: 11px !important;
+  line-height: 1.65 !important;
+}
+
+.terminal-legal-notice p + p {
+  margin-top: 3px !important;
+}
+
+.notice-close {
+  width: 30px !important;
+  height: 30px !important;
+  border: 1px solid rgba(124, 157, 183, 0.2) !important;
+  border-radius: 10px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  color: rgba(239, 246, 255, 0.78) !important;
+  background: rgba(2, 8, 12, 0.72) !important;
+  cursor: pointer !important;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease, transform 160ms ease !important;
+}
+
+.notice-close:hover,
+.notice-close:focus-visible {
+  color: #ffffff !important;
+  border-color: rgba(216, 172, 80, 0.62) !important;
+  background: rgba(216, 172, 80, 0.12) !important;
+  transform: translateY(-1px) !important;
+  outline: none !important;
+}
+
 @media (max-width: 760px) {
+  .temporary-legal-notices {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .terminal-legal-notice {
+    grid-template-columns: 36px minmax(0, 1fr) 30px !important;
+    padding: 11px !important;
+  }
+
+  .notice-icon {
+    width: 36px !important;
+    height: 36px !important;
+  }
+
   body[data-app-view="home"]:not(.intro-running) #sfm-live-floor.sfm-live-floor {
     gap: 10px !important;
   }
@@ -19365,4 +19495,26 @@ body[data-app-view="home"] #sfm-live-floor.sfm-live-floor > :first-child {
   body[data-app-view="home"]:not(.intro-running) .home-rec-top strong {
     font-size: 22px !important;
   }
+}
+
+body[data-app-view="home"] main > #temporary-legal-notices.temporary-legal-notices:not([hidden]),
+body[data-app-view="recommendations"] main > #temporary-legal-notices.temporary-legal-notices:not([hidden]) {
+  display: grid !important;
+}
+
+html body[data-app-view="home"]:not(.intro-running) .app-shell main > section#temporary-legal-notices#temporary-legal-notices#temporary-legal-notices#temporary-legal-notices.temporary-legal-notices:not([hidden]):not(.app-view-hidden),
+html body[data-app-view="recommendations"]:not(.intro-running) .app-shell main > section#temporary-legal-notices#temporary-legal-notices#temporary-legal-notices#temporary-legal-notices.temporary-legal-notices:not([hidden]):not(.app-view-hidden) {
+  display: grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+main > #temporary-legal-notices.temporary-legal-notices.app-view-hidden,
+main > #temporary-legal-notices.temporary-legal-notices[hidden] {
+  display: none !important;
+}
+
+html body .app-shell main > section#temporary-legal-notices#temporary-legal-notices#temporary-legal-notices#temporary-legal-notices.temporary-legal-notices[hidden],
+html body .app-shell main > section#temporary-legal-notices#temporary-legal-notices#temporary-legal-notices#temporary-legal-notices.temporary-legal-notices.app-view-hidden {
+  display: none !important;
 }
