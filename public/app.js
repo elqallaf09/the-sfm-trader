@@ -7376,7 +7376,7 @@ renderHistoryGroup = function renderHistoryGroup(group) {
         <span>${english ? "Target" : "الهدف"}</span>
         <span>${english ? "Stop loss" : "وقف الخسارة"}</span>
         <span>${english ? "Confidence" : "الثقة"}</span>
-        <span>${english ? "P/L" : "الربح/الخسارة"}</span>
+        <span>P/L</span>
         <span>${english ? "Status" : "الحالة"}</span>
         <span>${english ? "Date" : "التاريخ"}</span>
       </div>
@@ -7880,3 +7880,726 @@ setupSignalCardToggle = function setupSignalCardToggle(card, item) {
     }
   });
 };
+
+/* SFM final QA fixes: symbol-level currency, trade log page, rail labels, map, and provider states. */
+const SFM_FINAL_CURRENCY_BY_SYMBOL = {
+  AMD: "USD",
+  NVDA: "USD",
+  GOOGL: "USD",
+  "KFH.KW": "KWD",
+  "NBK.KW": "KWD",
+  "ZAIN.KW": "KWD",
+  "2222.SR": "SAR",
+  "7010.SR": "SAR",
+  "EMAAR.AE": "AED",
+  "QNBK.QA": "QAR",
+  "NBB.BH": "BHD",
+  "OMANTEL.OM": "OMR"
+};
+
+function sfmFinalIsEnglish() {
+  if (typeof isEnglishLanguage === "function") return isEnglishLanguage();
+  return String(appSettings?.language || "").toLowerCase() === "en";
+}
+
+function sfmFinalInferCurrencyFromSymbol(symbol) {
+  const upper = String(symbol || "").trim().toUpperCase();
+  if (!upper) return "";
+  if (SFM_FINAL_CURRENCY_BY_SYMBOL[upper]) return SFM_FINAL_CURRENCY_BY_SYMBOL[upper];
+  if (upper.endsWith("=X")) return "";
+  if (upper.endsWith("-USD") || upper.endsWith("USDT") || upper.endsWith("USDC")) return "USD";
+  if (upper.endsWith("=F")) return "USD";
+  if (upper.endsWith(".KW")) return "KWD";
+  if (upper.endsWith(".SR")) return "SAR";
+  if (upper.endsWith(".AE") || upper.endsWith(".AD") || upper.endsWith(".DU")) return "AED";
+  if (upper.endsWith(".QA")) return "QAR";
+  if (upper.endsWith(".BH")) return "BHD";
+  if (upper.endsWith(".OM")) return "OMR";
+  if (upper.endsWith(".AS") || upper.endsWith(".DE") || upper.endsWith(".PA") || upper.endsWith(".SW") || upper.endsWith(".L")) return "EUR";
+  if (upper.endsWith(".HK")) return "HKD";
+  if (upper.endsWith(".T")) return "JPY";
+  if (upper.endsWith(".KS")) return "KRW";
+  if (upper.startsWith("^") || /^[A-Z]{1,5}$/.test(upper)) return "USD";
+  return "";
+}
+
+normalizeDisplayCurrency = function normalizeDisplayCurrency(currency, symbol) {
+  return sfmFinalInferCurrencyFromSymbol(symbol) || normalizeCurrencyCode(currency) || "USD";
+};
+
+formatMoney = function formatMoney(value, currency) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return sfmFinalIsEnglish() ? "Unavailable" : "غير متاح";
+  const normalizedCurrency = normalizeCurrencyCode(currency);
+  const locale = sfmFinalIsEnglish() ? "en-US" : "ar-KW-u-nu-latn";
+  const fractionDigits = Math.abs(numeric) >= 1000 ? 2 : Math.abs(numeric) >= 10 ? 2 : 3;
+  if (!normalizedCurrency) {
+    return new Intl.NumberFormat(locale, {
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits
+    }).format(numeric);
+  }
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency: normalizedCurrency,
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits
+    }).format(numeric);
+  } catch {
+    return `${new Intl.NumberFormat(locale, {
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits
+    }).format(numeric)} ${normalizedCurrency}`;
+  }
+};
+
+function sfmFinalNormalizeAssetCurrency(item) {
+  if (!item || typeof item !== "object") return item;
+  const currency = normalizeDisplayCurrency(item.currency, item.symbol);
+  return {
+    ...item,
+    currency,
+    tradePlan: item.tradePlan ? { ...item.tradePlan } : item.tradePlan,
+    upsideOutlook: Array.isArray(item.upsideOutlook)
+      ? item.upsideOutlook.map((outlook) => ({ ...outlook, currency }))
+      : item.upsideOutlook
+  };
+}
+
+function sfmFinalNormalizeSupportedSymbol(item) {
+  if (!item || typeof item !== "object") return item;
+  return { ...item, currency: normalizeDisplayCurrency(item.currency, item.symbol) };
+}
+
+function sfmFinalNormalizePayloadCurrencies(data) {
+  if (!data || typeof data !== "object") return data;
+  if (Array.isArray(data.recommendations)) {
+    data.recommendations = data.recommendations.map(sfmFinalNormalizeAssetCurrency);
+  }
+  if (Array.isArray(data.smartAlerts)) {
+    data.smartAlerts = data.smartAlerts.map(sfmFinalNormalizeAssetCurrency);
+  }
+  if (data.market && Array.isArray(data.market.supportedSymbols)) {
+    data.market = {
+      ...data.market,
+      supportedSymbols: data.market.supportedSymbols.map(sfmFinalNormalizeSupportedSymbol)
+    };
+  }
+  if (data.opportunityRadar && typeof data.opportunityRadar === "object") {
+    data.opportunityRadar = sfmFinalNormalizeRadarCurrencies(data.opportunityRadar);
+  }
+  return data;
+}
+
+function sfmFinalNormalizeRadarCurrencies(radar) {
+  if (Array.isArray(radar)) return radar.map(sfmFinalNormalizeRadarCurrencies);
+  if (!radar || typeof radar !== "object") return radar;
+  if (radar.symbol) return sfmFinalNormalizeAssetCurrency(radar);
+  return Object.fromEntries(Object.entries(radar).map(([key, value]) => [key, sfmFinalNormalizeRadarCurrencies(value)]));
+}
+
+const sfmFinalOriginalUpdateRecommendationHistory = updateRecommendationHistory;
+updateRecommendationHistory = function updateRecommendationHistory(items = []) {
+  return sfmFinalOriginalUpdateRecommendationHistory((items || []).map(sfmFinalNormalizeAssetCurrency));
+};
+
+const sfmFinalOriginalRenderRecommendations = renderRecommendations;
+renderRecommendations = function renderRecommendations(data) {
+  return sfmFinalOriginalRenderRecommendations(sfmFinalNormalizePayloadCurrencies(data));
+};
+
+const sfmFinalOriginalRenderWatchlist = renderWatchlist;
+renderWatchlist = function renderWatchlist() {
+  if (watchlistData) sfmFinalNormalizePayloadCurrencies(watchlistData);
+  return sfmFinalOriginalRenderWatchlist();
+};
+
+const sfmFinalOriginalRenderPortfolio = renderPortfolio;
+renderPortfolio = function renderPortfolio(currentItems = []) {
+  return sfmFinalOriginalRenderPortfolio((currentItems || []).map(sfmFinalNormalizeAssetCurrency));
+};
+
+renderMiniSignalCard = function renderMiniSignalCard(item) {
+  const normalized = sfmFinalNormalizeAssetCurrency(item);
+  const english = sfmFinalIsEnglish();
+  const score = calculateFinalScore(normalized);
+  const statusClass = normalized.action === "sell" ? "sell" : normalized.action === "hold" ? "hold" : "buy";
+  const visual = getPremiumAssetVisual(normalized);
+  const actionLabel = localizeUiText(normalized.actionLabel || (normalized.action === "buy" ? "شراء" : normalized.action === "sell" ? "بيع" : "انتظار"));
+  const confidenceLabel = english ? `${formatNumber(normalized.confidence)}% confidence` : `${formatNumber(normalized.confidence)}% ثقة`;
+  const scoreLabel = english ? `Score ${formatNumber(score.score)}%` : `النقاط ${formatNumber(score.score)}%`;
+
+  return `
+    <article class="mini-card watch-card" data-symbol="${escapeHtml(normalized.symbol)}" role="link" tabindex="0" aria-label="${escapeHtml(normalized.symbol)} ${escapeHtml(actionLabel)}">
+      <div class="watch-card-head">
+        <span class="asset-logo mini-asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span>
+        <div class="watch-card-title">
+          <strong>${escapeHtml(normalized.symbol)}</strong>
+          <span>${escapeHtml(normalized.name || normalized.symbol)}</span>
+        </div>
+        <em class="status-pill-mini ${statusClass}">${escapeHtml(actionLabel)}</em>
+      </div>
+      <div class="watch-card-price">
+        <span>${english ? "Current price" : "السعر الحالي"}</span>
+        <strong>${formatMoney(normalized.currentPrice, normalized.currency)}</strong>
+        <b>${escapeHtml(confidenceLabel)}</b>
+      </div>
+      <div class="mini-meta watch-card-meta">
+        <em class="score-pill">${escapeHtml(scoreLabel)}</em>
+        <em class="score-pill">${english ? "Target" : "الهدف"} ${formatMoney(normalized.expectedPrice, normalized.currency)}</em>
+      </div>
+    </article>
+  `;
+};
+
+function sfmFinalTradeTimestamp(entry, key) {
+  const value = entry?.[key] || entry?.lastSeen || entry?.firstSeen || entry?.timestamp || entry?.date || 0;
+  const timestamp = Number(new Date(value));
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+function sfmFinalFormatDate(value) {
+  const timestamp = Number(new Date(value || 0));
+  if (!Number.isFinite(timestamp) || timestamp <= 0) return "-";
+  return new Intl.DateTimeFormat(sfmFinalIsEnglish() ? "en-US" : "ar-KW-u-nu-latn", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(new Date(timestamp));
+}
+
+function sfmFinalTradeAction(entry) {
+  return sfmFormatTradeAction(entry?.action, entry?.actionLabel);
+}
+
+function sfmFinalTradeStatus(entry) {
+  return sfmFormatTradeStatus(entry);
+}
+
+function sfmFinalTradePnl(entry) {
+  const value = typeof getHistoryReturnPct === "function" ? Number(getHistoryReturnPct(entry)) : Number(entry?.observedReturnPct || 0);
+  if (!Number.isFinite(value)) return { label: "-", className: "" };
+  return { label: `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`, className: value >= 0 ? "is-profit" : "is-loss" };
+}
+
+function sfmFinalGetTradeGroups() {
+  const values = Array.isArray(recommendationHistory) ? recommendationHistory.map(sfmFinalNormalizeAssetCurrency) : [];
+  const sorted = values.slice().sort((a, b) => sfmFinalTradeTimestamp(b, "lastSeen") - sfmFinalTradeTimestamp(a, "lastSeen"));
+  const waiting = (entry) => entry?.outcome === "pending" && (entry?.marketClosed || String(entry?.action || "").toLowerCase() === "hold" || !Number.isFinite(Number(entry?.lastPrice ?? entry?.currentPrice)));
+  const active = (entry) => entry?.outcome === "pending" && !waiting(entry);
+  return [
+    {
+      key: "winning",
+      titleAr: "الصفقات الرابحة",
+      titleEn: "Winning trades",
+      hintAr: "صفقات وصلت إلى الهدف أو حققت ربحا في السجل.",
+      hintEn: "Trades that reached target or currently show profit.",
+      items: sorted.filter((entry) => entry?.outcome === "target" || Number(getHistoryReturnPct(entry)) > 0).slice(0, 40)
+    },
+    {
+      key: "losing",
+      titleAr: "الصفقات الخاسرة",
+      titleEn: "Losing trades",
+      hintAr: "صفقات وصلت إلى وقف الخسارة أو تظهر خسارة في السجل.",
+      hintEn: "Trades that hit stop loss or currently show loss.",
+      items: sorted.filter((entry) => entry?.outcome === "stop" || Number(getHistoryReturnPct(entry)) < 0).slice(0, 40)
+    },
+    {
+      key: "waiting",
+      titleAr: "صفقات الانتظار",
+      titleEn: "Waiting trades",
+      hintAr: "صفقات تنتظر افتتاح السوق أو تأكيد الدخول.",
+      hintEn: "Setups waiting for the market or entry confirmation.",
+      items: sorted.filter(waiting).slice(0, 40)
+    },
+    {
+      key: "followed",
+      titleAr: "الصفقات تحت المتابعة",
+      titleEn: "Trades under watch",
+      hintAr: "صفقات نشطة أو مثبتة للتنبيه والمتابعة.",
+      hintEn: "Active or pinned trades being monitored.",
+      items: sorted.filter((entry) => followedTradeKeys?.has?.(entry?.key) || active(entry)).slice(0, 40)
+    }
+  ];
+}
+
+renderHistory = function renderHistory() {
+  if (!historyList) return;
+  sfmEnsureTradePerformanceHeading();
+  if (typeof renderAccuracyDashboard === "function") renderAccuracyDashboard();
+  const groups = sfmFinalGetTradeGroups();
+  historyList.innerHTML = `
+    <section class="trade-performance-summary">
+      <article><span>${sfmFinalIsEnglish() ? "Winning" : "الرابحة"}</span><strong>${formatNumber(groups[0].items.length)}</strong></article>
+      <article><span>${sfmFinalIsEnglish() ? "Losing" : "الخاسرة"}</span><strong>${formatNumber(groups[1].items.length)}</strong></article>
+      <article><span>${sfmFinalIsEnglish() ? "Waiting" : "الانتظار"}</span><strong>${formatNumber(groups[2].items.length)}</strong></article>
+      <article><span>${sfmFinalIsEnglish() ? "Under watch" : "تحت المتابعة"}</span><strong>${formatNumber(groups[3].items.length)}</strong></article>
+    </section>
+    ${groups.map(sfmFinalRenderTradeGroup).join("")}
+  `;
+  for (const button of historyList.querySelectorAll("[data-follow-trade]")) {
+    button.addEventListener("click", () => toggleFollowTrade(button.dataset.followTrade));
+  }
+};
+
+function sfmEnsureTradePerformanceHeading() {
+  const section = document.querySelector("#history-section");
+  if (!section) return;
+  const eyebrow = section.querySelector(".section-head .eyebrow");
+  const title = section.querySelector(".section-head h2");
+  const copy = section.querySelector(".section-head p");
+  if (eyebrow) eyebrow.textContent = sfmFinalIsEnglish() ? "TRADE PERFORMANCE" : "أداء الصفقات";
+  if (title) title.textContent = sfmFinalIsEnglish() ? "Trade Log" : "سجل الصفقات";
+  if (copy) copy.textContent = sfmFinalIsEnglish()
+    ? "Track winning, losing, waiting, and watched trades with per-asset currency."
+    : "متابعة الصفقات الرابحة والخاسرة والمنتظرة وتحت المتابعة مع عملة كل أصل بشكل مستقل.";
+}
+
+function sfmFinalRenderTradeGroup(group) {
+  const english = sfmFinalIsEnglish();
+  const empty = english
+    ? "No trades in this section yet. New recommendations will appear here after market updates."
+    : "لا توجد صفقات في هذا القسم حاليا. ستظهر الصفقات بعد تحديث التوصيات بدون أسعار وهمية.";
+  return `
+    <section class="history-group-card trade-performance-group history-${group.key}">
+      <div class="history-group-head">
+        <div>
+          <h3>${escapeHtml(english ? group.titleEn : group.titleAr)}</h3>
+          <p>${escapeHtml(english ? group.hintEn : group.hintAr)}</p>
+        </div>
+        <span class="history-count">${formatNumber(group.items.length)}</span>
+      </div>
+      <div class="history-table-head trade-performance-table-head" role="row">
+        <span>${english ? "Symbol" : "الرمز"}</span>
+        <span>${english ? "Company" : "الشركة"}</span>
+        <span>${english ? "Action" : "الإجراء"}</span>
+        <span>${english ? "Entry" : "الدخول"}</span>
+        <span>${english ? "Current" : "الحالي"}</span>
+        <span>${english ? "Target" : "الهدف"}</span>
+        <span>${english ? "Stop loss" : "وقف الخسارة"}</span>
+        <span>${english ? "Confidence" : "الثقة"}</span>
+        <span>P/L</span>
+        <span>${english ? "Status" : "الحالة"}</span>
+        <span>${english ? "Opened" : "تاريخ الفتح"}</span>
+        <span>${english ? "Updated" : "آخر تحديث"}</span>
+      </div>
+      <div class="history-group-list">
+        ${group.items.length ? group.items.map(sfmFinalRenderTradeRow).join("") : `<div class="history-empty-state">${escapeHtml(empty)}</div>`}
+      </div>
+    </section>
+  `;
+}
+
+function sfmFinalRenderTradeRow(rawEntry) {
+  const entry = sfmFinalNormalizeAssetCurrency(rawEntry);
+  const currency = normalizeDisplayCurrency(entry.currency, entry.symbol);
+  const pnl = sfmFinalTradePnl(entry);
+  const key = escapeHtml(entry?.key || `${entry?.symbol || ""}:${entry?.action || ""}`);
+  const opened = entry?.firstSeen || entry?.openedAt || entry?.timestamp;
+  const updated = entry?.lastSeen || entry?.updatedAt || entry?.hitAt || entry?.stopAt;
+  const status = sfmFinalTradeStatus(entry);
+  return `
+    <article class="history-item history-row trade-performance-row" role="row" data-symbol="${escapeHtml(entry?.symbol || "")}">
+      <strong class="history-symbol">${escapeHtml(entry?.symbol || "-")}</strong>
+      <span class="history-company">${escapeHtml(entry?.name || entry?.symbol || "-")}</span>
+      <span>${escapeHtml(sfmFinalTradeAction(entry))}</span>
+      <span>${sfmFormatHistoryMoney(entry?.entryPrice ?? entry?.currentPrice, currency)}</span>
+      <span>${sfmFormatHistoryMoney(entry?.lastPrice ?? entry?.currentPrice, currency)}</span>
+      <span>${sfmFormatHistoryMoney(entry?.target1 ?? entry?.expectedPrice, currency)}</span>
+      <span>${Number.isFinite(Number(entry?.stopLoss)) ? sfmFormatHistoryMoney(entry.stopLoss, currency) : "-"}</span>
+      <span>${Number.isFinite(Number(entry?.confidence)) ? `${Math.round(Number(entry.confidence))}%` : "-"}</span>
+      <span class="${pnl.className}">${pnl.label}</span>
+      <span class="trade-status-cell">
+        <b>${escapeHtml(status)}</b>
+        <button class="follow-trade-button ${followedTradeKeys.has(entry?.key) ? "is-following" : ""}" type="button" data-follow-trade="${key}">
+          ${followedTradeKeys.has(entry?.key) ? (sfmFinalIsEnglish() ? "Unfollow" : "إيقاف") : (sfmFinalIsEnglish() ? "Follow" : "تابع")}
+        </button>
+      </span>
+      <time>${sfmFinalFormatDate(opened)}</time>
+      <time>${sfmFinalFormatDate(updated)}</time>
+    </article>
+  `;
+}
+
+getSupportedSymbolMetadata = function getSupportedSymbolMetadata(data = {}) {
+  const supported = data.market?.supportedSymbols;
+  if (Array.isArray(supported) && supported.length) return supported.map(sfmFinalNormalizeSupportedSymbol);
+  const recommendations = Array.isArray(data.recommendations) ? data.recommendations : [];
+  return recommendations.map((item) => sfmFinalNormalizeSupportedSymbol({
+    symbol: item.symbol,
+    name: item.name,
+    currency: item.currency
+  }));
+};
+
+renderMarketDataState = function renderMarketDataState(data = {}) {
+  sfmFinalNormalizePayloadCurrencies(data);
+  const english = sfmFinalIsEnglish();
+  const marketLabel = data.market?.label || (english ? "Market" : "السوق");
+  const supported = getSupportedSymbolMetadata(data);
+  const provider = data.dataProvider?.active || data.dataProvider?.requested || "--";
+  const lastUpdate = data.generatedAt ? formatDateTime(data.generatedAt) : "--";
+  const reason = getUnavailableSummary(data);
+  return `
+    <section class="market-data-state" aria-label="${english ? "Market data state" : "حالة بيانات السوق"}">
+      <div class="market-data-state-head">
+        <span>${english ? "Provider Status" : "حالة مزود البيانات"}</span>
+        <strong>${escapeHtml(localizeUiText(marketLabel))}</strong>
+        <p>${escapeHtml(localizeUiText(getEmptyRecommendationsMessage(data)))}</p>
+      </div>
+      <div class="market-data-state-grid provider-state-grid">
+        <article class="provider-state-card">
+          <span>${english ? "Provider" : "المزود"}</span>
+          <strong>${escapeHtml(provider)}</strong>
+          <p>${escapeHtml(localizeUiText(data.partial ? "التحليل ما زال قيد الاكتمال" : "لا توجد أسعار حية كافية حالياً"))}</p>
+        </article>
+        <article class="provider-state-card">
+          <span>${english ? "Last update" : "آخر تحديث"}</span>
+          <strong>${escapeHtml(lastUpdate)}</strong>
+          <p>${escapeHtml(localizeUiText(data.cached || data.stale ? "آخر بيانات محفوظة" : "تحديث السوق الحالي"))}</p>
+        </article>
+        <article class="provider-state-card">
+          <span>${english ? "Unavailable reason" : "سبب عدم التوفر"}</span>
+          <strong>${formatNumber(data.unavailable?.length || 0)}</strong>
+          <p>${escapeHtml(localizeUiText(reason))}</p>
+        </article>
+        <article class="provider-state-card">
+          <span>${english ? "Supported symbols" : "الرموز المدعومة"}</span>
+          <strong>${formatNumber(supported.length)}</strong>
+          <p>${escapeHtml(localizeUiText("بيانات تعريفية احتياطية فقط، بدون أسعار حية مزيفة."))}</p>
+        </article>
+      </div>
+      <div class="market-symbol-metadata">
+        ${supported.slice(0, 36).map((item) => `
+          <span class="market-symbol-card" title="${escapeHtml(item.name || item.symbol)}">
+            <b>${escapeHtml(item.symbol)}</b>
+            <strong>${escapeHtml(item.name || item.symbol)}</strong>
+            <em>${escapeHtml(normalizeDisplayCurrency(item.currency, item.symbol))}</em>
+          </span>
+        `).join("")}
+      </div>
+    </section>
+  `;
+};
+
+renderProviderUnavailableDetails = function renderProviderUnavailableDetails(data = {}) {
+  sfmFinalNormalizePayloadCurrencies(data);
+  const english = sfmFinalIsEnglish();
+  const unavailableItems = Array.isArray(data.unavailable) ? data.unavailable : [];
+  const supported = getSupportedSymbolMetadata(data);
+  const provider = data.dataProvider?.active || data.dataProvider?.requested || "--";
+  const lastUpdate = data.generatedAt ? formatDateTime(data.generatedAt) : "--";
+  return `
+    <section class="provider-state-panel" aria-label="${english ? "Provider details" : "تفاصيل مزود البيانات"}">
+      <div class="provider-state-grid">
+        <article class="provider-state-card">
+          <span>${english ? "Provider status" : "حالة مزود البيانات"}</span>
+          <strong>${escapeHtml(provider)}</strong>
+          <p>${escapeHtml(localizeUiText(data.partial ? "تحليل جزئي" : "مزود غير مكتمل لهذا السوق"))}</p>
+        </article>
+        <article class="provider-state-card">
+          <span>${english ? "Reason" : "سبب عدم التوفر"}</span>
+          <strong>${formatNumber(unavailableItems.length)}</strong>
+          <p>${escapeHtml(localizeUiText(getUnavailableSummary(data)))}</p>
+        </article>
+        <article class="provider-state-card">
+          <span>${english ? "Last update" : "آخر تحديث"}</span>
+          <strong>${escapeHtml(lastUpdate)}</strong>
+          <p>${escapeHtml(localizeUiText("لا يتم إنشاء أسعار بديلة عند غياب المزود."))}</p>
+        </article>
+      </div>
+      <div class="market-symbol-metadata">
+        ${supported.slice(0, 36).map((item) => `
+          <span class="market-symbol-card">
+            <b>${escapeHtml(item.symbol)}</b>
+            <strong>${escapeHtml(item.name || item.symbol)}</strong>
+            <em>${escapeHtml(normalizeDisplayCurrency(item.currency, item.symbol))}</em>
+          </span>
+        `).join("")}
+      </div>
+      ${unavailableItems.length ? `
+        <div class="provider-unavailable-list">
+          ${unavailableItems.slice(0, 24).map((item) => `
+            <span><b>${escapeHtml(item.symbol)}</b><em>${escapeHtml(localizeUiText(simplifyUnavailableReason(item.reason)))}</em></span>
+          `).join("")}
+        </div>
+      ` : ""}
+    </section>
+  `;
+};
+
+function sfmFinalSessionState(session, now = new Date()) {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: session.zone,
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23"
+  });
+  const parts = Object.fromEntries(formatter.formatToParts(now).map((part) => [part.type, part.value]));
+  const minutes = Number(parts.hour) * 60 + Number(parts.minute);
+  const open = sfmTimeToMinutes(session.open);
+  const close = sfmTimeToMinutes(session.close);
+  const openNow = !session.weekend.includes(parts.weekday) && minutes >= open && minutes <= close;
+  const nextEvent = openNow ? close - minutes : minutes < open ? open - minutes : (24 * 60 - minutes) + open;
+  const localTime = new Intl.DateTimeFormat(sfmFinalIsEnglish() ? "en-US" : "ar-KW-u-nu-latn", {
+    timeZone: session.zone,
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(now);
+  return {
+    openNow,
+    localTime,
+    nextEvent,
+    nextLabel: openNow
+      ? (sfmFinalIsEnglish() ? "Closes in" : "يغلق بعد")
+      : (sfmFinalIsEnglish() ? "Opens in" : "يفتح بعد")
+  };
+}
+
+function sfmFinalFormatMinutes(minutes) {
+  const clean = Math.max(0, Number(minutes || 0));
+  const hours = Math.floor(clean / 60);
+  const mins = Math.round(clean % 60);
+  if (sfmFinalIsEnglish()) return hours ? `${hours}h ${mins}m` : `${mins}m`;
+  return hours ? `${formatNumber(hours)}س ${formatNumber(mins)}د` : `${formatNumber(mins)}د`;
+}
+
+function sfmFinalBuildMarketMap() {
+  const map = document.querySelector(".ai-world-map");
+  if (!map) return;
+  map.dataset.acceptanceMapReady = "true";
+  map.dataset.finalMapReady = "true";
+  map.classList.add("terminal-session-map", "sfm-final-session-map");
+  const english = sfmFinalIsEnglish();
+  map.innerHTML = `
+    <svg class="session-route-layer" viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="sfm-session-route-main" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#ffce73" stop-opacity="0.15" />
+          <stop offset="45%" stop-color="#62ffd0" stop-opacity="0.9" />
+          <stop offset="100%" stop-color="#63a8ff" stop-opacity="0.25" />
+        </linearGradient>
+        <filter id="sfm-session-glow">
+          <feGaussianBlur stdDeviation="4" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      <path class="session-route route-main" filter="url(#sfm-session-glow)" d="M80 235 C205 110 340 112 455 205 S690 344 920 150" />
+      <path class="session-route route-gcc" filter="url(#sfm-session-glow)" d="M472 260 C520 210 595 208 675 248" />
+      <path class="session-route route-asia" filter="url(#sfm-session-glow)" d="M675 246 C750 145 842 132 944 330" />
+      <path class="session-route route-us" filter="url(#sfm-session-glow)" d="M82 235 C175 315 292 330 404 248" />
+      <path class="session-route route-europe" filter="url(#sfm-session-glow)" d="M355 168 C410 122 478 130 535 194" />
+    </svg>
+    <div class="session-map-grid" aria-label="${english ? "Global trading sessions" : "جلسات التداول العالمية"}">
+      ${SFM_ACCEPTANCE_GLOBAL_SESSIONS.map((session) => `<button class="session-node node-${session.id}" type="button" data-session-node="${session.id}"><span>${escapeHtml(session.cityEn)}</span><small>${escapeHtml(session.cityAr)} · ${escapeHtml(english ? session.marketEn : session.marketAr)}</small></button>`).join("")}
+    </div>
+    <div id="global-session-cards" class="global-session-cards"></div>
+  `;
+}
+
+ensureProfessionalMarketMap = function ensureProfessionalMarketMap() {
+  const overview = document.querySelector(".ai-global-overview");
+  if (overview) {
+    overview.classList.add("market-overview-panel", "sfm-final-overview-panel");
+    if (!overview.querySelector(".market-overview-toolbar")) {
+      overview.insertAdjacentHTML("afterbegin", sfmRenderMarketOverviewToolbar());
+    }
+  }
+  sfmFinalBuildMarketMap();
+  sfmSyncMarketOverviewTimeframeState();
+  sfmBindMarketOverviewTimeframeButtons();
+};
+
+renderGlobalSessionCards = function renderGlobalSessionCards(now = new Date()) {
+  ensureProfessionalMarketMap();
+  const container = document.querySelector("#global-session-cards");
+  if (!container) return;
+  const english = sfmFinalIsEnglish();
+  const current = sfmGetMarketOverviewTimeframe();
+  const states = SFM_ACCEPTANCE_GLOBAL_SESSIONS.map((session) => ({ ...session, ...sfmFinalSessionState(session, now) }));
+  const openCount = states.filter((session) => session.openNow).length;
+  container.innerHTML = `
+    <div class="global-session-summary">
+      <strong>${english ? "Global market sessions" : "جلسات الأسواق العالمية"}</strong>
+      <span>${english ? `${openCount} active now · ${current.labelEn}` : `${formatNumber(openCount)} جلسات نشطة الآن · ${current.labelAr}`}</span>
+    </div>
+    <div class="global-session-card-grid">
+      ${states.map((session) => `
+        <article class="global-session-card ${session.openNow ? "is-open" : "is-closed"}" data-session-card="${session.id}">
+          <div>
+            <strong>${escapeHtml(session.cityEn)}</strong>
+            <b>${session.openNow ? (english ? "Open" : "مفتوحة") : (english ? "Closed" : "مغلقة")}</b>
+          </div>
+          <span>${escapeHtml(session.cityAr)} · ${escapeHtml(english ? session.marketEn : session.marketAr)}</span>
+          <small>${session.localTime} · ${session.open}-${session.close} · ${session.nextLabel} ${sfmFinalFormatMinutes(session.nextEvent)}</small>
+        </article>`).join("")}
+    </div>
+  `;
+  states.forEach((session) => {
+    const node = document.querySelector(`[data-session-node="${session.id}"]`);
+    if (!node) return;
+    node.classList.toggle("is-open", session.openNow);
+    node.classList.toggle("is-closed", !session.openNow);
+    node.title = `${english ? session.cityEn : session.cityAr} · ${session.openNow ? (english ? "Open" : "مفتوحة") : (english ? "Closed" : "مغلقة")} · ${session.localTime}`;
+  });
+  sfmSyncMarketOverviewTimeframeState();
+};
+
+let sfmFinalLatestMarketData = null;
+
+function sfmFinalGetLatestMarketData() {
+  if (sfmFinalLatestMarketData) return sfmFinalLatestMarketData;
+  if (typeof lastData !== "undefined" && lastData) return lastData;
+  return {
+    market: { label: sfmFinalIsEnglish() ? "Selected market" : "السوق المحدد", totalSymbols: 0, supportedSymbols: [] },
+    recommendations: [],
+    unavailable: [],
+    dataProvider: { active: sfmFinalIsEnglish() ? "Provider pending" : "مزود قيد التحقق" },
+    generatedAt: new Date().toISOString(),
+    partial: true
+  };
+}
+
+function sfmFinalEnsureMarketDataStatusPanel(data = sfmFinalGetLatestMarketData()) {
+  const marketSection = document.querySelector("#markets-section");
+  if (!marketSection) return;
+
+  sfmFinalNormalizePayloadCurrencies(data);
+  const english = sfmFinalIsEnglish();
+  const supported = getSupportedSymbolMetadata(data);
+  const unavailableCount = Array.isArray(data.unavailable) ? data.unavailable.length : 0;
+  const provider = data.dataProvider?.active || data.dataProvider?.requested || (english ? "Provider unavailable" : "مزود غير متصل");
+  const marketLabel = data.market?.label || (english ? "Selected market" : "السوق المحدد");
+  const lastUpdate = data.generatedAt ? formatDateTime(data.generatedAt) : "--";
+  const reason = getUnavailableSummary(data);
+  const metadata = supported.slice(0, 28);
+
+  let panel = marketSection.querySelector("#sfm-market-data-status-panel");
+  if (!panel) {
+    panel = document.createElement("section");
+    panel.id = "sfm-market-data-status-panel";
+    panel.className = "market-data-state provider-state-panel sfm-market-data-status-panel";
+    panel.setAttribute("aria-label", english ? "Market data provider status" : "حالة مزود بيانات السوق");
+    const anchor = marketSection.querySelector(".section-head") || marketSection.firstElementChild;
+    if (anchor?.insertAdjacentElement) {
+      anchor.insertAdjacentElement("afterend", panel);
+    } else {
+      marketSection.prepend(panel);
+    }
+  }
+
+  panel.innerHTML = `
+    <div class="market-data-state-head">
+      <span>${english ? "Provider status" : "حالة مزود البيانات"}</span>
+      <strong>${escapeHtml(localizeUiText(marketLabel))}</strong>
+      <p>${escapeHtml(english ? "Fallback metadata only. No live prices are fabricated when a provider is unavailable." : "بيانات وصفية احتياطية فقط - لا يتم إنشاء أسعار حية مزيفة عند تعذر المزود.")}</p>
+    </div>
+    <div class="provider-state-grid">
+      <article class="provider-state-card">
+        <span>${english ? "Provider status" : "حالة مزود البيانات"}</span>
+        <strong>${escapeHtml(provider)}</strong>
+        <p>${escapeHtml(localizeUiText(data.partial ? "تحليل جزئي أو مزود غير مكتمل" : "آخر حالة معروفة للمزود"))}</p>
+      </article>
+      <article class="provider-state-card">
+        <span>${english ? "Unavailable reason" : "سبب عدم التوفر"}</span>
+        <strong>${formatNumber(unavailableCount)}</strong>
+        <p>${escapeHtml(localizeUiText(reason))}</p>
+      </article>
+      <article class="provider-state-card">
+        <span>${english ? "Last update" : "آخر تحديث"}</span>
+        <strong>${escapeHtml(lastUpdate)}</strong>
+        <p>${escapeHtml(english ? "Timestamp from the provider payload." : "وقت آخر حمولة بيانات من المزود.")}</p>
+      </article>
+      <article class="provider-state-card">
+        <span>${english ? "Supported symbols" : "الرموز المدعومة"}</span>
+        <strong>${formatNumber(supported.length)}</strong>
+        <p>${escapeHtml(english ? "Fallback metadata only" : "بيانات وصفية احتياطية فقط")}</p>
+      </article>
+    </div>
+    <div class="market-symbol-metadata" aria-label="${english ? "Supported symbol list" : "قائمة الرموز المدعومة"}">
+      ${metadata.length ? metadata.map((item) => `
+        <span class="market-symbol-card" title="${escapeHtml(item.name || item.symbol)}">
+          <b>${escapeHtml(item.symbol)}</b>
+          <strong>${escapeHtml(item.name || item.symbol)}</strong>
+          <em>${escapeHtml(normalizeDisplayCurrency(item.currency, item.symbol))}</em>
+        </span>
+      `).join("") : `<span class="market-symbol-card"><b>--</b><strong>${escapeHtml(english ? "No supported symbols returned" : "لم يرجع المزود رموزا مدعومة")}</strong><em>--</em></span>`}
+    </div>
+  `;
+}
+
+const sfmFinalPreviousRenderRecommendations = renderRecommendations;
+renderRecommendations = function renderRecommendations(data) {
+  sfmFinalLatestMarketData = data || sfmFinalLatestMarketData;
+  const result = sfmFinalPreviousRenderRecommendations(data);
+  sfmFinalEnsureMarketDataStatusPanel(data || sfmFinalLatestMarketData);
+  return result;
+};
+
+function sfmFinalizeRailNavigation() {
+  const rail = document.querySelector(".desktop-trading-rail");
+  if (!rail) return;
+  const toolLink = rail.querySelector('[data-nav-key="tools"], [href="#command-center-section"]');
+  if (toolLink) {
+    toolLink.dataset.navKey = "ai-analysis";
+    toolLink.setAttribute("href", "#command-center-section");
+  }
+  const tradeLink = rail.querySelector('[data-nav-key="trades"], [href="#history-section"]');
+  if (tradeLink) tradeLink.setAttribute("href", "#history-section");
+  const calendarLink = rail.querySelector('[data-nav-key="calendar"]');
+  if (calendarLink) calendarLink.setAttribute("href", "#calendar-section");
+  const marketHours = document.querySelector(".market-hours-band");
+  if (marketHours && !marketHours.id) marketHours.id = "calendar-section";
+  const settingsRail = rail.querySelector("#rail-settings-button, #settings-rail-button");
+  if (settingsRail) settingsRail.dataset.navKey = "settings";
+  if (!rail.querySelector('[data-nav-key="education"]')) {
+    const educationLink = document.createElement("a");
+    educationLink.className = "rail-link";
+    educationLink.href = "#education-section";
+    educationLink.dataset.navKey = "education";
+    educationLink.innerHTML = '<span class="rail-icon" aria-hidden="true">▣</span><b>التعليم</b>';
+    rail.insertBefore(educationLink, settingsRail || rail.querySelector(".rail-voice") || null);
+    educationLink.addEventListener("click", (event) => {
+      event.preventDefault();
+      showAppView("education", { push: true });
+    });
+  }
+  ensureAcceptanceNavigationLabels();
+  const labelMap = {
+    alerts: [sfmFinalIsEnglish() ? "Alerts" : "التنبيهات"],
+    opportunities: [sfmFinalIsEnglish() ? "Opportunities" : "الفرص"],
+    "ai-analysis": [sfmFinalIsEnglish() ? "AI Analysis" : "تحليل الذكاء الاصطناعي"],
+    trades: [sfmFinalIsEnglish() ? "Trade Log" : "سجل الصفقات"],
+    favorites: [sfmFinalIsEnglish() ? "Watchlist" : "قائمة المراقبة"],
+    settings: [sfmFinalIsEnglish() ? "Settings" : "الإعدادات"]
+  };
+  rail.querySelectorAll(".rail-link[data-nav-key]").forEach((link) => {
+    const label = labelMap[link.dataset.navKey]?.[0] || link.querySelector("b")?.textContent?.trim() || link.getAttribute("aria-label") || "";
+    if (!label) return;
+    const text = link.querySelector("b");
+    if (text) text.textContent = label;
+    link.setAttribute("aria-label", label);
+    link.setAttribute("title", label);
+    link.dataset.tooltip = label;
+  });
+}
+
+function sfmFinalAfterDomReady() {
+  ensureEducationSection();
+  sfmFinalizeRailNavigation();
+  sfmEnsureTradePerformanceHeading();
+  ensureProfessionalMarketMap();
+  renderGlobalSessionCards(new Date());
+  sfmFinalEnsureMarketDataStatusPanel();
+  if (typeof renderHistory === "function") renderHistory();
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", sfmFinalAfterDomReady);
+} else {
+  sfmFinalAfterDomReady();
+}

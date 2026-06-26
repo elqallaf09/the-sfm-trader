@@ -446,12 +446,12 @@ function normalizeCurrencyCode(currency) {
 
 function resolveCurrencyForAsset(asset = {}, marketId = "") {
   const symbolCurrency = inferCurrencyFromSymbol(asset.symbol);
-  const marketCurrency = inferCurrencyFromMarketId(marketId);
   const providerCurrency = normalizeCurrencyCode(asset.currency);
+  const marketCurrency = inferCurrencyFromMarketId(marketId);
 
   if (symbolCurrency) return symbolCurrency;
-  if (marketCurrency) return marketCurrency;
-  if (providerCurrency && !["KWD", "GCC", "MIXED"].includes(providerCurrency)) return providerCurrency;
+  if (providerCurrency && !["GCC", "MIXED"].includes(providerCurrency)) return providerCurrency;
+  if (marketCurrency && !["GCC", "MIXED"].includes(marketCurrency)) return marketCurrency;
   return "USD";
 }
 
@@ -485,6 +485,7 @@ function inferCurrencyFromSymbol(symbol) {
   if (upper.endsWith(".BH")) return "BHD";
   if (upper.endsWith(".OM")) return "OMR";
   if (upper.endsWith(".AS") || upper.endsWith(".DE") || upper.endsWith(".PA") || upper.endsWith(".SW") || upper.endsWith(".L")) return "EUR";
+  if (upper.startsWith("^") || /^[A-Z]{1,5}$/.test(upper)) return "USD";
   return "";
 }
 
@@ -595,7 +596,7 @@ function resolveSymbolExecutionMarketId(symbol, fallbackMarketId = "") {
 function inferExecutionMarketFromSymbol(symbol) {
   if (symbol.endsWith(".KW")) return "kuwait";
   if (symbol.endsWith(".SR")) return "saudi";
-  if (symbol.endsWith(".AE")) return "uae";
+  if (symbol.endsWith(".AE") || symbol.endsWith(".AD") || symbol.endsWith(".DU")) return "uae";
   if (symbol.endsWith(".QA")) return "qatar";
   if (symbol.endsWith(".BH")) return "bahrain";
   if (symbol.endsWith(".OM")) return "oman";
