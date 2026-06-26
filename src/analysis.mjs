@@ -131,6 +131,7 @@ export async function analyzeSymbol(asset, options = {}) {
 function normalizeCurrencyCode(currency) {
   const code = String(currency || "").trim().toUpperCase();
   return {
+    PAIR: "PAIR",
     KWF: "KWD",
     KW: "KWD",
     KWD: "KWD",
@@ -146,13 +147,16 @@ function normalizeCurrencyCode(currency) {
 
 function inferCurrencyFromSymbol(symbol) {
   const upper = String(symbol || "").toUpperCase();
+  if (upper.endsWith("=X")) return "PAIR";
+  if (upper.includes("-USD")) return "USD";
+  if (upper.endsWith("=F")) return "USD";
   if (upper.endsWith(".KW")) return "KWD";
   if (upper.endsWith(".SR")) return "SAR";
-  if (upper.endsWith(".AE")) return "AED";
+  if (upper.endsWith(".AE") || upper.endsWith(".AD") || upper.endsWith(".DU")) return "AED";
   if (upper.endsWith(".QA")) return "QAR";
   if (upper.endsWith(".BH")) return "BHD";
   if (upper.endsWith(".OM")) return "OMR";
-  if (upper.endsWith(".AS") || upper.endsWith(".DE") || upper.endsWith(".PA") || upper.endsWith(".SW")) return "EUR";
+  if (upper.endsWith(".AS") || upper.endsWith(".DE") || upper.endsWith(".PA") || upper.endsWith(".SW") || upper.endsWith(".L")) return "EUR";
   return "USD";
 }
 

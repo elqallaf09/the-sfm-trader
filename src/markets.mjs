@@ -130,12 +130,10 @@ export const markets = {
       asset("NBK.KW", "بنك الكويت الوطني"),
       asset("KFH.KW", "بيت التمويل الكويتي"),
       asset("ZAIN.KW", "زين الكويت"),
-      asset("AUB.KW", "البنك الأهلي المتحد"),
-      asset("GBK.KW", "بنك الخليج"),
       asset("BOUBYAN.KW", "بنك بوبيان"),
-      asset("AGILITY.KW", "أجيليتي"),
-      asset("BURG.KW", "بنك برقان"),
-      asset("MABANEE.KW", "مباني")
+      asset("GBK.KW", "بنك الخليج"),
+      asset("AUB.KW", "البنك الأهلي المتحد"),
+      asset("AGILITY.KW", "أجيليتي")
     ]
   },
   uae: {

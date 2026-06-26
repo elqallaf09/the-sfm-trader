@@ -282,18 +282,22 @@ function mapTwelveDataSymbol(symbol) {
 
 function inferCurrency(symbol, meta = {}) {
   if (meta.currency) return normalizeCurrencyCode(meta.currency);
+  if (symbol.endsWith("=F")) return "USD";
   if (symbol.endsWith("-USD")) return "USD";
-  if (symbol.endsWith("=X")) return symbol.slice(3, 6);
+  if (symbol.endsWith("=X")) return "PAIR";
   if (symbol.endsWith(".KW")) return "KWD";
   if (symbol.endsWith(".SR")) return "SAR";
-  if (symbol.endsWith(".AE")) return "AED";
+  if (symbol.endsWith(".AE") || symbol.endsWith(".AD") || symbol.endsWith(".DU")) return "AED";
   if (symbol.endsWith(".QA")) return "QAR";
+  if (symbol.endsWith(".BH")) return "BHD";
+  if (symbol.endsWith(".OM")) return "OMR";
   return "USD";
 }
 
 function normalizeCurrencyCode(currency) {
   const code = String(currency || "").trim().toUpperCase();
   return {
+    PAIR: "PAIR",
     KWF: "KWD",
     KW: "KWD",
     KWD: "KWD",

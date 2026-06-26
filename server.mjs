@@ -1,4 +1,4 @@
-import http from "node:http";
+﻿import http from "node:http";
 import { spawn } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
@@ -337,7 +337,13 @@ function buildRecommendationsPayload(marketId, market, settled = [], options = {
       label: market.label,
       region: market.region,
       note: market.note,
-      totalSymbols: market.symbols.length
+      currency: market.currency,
+      totalSymbols: market.symbols.length,
+      supportedSymbols: market.symbols.map((asset) => ({
+        symbol: asset.symbol,
+        name: asset.name,
+        currency: resolveCurrencyForAsset(asset, marketId)
+      }))
     },
     recommendations,
     opportunityRadar: buildOpportunityRadar(recommendations),
@@ -370,7 +376,7 @@ function finalizeRecommendationsPayloadForSession(payload, marketId) {
   const marketWideSession = session && !isAggregateMarket(marketId);
   const closed = marketWideSession && session.isOpen === false;
   const recommendations = (payload.recommendations || []).map((item) => (
-    finalizeRecommendationForExecutionSession(normalizeRecommendationCurrency(item), marketId, session)
+    finalizeRecommendationForExecutionSession(normalizeRecommendationCurrency(item, marketId), marketId, session)
   ));
   const note = closed
     ? `${payload.market?.note || ""} السوق مغلق الآن؛ الإشارات المعروضة للمراقبة وليست أوامر دخول فورية.`
@@ -400,7 +406,7 @@ function finalizeRecommendationForExecutionSession(item, marketId, marketSession
   const session = aggregate ? getExecutionSessionState(executionMarketId) : marketSession;
   const enriched = {
     ...item,
-    currency: normalizeCurrencyCode(item.currency || inferCurrencyFromSymbol(item.symbol)),
+    currency: resolveCurrencyForAsset(item, executionMarketId),
     executionMarketId,
     executionSession: session || null
   };
@@ -412,16 +418,19 @@ function finalizeRecommendationForExecutionSession(item, marketId, marketSession
   return enriched;
 }
 
-function normalizeRecommendationCurrency(item = {}) {
+function normalizeRecommendationCurrency(item = {}, marketId = "") {
   return {
     ...item,
-    currency: normalizeCurrencyCode(item.currency || inferCurrencyFromSymbol(item.symbol))
+    currency: resolveCurrencyForAsset(item, marketId)
   };
 }
 
 function normalizeCurrencyCode(currency) {
   const code = String(currency || "").trim().toUpperCase();
   return {
+    PAIR: "PAIR",
+    MIXED: "MIXED",
+    GCC: "GCC",
     KWF: "KWD",
     KW: "KWD",
     KWD: "KWD",
@@ -435,16 +444,48 @@ function normalizeCurrencyCode(currency) {
   }[code] || code;
 }
 
+function resolveCurrencyForAsset(asset = {}, marketId = "") {
+  const symbolCurrency = inferCurrencyFromSymbol(asset.symbol);
+  const marketCurrency = inferCurrencyFromMarketId(marketId);
+  const providerCurrency = normalizeCurrencyCode(asset.currency);
+
+  if (symbolCurrency) return symbolCurrency;
+  if (marketCurrency) return marketCurrency;
+  if (providerCurrency && !["KWD", "GCC", "MIXED"].includes(providerCurrency)) return providerCurrency;
+  return "USD";
+}
+
+function inferCurrencyFromMarketId(marketId) {
+  const id = String(marketId || "").toLowerCase();
+  if (!id) return "";
+  if (id.includes("kuwait") || id.includes("bourse-kuwait")) return "KWD";
+  if (id.includes("saudi") || id.includes("tadawul")) return "SAR";
+  if (id.includes("uae") || id.includes("dubai") || id.includes("adx") || id.includes("dfm")) return "AED";
+  if (id.includes("qatar")) return "QAR";
+  if (id.includes("bahrain")) return "BHD";
+  if (id.includes("oman") || id.includes("muscat")) return "OMR";
+  if (id.includes("forex") || id.includes("fx") || id.includes("currency")) return "PAIR";
+  if (id.includes("crypto")) return "USD";
+  if (id.includes("commodity") || id.includes("commodities") || id.includes("energy")) return "USD";
+  if (id.includes("us") || id.includes("technology") || id.includes("food") || id.includes("pharmaceutical") || id.includes("banking") || id.includes("ai") || id.includes("semiconductor")) return "USD";
+  if (id.includes("europe")) return "EUR";
+  if (id.includes("asia") || id.includes("asian")) return "MIXED";
+  return "";
+}
+
 function inferCurrencyFromSymbol(symbol) {
   const upper = String(symbol || "").toUpperCase();
+  if (upper.endsWith("=X")) return "PAIR";
+  if (upper.includes("-USD")) return "USD";
+  if (upper.endsWith("=F")) return "USD";
   if (upper.endsWith(".KW")) return "KWD";
   if (upper.endsWith(".SR")) return "SAR";
-  if (upper.endsWith(".AE")) return "AED";
+  if (upper.endsWith(".AE") || upper.endsWith(".AD") || upper.endsWith(".DU")) return "AED";
   if (upper.endsWith(".QA")) return "QAR";
   if (upper.endsWith(".BH")) return "BHD";
   if (upper.endsWith(".OM")) return "OMR";
-  if (upper.endsWith(".AS") || upper.endsWith(".DE") || upper.endsWith(".PA") || upper.endsWith(".SW")) return "EUR";
-  return "USD";
+  if (upper.endsWith(".AS") || upper.endsWith(".DE") || upper.endsWith(".PA") || upper.endsWith(".SW") || upper.endsWith(".L")) return "EUR";
+  return "";
 }
 
 function applyClosedMarketGuard(item, session) {
@@ -610,7 +651,8 @@ async function handleWatchlist(response, symbols) {
         label: "Watchlist",
         region: "Custom",
         note: "أضف رموزاً لمراقبتها.",
-        totalSymbols: 0
+        totalSymbols: 0,
+        supportedSymbols: []
       },
       recommendations: [],
       smartAlerts: [],
@@ -679,7 +721,8 @@ function buildWatchlistPayload(assets, settled = [], options = {}) {
   });
 
   const economicCalendar = options.economicCalendar || null;
-  const recommendations = applyEconomicNewsOverlayToRecommendations(rawRecommendations, "watchlist", economicCalendar);
+  const recommendations = applyEconomicNewsOverlayToRecommendations(rawRecommendations, "watchlist", economicCalendar)
+    .map((item) => normalizeRecommendationCurrency(item, resolveSymbolExecutionMarketId(item.symbol, "watchlist")));
 
   recommendations.sort((a, b) => b.confidence - a.confidence || Math.abs(b.expectedMovePct) - Math.abs(a.expectedMovePct));
 
@@ -689,7 +732,12 @@ function buildWatchlistPayload(assets, settled = [], options = {}) {
       label: "Watchlist",
       region: "Custom",
       note: "قائمة مراقبة مخصصة تحفظ داخل المتصفح.",
-      totalSymbols: assets.length
+      totalSymbols: assets.length,
+      supportedSymbols: assets.map((asset) => ({
+        symbol: asset.symbol,
+        name: asset.name,
+        currency: resolveCurrencyForAsset(asset, resolveSymbolExecutionMarketId(asset.symbol, "watchlist"))
+      }))
     },
     recommendations,
     opportunityRadar: buildOpportunityRadar(recommendations),
