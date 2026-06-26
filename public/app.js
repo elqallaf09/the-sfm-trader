@@ -2978,9 +2978,10 @@ function buildScalpDecision(item) {
 
 function renderScalpResult(item, scalp) {
   const actionClass = `scalp-action-${scalp.action}`;
-  const current = formatMoney(item.currentPrice, item.currency);
-  const target = scalp.target ? formatMoney(scalp.target, item.currency) : "--";
-  const stop = scalp.stop ? formatMoney(scalp.stop, item.currency) : "--";
+  const currency = normalizeDisplayCurrency(item.currency, item.symbol);
+  const current = formatMoney(item.currentPrice, currency);
+  const target = scalp.target ? formatMoney(scalp.target, currency) : "--";
+  const stop = scalp.stop ? formatMoney(scalp.stop, currency) : "--";
 
   scalpResult.innerHTML = `
     <article class="scalp-card ${actionClass}">
@@ -6253,10 +6254,11 @@ async function getLocalAssetQueryReply(text) {
     if (!response.ok) throw new Error(data.error || "تعذر تحميل الأصل");
 
     const item = data.recommendation || {};
+    const normalizedItem = sfmFinalNormalizeAssetCurrency({ ...item, symbol: item.symbol || match.symbol });
     const marketId = ["KC=F", "CC=F"].includes(match.symbol) ? "food" : "commodities";
     return {
       marketId,
-      reply: `${match.name}: السعر الحالي ${formatMoney(item.currentPrice, item.currency)}، التوصية ${item.actionLabel || "انتظار"} بثقة ${formatNumber(item.confidence || 0)}%. الهدف ${formatMoney(item.target1 || item.expectedPrice, item.currency)} خلال ${item.duration || "الفترة القادمة"}. راقب المخاطر لأن السلع والعقود الآجلة تتحرك بسرعة.`
+      reply: `${match.name}: السعر الحالي ${formatMoney(normalizedItem.currentPrice, normalizedItem.currency)}، التوصية ${normalizedItem.actionLabel || "انتظار"} بثقة ${formatNumber(normalizedItem.confidence || 0)}%. الهدف ${formatMoney(normalizedItem.target1 || normalizedItem.expectedPrice, normalizedItem.currency)} خلال ${normalizedItem.duration || "الفترة القادمة"}. راقب المخاطر لأن السلع والعقود الآجلة تتحرك بسرعة.`
     };
   } catch (error) {
     return {

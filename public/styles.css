@@ -13476,7 +13476,7 @@ main{grid-area:main!important;min-width:0!important;display:flex!important;flex-
 /* Reference fidelity pass: exact terminal rhythm, premium logos, and market badges. */
 :root {
   --terminal-max: 1210px;
-  --terminal-rail: 88px;
+  --terminal-rail: 104px;
   --terminal-gap: 10px;
   --terminal-radius: 16px;
   --terminal-card-radius: 13px;
@@ -19583,7 +19583,7 @@ html[dir="ltr"] .desktop-trading-rail .rail-link {
 @media (min-width: 761px) and (max-width: 1180px) {
   :root {
     --sfm-rail: 86px;
-    --terminal-rail: 86px;
+    --terminal-rail: 112px;
   }
 
   .desktop-trading-rail .rail-link {
@@ -19597,13 +19597,14 @@ html[dir="ltr"] .desktop-trading-rail .rail-link {
   }
 
   .desktop-trading-rail .rail-link b {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    overflow: hidden !important;
-    clip: rect(0 0 0 0) !important;
-    clip-path: inset(50%) !important;
-    white-space: nowrap !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: none !important;
+    overflow: visible !important;
+    clip: auto !important;
+    clip-path: none !important;
+    white-space: normal !important;
   }
 
   .desktop-trading-rail .rail-link:hover::after,
