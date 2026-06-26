@@ -5642,15 +5642,33 @@ function renderTimeframePills(timeframes) {
   }
 
   return timeframes.map((frame) => {
+    const timeframeLabel = localizeTimeframeLabel(frame.label);
     const actionClass =
       frame.action === "buy" ? "action-buy-lite" : frame.action === "sell" ? "action-sell-lite" : "action-hold-lite";
     return `
-      <div class="timeframe-pill ${actionClass}" title="RSI ${frame.rsi14} · زخم ${formatPercent(frame.momentum20)}">
-        <span>${escapeHtml(frame.label)}</span>
-        <strong>${escapeHtml(frame.actionLabel)}</strong>
-      </div>
-    `;
+        <div class="timeframe-pill ${actionClass}" title="RSI ${frame.rsi14} · زخم ${formatPercent(frame.momentum20)}">
+          <span>${escapeHtml(timeframeLabel)}</span>
+          <strong>${escapeHtml(frame.actionLabel)}</strong>
+        </div>
+      `;
   }).join("");
+}
+
+function localizeTimeframeLabel(value) {
+  const source = String(value || "").trim();
+  if (!isArabicLanguage() || !source) return source;
+
+    const asRange1 = source.match(/^([0-9]+)\s*[–—-]\s*([0-9]+)\s*weeks?$/i);
+    if (asRange1) {
+      return `${asRange1[1]}-${asRange1[2]} أسابيع`;
+    }
+  
+    const asRange2 = source.match(/^weeks?\s+([0-9]+)\s*[–—-]\s*([0-9]+)$/i);
+  if (asRange2) {
+    return `${asRange2[1]}-${asRange2[2]} أسابيع`;
+  }
+
+  return source;
 }
 
 function initVoiceAssistant() {
@@ -7694,6 +7712,59 @@ function sfmSyncMarketOverviewTimeframeState() {
     button.setAttribute("aria-label", english ? option.labelEn : option.labelAr);
     button.title = english ? option.labelEn : option.labelAr;
   });
+  sfmBindMarketOverviewTimeframeButtons();
+}
+
+function sfmResolveMarketOverviewTimeframeFromButton(button) {
+  const option = button ? button.dataset.marketTimeframe : null;
+  if (!option) return null;
+  return sfmGetMarketOverviewTimeframe(option);
+}
+
+let sfmLastMarketTimeframeActivation = {
+  at: 0,
+  id: ""
+};
+
+function sfmHandleMarketOverviewTimeframeActivation(event) {
+  const button = event.target?.closest?.("[data-market-timeframe]");
+  if (!button) return;
+
+  if (event.type === "keydown") {
+    const key = event.key;
+    if (key !== "Enter" && key !== " ") return;
+    event.preventDefault();
+  }
+
+  if (event.type === "touchend" || event.type === "pointerup") {
+    event.preventDefault();
+  }
+
+  const option = sfmResolveMarketOverviewTimeframeFromButton(button);
+  if (!option) return;
+
+  const now = Date.now();
+  if (sfmLastMarketTimeframeActivation.id === option.id && (now - sfmLastMarketTimeframeActivation.at) < 320) {
+    return;
+  }
+
+  sfmLastMarketTimeframeActivation = { at: now, id: option.id };
+  sfmSetMarketOverviewTimeframe(option.id);
+}
+
+function sfmBindMarketOverviewTimeframeButtons() {
+  const buttons = document.querySelectorAll(".market-timeframe-button");
+  for (const button of buttons) {
+    if (button.dataset.timeframeBound === "1") continue;
+    button.dataset.timeframeBound = "1";
+    button.tabIndex = 0;
+    button.setAttribute("role", "button");
+    button.setAttribute("type", "button");
+    button.addEventListener("click", sfmHandleMarketOverviewTimeframeActivation);
+    button.addEventListener("pointerup", sfmHandleMarketOverviewTimeframeActivation);
+    button.addEventListener("touchend", sfmHandleMarketOverviewTimeframeActivation);
+    button.addEventListener("keydown", sfmHandleMarketOverviewTimeframeActivation);
+  }
 }
 
 const sfmPreviousEnsureProfessionalMarketMap = ensureProfessionalMarketMap;
@@ -7706,6 +7777,7 @@ ensureProfessionalMarketMap = function ensureProfessionalMarketMap() {
     overview.insertAdjacentHTML("afterbegin", sfmRenderMarketOverviewToolbar());
   }
   sfmSyncMarketOverviewTimeframeState();
+  sfmBindMarketOverviewTimeframeButtons();
 };
 
 renderGlobalSessionCards = function renderGlobalSessionCards(now = new Date()) {
@@ -7773,12 +7845,9 @@ renderMiniSignalCard = function renderMiniSignalCard(item) {
   `;
 };
 
-document.addEventListener("click", (event) => {
-  const button = event.target?.closest?.("[data-market-timeframe]");
-  if (!button) return;
-  event.preventDefault();
-  sfmSetMarketOverviewTimeframe(button.dataset.marketTimeframe);
-});
+document.addEventListener("pointerup", sfmHandleMarketOverviewTimeframeActivation, { capture: true });
+document.addEventListener("touchend", sfmHandleMarketOverviewTimeframeActivation, { capture: true });
+document.addEventListener("click", sfmHandleMarketOverviewTimeframeActivation);
 
 document.addEventListener("DOMContentLoaded", () => {
   ensureProfessionalMarketMap();
