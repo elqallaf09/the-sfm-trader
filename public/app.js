@@ -7627,3 +7627,187 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+/* SFM mobile fixes: real market overview timeframe controls and compact mobile cards. */
+const SFM_MARKET_OVERVIEW_TIMEFRAMES = [
+  { id: "ALL", labelAr: "كل الجلسات", labelEn: "All sessions", pulse: 1, routeClass: "range-all" },
+  { id: "1Y", labelAr: "سنة واحدة", labelEn: "1 year", pulse: 0.9, routeClass: "range-year" },
+  { id: "1M", labelAr: "شهر واحد", labelEn: "1 month", pulse: 1.05, routeClass: "range-month" },
+  { id: "1W", labelAr: "أسبوع واحد", labelEn: "1 week", pulse: 1.15, routeClass: "range-week" },
+  { id: "1D", labelAr: "يوم واحد", labelEn: "1 day", pulse: 1.3, routeClass: "range-day" }
+];
+let sfmMarketOverviewTimeframe = "ALL";
+
+function sfmGetMarketOverviewTimeframe(id = sfmMarketOverviewTimeframe) {
+  return SFM_MARKET_OVERVIEW_TIMEFRAMES.find((item) => item.id === id) || SFM_MARKET_OVERVIEW_TIMEFRAMES[0];
+}
+
+function sfmSetMarketOverviewTimeframe(id) {
+  const next = sfmGetMarketOverviewTimeframe(id).id;
+  if (sfmMarketOverviewTimeframe === next) {
+    sfmSyncMarketOverviewTimeframeState();
+    return;
+  }
+  sfmMarketOverviewTimeframe = next;
+  sfmSyncMarketOverviewTimeframeState();
+  renderGlobalSessionCards(new Date());
+}
+
+function sfmRenderMarketOverviewToolbar() {
+  const english = sfmAcceptanceIsEnglish();
+  return `
+    <div class="market-overview-toolbar" aria-label="${english ? "Market overview timeframe" : "إطار عرض خريطة السوق"}">
+      <div class="market-overview-title">
+        <span>${english ? "Market overview" : "نظرة السوق"}</span>
+        <strong id="market-overview-timeframe-label">${english ? "All sessions" : "كل الجلسات"}</strong>
+      </div>
+      <div class="market-timeframe-controls" role="group" aria-label="${english ? "Select timeframe" : "اختيار الإطار الزمني"}">
+        ${SFM_MARKET_OVERVIEW_TIMEFRAMES.map((item) => `
+          <button class="market-timeframe-button" type="button" data-market-timeframe="${item.id}" aria-pressed="false" aria-label="${english ? item.labelEn : item.labelAr}">${item.id}</button>
+        `).join("")}
+      </div>
+    </div>`;
+}
+
+function sfmSyncMarketOverviewTimeframeState() {
+  const overview = document.querySelector(".ai-global-overview");
+  const map = document.querySelector(".terminal-session-map, .ai-world-map");
+  const current = sfmGetMarketOverviewTimeframe();
+  const english = sfmAcceptanceIsEnglish();
+  if (overview) {
+    overview.dataset.timeframe = current.id;
+    overview.style.setProperty("--session-pulse-scale", String(current.pulse));
+  }
+  if (map) {
+    map.dataset.timeframe = current.id;
+    map.classList.remove(...SFM_MARKET_OVERVIEW_TIMEFRAMES.map((item) => item.routeClass));
+    map.classList.add(current.routeClass);
+  }
+  const label = document.querySelector("#market-overview-timeframe-label");
+  if (label) label.textContent = english ? current.labelEn : current.labelAr;
+  document.querySelectorAll("[data-market-timeframe]").forEach((button) => {
+    const active = button.dataset.marketTimeframe === current.id;
+    const option = sfmGetMarketOverviewTimeframe(button.dataset.marketTimeframe);
+    button.classList.toggle("active", active);
+    button.classList.toggle("is-active", active);
+    button.setAttribute("aria-pressed", String(active));
+    button.setAttribute("aria-label", english ? option.labelEn : option.labelAr);
+    button.title = english ? option.labelEn : option.labelAr;
+  });
+}
+
+const sfmPreviousEnsureProfessionalMarketMap = ensureProfessionalMarketMap;
+ensureProfessionalMarketMap = function ensureProfessionalMarketMap() {
+  sfmPreviousEnsureProfessionalMarketMap();
+  const overview = document.querySelector(".ai-global-overview");
+  if (!overview) return;
+  overview.classList.add("market-overview-panel");
+  if (!overview.querySelector(".market-overview-toolbar")) {
+    overview.insertAdjacentHTML("afterbegin", sfmRenderMarketOverviewToolbar());
+  }
+  sfmSyncMarketOverviewTimeframeState();
+};
+
+renderGlobalSessionCards = function renderGlobalSessionCards(now = new Date()) {
+  ensureProfessionalMarketMap();
+  const container = document.querySelector("#global-session-cards");
+  if (!container) return;
+  const english = sfmAcceptanceIsEnglish();
+  const current = sfmGetMarketOverviewTimeframe();
+  const states = SFM_ACCEPTANCE_GLOBAL_SESSIONS.map((session) => ({ ...session, ...sfmGetSessionState(session, now) }));
+  const openCount = states.filter((session) => session.openNow).length;
+  container.innerHTML = `
+    <div class="global-session-summary">
+      <strong>${english ? "Global market sessions" : "جلسات الأسواق العالمية"}</strong>
+      <span>${english ? `${openCount} active now · ${current.labelEn}` : `${openCount} جلسات نشطة الآن · ${current.labelAr}`}</span>
+    </div>
+    <div class="global-session-card-grid">
+      ${states.map((session) => `
+        <article class="global-session-card ${session.openNow ? "is-open" : "is-closed"}" data-session-card="${session.id}">
+          <div>
+            <strong>${english ? session.cityEn : session.cityAr}</strong>
+            <span>${english ? session.marketEn : session.marketAr}</span>
+          </div>
+          <b>${session.openNow ? (english ? "Open" : "مفتوحة") : (english ? "Closed" : "مغلقة")}</b>
+          <small>${session.localTime} · ${session.open}-${session.close}</small>
+        </article>`).join("")}
+    </div>`;
+  states.forEach((session) => {
+    const node = document.querySelector(`[data-session-node="${session.id}"]`);
+    if (!node) return;
+    node.classList.toggle("is-open", session.openNow);
+    node.classList.toggle("is-closed", !session.openNow);
+  });
+  sfmSyncMarketOverviewTimeframeState();
+};
+
+renderMiniSignalCard = function renderMiniSignalCard(item) {
+  const english = sfmAcceptanceIsEnglish();
+  const score = calculateFinalScore(item);
+  const statusClass = item.action === "sell" ? "sell" : item.action === "hold" ? "hold" : "buy";
+  const visual = getPremiumAssetVisual(item);
+  const actionLabel = localizeUiText(item.actionLabel || (item.action === "buy" ? "شراء" : item.action === "sell" ? "بيع" : "انتظار"));
+  const confidenceLabel = english ? `${formatNumber(item.confidence)}% confidence` : `${formatNumber(item.confidence)}% ثقة`;
+  const scoreLabel = english ? `Score ${formatNumber(score.score)}%` : `النقاط ${formatNumber(score.score)}%`;
+
+  return `
+    <article class="mini-card watch-card" data-symbol="${escapeHtml(item.symbol)}" role="link" tabindex="0" aria-label="${escapeHtml(item.symbol)} ${escapeHtml(actionLabel)}">
+      <div class="watch-card-head">
+        <span class="asset-logo mini-asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span>
+        <div class="watch-card-title">
+          <strong>${escapeHtml(item.symbol)}</strong>
+          <span>${escapeHtml(item.name || item.symbol)}</span>
+        </div>
+        <em class="status-pill-mini ${statusClass}">${escapeHtml(actionLabel)}</em>
+      </div>
+      <div class="watch-card-price">
+        <span>${english ? "Current price" : "السعر الحالي"}</span>
+        <strong>${formatMoney(item.currentPrice, item.currency)}</strong>
+        <b>${escapeHtml(confidenceLabel)}</b>
+      </div>
+      <div class="mini-meta watch-card-meta">
+        <em class="score-pill">${escapeHtml(scoreLabel)}</em>
+        <em class="score-pill">${english ? "Target" : "الهدف"} ${formatMoney(item.expectedPrice, item.currency)}</em>
+      </div>
+    </article>
+  `;
+};
+
+document.addEventListener("click", (event) => {
+  const button = event.target?.closest?.("[data-market-timeframe]");
+  if (!button) return;
+  event.preventDefault();
+  sfmSetMarketOverviewTimeframe(button.dataset.marketTimeframe);
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  ensureProfessionalMarketMap();
+  sfmSyncMarketOverviewTimeframeState();
+  renderGlobalSessionCards(new Date());
+});
+
+/* SFM mobile compact recommendation behavior. */
+setupSignalCardToggle = function setupSignalCardToggle(card, item) {
+  const button = card.querySelector(".card-toggle");
+  const isMobile = window.matchMedia("(max-width: 760px)").matches;
+  const isCollapsed = isMobile ? true : !expandedSignalCards.has(item.symbol);
+  setSignalCardCollapsed(card, isCollapsed);
+
+  button?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    const shouldCollapse = !card.classList.contains("is-collapsed");
+
+    if (shouldCollapse) {
+      expandedSignalCards.delete(item.symbol);
+    } else {
+      expandedSignalCards.add(item.symbol);
+    }
+
+    saveStored("the-sfm-trader-expanded-cards", [...expandedSignalCards]);
+    setSignalCardCollapsed(card, shouldCollapse);
+
+    if (!shouldCollapse) {
+      drawSparkline(card.querySelector(".sparkline"), item.sparkline, item.action);
+    }
+  });
+};
