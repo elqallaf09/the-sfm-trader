@@ -993,7 +993,7 @@ const STORAGE_PREFIX = "the-sfm-trader-";
 const LEGACY_STORAGE_PREFIX = "the-sfm-";
 const TEMPORARY_LEGAL_NOTICE_STORAGE_KEY = "the-sfm-trader-dismissed-legal-notices";
 const APP_VIEW_GROUPS = {
-  home: ["#sfm-live-floor", "#markets-section", "#command-center-section", "#home-heatmap-section", "#home-deck-section", "#economic-news-section", "#recommendations-section", "#temporary-legal-notices"],
+  home: ["#market-overview-section", "#sfm-live-floor", "#markets-section", "#command-center-section", "#home-heatmap-section", "#home-deck-section", "#economic-news-section", "#recommendations-section", "#temporary-legal-notices"],
   markets: ["#markets-section", ".summary-band", ".insight-band", "#calendar-section", "#economic-news-section", "#radar-section"],
   ai: ["#sfm-live-floor", "#command-center-section", "#radar-section", "#smart-alerts-section", "#golden-section", "#recommendations-section"],
   recommendations: ["#markets-section", ".summary-band", ".insight-band", "#command-center-section", "#recommendations-section", "#temporary-legal-notices", "#us-dashboard-section", "#us-outlook-section"],
@@ -2618,6 +2618,8 @@ function renderRecommendations(data) {
   safeRenderPanel("توقعات السوق الأمريكي", () => renderUsOutlook(data), usOutlookGrid);
   safeRenderPanel("الفرص الذهبية", () => renderGoldenOpportunities(data), goldenGrid);
   safeRenderPanel("المضاربة", () => renderScalpQuickList(data), scalpQuickList);
+  updateRightPanel(all, buys, sells);
+  updateMarketOverviewBubbles(all);
   if (data.market?.id === "watchlist") {
     watchlistData = data;
     watchlistLastLoadedAt = Date.now();
@@ -8604,4 +8606,114 @@ if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", sfmFinalAfterDomReady);
 } else {
   sfmFinalAfterDomReady();
+}
+
+/* ── Right Dashboard Panel ─────────────────────────────────── */
+function updateRightPanel(all = [], buys = [], sells = []) {
+  const picksEl = document.getElementById("rdp-picks-list");
+  const biasLabel = document.getElementById("rdp-bias-label");
+  const bullBar = document.getElementById("rdp-bull-bar");
+  const bearBar = document.getElementById("rdp-bear-bar");
+  const neutBar = document.getElementById("rdp-neut-bar");
+  const bullPctEl = document.getElementById("rdp-bull-pct");
+  const bearPctEl = document.getElementById("rdp-bear-pct");
+  const neutPctEl = document.getElementById("rdp-neut-pct");
+
+  const topBuys = [...buys].sort((a, b) => b.confidence - a.confidence).slice(0, 2);
+  const topSells = [...sells].sort((a, b) => b.confidence - a.confidence).slice(0, 2);
+  const picks = [...topBuys, ...topSells];
+
+  if (picksEl && picks.length) {
+    picksEl.innerHTML = picks.map((item) => `
+      <div class="rdp-pick-row">
+        <div class="rdp-pick-asset">
+          <div class="rdp-pick-logo">${escapeHtml(item.symbol.slice(0, 3))}</div>
+          <div class="rdp-pick-info">
+            <strong>${escapeHtml(item.symbol)}</strong>
+            <span>${escapeHtml((item.name || "").split(" ").slice(0, 2).join(" "))}</span>
+          </div>
+        </div>
+        <span class="rdp-pick-badge${item.action === "sell" ? " sell" : ""}">${escapeHtml(item.actionLabel || item.action.toUpperCase())}</span>
+        <span class="rdp-pick-confidence">${item.confidence}%</span>
+        <span class="rdp-pick-timeframe">${escapeHtml(item.duration || "--")}</span>
+      </div>`).join("");
+  }
+
+  const total = all.length || 1;
+  const bullV = Math.round((buys.length / total) * 100);
+  const bearV = Math.round((sells.length / total) * 100);
+  const neutV = Math.max(0, 100 - bullV - bearV);
+
+  if (bullBar) bullBar.style.width = `${bullV}%`;
+  if (bearBar) bearBar.style.width = `${bearV}%`;
+  if (neutBar) neutBar.style.width = `${neutV}%`;
+  if (bullPctEl) bullPctEl.textContent = `${bullV}%`;
+  if (bearPctEl) bearPctEl.textContent = `${bearV}%`;
+  if (neutPctEl) neutPctEl.textContent = `${neutV}%`;
+
+  if (biasLabel) {
+    const label = bullV > 55 ? "BULLISH" : bearV > 55 ? "BEARISH" : "NEUTRAL";
+    biasLabel.textContent = label;
+    biasLabel.className = `rdp-bias-label ${label === "BEARISH" ? "rdp-bearish-label" : label === "NEUTRAL" ? "rdp-neutral-label" : ""}`;
+  }
+
+  updateRightPanelNews();
+}
+
+function updateRightPanelNews() {
+  const newsEl = document.getElementById("rdp-news-list");
+  if (!newsEl || newsEl.dataset.populated === "1") return;
+
+  const staticNews = [
+    { title: "Fed Signals Potential Rate Cut in Q3 2025", time: "5 minutes ago", impact: "high" },
+    { title: "AI Stocks Lead Tech Market Rally", time: "12 minutes ago", impact: "medium" },
+    { title: "Gulf Markets Open Higher on Oil Gains", time: "18 minutes ago", impact: "medium" },
+    { title: "Oil Prices Rise on Geopolitical Tensions", time: "24 minutes ago", impact: "high" },
+  ];
+  newsEl.innerHTML = staticNews.map((n) => `
+    <div class="rdp-news-item">
+      <div class="rdp-news-dot">📰</div>
+      <div class="rdp-news-text">
+        <p>${escapeHtml(n.title)}</p>
+        <span>${escapeHtml(n.time)}</span>
+      </div>
+      <span class="rdp-news-impact ${n.impact}">${n.impact === "high" ? "HIGH IMPACT" : "MED IMPACT"}</span>
+    </div>`).join("");
+  newsEl.dataset.populated = "1";
+}
+
+/* ── Market Overview Bubble Updater ────────────────────────── */
+function updateMarketOverviewBubbles(all = []) {
+  const MAP = {
+    "NAS100": "moc-nasdaq", "US100": "moc-nasdaq",
+    "SPX500": "moc-sp500", "US500": "moc-sp500", "SP500": "moc-sp500",
+    "UK100": "moc-ftse", "FTSE100": "moc-ftse",
+    "GER40": "moc-dax", "DAX40": "moc-dax",
+    "JP225": "moc-nikkei", "NIKKEI225": "moc-nikkei",
+    "AUS200": "moc-asx", "ASX200": "moc-asx",
+  };
+
+  const sentimentEl = document.getElementById("mo-sentiment-label");
+  const confEl = document.getElementById("mo-confidence-pct");
+
+  all.forEach((item) => {
+    const elId = MAP[item.symbol?.toUpperCase()];
+    if (!elId) return;
+    const el = document.getElementById(elId);
+    if (!el) return;
+    const pct = item.expectedMovePct != null ? formatPercent(item.expectedMovePct) : "--";
+    el.textContent = pct;
+    el.className = `mo-bubble-change ${(item.expectedMovePct ?? 0) >= 0 ? "up" : "down"}`;
+  });
+
+  if (sentimentEl && all.length) {
+    const buys = all.filter((r) => r.action === "buy").length;
+    const bullPct = Math.round((buys / all.length) * 100);
+    const label = bullPct > 55 ? "BULLISH" : buys < all.length * 0.35 ? "BEARISH" : "NEUTRAL";
+    sentimentEl.textContent = label;
+    if (confEl) {
+      const avgConf = Math.round(all.reduce((s, r) => s + (r.confidence || 0), 0) / all.length);
+      confEl.textContent = `${avgConf}%`;
+    }
+  }
 }

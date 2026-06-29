@@ -22,7 +22,7 @@
   <body class="notranslate" translate="no">
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
 
-    <div class="app-shell">
+    <div class="app-shell sfm-dashboard">
       <header class="topbar">
         <div class="brand-lockup">
           <p class="eyebrow">وكيل تحليل الأسواق</p>
@@ -64,6 +64,17 @@
       </header>
 
       <aside class="desktop-trading-rail" aria-label="تنقل غرفة التداول">
+        <div class="sidebar-brand-block">
+          <svg class="sidebar-brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M4 18v3"></path><path d="M8 14v7"></path><path d="M12 16v5"></path>
+            <path d="M16 10v11"></path><path d="M20 6v15"></path>
+            <path d="m22 3-8.5 8.5-4-4L2 15"></path>
+          </svg>
+          <div class="sidebar-brand-text">
+            <strong>THE-SFM</strong>
+            <span>TRADER</span>
+          </div>
+        </div>
         <div class="rail-top-mark" aria-hidden="true">
           <svg class="rail-lucide-icon" viewBox="0 0 24 24">
             <path d="M4 18v3"></path>
@@ -210,9 +221,28 @@
           </span>
           <b>Voice</b>
         </a>
-        <div class="rail-ai-card" aria-label="AI Assistant">
-          <span></span>
-          <strong>AI Assistant</strong>
+        <div class="sidebar-spacer"></div>
+        <div class="sidebar-pro-card">
+          <div class="sidebar-pro-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+              <path d="M2 17l10 5 10-5"></path>
+              <path d="M2 12l10 5 10-5"></path>
+            </svg>
+          </div>
+          <div>
+            <strong>AI PRO</strong>
+            <span>Unlock full power</span>
+            <button id="sidebar-upgrade-btn" type="button">Upgrade Now</button>
+          </div>
+        </div>
+        <div class="sidebar-user-card">
+          <div class="sidebar-avatar" aria-hidden="true">SFM</div>
+          <div class="sidebar-user-info">
+            <strong id="sidebar-user-name">The SFM Trader</strong>
+            <span>Premium Member</span>
+          </div>
+          <span class="sidebar-online-dot" aria-label="متصل" title="Online"></span>
         </div>
       </aside>
 
@@ -399,6 +429,42 @@
       </section>
 
       <main>
+        <section id="market-overview-section" class="market-overview-band" aria-label="نظرة عامة على الأسواق العالمية">
+          <div class="mo-head">
+            <div>
+              <p class="eyebrow">REAL-TIME GLOBAL MARKET ANALYSIS BY AI</p>
+              <h2>Market Overview</h2>
+            </div>
+            <div class="mo-timeframes" role="group" aria-label="الإطار الزمني">
+              <button class="mo-tf active" type="button">1D</button>
+              <button class="mo-tf" type="button">1W</button>
+              <button class="mo-tf" type="button">1M</button>
+              <button class="mo-tf" type="button">1Y</button>
+              <button class="mo-tf" type="button">ALL</button>
+            </div>
+          </div>
+          <div class="world-map-canvas" aria-hidden="true">
+            <div class="mo-bubble mo-nasdaq"><span>NASDAQ</span><span class="mo-bubble-change up" id="moc-nasdaq">+1.27%</span></div>
+            <div class="mo-bubble mo-sp500"><span>S&P 500</span><span class="mo-bubble-change up" id="moc-sp500">+1.04%</span></div>
+            <div class="mo-bubble mo-ftse"><span>FTSE 100</span><span class="mo-bubble-change up" id="moc-ftse">+0.23%</span></div>
+            <div class="mo-bubble mo-dax"><span>DAX 40</span><span class="mo-bubble-change up" id="moc-dax">+0.31%</span></div>
+            <div class="mo-bubble mo-nikkei"><span>NIKKEI 225</span><span class="mo-bubble-change down" id="moc-nikkei">-0.17%</span></div>
+            <div class="mo-bubble mo-asx"><span>ASX 200</span><span class="mo-bubble-change up" id="moc-asx">+0.56%</span></div>
+          </div>
+          <div class="mo-sentiment-hud">
+            <div class="mo-sentiment-card">
+              <p>Market Sentiment</p>
+              <strong id="mo-sentiment-label">BULLISH</strong>
+              <em id="mo-sentiment-pct">72%</em>
+            </div>
+            <div class="mo-sentiment-card">
+              <p>AI Confidence</p>
+              <strong id="mo-confidence-label">HIGH</strong>
+              <em id="mo-confidence-pct">78%</em>
+            </div>
+          </div>
+        </section>
+
         <section id="sfm-live-floor" class="sfm-live-floor" aria-label="لوحة التداول الحية">
 
           <div class="ai-agent-kpi-strip" aria-label="ملخص حالة وكيل التداول">
@@ -1075,6 +1141,61 @@
         <span>the-sfm trader</span>
         <strong>Powered by M.ALQ</strong>
       </footer>
+
+      <aside class="right-dashboard-panel" aria-label="ملخص السوق">
+
+        <div class="rdp-block">
+          <div class="rdp-block-head">
+            <h3>AI Top Picks</h3>
+            <a href="#recommendations-section" class="rdp-view-all">View All</a>
+          </div>
+          <div class="rdp-picks-header">
+            <span>ASSET</span>
+            <span>SIGNAL</span>
+            <span>CONF</span>
+            <span>TIME</span>
+          </div>
+          <div id="rdp-picks-list" class="rdp-picks-list">
+            <div class="rdp-pick-loading">جاري تحليل الأسواق...</div>
+          </div>
+        </div>
+
+        <div class="rdp-block rdp-news-block">
+          <div class="rdp-block-head">
+            <h3>Market News</h3>
+            <a href="#economic-news-section" class="rdp-view-all">View All</a>
+          </div>
+          <div id="rdp-news-list" class="rdp-news-list"></div>
+        </div>
+
+        <div class="rdp-block rdp-analysis-block">
+          <div class="rdp-block-head">
+            <h3>AI Market Analysis</h3>
+          </div>
+          <div class="rdp-analysis-body">
+            <p class="rdp-analysis-eyebrow">Overall Market Bias</p>
+            <strong id="rdp-bias-label" class="rdp-bias-label">--</strong>
+            <div class="rdp-bias-bars">
+              <div class="rdp-bias-row">
+                <span>Bullish</span>
+                <div class="rdp-bar-track"><span id="rdp-bull-bar" class="rdp-bar rdp-bull-fill" style="width:0%"></span></div>
+                <b id="rdp-bull-pct">--</b>
+              </div>
+              <div class="rdp-bias-row">
+                <span>Bearish</span>
+                <div class="rdp-bar-track"><span id="rdp-bear-bar" class="rdp-bar rdp-bear-fill" style="width:0%"></span></div>
+                <b id="rdp-bear-pct">--</b>
+              </div>
+              <div class="rdp-bias-row">
+                <span>Neutral</span>
+                <div class="rdp-bar-track"><span id="rdp-neut-bar" class="rdp-bar rdp-neut-fill" style="width:0%"></span></div>
+                <b id="rdp-neut-pct">--</b>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </aside>
 
       <button id="mobile-voice-orb" class="mobile-voice-orb" type="button" aria-label="ابدأ المحادثة الصوتية">
         <span aria-hidden="true"></span>
