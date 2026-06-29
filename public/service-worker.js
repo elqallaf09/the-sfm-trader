@@ -1,12 +1,13 @@
-const CACHE_NAME = "the-sfm-trader-ios-shell-v20260623-detail-en-1";
+const CACHE_NAME = "the-sfm-trader-v20260630-cinema";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/detail.html",
-  "/styles.css?v=20260623-detail-en-1",
-  "/desktop-balance.css?v=20260623-detail-en-1",
-  "/app.js?v=20260623-language-hover-1",
-  "/detail.js?v=20260623-detail-en-1",
+  "/styles.css?v=20260630-cinema",
+  "/desktop-balance.css?v=20260630-cinema",
+  "/cinema.css?v=20260630-cinema",
+  "/app.js",
+  "/detail.js",
   "/manifest.webmanifest",
   "/assets/sfm-trader-logo.svg",
   "/the-sfm-trader-icon-256.png",
@@ -43,16 +44,30 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-
-      return fetch(request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== "basic") return response;
-        const responseClone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+  // Network-first for JS/CSS (always fresh), cache-first for images
+  const isAsset = /\.(png|ico|svg|webp|jpg|jpeg|gif|woff2?)(\?|$)/.test(url.pathname);
+  if (isAsset) {
+    event.respondWith(
+      caches.match(request).then((cached) => cached || fetch(request).then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
         return response;
-      });
-    })
+      }))
+    );
+    return;
+  }
+
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request))
   );
 });

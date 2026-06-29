@@ -291,7 +291,7 @@
               </div>
             </div>
             <label class="settings-switch">
-              <input type="checkbox" checked />
+              <input type="checkbox" name="latin-digits" id="settings-latin-digits" checked />
               <span>استخدام الأرقام الإنجليزية داخل الواجهة</span>
             </label>
           </section>
@@ -302,11 +302,11 @@
               <strong>التنبيهات</strong>
             </div>
             <label class="settings-switch">
-              <input type="checkbox" checked />
+              <input type="checkbox" name="notify-target" id="settings-notify-target" checked />
               <span>تنبيه عند وصول الصفقة إلى الهدف</span>
             </label>
             <label class="settings-switch">
-              <input type="checkbox" checked />
+              <input type="checkbox" name="notify-sound" id="settings-notify-sound" checked />
               <span>تنبيه صوتي للفرص عالية الثقة</span>
             </label>
           </section>
@@ -325,7 +325,7 @@
               </select>
             </label>
             <label class="settings-switch">
-              <input type="checkbox" />
+              <input type="checkbox" name="sharia-only" id="settings-sharia-only" />
               <span>عرض الأسهم المطابقة للشريعة فقط</span>
             </label>
           </section>
@@ -776,7 +776,7 @@
             </div>
           </div>
           <form id="voice-text-form" class="voice-text-form">
-            <input id="voice-text-command" type="text" placeholder="إذا ظهر خطأ network اكتب الأمر هنا: شنو أشتري اليوم؟" autocomplete="off" />
+            <input id="voice-text-command" type="text" placeholder="اسألني: ماذا أشتري اليوم؟" autocomplete="off" />
             <button type="submit">إرسال الأمر</button>
           </form>
         </section>

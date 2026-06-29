@@ -48,7 +48,7 @@ export async function analyzeSymbol(asset, options = {}) {
     shariaStatus: asset.shariaStatus || "unknown",
     shariaLabel: asset.shariaLabel || "",
     shariaSource: asset.shariaSource || getDefaultShariaSource(asset.shariaStatus),
-    shariaCheckedAt: asset.shariaCheckedAt || "2026-06",
+    shariaCheckedAt: asset.shariaCheckedAt || new Date().toISOString().slice(0, 7),
     exchangeName: meta.exchangeName || meta.fullExchangeName || "",
     currency: normalizeCurrencyCode(meta.currency || inferCurrencyFromSymbol(asset.symbol)),
     dataProvider: meta.dataProvider || "Yahoo Finance",
