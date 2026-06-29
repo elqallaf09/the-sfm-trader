@@ -1,0 +1,607 @@
+/* ============================================================
+   cinema.css — THE-SFM TRADER  |  Cinematic Trading Layer
+   Loaded last — overrides everything for maximum visual impact
+   ============================================================ */
+
+/* ── 0. Google Font: Cairo (Arabic) + JetBrains Mono (numbers) ─ */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
+/* ── 1. Root upgrades ─────────────────────────────────────── */
+:root {
+  --cin-green:      #00f59b;
+  --cin-green-glow: rgba(0, 245, 155, 0.55);
+  --cin-red:        #ff3b5c;
+  --cin-red-glow:   rgba(255, 59, 92, 0.55);
+  --cin-gold:       #f0c040;
+  --cin-gold-glow:  rgba(240, 192, 64, 0.45);
+  --cin-blue:       #00b4ff;
+  --cin-blue-glow:  rgba(0, 180, 255, 0.4);
+  --cin-scan:       rgba(0, 0, 0, 0.06);
+  --cin-bg:         #020509;
+  --cin-panel:      rgba(4, 12, 20, 0.96);
+  --cin-border:     rgba(255, 255, 255, 0.06);
+  --cin-radius:     16px;
+  font-family: "Cairo", "Segoe UI", Tahoma, Arial, sans-serif !important;
+}
+
+/* ── 2. Cinematic background — deep space + market aurora ──── */
+html, body {
+  background:
+    radial-gradient(ellipse 90% 55% at 18% -5%,  rgba(0, 245, 155, 0.07),  transparent 55%),
+    radial-gradient(ellipse 70% 40% at 82% -2%,  rgba(240, 192, 64, 0.065), transparent 50%),
+    radial-gradient(ellipse 60% 35% at 50% 105%, rgba(255, 59,  92, 0.055), transparent 50%),
+    radial-gradient(ellipse 45% 60% at  5% 60%,  rgba(0,  180, 255, 0.04),  transparent 55%),
+    linear-gradient(180deg, #020a12 0%, #030810 40%, #020509 100%) !important;
+  background-attachment: fixed !important;
+}
+
+/* ── 3. Scanline CRT overlay — soul of the trading terminal ── */
+body::before {
+  content: "" !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9998 !important;
+  pointer-events: none !important;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 3px,
+    var(--cin-scan) 3px,
+    var(--cin-scan) 4px
+  ) !important;
+  animation: scanlines 8s linear infinite !important;
+  will-change: background-position !important;
+}
+
+@keyframes scanlines {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 -400px; }
+}
+
+/* ── 4. Animated aurora pulse (decorative layer) ───────────── */
+body::after {
+  content: "" !important;
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 0 !important;
+  pointer-events: none !important;
+  opacity: 1 !important;
+  background:
+    radial-gradient(ellipse 70% 30% at 20%  8%,  rgba(0, 245, 155, 0.055), transparent),
+    radial-gradient(ellipse 55% 28% at 80%  5%,  rgba(240, 192, 64, 0.05), transparent),
+    radial-gradient(ellipse 40% 45% at  8% 62%,  rgba(0, 180, 255, 0.038), transparent),
+    repeating-linear-gradient(90deg, transparent 0 70px, rgba(0,245,155,0.028) 71px 72px, transparent 73px 144px),
+    repeating-linear-gradient(90deg, transparent 0 90px, rgba(255,59,92,0.022) 91px 92px, transparent 93px 186px) !important;
+  background-size: auto, auto, auto, 146px 1px, 186px 1px !important;
+  animation: aurora-breathe 14s ease-in-out infinite alternate !important;
+  will-change: opacity !important;
+}
+
+@keyframes aurora-breathe {
+  0%   { opacity: 0.7; }
+  50%  { opacity: 1.0; }
+  100% { opacity: 0.7; }
+}
+
+/* ── 5. Numbers: monospace for rock-solid alignment ───────────── */
+.price-row,
+.pulse-price-row,
+.live-pulse-card,
+.market-board-card strong,
+.home-rec-metrics strong,
+.trade-plan-row div strong,
+.asset-price,
+.sparkline-label,
+[data-price],
+[data-value],
+.confidence-value,
+.session-clock,
+#session-clock,
+#header-session-clock {
+  font-family: "JetBrains Mono", "Courier New", monospace !important;
+  font-variant-numeric: tabular-nums lining-nums !important;
+}
+
+/* ── 6. Signal cards — the heart of the UI ───────────────────── */
+.signal-card {
+  border-color: rgba(255,255,255,0.07) !important;
+  background:
+    linear-gradient(145deg, rgba(4, 14, 22, 0.97), rgba(2, 8, 14, 0.97)) !important;
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.04) !important;
+  transition:
+    transform 0.22s ease,
+    box-shadow 0.22s ease,
+    border-color 0.22s ease !important;
+  border-radius: 18px !important;
+}
+
+.signal-card:hover {
+  transform: translateY(-3px) !important;
+  border-color: rgba(240,192,64,0.3) !important;
+  box-shadow:
+    0 18px 52px rgba(0,0,0,0.6),
+    0 0 28px rgba(240,192,64,0.08),
+    inset 0 1px 0 rgba(255,255,255,0.06) !important;
+}
+
+/* BUY card — electric green */
+.signal-card:has(.action-buy) {
+  border-color: rgba(0,245,155,0.28) !important;
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.5),
+    0 0 32px rgba(0,245,155,0.07),
+    inset 0 1px 0 rgba(0,245,155,0.06) !important;
+}
+
+.signal-card:has(.action-buy):hover {
+  border-color: rgba(0,245,155,0.55) !important;
+  box-shadow:
+    0 18px 52px rgba(0,0,0,0.6),
+    0 0 44px rgba(0,245,155,0.14),
+    inset 0 1px 0 rgba(0,245,155,0.1) !important;
+}
+
+/* SELL card — electric red */
+.signal-card:has(.action-sell) {
+  border-color: rgba(255,59,92,0.25) !important;
+  box-shadow:
+    0 4px 24px rgba(0,0,0,0.5),
+    0 0 28px rgba(255,59,92,0.06),
+    inset 0 1px 0 rgba(255,59,92,0.05) !important;
+}
+
+.signal-card:has(.action-sell):hover {
+  border-color: rgba(255,59,92,0.5) !important;
+  box-shadow:
+    0 18px 52px rgba(0,0,0,0.6),
+    0 0 40px rgba(255,59,92,0.13),
+    inset 0 1px 0 rgba(255,59,92,0.08) !important;
+}
+
+/* ── 7. Action badges — dramatic neon pill ───────────────────── */
+.action-badge,
+.action-buy,
+.action-sell,
+.action-hold {
+  font-family: "JetBrains Mono", monospace !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  font-size: 11px !important;
+  padding: 4px 12px !important;
+  border-radius: 999px !important;
+  border: 1px solid transparent !important;
+}
+
+.action-buy {
+  color: #000 !important;
+  background: linear-gradient(135deg, #00f59b, #00cc7a) !important;
+  border-color: rgba(0,245,155,0.5) !important;
+  box-shadow: 0 0 16px rgba(0,245,155,0.45), 0 2px 8px rgba(0,0,0,0.4) !important;
+  text-shadow: none !important;
+}
+
+.action-sell {
+  color: #fff !important;
+  background: linear-gradient(135deg, #ff3b5c, #cc2044) !important;
+  border-color: rgba(255,59,92,0.5) !important;
+  box-shadow: 0 0 16px rgba(255,59,92,0.45), 0 2px 8px rgba(0,0,0,0.4) !important;
+  text-shadow: none !important;
+}
+
+.action-hold {
+  color: #fff !important;
+  background: linear-gradient(135deg, rgba(145,167,255,0.25), rgba(100,130,255,0.15)) !important;
+  border-color: rgba(145,167,255,0.4) !important;
+  box-shadow: 0 0 12px rgba(145,167,255,0.25) !important;
+  text-shadow: none !important;
+}
+
+/* ── 8. Live Pulse cards — glowing market snapshot ──────────── */
+.live-pulse-card {
+  position: relative !important;
+  overflow: hidden !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+}
+
+.live-pulse-card::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: inherit !important;
+  opacity: 0 !important;
+  transition: opacity 0.3s ease !important;
+  pointer-events: none !important;
+  background: radial-gradient(circle at 50% 0%, rgba(0,245,155,0.12), transparent 65%) !important;
+}
+
+.live-pulse-card:not(.is-down)::before {
+  background: radial-gradient(circle at 50% 0%, rgba(0,245,155,0.1), transparent 65%) !important;
+}
+
+.live-pulse-card.is-down::before {
+  background: radial-gradient(circle at 50% 0%, rgba(255,59,92,0.1), transparent 65%) !important;
+}
+
+.live-pulse-card:hover::before { opacity: 1 !important; }
+
+.live-pulse-card:not(.is-down) {
+  border-color: rgba(0, 245, 155, 0.22) !important;
+  box-shadow:
+    0 0 20px rgba(0,245,155,0.06),
+    inset 0 1px 0 rgba(0,245,155,0.06) !important;
+}
+
+.live-pulse-card.is-down {
+  border-color: rgba(255, 59, 92, 0.22) !important;
+  box-shadow:
+    0 0 20px rgba(255,59,92,0.06),
+    inset 0 1px 0 rgba(255,59,92,0.06) !important;
+}
+
+.live-pulse-card:hover {
+  transform: translateY(-2px) scale(1.01) !important;
+}
+
+/* ── 9. Sparklines — glowing chart lines ────────────────────── */
+.live-pulse-sparkline polyline,
+.home-rec-sparkline polyline,
+.sparkline polyline {
+  filter: drop-shadow(0 0 3px var(--cin-green)) !important;
+}
+
+.is-down .live-pulse-sparkline polyline,
+.sell .home-rec-sparkline polyline {
+  filter: drop-shadow(0 0 3px var(--cin-red)) !important;
+}
+
+/* ── 10. Confidence bar — glowing fill ──────────────────────── */
+.confidence-bar,
+[class*="confidence-fill"],
+[class*="progress-fill"],
+.confidence-track > *:first-child {
+  position: relative !important;
+  border-radius: 999px !important;
+  overflow: hidden !important;
+}
+
+.confidence-fill,
+.confidence-bar-fill {
+  box-shadow: 0 0 10px var(--cin-green-glow) !important;
+  background: linear-gradient(90deg, var(--cin-green), #00cc7a) !important;
+  animation: confidence-pulse 3s ease-in-out infinite alternate !important;
+}
+
+@keyframes confidence-pulse {
+  0%   { box-shadow: 0 0 8px  var(--cin-green-glow); }
+  100% { box-shadow: 0 0 18px var(--cin-green-glow); }
+}
+
+/* ── 11. Market board cards ─────────────────────────────────── */
+.market-board-card {
+  transition: transform 0.18s ease, box-shadow 0.18s ease !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+.market-board-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5) !important;
+}
+
+.market-board-card.buy {
+  border-color: rgba(0,245,155,0.25) !important;
+  box-shadow: inset 3px 0 0 var(--cin-green), 0 0 16px rgba(0,245,155,0.05) !important;
+}
+
+.market-board-card.sell {
+  border-color: rgba(255,59,92,0.22) !important;
+  box-shadow: inset 3px 0 0 var(--cin-red), 0 0 16px rgba(255,59,92,0.05) !important;
+}
+
+.market-board-card.buy b   { color: var(--cin-green) !important; text-shadow: 0 0 12px var(--cin-green-glow) !important; }
+.market-board-card.sell b  { color: var(--cin-red)   !important; text-shadow: 0 0 12px var(--cin-red-glow)   !important; }
+
+/* ── 12. Market band sections — deep glass panels ───────────── */
+.market-band,
+.voice-band,
+.scalping-band,
+.radar-band,
+.recommendations-band,
+.watchlist-band,
+.portfolio-band,
+.history-band,
+.golden-band {
+  border-color: rgba(255,255,255,0.07) !important;
+  background:
+    radial-gradient(ellipse 80% 40% at 50% -10%, rgba(255,255,255,0.025), transparent 50%),
+    rgba(4, 12, 20, 0.94) !important;
+  box-shadow:
+    0 8px 40px rgba(0,0,0,0.45),
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    inset 0 -1px 0 rgba(0,0,0,0.3) !important;
+  border-radius: 20px !important;
+}
+
+/* ── 13. Ticker tape — neon streaming data ───────────────────── */
+.ticker-tape {
+  background: transparent !important;
+}
+
+.ticker-item,
+.ticker-tape > * {
+  font-family: "JetBrains Mono", monospace !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.ticker-tape .is-up   { color: var(--cin-green) !important; text-shadow: 0 0 8px var(--cin-green-glow) !important; }
+.ticker-tape .is-down { color: var(--cin-red)   !important; text-shadow: 0 0 8px var(--cin-red-glow)   !important; }
+
+/* ── 14. Header / Topbar — premium trading station ──────────── */
+.topbar {
+  background:
+    radial-gradient(ellipse 60% 100% at 50% 0%, rgba(240,192,64,0.06), transparent 70%),
+    rgba(2, 8, 14, 0.97) !important;
+  border-color: rgba(240,192,64,0.18) !important;
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.5),
+    0 1px 0 rgba(240,192,64,0.1),
+    inset 0 1px 0 rgba(255,255,255,0.04) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+/* ── 15. Session status — live glow dot ─────────────────────── */
+.pulse,
+.status-dot,
+[class*="pulse-dot"] {
+  animation: dot-pulse 2s ease-in-out infinite !important;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { box-shadow: 0 0 0 0    rgba(0,245,155,0.6); }
+  50%       { box-shadow: 0 0 0 5px rgba(0,245,155,0);   }
+}
+
+/* ── 16. Price change flash — key UX moment ─────────────────── */
+@keyframes flash-up {
+  0%   { background: rgba(0,245,155,0.18); color: var(--cin-green); }
+  100% { background: transparent; color: inherit; }
+}
+
+@keyframes flash-down {
+  0%   { background: rgba(255,59,92,0.18); color: var(--cin-red); }
+  100% { background: transparent; color: inherit; }
+}
+
+.price-flash-up   { animation: flash-up   0.8s ease-out forwards !important; }
+.price-flash-down { animation: flash-down 0.8s ease-out forwards !important; }
+
+/* ── 17. Home recommendation cards ──────────────────────────── */
+.home-rec-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+  border-radius: 18px !important;
+}
+
+.home-rec-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow:
+    0 20px 48px rgba(0,0,0,0.55),
+    0 0 24px rgba(240,192,64,0.07) !important;
+}
+
+.home-rec-card.buy {
+  border-color: rgba(0,245,155,0.3) !important;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(0,245,155,0.06), transparent),
+    linear-gradient(145deg, rgba(4,14,22,0.97), rgba(2,8,14,0.97)) !important;
+}
+
+.home-rec-card.sell {
+  border-color: rgba(255,59,92,0.27) !important;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(255,59,92,0.05), transparent),
+    linear-gradient(145deg, rgba(14,4,8,0.97), rgba(8,2,4,0.97)) !important;
+}
+
+/* ── 18. Radar cards ────────────────────────────────────────── */
+.radar-card {
+  border-radius: 16px !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.radar-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 14px 36px rgba(0,0,0,0.5) !important;
+}
+
+.radar-card.buy {
+  border-color: rgba(0,245,155,0.3) !important;
+  box-shadow: 0 0 20px rgba(0,245,155,0.06) !important;
+}
+
+.radar-card.sell {
+  border-color: rgba(255,59,92,0.27) !important;
+  box-shadow: 0 0 20px rgba(255,59,92,0.06) !important;
+}
+
+/* ── 19. Trading Rail (sidebar) — premium terminal column ────── */
+.desktop-trading-rail {
+  background:
+    radial-gradient(ellipse 100% 30% at 50% 0%, rgba(240,192,64,0.07), transparent 40%),
+    linear-gradient(180deg, rgba(3,10,16,0.99), rgba(2,7,12,0.99)) !important;
+  border-color: rgba(240,192,64,0.16) !important;
+  box-shadow:
+    4px 0 40px rgba(0,0,0,0.4),
+    inset -1px 0 0 rgba(255,255,255,0.03) !important;
+}
+
+.rail-link.active {
+  border-color: rgba(240,192,64,0.6) !important;
+  background: rgba(240,192,64,0.1) !important;
+  box-shadow:
+    0 0 20px rgba(240,192,64,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.06) !important;
+  color: var(--cin-gold) !important;
+}
+
+.rail-link:hover:not(.active) {
+  border-color: rgba(255,255,255,0.12) !important;
+  background: rgba(255,255,255,0.04) !important;
+}
+
+/* ── 20. Settings panel ─────────────────────────────────────── */
+.settings-panel,
+.notification-panel {
+  background:
+    radial-gradient(ellipse 80% 40% at 50% 0%, rgba(240,192,64,0.05), transparent),
+    rgba(2, 8, 15, 0.98) !important;
+  border-color: rgba(240,192,64,0.16) !important;
+  box-shadow:
+    0 32px 80px rgba(0,0,0,0.7),
+    inset 0 1px 0 rgba(255,255,255,0.04) !important;
+  backdrop-filter: blur(16px) !important;
+}
+
+/* ── 21. Market tabs — glowing active state ──────────────────── */
+.market-tab,
+.tab-link,
+[data-tab] {
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease !important;
+}
+
+.market-tab.is-active,
+.tab-link.active,
+[data-tab].active {
+  color: var(--cin-gold) !important;
+  border-color: var(--cin-gold) !important;
+  text-shadow: 0 0 12px var(--cin-gold-glow) !important;
+}
+
+/* ── 22. Session map — world time glowing dots ───────────────── */
+.session-dot,
+.session-city-dot,
+[class*="session-marker"] {
+  filter: drop-shadow(0 0 6px currentColor) !important;
+}
+
+/* ── 23. Sharia badge ───────────────────────────────────────── */
+.sharia-badge,
+[class*="sharia"] {
+  font-family: "Cairo", sans-serif !important;
+}
+
+/* ── 24. Card entrance animation ────────────────────────────── */
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.signal-card,
+.home-rec-card,
+.radar-card,
+.live-pulse-card {
+  animation: card-enter 0.35s cubic-bezier(0.22, 1, 0.36, 1) both !important;
+}
+
+/* Stagger for cards grid */
+.cards .signal-card:nth-child(1)  { animation-delay: 0.00s !important; }
+.cards .signal-card:nth-child(2)  { animation-delay: 0.05s !important; }
+.cards .signal-card:nth-child(3)  { animation-delay: 0.10s !important; }
+.cards .signal-card:nth-child(4)  { animation-delay: 0.15s !important; }
+.cards .signal-card:nth-child(5)  { animation-delay: 0.20s !important; }
+.cards .signal-card:nth-child(6)  { animation-delay: 0.25s !important; }
+.cards .signal-card:nth-child(7)  { animation-delay: 0.30s !important; }
+.cards .signal-card:nth-child(8)  { animation-delay: 0.35s !important; }
+
+/* ── 25. Session clock — monospace precision time ────────────── */
+#session-clock,
+#header-session-clock,
+.session-clock,
+#pulse-session-clock {
+  font-family: "JetBrains Mono", monospace !important;
+  font-variant-numeric: tabular-nums !important;
+  letter-spacing: 0.02em !important;
+  color: var(--cin-gold) !important;
+  text-shadow: 0 0 12px var(--cin-gold-glow) !important;
+}
+
+/* ── 26. AI Score badge ─────────────────────────────────────── */
+[class*="ai-score"],
+.ai-score {
+  font-family: "JetBrains Mono", monospace !important;
+  color: var(--cin-blue) !important;
+  text-shadow: 0 0 10px var(--cin-blue-glow) !important;
+}
+
+/* ── 27. BUY/SELL price colors — maximum contrast ───────────── */
+.is-up   > [class*="change"],
+.is-up   > .pulse-price-row .change,
+[class*="price-up"],
+.price-up,
+.change-up {
+  color: var(--cin-green) !important;
+  text-shadow: 0 0 10px var(--cin-green-glow) !important;
+}
+
+.is-down > [class*="change"],
+.is-down > .pulse-price-row .change,
+[class*="price-down"],
+.price-down,
+.change-down {
+  color: var(--cin-red) !important;
+  text-shadow: 0 0 10px var(--cin-red-glow) !important;
+}
+
+/* ── 28. Loading shimmer ────────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.loading-skeleton,
+[class*="skeleton"],
+[aria-busy="true"] {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.03) 0%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.03) 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: shimmer 1.6s ease-in-out infinite !important;
+}
+
+/* ── 29. Reduce motion — accessibility ───────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── 30. AI Agent / Voice rail button ───────────────────────── */
+.rail-voice,
+.rail-ai-card {
+  background:
+    radial-gradient(circle at 50% 28%, rgba(0,180,255,0.35), rgba(3,10,18,0.9)) !important;
+  border-color: rgba(0,180,255,0.7) !important;
+  box-shadow:
+    0 0 28px rgba(0,180,255,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.08) !important;
+  animation: ai-pulse 4s ease-in-out infinite alternate !important;
+}
+
+@keyframes ai-pulse {
+  0%   { box-shadow: 0 0 22px rgba(0,180,255,0.25), inset 0 1px 0 rgba(255,255,255,0.07); }
+  100% { box-shadow: 0 0 42px rgba(0,180,255,0.45), inset 0 1px 0 rgba(255,255,255,0.10); }
+}

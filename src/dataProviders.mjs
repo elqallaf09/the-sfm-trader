@@ -366,8 +366,8 @@ async function fetchJson(url) {
     }
   }
 
-  if (!response.ok) {
-    throw new Error(`تعذر جلب البيانات: ${response.status}`);
+  if (!response?.ok) {
+    throw new Error(`تعذر جلب البيانات: ${response?.status ?? "لا استجابة"}`);
   }
 
   const data = await response.json();

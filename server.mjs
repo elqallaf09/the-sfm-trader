@@ -242,7 +242,9 @@ const server = http.createServer(async (request, response) => {
 
     return await serveStatic(response, url.pathname);
   } catch (error) {
-    return sendJson(response, { error: error.message || "حدث خطأ غير متوقع" }, 500);
+    console.error("[server error]", error);
+    const safe = /^[؀-ۿ\w\s،.]{1,120}$/.test(error.message) ? error.message : "حدث خطأ غير متوقع";
+    return sendJson(response, { error: safe }, 500);
   }
 });
 
@@ -298,7 +300,6 @@ async function handleRecommendations(response, marketId) {
   if (completed) {
     cache.set(cacheKey, { createdAt: Date.now(), payload });
   } else {
-    cache.set(cacheKey, { createdAt: Date.now(), payload });
     completeMarketJobInBackground(cacheKey, marketId, market, job, economicCalendar);
   }
 
@@ -1541,7 +1542,7 @@ async function getOllamaStatus() {
       baseUrl: OLLAMA_BASE_URL,
       models: [],
       hasConfiguredModel: false,
-      message: `Ollama غير متصل: ${error.message}`
+      message: "Ollama غير متصل أو غير مثبت"
     };
   }
 }
@@ -1701,7 +1702,7 @@ function runPythonVoiceAgent(payload) {
       clearTimeout(timer);
       resolve({
         intent: "voice_error",
-        reply: `تعذر تشغيل Python للمحادثة الصوتية: ${error.message}`
+        reply: "تعذر تشغيل المساعد الصوتي، يرجى التحقق من إعدادات Python."
       });
     });
     child.on("close", () => {
@@ -1714,7 +1715,7 @@ function runPythonVoiceAgent(payload) {
       } catch {
         resolve({
           intent: "voice_error",
-          reply: stderr || "تعذر فهم رد مساعد Python."
+          reply: "تعذر فهم رد المساعد الصوتي، يرجى المحاولة مرة أخرى."
         });
       }
     });
@@ -2280,7 +2281,7 @@ async function serveStatic(response, pathname) {
   const safePath = pathname === "/" ? "/index.html" : pathname;
   const requestedPath = path.normalize(path.join(publicDir, safePath));
 
-  if (!requestedPath.startsWith(publicDir)) {
+  if (!requestedPath.toLowerCase().startsWith(publicDir.toLowerCase())) {
     return sendText(response, "Forbidden", 403);
   }
 
@@ -2309,7 +2310,11 @@ async function readJsonBody(request) {
   }
 
   if (!body.trim()) return {};
-  return JSON.parse(body);
+  try {
+    return JSON.parse(body);
+  } catch {
+    throw new Error("صيغة الطلب غير صالحة");
+  }
 }
 
 function sendJson(response, payload, status = 200) {

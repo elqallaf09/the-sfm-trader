@@ -2448,10 +2448,10 @@ function renderMarketTabs(markets = []) {
     if (primaryKey) button.dataset.primaryMarket = primaryKey;
     const visual = getMarketVisual(market);
     button.innerHTML = `
-      <span class="market-button-icon ${visual.className}" aria-hidden="true">${visual.html}</span>
+      <span class="market-button-icon ${escapeHtml(visual.className)}" aria-hidden="true">${visual.html}</span>
       <span class="market-button-copy">
-        <strong>${localizeUiText(getMarketDisplayLabel(market))}</strong>
-        <span>${localizeUiText(`${market.count} رمز`)}</span>
+        <strong>${escapeHtml(localizeUiText(getMarketDisplayLabel(market)))}</strong>
+        <span></span>
       </span>
     `;
     const countNode = button.querySelector(".market-button-copy span");
