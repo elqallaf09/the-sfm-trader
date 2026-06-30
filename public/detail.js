@@ -3,6 +3,19 @@ const symbol = params.get("symbol") || "";
 const NUMBER_LOCALE = "ar-KW-u-nu-latn";
 const NUMBER_OPTIONS = { numberingSystem: "latn" };
 const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
+
+function normalizeDigits(value) {
+  return String(value ?? "")
+    .replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (digit) => {
+      const code = digit.charCodeAt(0);
+      return String(code >= 0x06f0 ? code - 0x06f0 : code - 0x0660);
+    })
+    .replace(/\u066B/g, ".")
+    .replace(/\u066C/g, ",")
+    .replace(/\u066A/g, "%")
+    .replace(/[\u061C\u200E\u200F]/g, "");
+}
+
 const DETAIL_TEXT_TRANSLATIONS = {
   "تفاصيل السهم - the-sfm trader": "Stock details - the-sfm trader",
   "صفحة تحليل السهم": "Stock analysis page",
@@ -1240,10 +1253,10 @@ function formatPercent(value) {
 function formatNumber(value, options = {}) {
   const number = Number(value);
   if (!Number.isFinite(number)) return "--";
-  return number.toLocaleString(NUMBER_LOCALE, {
+  return normalizeDigits(number.toLocaleString(NUMBER_LOCALE, {
     ...NUMBER_OPTIONS,
     ...options
-  });
+  }));
 }
 
 function clamp(value, min, max) {

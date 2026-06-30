@@ -152,6 +152,26 @@ const scalpResult = document.querySelector("#scalp-result");
 const NUMBER_LOCALE = "ar-KW-u-nu-latn";
 const NUMBER_OPTIONS = { numberingSystem: "latn" };
 const VOICE_RECOGNITION_LANGUAGES = ["ar-SA", "ar-KW", "ar", "en-US"];
+
+function normalizeDigits(value) {
+  return String(value ?? "")
+    .replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (digit) => {
+      const code = digit.charCodeAt(0);
+      return String(code >= 0x06f0 ? code - 0x06f0 : code - 0x0660);
+    })
+    .replace(/\u066B/g, ".")
+    .replace(/\u066C/g, ",")
+    .replace(/\u066A/g, "%")
+    .replace(/[\u061C\u200E\u200F]/g, "");
+}
+
+function latinLocale(locale) {
+  const raw = String(locale || "en-US").trim();
+  if (/-u(?:-.+)?-nu-/i.test(raw)) return raw.replace(/-nu-[a-z0-9]+/i, "-nu-latn");
+  if (/-u-/i.test(raw)) return `${raw}-nu-latn`;
+  return `${raw}-u-nu-latn`;
+}
+
 const WATCHLIST_REFRESH_MS = 15_000;
 const RECOMMENDATIONS_REFRESH_MS = 12_000;
 const RECOMMENDATIONS_FORCE_REFRESH_GRACE_MS = 600;
@@ -1326,6 +1346,11 @@ async function init() {
   });
   watchlistForm.addEventListener("submit", addWatchlistSymbol);
   portfolioForm.addEventListener("submit", addPortfolioPosition);
+  [portfolioQty, portfolioPrice].forEach((input) => {
+    input?.addEventListener("input", () => {
+      input.value = normalizeDigits(input.value);
+    });
+  });
   clearHistoryButton.addEventListener("click", () => {
     for (const key of followedTradeKeys) {
       removedFollowedTradeKeys.add(key);
@@ -4584,6 +4609,8 @@ function renderPortfolio(currentItems = []) {
 function addPortfolioPosition(event) {
   event.preventDefault();
   const symbol = normalizeSymbol(portfolioSymbol.value);
+  portfolioQty.value = normalizeDigits(portfolioQty.value);
+  portfolioPrice.value = normalizeDigits(portfolioPrice.value);
   const qty = Number(portfolioQty.value);
   const buyPrice = Number(portfolioPrice.value);
 
@@ -7095,14 +7122,14 @@ function formatPercent(value) {
 }
 
 function formatDateTime(value) {
-  return new Intl.DateTimeFormat(NUMBER_LOCALE, {
+  return normalizeDigits(new Intl.DateTimeFormat(NUMBER_LOCALE, {
     numberingSystem: "latn",
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
     day: "2-digit",
     month: "2-digit"
-  }).format(new Date(value));
+  }).format(new Date(value)));
 }
 
 function normalizeDateString(value) {
@@ -7113,19 +7140,19 @@ function normalizeDateString(value) {
 function formatNumber(value, options = {}) {
   const number = Number(value);
   if (!Number.isFinite(number)) return "--";
-  return number.toLocaleString(NUMBER_LOCALE, {
+  return normalizeDigits(number.toLocaleString(NUMBER_LOCALE, {
     ...NUMBER_OPTIONS,
     ...options
-  });
+  }));
 }
 
 function formatCompactNumber(value) {
   const number = Number(value);
   if (!Number.isFinite(number)) return "--";
-  return number.toLocaleString("en-US", {
+  return normalizeDigits(number.toLocaleString("en-US", {
     notation: "compact",
     maximumFractionDigits: 1
-  });
+  }));
 }
 
 async function fetchJson(url, options = {}) {
@@ -7290,19 +7317,20 @@ formatMoney = function formatMoney(value, currency) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return sfmAcceptanceIsEnglish() ? "Unavailable" : "غير متاح";
   const normalizedCurrency = normalizeCurrencyCode(currency);
-  const locale = sfmAcceptanceIsEnglish() ? "en-US" : "ar-KW";
+  const locale = latinLocale(sfmAcceptanceIsEnglish() ? "en-US" : "ar-KW");
   const fractionDigits = Math.abs(numeric) >= 1000 ? 2 : 3;
   if (!normalizedCurrency) {
-    return new Intl.NumberFormat(locale, { maximumFractionDigits: fractionDigits }).format(numeric);
+    return normalizeDigits(new Intl.NumberFormat(locale, { numberingSystem: "latn", maximumFractionDigits: fractionDigits }).format(numeric));
   }
   try {
-    return new Intl.NumberFormat(locale, {
+    return normalizeDigits(new Intl.NumberFormat(locale, {
+      numberingSystem: "latn",
       style: "currency",
       currency: normalizedCurrency,
       maximumFractionDigits: fractionDigits
-    }).format(numeric);
+    }).format(numeric));
   } catch (error) {
-    return `${new Intl.NumberFormat(locale, { maximumFractionDigits: fractionDigits }).format(numeric)} ${normalizedCurrency}`;
+    return normalizeDigits(`${new Intl.NumberFormat(locale, { numberingSystem: "latn", maximumFractionDigits: fractionDigits }).format(numeric)} ${normalizedCurrency}`);
   }
 }
 
@@ -7452,8 +7480,8 @@ function sfmFormatTradeStatus(entry) {
 function sfmFormatTradeDate(entry) {
   const timestamp = sfmTradeTimestamp(entry);
   if (!timestamp) return "-";
-  const locale = sfmAcceptanceIsEnglish() ? "en-US" : "ar-KW";
-  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(timestamp));
+  const locale = latinLocale(sfmAcceptanceIsEnglish() ? "en-US" : "ar-KW");
+  return normalizeDigits(new Intl.DateTimeFormat(locale, { numberingSystem: "latn", dateStyle: "medium", timeStyle: "short" }).format(new Date(timestamp)));
 }
 
 function ensureAcceptanceNavigation() {
@@ -7619,11 +7647,12 @@ function sfmGetSessionState(session, now) {
   const open = sfmTimeToMinutes(session.open);
   const close = sfmTimeToMinutes(session.close);
   const openNow = !session.weekend.includes(parts.weekday) && minutes >= open && minutes <= close;
-  const display = new Intl.DateTimeFormat(sfmAcceptanceIsEnglish() ? "en-US" : "ar-KW", {
+  const display = normalizeDigits(new Intl.DateTimeFormat(latinLocale(sfmAcceptanceIsEnglish() ? "en-US" : "ar-KW"), {
+    numberingSystem: "latn",
     timeZone: session.zone,
     hour: "2-digit",
     minute: "2-digit"
-  }).format(now);
+  }).format(now));
   return { openNow, localTime: display };
 }
 
@@ -7935,26 +7964,29 @@ formatMoney = function formatMoney(value, currency) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) return sfmFinalIsEnglish() ? "Unavailable" : "غير متاح";
   const normalizedCurrency = normalizeCurrencyCode(currency);
-  const locale = sfmFinalIsEnglish() ? "en-US" : "ar-KW-u-nu-latn";
+  const locale = latinLocale(sfmFinalIsEnglish() ? "en-US" : "ar-KW");
   const fractionDigits = Math.abs(numeric) >= 1000 ? 2 : Math.abs(numeric) >= 10 ? 2 : 3;
   if (!normalizedCurrency) {
-    return new Intl.NumberFormat(locale, {
+    return normalizeDigits(new Intl.NumberFormat(locale, {
+      numberingSystem: "latn",
       minimumFractionDigits: fractionDigits,
       maximumFractionDigits: fractionDigits
-    }).format(numeric);
+    }).format(numeric));
   }
   try {
-    return new Intl.NumberFormat(locale, {
+    return normalizeDigits(new Intl.NumberFormat(locale, {
+      numberingSystem: "latn",
       style: "currency",
       currency: normalizedCurrency,
       minimumFractionDigits: fractionDigits,
       maximumFractionDigits: fractionDigits
-    }).format(numeric);
+    }).format(numeric));
   } catch {
-    return `${new Intl.NumberFormat(locale, {
+    return normalizeDigits(`${new Intl.NumberFormat(locale, {
+      numberingSystem: "latn",
       minimumFractionDigits: fractionDigits,
       maximumFractionDigits: fractionDigits
-    }).format(numeric)} ${normalizedCurrency}`;
+    }).format(numeric)} ${normalizedCurrency}`);
   }
 };
 
@@ -8066,10 +8098,11 @@ function sfmFinalTradeTimestamp(entry, key) {
 function sfmFinalFormatDate(value) {
   const timestamp = Number(new Date(value || 0));
   if (!Number.isFinite(timestamp) || timestamp <= 0) return "-";
-  return new Intl.DateTimeFormat(sfmFinalIsEnglish() ? "en-US" : "ar-KW-u-nu-latn", {
+  return normalizeDigits(new Intl.DateTimeFormat(latinLocale(sfmFinalIsEnglish() ? "en-US" : "ar-KW"), {
+    numberingSystem: "latn",
     dateStyle: "medium",
     timeStyle: "short"
-  }).format(new Date(timestamp));
+  }).format(new Date(timestamp)));
 }
 
 function sfmFinalTradeAction(entry) {
@@ -8346,11 +8379,12 @@ function sfmFinalSessionState(session, now = new Date()) {
   const close = sfmTimeToMinutes(session.close);
   const openNow = !session.weekend.includes(parts.weekday) && minutes >= open && minutes <= close;
   const nextEvent = openNow ? close - minutes : minutes < open ? open - minutes : (24 * 60 - minutes) + open;
-  const localTime = new Intl.DateTimeFormat(sfmFinalIsEnglish() ? "en-US" : "ar-KW-u-nu-latn", {
+  const localTime = normalizeDigits(new Intl.DateTimeFormat(latinLocale(sfmFinalIsEnglish() ? "en-US" : "ar-KW"), {
+    numberingSystem: "latn",
     timeZone: session.zone,
     hour: "2-digit",
     minute: "2-digit"
-  }).format(now);
+  }).format(now));
   return {
     openNow,
     localTime,
