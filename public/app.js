@@ -165,6 +165,92 @@ function normalizeDigits(value) {
     .replace(/[\u061C\u200E\u200F]/g, "");
 }
 
+const NON_LATIN_NUMBER_CHARS = /[\u0660-\u0669\u06F0-\u06F9\u066A\u066B\u066C\u061C\u200E\u200F]/;
+const DIGIT_NORMALIZED_ATTRIBUTES = ["placeholder", "title", "aria-label", "aria-valuetext", "alt"];
+const DIGIT_NORMALIZER_SKIP_TAGS = new Set(["SCRIPT", "STYLE", "NOSCRIPT", "TEMPLATE"]);
+
+function normalizeDigitString(value) {
+  return NON_LATIN_NUMBER_CHARS.test(value) ? normalizeDigits(value) : value;
+}
+
+function normalizeDigitTextNode(node) {
+  const value = node.nodeValue;
+  if (value && NON_LATIN_NUMBER_CHARS.test(value)) node.nodeValue = normalizeDigits(value);
+}
+
+function normalizeDigitElement(element) {
+  if (!element || DIGIT_NORMALIZER_SKIP_TAGS.has(element.tagName)) return;
+  DIGIT_NORMALIZED_ATTRIBUTES.forEach((attribute) => {
+    const value = element.getAttribute(attribute);
+    if (value && NON_LATIN_NUMBER_CHARS.test(value)) element.setAttribute(attribute, normalizeDigits(value));
+  });
+  if ((element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) && element.type !== "password") {
+    element.value = normalizeDigitString(element.value);
+  }
+}
+
+function normalizeDigitTree(root) {
+  if (!root) return;
+  if (root.nodeType === Node.TEXT_NODE) {
+    normalizeDigitTextNode(root);
+    return;
+  }
+  if (!(root instanceof Element || root instanceof DocumentFragment)) return;
+  if (root instanceof Element) {
+    if (DIGIT_NORMALIZER_SKIP_TAGS.has(root.tagName)) return;
+    normalizeDigitElement(root);
+  }
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (node instanceof Element && DIGIT_NORMALIZER_SKIP_TAGS.has(node.tagName)) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  let current = walker.nextNode();
+  while (current) {
+    if (current.nodeType === Node.TEXT_NODE) normalizeDigitTextNode(current);
+    else if (current instanceof Element) normalizeDigitElement(current);
+    current = walker.nextNode();
+  }
+}
+
+function normalizeDigitInputEvent(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) || target.type === "password") return;
+  if (!NON_LATIN_NUMBER_CHARS.test(target.value)) return;
+  const start = target.selectionStart;
+  const end = target.selectionEnd;
+  target.value = normalizeDigits(target.value);
+  if (start !== null && end !== null) {
+    try {
+      target.setSelectionRange(start, end);
+    } catch {
+      // Date/time inputs do not expose selection ranges.
+    }
+  }
+}
+
+function installLatinDigitNormalizer() {
+  if (!document.body) return;
+  normalizeDigitTree(document.body);
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === "characterData") normalizeDigitTree(mutation.target);
+      else if (mutation.type === "attributes") normalizeDigitElement(mutation.target);
+      else mutation.addedNodes.forEach(normalizeDigitTree);
+    });
+  });
+  observer.observe(document.body, {
+    attributes: true,
+    attributeFilter: DIGIT_NORMALIZED_ATTRIBUTES,
+    characterData: true,
+    childList: true,
+    subtree: true
+  });
+  document.addEventListener("input", normalizeDigitInputEvent, true);
+  document.addEventListener("change", normalizeDigitInputEvent, true);
+}
+
 function latinLocale(locale) {
   const raw = String(locale || "en-US").trim();
   if (/-u(?:-.+)?-nu-/i.test(raw)) return raw.replace(/-nu-[a-z0-9]+/i, "-nu-latn");
@@ -1293,6 +1379,7 @@ function initTerminalSearch() {
 }
 
 async function init() {
+  installLatinDigitNormalizer();
   initSettingsPanel();
   initTerminalSearch();
   initInterfaceTranslator();
