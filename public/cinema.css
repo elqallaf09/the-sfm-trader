@@ -24,15 +24,23 @@
   font-family: "Cairo", "Segoe UI", Tahoma, Arial, sans-serif !important;
 }
 
-/* ── 2. Cinematic background — deep space + market aurora ──── */
+/* ── 2. Cinematic background — بورصة سينمائية + market aurora ── */
 html, body {
   background:
-    radial-gradient(ellipse 90% 55% at 18% -5%,  rgba(0, 245, 155, 0.07),  transparent 55%),
-    radial-gradient(ellipse 70% 40% at 82% -2%,  rgba(240, 192, 64, 0.065), transparent 50%),
-    radial-gradient(ellipse 60% 35% at 50% 105%, rgba(255, 59,  92, 0.055), transparent 50%),
-    radial-gradient(ellipse 45% 60% at  5% 60%,  rgba(0,  180, 255, 0.04),  transparent 55%),
+    radial-gradient(ellipse 90% 55% at 18% -5%,  rgba(0, 245, 155, 0.06),  transparent 55%),
+    radial-gradient(ellipse 70% 40% at 82% -2%,  rgba(240, 192, 64, 0.055), transparent 50%),
+    linear-gradient(180deg, rgba(2, 10, 18, 0.62) 0%, rgba(3, 8, 16, 0.5) 40%, rgba(2, 5, 9, 0.78) 100%),
+    url("/assets/trading-cinematic-bg.jpg") center / cover no-repeat fixed,
     linear-gradient(180deg, #020a12 0%, #030810 40%, #020509 100%) !important;
   background-attachment: fixed !important;
+}
+
+@media (max-width: 720px) {
+  /* الجوال: fixed attachment ثقيل على iOS، نستخدم scroll مع تغطية كاملة */
+  html, body {
+    background-attachment: scroll !important;
+    background-position: center top !important;
+  }
 }
 
 /* ── 3. Scanline CRT overlay — soul of the trading terminal ── */

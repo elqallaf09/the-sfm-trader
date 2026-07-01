@@ -11,6 +11,21 @@ const TIMEFRAME_CONFIGS = [
   { id: "1y", label: "سنوي", range: "10y", interval: "1mo", weight: 0.1, minBars: 60 }
 ];
 const TIMEFRAME_FIRST_PASS_MS = Number(process.env.TIMEFRAME_FIRST_PASS_MS || 4_000);
+
+// وضع الدقة العالية: لا تُنشر إشارة شراء/بيع إلا إذا أثبت الاختبار الخلفي
+// أن نفس الإعداد على نفس الرمز أصاب الهدف الأول بنسبة >= PRECISION_MIN_WINRATE.
+const PRECISION_MIN_WINRATE = clampEnv("PRECISION_MIN_WINRATE", 90, 50, 99);
+const PRECISION_MIN_SAMPLES = clampEnv("PRECISION_MIN_SAMPLES", 8, 3, 60);
+const TP1_ATR_MULTIPLE = 0.9;   // هدف أول قريب = احتمال إصابة مرتفع
+const TP2_ATR_MULTIPLE = 2.2;   // هدف ثاني للسوينق
+const SL_ATR_MULTIPLE = 1.8;    // وقف واسع خلف الهيكل السعري
+const BACKTEST_HORIZON = 15;    // عدد الشموع لمحاكاة أول ملامسة
+
+function clampEnv(name, fallback, min, max) {
+  const value = Number(process.env[name]);
+  if (!Number.isFinite(value)) return fallback;
+  return Math.min(Math.max(value, min), max);
+}
 const PRIMARY_TIMEFRAME_IDS = new Set(["15m", "1h", "1d", "1wk"]);
 const FAST_MARKET_TIMEFRAME_IDS = new Set(["1d"]);
 
@@ -31,14 +46,15 @@ export async function analyzeSymbol(asset, options = {}) {
   const currentPrice = pickValidPrice(meta.regularMarketPrice, primaryFrame.currentPrice, closes.at(-1));
   const indicators = primaryFrame.indicators;
   const dataHealth = buildDataHealth(timeframeAnalyses, primaryFrame, currentPrice);
+  const backtest = backtestSignals(closes, highs, lows, volumes);
   let recommendation = calibrateRecommendation(scoreMultiTimeframe(timeframeAnalyses), timeframeAnalyses, dataHealth);
+  recommendation = applyPrecisionGate(recommendation, backtest);
   let expectedPrice = projectPrice(currentPrice, indicators, recommendation.score, recommendation.action, timeframeAnalyses);
   let tradePlan = buildTradePlan(currentPrice, expectedPrice, indicators, recommendation, timeframeAnalyses);
   recommendation = applyExecutionGate(recommendation, tradePlan, dataHealth);
   expectedPrice = projectPrice(currentPrice, indicators, recommendation.score, recommendation.action, timeframeAnalyses);
   tradePlan = buildTradePlan(currentPrice, expectedPrice, indicators, recommendation, timeframeAnalyses);
   const risk = buildRiskProfile(indicators, recommendation.score, recommendation.agreementPct);
-  const backtest = backtestSignals(closes, highs, lows, volumes);
   const analysisQuality = buildAnalysisQuality(timeframeAnalyses, recommendation, indicators, backtest, dataHealth);
   const decision = buildDecisionSummary(recommendation, risk, tradePlan, analysisQuality, dataHealth);
 
@@ -103,6 +119,7 @@ export async function analyzeSymbol(asset, options = {}) {
     })),
     risk,
     backtest,
+    precisionMode: recommendation.precision || null,
     analysisQuality,
     decision,
     sparkline: buildSparkline(closes, 36),
@@ -435,6 +452,49 @@ function applyExecutionGate(recommendation, tradePlan, dataHealth) {
   return calibrated;
 }
 
+function applyPrecisionGate(recommendation, backtest) {
+  const next = cloneRecommendation(recommendation);
+  const winRate = Number(backtest?.winRate);
+  const samples = Number(backtest?.samples || 0);
+  next.precision = {
+    enabled: true,
+    required: PRECISION_MIN_WINRATE,
+    measuredWinRate: Number.isFinite(winRate) ? winRate : null,
+    samples,
+    passed: false
+  };
+
+  if (next.action === "hold") return next;
+
+  if (!Number.isFinite(winRate) || samples < PRECISION_MIN_SAMPLES) {
+    return forceHoldRecommendation(
+      next,
+      58,
+      `وضع الدقة العالية: عينات الاختبار الخلفي (${samples}) غير كافية لإثبات نسبة نجاح ${PRECISION_MIN_WINRATE}%، لذلك لا تُنشر الإشارة.`
+    );
+  }
+
+  if (winRate < PRECISION_MIN_WINRATE) {
+    return forceHoldRecommendation(
+      next,
+      62,
+      `وضع الدقة العالية: نسبة إصابة هذا الإعداد تاريخياً ${winRate}% وهي أقل من الحد المطلوب ${PRECISION_MIN_WINRATE}%.`
+    );
+  }
+
+  // ثقة مبنية على النتائج الفعلية (تنعيم لابلاس لتجنب المبالغة مع العينات القليلة)
+  const wins = Number(backtest.wins ?? Math.round((winRate / 100) * samples));
+  const smoothedWinRate = ((wins + 2) / (samples + 4)) * 100;
+  next.precision.passed = true;
+  next.confidence = clamp(Math.round(Math.min(96, smoothedWinRate * 0.7 + next.confidence * 0.3)), 62, 96);
+  next.reasons = uniqueReasons([
+    `اجتاز فلتر الدقة العالية: إصابة الهدف الأول ${winRate}% عبر ${samples} صفقة تاريخية على نفس الرمز`,
+    ...next.reasons
+  ]).slice(0, 6);
+
+  return next;
+}
+
 function cloneRecommendation(recommendation) {
   return {
     ...recommendation,
@@ -487,15 +547,15 @@ function scoreMultiTimeframe(frames) {
   const slowBias = getFrameBias(slowFrames);
   const hasConflict = fastBias !== "neutral" && slowBias !== "neutral" && fastBias !== slowBias;
   const conflictPenalty = hasConflict ? 8 : 0;
-  const confidence = clamp(Math.round(48 + absScore * 11 + Math.max(0, agreementPct - 50) * 0.55 - coveragePenalty - conflictPenalty), 45, 92);
+  const confidence = clamp(Math.round(48 + absScore * 5 + Math.max(0, agreementPct - 50) * 0.55 - coveragePenalty - conflictPenalty), 45, 92);
 
   let action = "hold";
-  if (weightedScore >= 0.7 && bullishWeight >= totalWeight * 0.42) action = "buy";
-  if (weightedScore <= -0.7 && bearishWeight >= totalWeight * 0.42) action = "sell";
+  if (weightedScore >= 2.2 && bullishWeight >= totalWeight * 0.42) action = "buy";
+  if (weightedScore <= -2.2 && bearishWeight >= totalWeight * 0.42) action = "sell";
   if (hasConflict && agreementPct < 68) action = "hold";
 
   const actionLabel = action === "buy" ? "شراء" : action === "sell" ? "بيع" : "انتظار";
-  const bias = weightedScore > 0.25 ? "صاعد" : weightedScore < -0.25 ? "هابط" : "محايد";
+  const bias = weightedScore > 0.8 ? "صاعد" : weightedScore < -0.8 ? "هابط" : "محايد";
   const conflict = hasConflict
     ? `تضارب بين الفريمات السريعة (${fastBias === "bullish" ? "صاعدة" : "هابطة"}) والطويلة (${slowBias === "bullish" ? "صاعدة" : "هابطة"})`
     : "";
@@ -516,8 +576,8 @@ function scoreMultiTimeframe(frames) {
 function getFrameBias(frames) {
   if (!frames.length) return "neutral";
   const score = frames.reduce((sum, frame) => sum + frame.signal.score * frame.weight, 0) / frames.reduce((sum, frame) => sum + frame.weight, 0);
-  if (score > 0.35) return "bullish";
-  if (score < -0.35) return "bearish";
+  if (score > 1.1) return "bullish";
+  if (score < -1.1) return "bearish";
   return "neutral";
 }
 
@@ -560,11 +620,18 @@ function chooseConsensusDuration(frames, action) {
 function buildIndicators(closes, highs, lows, volumes, currentPrice) {
   const sma20 = sma(closes, 20);
   const sma50 = sma(closes, 50);
+  const ema9 = emaSeries(closes, 9).at(-1) ?? currentPrice;
+  const ema21 = emaSeries(closes, 21).at(-1) ?? currentPrice;
+  const ema50 = emaSeries(closes, 50).at(-1) ?? sma50 ?? currentPrice;
+  const ema200 = closes.length >= 60 ? (emaSeries(closes, 200).at(-1) ?? sma50) : sma50;
   const ema12 = emaSeries(closes, 12);
   const ema26 = emaSeries(closes, 26);
   const macdSeries = ema12.map((value, index) => value - ema26[index]).filter(Number.isFinite);
   const macd = macdSeries.at(-1) ?? 0;
   const macdSignal = emaSeries(macdSeries, 9).at(-1) ?? 0;
+  const macdHistPrev = macdSeries.length > 1
+    ? (macdSeries.at(-2) ?? 0) - (emaSeries(macdSeries.slice(0, -1), 9).at(-1) ?? 0)
+    : 0;
   const rsi14 = rsi(closes, 14);
   const previousMomentumPrice = closes.at(-21);
   const momentum20 = closes.length > 20 && previousMomentumPrice > 0 ? (currentPrice - previousMomentumPrice) / previousMomentumPrice : 0;
@@ -577,6 +644,10 @@ function buildIndicators(closes, highs, lows, volumes, currentPrice) {
     .filter(Number.isFinite);
   const volatility20 = finiteOr(stdDev(returns) * Math.sqrt(20), 0);
   const atr14 = atr(highs, lows, closes, 14);
+  const trend = adx(highs, lows, closes, 14);
+  const stoch = stochastic(highs, lows, closes, 14, 3);
+  const bands = bollinger(closes, 20, 2);
+  const obvTrend = obvSlope(closes, volumes, 20);
   const averageVolume20 = sma(volumes, 20) || 0;
   const averageVolume50 = sma(volumes, 50) || averageVolume20 || 1;
   const latestVolume = finiteOr(volumes.at(-1), 0);
@@ -589,12 +660,27 @@ function buildIndicators(closes, highs, lows, volumes, currentPrice) {
     currentPrice,
     sma20,
     sma50,
+    ema9,
+    ema21,
+    ema50,
+    ema200,
     macd,
     macdSignal,
+    macdHistPrev,
     rsi14,
     momentum20,
     volatility20,
     atr14,
+    adx14: trend.adx,
+    plusDI: trend.plusDI,
+    minusDI: trend.minusDI,
+    stochK: stoch.k,
+    stochD: stoch.d,
+    bbUpper: bands.upper,
+    bbLower: bands.lower,
+    bbPos: bands.pos,
+    bbWidth: bands.width,
+    obvSlope: obvTrend,
     vwap,
     support: supportResistance.support,
     resistance: supportResistance.resistance,
@@ -663,7 +749,7 @@ function buildRiskProfile(indicators, score, agreementPct = 0) {
     notes.push("RSI عند طرف قوي");
   }
 
-  if (Math.abs(score) < 0.65) {
+  if (Math.abs(score) < 2.2) {
     points += 1;
     notes.push("الإشارة ليست حادة");
   }
@@ -690,46 +776,83 @@ function buildRiskProfile(indicators, score, agreementPct = 0) {
 }
 
 function backtestSignals(closes, highs, lows, volumes) {
-  const horizonDays = 20;
+  const horizonDays = BACKTEST_HORIZON;
   const samples = [];
   const limit = closes.length - horizonDays;
+  const start = Math.max(65, Math.min(210, Math.floor(closes.length * 0.35)));
 
-  for (let index = 65; index < limit; index += 5) {
-    const currentPrice = closes[index];
-    const localCloses = closes.slice(0, index + 1);
-    const localHighs = highs.slice(0, index + 1);
-    const localLows = lows.slice(0, index + 1);
-    const localVolumes = volumes.slice(0, index + 1);
-    const localIndicators = buildIndicators(localCloses, localHighs, localLows, localVolumes, currentPrice);
+  for (let index = start; index < limit; index += 3) {
+    const entry = closes[index];
+    if (!Number.isFinite(entry) || entry <= 0) continue;
+
+    const localIndicators = buildIndicators(
+      closes.slice(0, index + 1),
+      highs.slice(0, index + 1),
+      lows.slice(0, index + 1),
+      volumes.slice(0, index + 1),
+      entry
+    );
     const signal = scoreSignal(localIndicators);
-
     if (signal.action === "hold") continue;
 
-    const futurePrice = closes[index + horizonDays];
-    const returnPct = pctChange(currentPrice, futurePrice);
-    const success = signal.action === "buy" ? returnPct > 0 : returnPct < 0;
-    samples.push({ action: signal.action, returnPct, success });
+    const atrValue = Math.max(finiteOr(localIndicators.atr14, 0), entry * 0.004);
+    const direction = signal.action === "buy" ? 1 : -1;
+    const takeProfit = entry + direction * atrValue * TP1_ATR_MULTIPLE;
+    const stopLoss = entry - direction * atrValue * SL_ATR_MULTIPLE;
+    let outcome = null;
+
+    // محاكاة أول ملامسة: أيهما يُلمس أولا، الهدف الأول أم الوقف؟
+    for (let step = index + 1; step <= index + horizonDays; step += 1) {
+      const high = highs[step];
+      const low = lows[step];
+      if (!Number.isFinite(high) || !Number.isFinite(low)) continue;
+
+      const hitStop = direction === 1 ? low <= stopLoss : high >= stopLoss;
+      const hitTarget = direction === 1 ? high >= takeProfit : low <= takeProfit;
+
+      if (hitStop) { outcome = false; break; } // تحفظي: عند تلامس الاثنين بنفس الشمعة تُحسب خسارة
+      if (hitTarget) { outcome = true; break; }
+    }
+
+    if (outcome === null) {
+      const exit = closes[index + horizonDays];
+      outcome = direction === 1 ? exit > entry : exit < entry;
+    }
+
+    const exitPrice = outcome ? takeProfit : stopLoss;
+    samples.push({
+      action: signal.action,
+      success: outcome,
+      returnPct: pctChange(entry, exitPrice) * direction
+    });
   }
 
   if (samples.length < 3) {
     return {
       samples: samples.length,
+      wins: 0,
       winRate: null,
       avgReturnPct: null,
       horizonDays,
+      tpAtrMultiple: TP1_ATR_MULTIPLE,
+      slAtrMultiple: SL_ATR_MULTIPLE,
       label: "بيانات غير كافية"
     };
   }
 
   const wins = samples.filter((sample) => sample.success).length;
   const avgReturnPct = samples.reduce((sum, sample) => sum + sample.returnPct, 0) / samples.length;
+  const winRate = round((wins / samples.length) * 100, 1);
 
   return {
     samples: samples.length,
-    winRate: round((wins / samples.length) * 100, 1),
+    wins,
+    winRate,
     avgReturnPct: round(avgReturnPct, 2),
     horizonDays,
-    label: `${round((wins / samples.length) * 100, 1)}% نجاح`
+    tpAtrMultiple: TP1_ATR_MULTIPLE,
+    slAtrMultiple: SL_ATR_MULTIPLE,
+    label: `${winRate}% إصابة الهدف الأول`
   };
 }
 
@@ -740,124 +863,166 @@ function scoreSignal(indicators) {
     currentPrice,
     sma20,
     sma50,
+    ema9,
+    ema21,
+    ema200,
     macd,
     macdSignal,
+    macdHistPrev,
     rsi14,
     momentum20,
     volumeTrend,
     volatility20,
     vwap,
-    relativeVolume
+    relativeVolume,
+    adx14,
+    plusDI,
+    minusDI,
+    stochK,
+    stochD,
+    bbPos,
+    obvSlope: obvTrend
   } = indicators;
 
-  if (currentPrice > sma20) {
-    score += 1;
-    reasons.push("السعر أعلى من متوسط 20 يوم");
+  // 1) نظام السوق العام (فلتر الاتجاه الكبير EMA200)
+  if (currentPrice > ema200) {
+    score += 1.2;
+    reasons.push("السعر فوق EMA200: النظام العام صاعد");
   } else {
-    score -= 1;
-    reasons.push("السعر أدنى من متوسط 20 يوم");
+    score -= 1.2;
+    reasons.push("السعر تحت EMA200: النظام العام هابط");
   }
 
-  if (currentPrice > sma50) {
-    score += 0.8;
-    reasons.push("الاتجاه فوق متوسط 50 يوم");
+  if (indicators.ema50 > ema200) score += 0.6; else score -= 0.6;
+
+  // 2) هيكل الاتجاه القريب
+  if (currentPrice > ema21) score += 0.6; else score -= 0.6;
+  if (ema9 > ema21) {
+    score += 0.5;
+    reasons.push("تقاطع EMA9/21 إيجابي");
   } else {
-    score -= 0.8;
-    reasons.push("الاتجاه تحت متوسط 50 يوم");
+    score -= 0.5;
+  }
+  if (sma20 > sma50) score += 0.5; else score -= 0.5;
+
+  // 3) الزخم
+  const macdHist = macd - macdSignal;
+  if (macdHist > 0) {
+    score += macdHist > macdHistPrev ? 0.9 : 0.6;
+    reasons.push(macdHist > macdHistPrev ? "MACD إيجابي ومتسارع" : "MACD إيجابي");
+  } else {
+    score -= macdHist < macdHistPrev ? 0.9 : 0.6;
+    reasons.push(macdHist < macdHistPrev ? "MACD سلبي ومتسارع" : "MACD سلبي");
   }
 
-  if (sma20 > sma50) {
+  if (momentum20 > 0.03) {
     score += 0.7;
-    reasons.push("متوسط 20 يوم أعلى من متوسط 50 يوم");
-  } else {
+    reasons.push("زخم شهري إيجابي");
+  } else if (momentum20 < -0.03) {
     score -= 0.7;
-    reasons.push("متوسط 20 يوم أقل من متوسط 50 يوم");
+    reasons.push("زخم شهري سلبي");
   }
 
-  if (macd > macdSignal) {
-    score += 0.8;
-    reasons.push("MACD إيجابي");
-  } else {
-    score -= 0.8;
-    reasons.push("MACD سلبي");
+  if (currentPrice > vwap) score += 0.4; else score -= 0.4;
+
+  // 4) RSI بمناطق دقيقة (Wilder)
+  if (rsi14 >= 53 && rsi14 <= 68) {
+    score += 0.5;
+    reasons.push(`RSI ${round(rsi14, 1)}: زخم صحي`);
+  } else if (rsi14 > 75) {
+    score -= 1.0;
+    reasons.push("RSI في تشبع شرائي حاد");
+  } else if (rsi14 < 25) {
+    score += currentPrice > ema200 ? 0.8 : -0.4;
+    reasons.push(currentPrice > ema200 ? "RSI تشبع بيعي داخل اتجاه صاعد: فرصة ارتداد" : "تشبع بيعي داخل اتجاه هابط: خطر استمرار الهبوط");
+  } else if (rsi14 >= 32 && rsi14 <= 45) {
+    score -= 0.4;
   }
 
-  if (currentPrice > vwap) {
-    score += 0.45;
-    reasons.push("السعر فوق VWAP: المشترون أقوى");
-  } else {
-    score -= 0.45;
-    reasons.push("السعر تحت VWAP: ضغط بيعي");
+  // 5) ستوكاستيك: تقاطعات من مناطق التشبع
+  if (stochK > stochD && stochK < 35) {
+    score += 0.6;
+    reasons.push("تقاطع ستوكاستيك صاعد من تشبع بيعي");
+  } else if (stochK < stochD && stochK > 65) {
+    score -= 0.6;
+    reasons.push("تقاطع ستوكاستيك هابط من تشبع شرائي");
   }
 
-  if (momentum20 > 0.035) {
-    score += 0.8;
-    reasons.push("زخم شهر إيجابي");
-  } else if (momentum20 < -0.035) {
-    score -= 0.8;
-    reasons.push("زخم شهر سلبي");
+  // 6) بولنجر: تمدد سعري خارج النطاق = خطر انعكاس
+  if (bbPos > 1.02) {
+    score -= 0.6;
+    reasons.push("السعر خارج نطاق بولنجر العلوي");
+  } else if (bbPos < -0.02) {
+    score += 0.6;
+    reasons.push("السعر خارج نطاق بولنجر السفلي");
   }
 
-  if (rsi14 < 30) {
-    score += 1.1;
-    reasons.push("RSI منخفض: احتمال ارتداد");
-  } else if (rsi14 > 70) {
-    score -= 1.1;
-    reasons.push("RSI مرتفع: احتمال جني أرباح");
-  } else {
-    reasons.push("RSI في نطاق محايد");
+  // 7) تأكيد السيولة (OBV + الحجم النسبي)
+  if (obvTrend > 0.04) {
+    score += 0.5;
+    reasons.push("تدفق سيولة شرائي (OBV صاعد)");
+  } else if (obvTrend < -0.04) {
+    score -= 0.5;
+    reasons.push("تدفق سيولة بيعي (OBV هابط)");
   }
 
-  if (volumeTrend > 0.15) {
-    score += score >= 0 ? 0.35 : -0.35;
-    reasons.push("النشاط أعلى من المعتاد");
-  }
-
-  if (relativeVolume > 1.45) {
-    score += score >= 0 ? 0.35 : -0.35;
-    reasons.push("حجم تداول لحظي أعلى من المتوسط");
-  } else if (relativeVolume < 0.55) {
-    score *= 0.88;
+  if (relativeVolume > 1.3) {
+    score += score >= 0 ? 0.4 : -0.4;
+    reasons.push("حجم تداول أعلى من المتوسط يؤكد الحركة");
+  } else if (relativeVolume < 0.5) {
+    score *= 0.85;
     reasons.push("حجم التداول ضعيف");
   }
 
-  if (volatility20 > 0.14) {
+  if (volumeTrend > 0.15) score += score >= 0 ? 0.25 : -0.25;
+
+  // 8) قوة الاتجاه ADX: تضخيم الإشارة مع الاتجاه القوي وكبحها في السوق العرضي
+  if (adx14 >= 25 && ((score > 0 && plusDI > minusDI) || (score < 0 && minusDI > plusDI))) {
+    score *= 1.12;
+    reasons.push(`ADX ${round(adx14, 0)}: اتجاه قوي يدعم الإشارة`);
+  } else if (adx14 > 0 && adx14 < 17) {
+    score *= 0.7;
+    reasons.push("ADX منخفض: سوق عرضي بلا اتجاه واضح");
+  }
+
+  if (volatility20 > 0.16) {
     score *= 0.9;
     reasons.push("التذبذب مرتفع نسبيا");
   }
 
   const absScore = Math.abs(score);
-  const confidence = clamp(Math.round(50 + absScore * 8), 50, 88);
+  const confidence = clamp(Math.round(50 + absScore * 4.6), 50, 90);
 
-  if (score >= 1.5) {
+  // عتبات صارمة: لا إشارة بدون توافق قوي بين المؤشرات
+  if (score >= 3.4) {
     return {
       action: "buy",
       actionLabel: "شراء",
       confidence,
       score,
       duration: chooseDuration(volatility20, "up"),
-      reasons: reasons.slice(0, 4)
+      reasons: reasons.slice(0, 5)
     };
   }
 
-  if (score <= -1.5) {
+  if (score <= -3.4) {
     return {
       action: "sell",
       actionLabel: "بيع",
       confidence,
       score,
       duration: chooseDuration(volatility20, "down"),
-      reasons: reasons.slice(0, 4)
+      reasons: reasons.slice(0, 5)
     };
   }
 
   return {
     action: "hold",
     actionLabel: "انتظار",
-    confidence: clamp(Math.round(48 + absScore * 5), 48, 60),
+    confidence: clamp(Math.round(48 + absScore * 4), 48, 60),
     score,
     duration: "3 إلى 10 أيام",
-    reasons: ["الإشارات متقاربة ولا تعطي أفضلية واضحة", ...reasons.slice(0, 3)]
+    reasons: ["توافق المؤشرات أقل من عتبة الدقة العالية", ...reasons.slice(0, 4)]
   };
 }
 
@@ -889,18 +1054,21 @@ function buildTradePlan(currentPrice, expectedPrice, indicators, recommendation,
     };
   }
 
-  const agreementBoost = clamp((recommendation.agreementPct - 50) / 100, 0, 0.3);
-  const target1Distance = Math.max(Math.abs(expectedPrice - currentPrice), atrValue * (1.15 + agreementBoost));
-  const target2Distance = Math.max(target1Distance * 1.65, atrValue * 2.05);
-  const stopDistance = Math.max(atrValue * 1.05, currentPrice * 0.006);
+  const agreementBoost = clamp((recommendation.agreementPct - 50) / 100, 0, 0.25);
+  // نفس هندسة الاختبار الخلفي: هدف أول قريب باحتمال إصابة مرتفع + وقف واسع خلف الهيكل
+  const target1Distance = atrValue * (TP1_ATR_MULTIPLE + agreementBoost * 0.3);
+  const target2Distance = Math.max(atrValue * TP2_ATR_MULTIPLE, target1Distance * 2.1);
+  const stopDistance = Math.max(atrValue * SL_ATR_MULTIPLE, currentPrice * 0.008);
   const stopCandidate = action === "buy"
     ? Math.min(currentPrice - stopDistance, support - atrValue * 0.18)
     : Math.max(currentPrice + stopDistance, resistance + atrValue * 0.18);
   const target1 = Math.max(0, currentPrice + targetDirection * target1Distance);
   const target2 = Math.max(0, currentPrice + targetDirection * target2Distance);
   const risk = Math.abs(currentPrice - stopCandidate);
-  const reward = Math.abs(target1 - currentPrice);
-  const riskReward = risk > 0 ? reward / risk : null;
+  const reward1 = Math.abs(target1 - currentPrice);
+  const reward2 = Math.abs(target2 - currentPrice);
+  const riskReward = risk > 0 ? reward2 / risk : null;
+  const riskReward1 = risk > 0 ? reward1 / risk : null;
 
   return {
     action,
@@ -911,6 +1079,7 @@ function buildTradePlan(currentPrice, expectedPrice, indicators, recommendation,
     support,
     resistance,
     riskReward: Number.isFinite(riskReward) ? round(riskReward, 2) : null,
+    riskReward1: Number.isFinite(riskReward1) ? round(riskReward1, 2) : null,
     atr: round(atrValue, precision),
     note: buildTradePlanNote(action, riskReward, frames)
   };
@@ -918,7 +1087,9 @@ function buildTradePlan(currentPrice, expectedPrice, indicators, recommendation,
 
 function buildTradePlanNote(action, riskReward, frames) {
   const fastReady = frames.filter((frame) => ["15m", "30m", "1h"].includes(frame.id) && frame.signal.action === action).length;
-  const rrText = Number.isFinite(riskReward) ? `العائد إلى المخاطرة ${round(riskReward, 2)}` : "العائد إلى المخاطرة غير مكتمل";
+  const rrText = Number.isFinite(riskReward)
+    ? `العائد إلى المخاطرة حتى الهدف الثاني ${round(riskReward, 2)}. الهدف الأول قريب عمداً لرفع احتمال الإصابة`
+    : "العائد إلى المخاطرة غير مكتمل";
   if (fastReady >= 2) return `${rrText}. فريمات الدخول تدعم القرار.`;
   return `${rrText}. انتظر تأكيد فريم 15 أو 30 دقيقة قبل الدخول.`;
 }
@@ -1112,19 +1283,26 @@ function emaSeries(values, period) {
 function rsi(values, period) {
   if (values.length <= period) return 50;
 
-  const recent = values.slice(-(period + 1));
+  // RSI بطريقة Wilder الأصلية (تنعيم أسي) بدلا من المتوسط البسيط: أدق بكثير
   let gains = 0;
   let losses = 0;
-
-  for (let index = 1; index < recent.length; index += 1) {
-    const change = recent[index] - recent[index - 1];
+  for (let index = 1; index <= period; index += 1) {
+    const change = values[index] - values[index - 1];
     if (change >= 0) gains += change;
-    else losses += Math.abs(change);
+    else losses -= change;
   }
 
-  if (losses === 0) return 100;
-  const rs = (gains / period) / (losses / period);
-  return 100 - 100 / (1 + rs);
+  let avgGain = gains / period;
+  let avgLoss = losses / period;
+
+  for (let index = period + 1; index < values.length; index += 1) {
+    const change = values[index] - values[index - 1];
+    avgGain = (avgGain * (period - 1) + Math.max(change, 0)) / period;
+    avgLoss = (avgLoss * (period - 1) + Math.max(-change, 0)) / period;
+  }
+
+  if (avgLoss === 0) return 100;
+  return 100 - 100 / (1 + avgGain / avgLoss);
 }
 
 function atr(highs, lows, closes, period) {
@@ -1139,7 +1317,122 @@ function atr(highs, lows, closes, period) {
     trueRanges.push(Math.max(high - low, Math.abs(high - previousClose), Math.abs(low - previousClose)));
   }
 
-  return sma(trueRanges, period);
+  if (trueRanges.length <= period) return sma(trueRanges, trueRanges.length);
+
+  // ATR بطريقة Wilder (تنعيم متتابع) بدلا من المتوسط البسيط
+  let value = sma(trueRanges.slice(0, period), period);
+  for (let index = period; index < trueRanges.length; index += 1) {
+    value = (value * (period - 1) + trueRanges[index]) / period;
+  }
+
+  return value;
+}
+
+function adx(highs, lows, closes, period = 14) {
+  const limit = Math.min(highs.length, lows.length, closes.length);
+  if (limit < period * 2 + 2) return { adx: 0, plusDI: 0, minusDI: 0 };
+
+  const trueRanges = [];
+  const plusDMs = [];
+  const minusDMs = [];
+
+  for (let index = 1; index < limit; index += 1) {
+    const upMove = highs[index] - highs[index - 1];
+    const downMove = lows[index - 1] - lows[index];
+    plusDMs.push(upMove > downMove && upMove > 0 ? upMove : 0);
+    minusDMs.push(downMove > upMove && downMove > 0 ? downMove : 0);
+    trueRanges.push(Math.max(
+      highs[index] - lows[index],
+      Math.abs(highs[index] - closes[index - 1]),
+      Math.abs(lows[index] - closes[index - 1])
+    ));
+  }
+
+  let trSum = trueRanges.slice(0, period).reduce((sum, value) => sum + value, 0);
+  let plusSum = plusDMs.slice(0, period).reduce((sum, value) => sum + value, 0);
+  let minusSum = minusDMs.slice(0, period).reduce((sum, value) => sum + value, 0);
+  const dxValues = [];
+  let plusDI = 0;
+  let minusDI = 0;
+
+  for (let index = period; index < trueRanges.length; index += 1) {
+    trSum = trSum - trSum / period + trueRanges[index];
+    plusSum = plusSum - plusSum / period + plusDMs[index];
+    minusSum = minusSum - minusSum / period + minusDMs[index];
+    plusDI = trSum ? (plusSum / trSum) * 100 : 0;
+    minusDI = trSum ? (minusSum / trSum) * 100 : 0;
+    const diSum = plusDI + minusDI;
+    dxValues.push(diSum ? (Math.abs(plusDI - minusDI) / diSum) * 100 : 0);
+  }
+
+  if (!dxValues.length) return { adx: 0, plusDI, minusDI };
+
+  let adxValue = sma(dxValues.slice(0, period), Math.min(period, dxValues.length));
+  for (let index = period; index < dxValues.length; index += 1) {
+    adxValue = (adxValue * (period - 1) + dxValues[index]) / period;
+  }
+
+  return { adx: finiteOr(adxValue, 0), plusDI: finiteOr(plusDI, 0), minusDI: finiteOr(minusDI, 0) };
+}
+
+function stochastic(highs, lows, closes, period = 14, smooth = 3) {
+  if (closes.length < period + smooth + 1) return { k: 50, d: 50 };
+
+  const rawK = [];
+  for (let index = period - 1; index < closes.length; index += 1) {
+    const windowHighs = highs.slice(index - period + 1, index + 1).filter(Number.isFinite);
+    const windowLows = lows.slice(index - period + 1, index + 1).filter(Number.isFinite);
+    if (!windowHighs.length || !windowLows.length) continue;
+    const highest = Math.max(...windowHighs);
+    const lowest = Math.min(...windowLows);
+    rawK.push(highest === lowest ? 50 : ((closes[index] - lowest) / (highest - lowest)) * 100);
+  }
+
+  if (rawK.length < smooth) return { k: 50, d: 50 };
+
+  const smoothedK = [];
+  for (let index = smooth - 1; index < rawK.length; index += 1) {
+    smoothedK.push(sma(rawK.slice(0, index + 1), smooth));
+  }
+
+  return {
+    k: finiteOr(smoothedK.at(-1), 50),
+    d: finiteOr(sma(smoothedK, 3), 50)
+  };
+}
+
+function bollinger(closes, period = 20, multiplier = 2) {
+  if (closes.length < period) {
+    const price = closes.at(-1) || 0;
+    return { upper: price, lower: price, mid: price, width: 0, pos: 0.5 };
+  }
+
+  const slice = closes.slice(-period);
+  const mid = sma(closes, period);
+  const deviation = stdDev(slice);
+  const upper = mid + multiplier * deviation;
+  const lower = mid - multiplier * deviation;
+  const price = closes.at(-1);
+  const pos = upper === lower ? 0.5 : clamp((price - lower) / (upper - lower), -0.5, 1.5);
+
+  return { upper, lower, mid, width: mid ? (upper - lower) / mid : 0, pos };
+}
+
+function obvSlope(closes, volumes, period = 20) {
+  if (closes.length < period + 2) return 0;
+
+  let obv = 0;
+  const series = [0];
+  for (let index = 1; index < closes.length; index += 1) {
+    const volume = Math.max(0, finiteOr(volumes[index], 0));
+    if (closes[index] > closes[index - 1]) obv += volume;
+    else if (closes[index] < closes[index - 1]) obv -= volume;
+    series.push(obv);
+  }
+
+  const recent = series.slice(-period);
+  const scale = Math.max(...series.map((value) => Math.abs(value)), 1);
+  return (recent.at(-1) - recent[0]) / scale;
 }
 
 function stdDev(values) {
