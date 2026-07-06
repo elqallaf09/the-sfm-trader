@@ -820,10 +820,13 @@ function backtestSignals(closes, highs, lows, volumes) {
     }
 
     const exitPrice = outcome ? takeProfit : stopLoss;
+    const returnPct = pctChange(entry, exitPrice);
+    if (!Number.isFinite(returnPct)) continue;
+
     samples.push({
       action: signal.action,
       success: outcome,
-      returnPct: pctChange(entry, exitPrice) * direction
+      returnPct: returnPct * direction
     });
   }
 
@@ -1443,8 +1446,17 @@ function stdDev(values) {
 }
 
 function pctChange(from, to) {
-  if (!Number.isFinite(from) || !Number.isFinite(to) || from === 0) return 0;
-  return round(((to - from) / from) * 100, 2);
+  const fromValue = Number(from);
+  const toValue = Number(to);
+
+  if (!Number.isFinite(fromValue) || !Number.isFinite(toValue) || fromValue <= 0 || toValue <= 0) {
+    return null;
+  }
+
+  const ratio = (toValue - fromValue) / fromValue;
+  if (!Number.isFinite(ratio) || Math.abs(ratio) > 5) return null;
+
+  return round(ratio * 100, 2);
 }
 
 function clamp(value, min, max) {

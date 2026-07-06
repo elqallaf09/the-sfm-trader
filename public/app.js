@@ -8838,3 +8838,600 @@ function updateMarketOverviewBubbles(all = []) {
     }
   }
 }
+
+(function sfmInitializeRecommendationTableUX() {
+  if (typeof renderRecommendations !== "function") return;
+
+  const sfmFinalRecommendationMissingText = sfmFinalIsEnglish()
+    ? "Data is currently unavailable"
+    : "البيانات غير متاحة حالياً";
+  const sfmFinalRecommendationEmptyText = sfmFinalIsEnglish()
+    ? "No recommendations available right now."
+    : "لا توجد توصيات متاحة الآن.";
+  const sfmFinalRecommendationErrorText = sfmFinalIsEnglish()
+    ? "Failed to load recommendations. Please refresh."
+    : "تعذر تحميل التوصيات. يرجى التحديث.";
+  const sfmFinalRecommendationPendingText = sfmFinalIsEnglish()
+    ? "بانتظار البيانات"
+    : "بانتظار البيانات";
+  const sfmFinalRecommendationDash = "—";
+
+  const sfmFinalDrawer = document.querySelector("[data-recommendation-drawer]");
+  const sfmFinalDrawerContent = document.querySelector("#recommendation-detail-content");
+  const sfmFinalDrawerButtons = () => document.querySelectorAll("[data-recommendation-close]");
+  let sfmFinalRecommendationRowsData = [];
+  let sfmFinalDrawerInitialized = false;
+  let sfmFinalRecommendationsInited = false;
+
+  function sfmFinalL(arText, enText) {
+    return sfmFinalIsEnglish() ? enText : arText;
+  }
+
+  function sfmFinalSafeNumber(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
+  }
+
+  function sfmFinalNormalizeCurrency(currency) {
+    const code = String(currency || "").trim().toUpperCase();
+    if (!code || code === "UNKNOWN") return "";
+    return code;
+  }
+
+  function sfmFinalSafeText(value) {
+    const text = String(value ?? "").trim();
+    return text ? text : sfmFinalRecommendationDash;
+  }
+
+  function sfmFinalCleanSource(value) {
+    const raw = String(value || "").trim();
+    if (!raw) return sfmFinalL("مصدر غير متاح", "Source unavailable");
+    const normalized = raw.toLowerCase();
+    if (/(fallback|yf|fmp|finnhub|yahoo|provider|diagnostic|debug|error|N\/A|غير متاح|بدون مزود)/i.test(normalized)) {
+      return sfmFinalL("مصدر الأسعار", "Price source");
+    }
+    return raw;
+  }
+
+  function sfmFinalPercentStyle(value) {
+    if (!Number.isFinite(value)) return "is-neutral";
+    if (value > 0) return "is-up";
+    if (value < 0) return "is-down";
+    return "is-neutral";
+  }
+
+  function sfmFinalClampPercent(value) {
+    const number = sfmFinalSafeNumber(value);
+    if (number === null) return null;
+    if (!Number.isFinite(number)) return null;
+    if (Math.abs(number) > 500) return null;
+    return round(number, 2);
+  }
+
+  function sfmFinalBuildPercent(fromValue, toValue) {
+    const from = sfmFinalSafeNumber(fromValue);
+    const to = sfmFinalSafeNumber(toValue);
+    if (from === null || to === null || from <= 0 || to <= 0) return null;
+    const ratio = to / from;
+    if (!Number.isFinite(ratio) || ratio <= 0) return null;
+    const percent = ((to - from) / from) * 100;
+    return sfmFinalClampPercent(percent);
+  }
+
+  function sfmFinalFormatPrice(value, currency) {
+    const number = sfmFinalSafeNumber(value);
+    if (number === null || number <= 0) return sfmFinalRecommendationDash;
+    const locale = sfmFinalIsEnglish() ? "en-US" : "ar-KW";
+    const abs = Math.abs(number);
+    const maxDigits = abs < 1 ? 4 : abs < 10 ? 3 : 2;
+    const result = new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: maxDigits
+    }).format(number);
+    const normalizedCurrency = sfmFinalNormalizeCurrency(currency);
+    return normalizedCurrency ? `${result} ${normalizedCurrency}` : result;
+  }
+
+  function sfmFinalFormatPercent(value, options = {}) {
+    const number = sfmFinalSafeNumber(value);
+    if (number === null) return sfmFinalRecommendationDash;
+    const rounded = round(number, 2);
+    if (!Number.isFinite(rounded)) return sfmFinalRecommendationDash;
+    const prefix = rounded > 0 ? "+" : "";
+    const normalized = sfmFinalClampPercent(rounded);
+    if (normalized === null) return sfmFinalRecommendationDash;
+    const locale = sfmFinalIsEnglish() ? "en-US" : "ar-KW";
+    const formatted = new Intl.NumberFormat(locale, {
+      minimumFractionDigits: Math.abs(normalized) < 1 ? 2 : 2,
+      maximumFractionDigits: 2,
+      signDisplay: "never"
+    }).format(Math.abs(normalized));
+    // placeholder removed for simplified percent formatting
+    if (!options.allowHuge && Math.abs(normalized) > 500) return sfmFinalRecommendationDash;
+    return normalized >= 0 ? `${prefix}${formatted}%` : `-${formatted}%`;
+  }
+
+  function sfmFinalFormatConfidence(value) {
+    const number = sfmFinalSafeNumber(value);
+    if (number === null) return sfmFinalRecommendationDash;
+    return `${Math.round(number)}%`;
+  }
+
+  function sfmFinalNormalizeRecommendationAction(item, changePercent, hasCoreData) {
+    if (!hasCoreData) return { key: "pending", label: sfmFinalRecommendationPendingText, className: "is-pending" };
+    const raw = String(item?.action || item?.recommendationAction || "").toLowerCase();
+    if (raw === "buy" || raw === "شراء") {
+      return { key: "buy", label: sfmFinalL("شراء", "Buy"), className: "is-buy" };
+    }
+    if (raw === "sell" || raw === "بيع") {
+      return { key: "sell", label: sfmFinalL("بيع", "Sell"), className: "is-sell" };
+    }
+    if (raw === "hold" || raw === "انتظار" || raw === "wait" || raw === "watch") {
+      return { key: "hold", label: sfmFinalL("انتظار", "Wait"), className: "is-hold" };
+    }
+    if (raw === "avoid" || raw === "مراقبة") {
+      return { key: "watch", label: sfmFinalL("مراقبة", "Watch"), className: "is-watch" };
+    }
+
+    if (Number.isFinite(changePercent)) {
+      if (changePercent > 0.5) return { key: "buy", label: sfmFinalL("شراء", "Buy"), className: "is-buy" };
+      if (changePercent < -0.5) return { key: "sell", label: sfmFinalL("بيع", "Sell"), className: "is-sell" };
+      return { key: "hold", label: sfmFinalL("انتظار", "Wait"), className: "is-hold" };
+    }
+
+    return { key: "watch", label: sfmFinalL("مراقبة", "Watch"), className: "is-watch" };
+  }
+
+  function sfmFinalNormalizeRisk(item) {
+    const riskLevel = String(item?.risk?.level || item?.riskLevel || item?.risk || "").toLowerCase();
+    if (riskLevel.includes("high") || riskLevel === "عالي" || riskLevel === "مرتفع") {
+      return { label: sfmFinalL("مرتفع", "High"), className: "is-high" };
+    }
+    if (riskLevel.includes("medium") || riskLevel === "متوسط" || riskLevel === "اعتدال") {
+      return { label: sfmFinalL("متوسط", "Medium"), className: "is-medium" };
+    }
+    if (riskLevel.includes("low") || riskLevel === "منخفض") {
+      return { label: sfmFinalL("منخفض", "Low"), className: "is-low" };
+    }
+
+    const score = sfmFinalSafeNumber(item?.score || item?.risk?.score || item?.riskScore);
+    if (score === null) return { label: sfmFinalRecommendationDash, className: "is-na" };
+    if (score >= 70) return { label: sfmFinalL("منخفض", "Low"), className: "is-low" };
+    if (score >= 40) return { label: sfmFinalL("متوسط", "Medium"), className: "is-medium" };
+    return { label: sfmFinalL("مرتفع", "High"), className: "is-high" };
+  }
+
+  function sfmFinalNormalizeRecommendationRows(items) {
+    if (!Array.isArray(items)) return [];
+
+    return items
+      .map((item, index) => {
+        if (!item || typeof item !== "object") return null;
+        const currentPrice = sfmFinalSafeNumber(item.currentPrice);
+        const expectedPrice = sfmFinalSafeNumber(item.expectedPrice);
+        const expectedMove = sfmFinalSafeNumber(item.expectedMovePct);
+        const confidence = sfmFinalSafeNumber(item.confidence);
+        const percent =
+          expectedMove !== null
+            ? sfmFinalClampPercent(expectedMove)
+            : sfmFinalBuildPercent(currentPrice, expectedPrice);
+        const hasCorePrice = currentPrice !== null;
+        const hasChange = percent !== null;
+        const hasConfidence = confidence !== null;
+        const hasCriticalPrice = hasCorePrice && hasChange && hasConfidence;
+        const action = sfmFinalNormalizeRecommendationAction(item, percent, hasCriticalPrice);
+        const risk = sfmFinalNormalizeRisk(item);
+
+        return {
+          index,
+          symbol: String(item.symbol || item.ticker || "").trim(),
+          name: String(item.name || item.title || "").trim(),
+          logoUrl: sfmFinalSafeText(item.logoUrl === "--" ? "" : (item.logoUrl || "")),
+          currency: sfmFinalNormalizeCurrency(item.currency || item.isoCurrency || item.dataCurrency),
+          currentPrice,
+          expectedPrice,
+          expectedMovePct: percent,
+          confidence,
+          action,
+          duration: sfmFinalSafeText(item.duration),
+          target: sfmFinalSafeText(item.target1 || item.target || item.priceTarget),
+          risk,
+          score: sfmFinalSafeNumber(item.score),
+          updatedAt: item.updatedAt || item.generatedAt || item.analyzedAt || "",
+          dataProvider: item.dataProvider || item.source || item.provider || item.priceSource,
+          reasons: Array.isArray(item.reasons) ? item.reasons : [],
+          decision: item.decision || null,
+          aiScore: sfmFinalSafeNumber(item.score),
+          hasCriticalPrice,
+          hasCorePrice,
+          hasConfidence,
+          hasTarget: sfmFinalSafeNumber(item.target1) !== null || sfmFinalSafeNumber(item.target2) !== null,
+          explanation: item.decision?.message || item.decision?.title || item.decisionTitle || item.comment || ""
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function sfmFinalRenderRecommendationSkeleton(count = 6) {
+    const rows = Array.from({ length: count }).map(() => `
+      <tr>
+        <td><span class="recommendation-skeleton recommendation-skeleton-asset"></span></td>
+        <td><span class="recommendation-skeleton"></span></td>
+        <td><span class="recommendation-skeleton"></span></td>
+        <td><span class="recommendation-skeleton"></span></td>
+        <td><span class="recommendation-skeleton"></span></td>
+        <td><span class="recommendation-skeleton"></span></td>
+        <td><span class="recommendation-skeleton"></span></td>
+      </tr>
+    `).join("");
+
+    return `
+      <div class="recommendation-table-scroll" role="status" aria-label="${sfmFinalL("تحميل التوصيات", "Loading recommendations")}">
+        <table class="recommendation-table">
+          <thead>
+            <tr>
+              <th scope="col">${sfmFinalL("الأصل", "Asset")}</th>
+              <th scope="col">${sfmFinalL("السعر", "Price")}</th>
+              <th scope="col">${sfmFinalL("التغير", "Change")}</th>
+              <th scope="col">${sfmFinalL("التوصية", "Recommendation")}</th>
+              <th scope="col">${sfmFinalL("الثقة", "Confidence")}</th>
+              <th scope="col">${sfmFinalL("المخاطرة", "Risk")}</th>
+              <th scope="col">${sfmFinalL("إجراء", "Action")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
+        </table>
+      </div>
+      <div class="recommendation-mobile-list" aria-hidden="true">
+        ${Array.from({ length: count }).map(() => `
+          <article class="recommendation-mobile-card recommendation-mobile-card-skeleton">
+            <div class="recommendation-mobile-head">
+              <span class="recommendation-skeleton recommendation-skeleton-asset"></span>
+            </div>
+            <div class="recommendation-mobile-grid">
+              <span><span class="recommendation-skeleton"></span></span>
+              <span><span class="recommendation-skeleton"></span></span>
+              <span><span class="recommendation-skeleton"></span></span>
+              <span><span class="recommendation-skeleton"></span></span>
+              <span><span class="recommendation-skeleton"></span></span>
+            </div>
+          </article>
+        `).join("")}
+      </div>
+    `;
+  }
+
+  function sfmFinalRecommendationAssetLogoHtml(item) {
+    const symbol = sfmFinalSafeText(item.symbol);
+    const initials = symbol === sfmFinalRecommendationDash ? "--" : symbol.slice(0, 3).toUpperCase();
+    if (item.logoUrl && item.logoUrl !== sfmFinalRecommendationDash) {
+      return `<span class="recommendation-asset-logo" style="background-image: url('${escapeHtml(item.logoUrl)}')"><span>${escapeHtml(initials.slice(0, 2))}</span></span>`;
+    }
+    return `<span class="recommendation-asset-logo is-initial"><span>${escapeHtml(initials)}</span></span>`;
+  }
+
+  function sfmFinalRecommendationRowToHtml(row) {
+    const rowPrice = row.hasCorePrice
+      ? sfmFinalFormatPrice(row.currentPrice, row.currency)
+      : sfmFinalRecommendationMissingText;
+    const changeText = row.hasCorePrice && row.hasConfidence && sfmFinalSafeNumber(row.expectedMovePct) !== null
+      ? sfmFinalFormatPercent(row.expectedMovePct)
+      : sfmFinalRecommendationDash;
+    const safeChangeClass = sfmFinalPercentStyle(sfmFinalSafeNumber(row.expectedMovePct));
+    const confidenceText = row.hasConfidence ? sfmFinalFormatConfidence(row.confidence) : sfmFinalRecommendationDash;
+    const recommendation = row.action || { key: "pending", label: sfmFinalRecommendationPendingText, className: "is-pending" };
+    const riskText = row.risk?.label || sfmFinalRecommendationDash;
+
+    return `
+      <tr data-recommendation-row="${row.index}" data-recommendation-index="${row.index}">
+        <td class="recommendation-col-asset">
+          <div class="recommendation-asset-cell">
+            ${sfmFinalRecommendationAssetLogoHtml(row)}
+            <div class="recommendation-asset-meta">
+              <strong>${escapeHtml(row.name || row.symbol || sfmFinalRecommendationDash)}</strong>
+              <small>${escapeHtml(row.symbol || sfmFinalRecommendationDash)}</small>
+            </div>
+          </div>
+        </td>
+        <td>${escapeHtml(rowPrice)}</td>
+        <td class="recommendation-change ${safeChangeClass}">${escapeHtml(changeText)}</td>
+        <td><span class="recommendation-badge ${recommendation.className}">${escapeHtml(recommendation.label)}</span></td>
+        <td>${escapeHtml(confidenceText)}</td>
+        <td><span class="recommendation-risk ${row.risk?.className}">${escapeHtml(riskText)}</span></td>
+        <td><button type="button" class="recommendation-detail-button" data-recommendation-index="${row.index}">${sfmFinalL("تحليل", "Analyze")}</button></td>
+      </tr>
+    `;
+  }
+
+  function sfmFinalRecommendationMobileCardHtml(row) {
+    const rowPrice = row.hasCorePrice
+      ? sfmFinalFormatPrice(row.currentPrice, row.currency)
+      : sfmFinalRecommendationMissingText;
+    const recommendation = row.action || { key: "pending", label: sfmFinalRecommendationPendingText, className: "is-pending" };
+    const confidenceText = row.hasConfidence ? sfmFinalFormatConfidence(row.confidence) : sfmFinalRecommendationDash;
+    const changeText = row.hasCorePrice && row.hasConfidence
+      ? sfmFinalFormatPercent(row.expectedMovePct)
+      : sfmFinalRecommendationDash;
+    const safeChangeClass = sfmFinalPercentStyle(sfmFinalSafeNumber(row.expectedMovePct));
+
+    return `
+      <article class="recommendation-mobile-card" data-recommendation-index="${row.index}">
+        <div class="recommendation-mobile-head">
+          <div class="recommendation-asset-cell">
+            ${sfmFinalRecommendationAssetLogoHtml(row)}
+            <div class="recommendation-asset-meta">
+              <strong>${escapeHtml(row.name || row.symbol || sfmFinalRecommendationDash)}</strong>
+              <small>${escapeHtml(row.symbol || sfmFinalRecommendationDash)}</small>
+            </div>
+          </div>
+          <span class="recommendation-change ${safeChangeClass}">${escapeHtml(changeText)}</span>
+        </div>
+        <div class="recommendation-mobile-grid">
+          <div>
+            <span>${sfmFinalL("السعر", "Price")}</span>
+            <strong>${escapeHtml(rowPrice)}</strong>
+          </div>
+          <div>
+            <span>${sfmFinalL("التوصية", "Recommendation")}</span>
+            <strong><span class="recommendation-badge ${recommendation.className}">${escapeHtml(recommendation.label)}</span></strong>
+          </div>
+          <div>
+            <span>${sfmFinalL("الثقة", "Confidence")}</span>
+            <strong>${escapeHtml(confidenceText)}</strong>
+          </div>
+          <div>
+            <button type="button" class="recommendation-detail-button recommendation-detail-button--mobile" data-recommendation-index="${row.index}">${sfmFinalL("تحليل", "Analyze")}</button>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  function sfmFinalSetUnavailable(message, variant = "empty") {
+    if (!unavailable) return;
+    unavailable.textContent = message || sfmFinalRecommendationEmptyText;
+    unavailable.classList.add("is-visible");
+    unavailable.dataset.state = variant;
+    if (cards) {
+      cards.innerHTML = "";
+    }
+  }
+
+  function sfmFinalRenderRecommendationsPanel(payload = []) {
+    if (!cards) return;
+
+    if (!sfmFinalRecommendationsInited) {
+      sfmFinalSetupRecommendationDrawer();
+      sfmFinalRecommendationsInited = true;
+    }
+
+    sfmFinalRecommendationRowsData = sfmFinalNormalizeRecommendationRows(payload);
+
+    if (unavailable) {
+      unavailable.textContent = "";
+      unavailable.classList.remove("is-visible");
+      unavailable.dataset.state = "";
+    }
+
+    if (!sfmFinalRecommendationRowsData.length) {
+      sfmFinalSetUnavailable(sfmFinalRecommendationEmptyText, "empty");
+      return;
+    }
+
+    const tableRows = sfmFinalRecommendationRowsData.map(sfmFinalRecommendationRowToHtml).join("");
+    const mobileCards = sfmFinalRecommendationRowsData.map(sfmFinalRecommendationMobileCardHtml).join("");
+    const now = new Date().toLocaleTimeString(sfmFinalIsEnglish() ? "en-US" : "ar-KW", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+    cards.innerHTML = `
+      <div class="recommendation-state-head">
+        <strong>${sfmFinalL("آخر تحديث", "Last update")}: ${escapeHtml(now)}</strong>
+      </div>
+      <div class="recommendation-table-scroll">
+        <table class="recommendation-table" role="table" aria-label="${sfmFinalL("جدول توصيات السوق", "Market recommendations table")}" dir="rtl">
+          <thead>
+            <tr>
+              <th scope="col">${sfmFinalL("الأصل", "Asset")}</th>
+              <th scope="col">${sfmFinalL("السعر", "Price")}</th>
+              <th scope="col">${sfmFinalL("التغير", "Change")}</th>
+              <th scope="col">${sfmFinalL("التوصية", "Recommendation")}</th>
+              <th scope="col">${sfmFinalL("الثقة", "Confidence")}</th>
+              <th scope="col">${sfmFinalL("المخاطرة", "Risk")}</th>
+              <th scope="col">${sfmFinalL("إجراء", "Action")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+      </div>
+      <div class="recommendation-mobile-list">
+        ${mobileCards}
+      </div>
+    `;
+
+    sfmFinalBindRecommendationDetailButtons();
+  }
+
+  function sfmFinalRenderRecommendationsState(isLoading, hasError, recommendations) {
+    if (isLoading) {
+      cards.innerHTML = sfmFinalRenderRecommendationSkeleton();
+      if (unavailable) {
+        unavailable.textContent = "";
+        unavailable.classList.remove("is-visible");
+      }
+      return;
+    }
+
+    if (hasError) {
+      sfmFinalSetUnavailable(sfmFinalRecommendationErrorText, "error");
+      return;
+    }
+
+    sfmFinalRenderRecommendationsPanel(recommendations);
+  }
+
+  function sfmFinalFormatTimestamp(value) {
+    if (!value) return sfmFinalL("غير متاح", "Unavailable");
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return sfmFinalL("غير متاح", "Unavailable");
+    return new Intl.DateTimeFormat(sfmFinalIsEnglish() ? "en-US" : "ar-KW", {
+      dateStyle: "medium",
+      timeStyle: "short"
+    }).format(parsed);
+  }
+
+  function sfmFinalRenderRecommendationDetail(row) {
+    if (!sfmFinalDrawer || !sfmFinalDrawerContent || !row) return;
+
+    const recommendation = row.action || { key: "pending", label: sfmFinalRecommendationPendingText, className: "is-pending" };
+    const targetText = row.target && row.target !== sfmFinalRecommendationDash
+      ? row.target
+      : sfmFinalL("غير متاح", "Unavailable");
+    const explanation = sfmFinalSafeText(row.explanation)
+      || (Array.isArray(row.reasons) && row.reasons.length
+        ? row.reasons.slice(0, 5).join("، ")
+        : sfmFinalL("لا يوجد شرح.", "No explanation."));
+
+    sfmFinalDrawerContent.innerHTML = `
+      <div class="recommendation-detail-row">
+        <span>${sfmFinalL("الأصل", "Asset")}</span>
+        <strong>${escapeHtml(row.name || row.symbol || sfmFinalRecommendationDash)}</strong>
+      </div>
+      <div class="recommendation-detail-row">
+        <span>${sfmFinalL("مصدر السعر", "Price source")}</span>
+        <strong>${escapeHtml(sfmFinalCleanSource(row.dataProvider))}</strong>
+      </div>
+      <div class="recommendation-detail-grid-two">
+        <div class="recommendation-detail-row">
+          <span>${sfmFinalL("السعر الحالي", "Current price")}</span>
+          <strong>${escapeHtml(row.hasCorePrice ? sfmFinalFormatPrice(row.currentPrice, row.currency) : sfmFinalRecommendationMissingText)}</strong>
+        </div>
+        <div class="recommendation-detail-row">
+          <span>${sfmFinalL("التوصية", "Recommendation")}</span>
+          <strong><span class="recommendation-badge ${recommendation.className}">${escapeHtml(recommendation.label)}</span></strong>
+        </div>
+      </div>
+      <div class="recommendation-detail-grid-two">
+        <div class="recommendation-detail-row">
+          <span>${sfmFinalL("الهدف", "Target")}</span>
+          <strong>${escapeHtml(targetText)}</strong>
+        </div>
+        <div class="recommendation-detail-row">
+          <span>${sfmFinalL("المدة", "Duration")}</span>
+          <strong>${escapeHtml(row.duration)}</strong>
+        </div>
+      </div>
+      <div class="recommendation-detail-grid-two">
+        <div class="recommendation-detail-row">
+          <span>${sfmFinalL("المخاطرة", "Risk")}</span>
+          <strong>${escapeHtml(row.risk?.label || sfmFinalRecommendationDash)}</strong>
+        </div>
+        <div class="recommendation-detail-row">
+          <span>AI Score</span>
+          <strong>${row.score === null ? sfmFinalRecommendationDash : `${row.score}`}</strong>
+        </div>
+      </div>
+      <div class="recommendation-detail-grid-two">
+        <div class="recommendation-detail-row">
+          <span>${sfmFinalL("الثقة", "Confidence")}</span>
+          <strong>${row.hasConfidence ? sfmFinalFormatConfidence(row.confidence) : sfmFinalRecommendationDash}</strong>
+        </div>
+        <div class="recommendation-detail-row">
+          <span>${sfmFinalL("آخر تحديث", "Last updated")}</span>
+          <strong>${escapeHtml(sfmFinalFormatTimestamp(row.updatedAt))}</strong>
+        </div>
+      </div>
+      <div class="recommendation-detail-row recommendation-detail-row-full">
+        <span>${sfmFinalL("الشرح", "Explanation")}</span>
+        <p>${escapeHtml(explanation)}</p>
+      </div>
+    `;
+
+    sfmFinalOpenRecommendationDrawer();
+  }
+
+  function sfmFinalOpenRecommendationDrawer() {
+    if (!sfmFinalDrawer) return;
+    sfmFinalDrawer.classList.add("is-open");
+    sfmFinalDrawer.setAttribute("aria-hidden", "false");
+    document.body.classList.add("recommendation-drawer-open");
+  }
+
+  function sfmFinalCloseRecommendationDrawer() {
+    if (!sfmFinalDrawer) return;
+    sfmFinalDrawer.classList.remove("is-open");
+    sfmFinalDrawer.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("recommendation-drawer-open");
+  }
+
+  function sfmFinalSetupRecommendationDrawer() {
+    if (sfmFinalDrawerInitialized) return;
+    sfmFinalDrawerInitialized = true;
+    if (!sfmFinalDrawer) return;
+
+    sfmFinalDrawerButtons().forEach((button) => {
+      button.addEventListener("click", sfmFinalCloseRecommendationDrawer);
+    });
+
+    sfmFinalDrawer.addEventListener("click", (event) => {
+      if (event.target instanceof Element && event.target.closest("[data-recommendation-close]")) {
+        sfmFinalCloseRecommendationDrawer();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (!sfmFinalDrawer.classList.contains("is-open")) return;
+      if (event.key === "Escape") sfmFinalCloseRecommendationDrawer();
+    });
+  }
+
+  function sfmFinalBindRecommendationDetailButtons() {
+    if (!cards) return;
+    cards.querySelectorAll("[data-recommendation-index]").forEach((button) => {
+      button.addEventListener("click", (event) => {
+        const target = event.currentTarget;
+        const index = Number(target.getAttribute("data-recommendation-index"));
+        const row = sfmFinalRecommendationRowsData.find((item) => item.index === index);
+        if (!row) return;
+        sfmFinalRenderRecommendationDetail(row);
+      });
+    });
+  }
+
+  function sfmFinalRenderRecommendations(data) {
+    if (!cards) return;
+
+    sfmFinalLatestMarketData = data || sfmFinalLatestMarketData;
+
+    const recommendations = Array.isArray(data?.recommendations)
+      ? data.recommendations
+      : Array.isArray(data?.items)
+        ? data.items
+        : Array.isArray(data)
+          ? data
+          : [];
+
+    const isLoading = data === null || data === undefined || data.state === "loading" || data.loading;
+    const hasError = Boolean(data && (data.error || data.errorMessage));
+
+    if (typeof sfmFinalEnsureMarketDataStatusPanel === "function") {
+      sfmFinalEnsureMarketDataStatusPanel(data || sfmFinalLatestMarketData);
+    }
+
+    sfmFinalRenderRecommendationsState(isLoading, hasError, recommendations);
+  }
+  renderRecommendations = function renderRecommendations(data) {
+    sfmFinalRenderRecommendations(data);
+  };
+})();
+
+
+
+
+
+

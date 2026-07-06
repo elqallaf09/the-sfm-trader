@@ -1079,8 +1079,19 @@
             </label>
           </div>
 
-          <div id="cards" class="cards" aria-live="polite"></div>
-          <div id="unavailable" class="unavailable"></div>
+          <div id="cards" class="cards recommendation-table-shell" aria-live="polite"></div>
+          <div id="unavailable" class="unavailable recommendation-unavailable"></div>
+
+          <aside class="recommendation-detail-drawer" data-recommendation-drawer aria-hidden="true">
+            <div class="recommendation-drawer-backdrop" data-recommendation-close aria-hidden="true"></div>
+            <section class="recommendation-drawer-panel">
+              <header class="recommendation-drawer-head">
+                <h3>تحليل</h3>
+                <button type="button" class="recommendation-drawer-close" data-recommendation-close aria-label="إغلاق">×</button>
+              </header>
+              <div id="recommendation-detail-content" class="recommendation-detail-content"></div>
+            </section>
+          </aside>
         </section>
 
         <section id="temporary-legal-notices" class="temporary-legal-notices" aria-label="تنبيهات داخلية مؤقتة">
@@ -1346,6 +1357,7 @@
     <script src="/app.js?v=20260624-no-welcome-hero" type="module"></script>
   </body>
 </html>
+
 
 
 
