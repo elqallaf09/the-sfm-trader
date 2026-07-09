@@ -1,7 +1,7 @@
 {
-  "name": "the-sfm trader",
-  "short_name": "SFM Trader",
-  "description": "تطبيق the-sfm trader الخاص لتحليل ومتابعة الأسواق.",
+  "name": "اس اف ام المحلل الذكي",
+  "short_name": "SFM Smart",
+  "description": "تطبيق اس اف ام المحلل الذكي الخاص لتحليل ومتابعة الأسواق.",
   "lang": "ar-KW",
   "dir": "rtl",
   "start_url": "/?app=ios",

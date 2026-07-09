@@ -271,8 +271,23 @@ const TRANSLATION_LANGUAGE_FALLBACK = {
   en: "en",
   fr: "en"
 };
+const APP_BRAND_TITLES = {
+  ar: "اس اف ام المحلل الذكي",
+  en: "SFM Smart Analyzer"
+};
+const APP_BRAND_SHORT_TITLES = {
+  ar: "اس اف ام",
+  en: "SFM"
+};
+const APP_BRAND_SCAN_TITLES = {
+  ar: "اس اف ام المحلل الذكي scan",
+  en: "SFM Smart Analyzer scan"
+};
 const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
 const UI_TEXT_TRANSLATIONS = {
+  "اس اف ام المحلل الذكي": "SFM Smart Analyzer",
+  "اس اف ام المحلل الذكي scan": "SFM Smart Analyzer scan",
+  "اس اف ام": "SFM",
   "تنبيهات داخلية مؤقتة": "Temporary internal notices",
   "تنبيه المخاطر": "Risk notice",
   "جميع التحليلات والمؤشرات والتوقعات المعروضة داخل SFM Trading Terminal هي لأغراض تعليمية ومعلوماتية فقط ولا تشكل نصيحة استثمارية أو توصية مالية.": "All analysis, indicators, and forecasts shown inside SFM Trading Terminal are for educational and informational purposes only and do not constitute investment advice or a financial recommendation.",
@@ -1752,6 +1767,47 @@ function isEnglishLanguage() {
   return getTranslationLanguageKey() === "en";
 }
 
+function getLocalizedBrandValue(values, language = getAppLanguage()) {
+  const languageKey = getTranslationLanguageKey(language);
+  return values[languageKey] || values.ar;
+}
+
+function getLocalizedBrandTitle(language = getAppLanguage()) {
+  return getLocalizedBrandValue(APP_BRAND_TITLES, language);
+}
+
+function getLocalizedBrandShortTitle(language = getAppLanguage()) {
+  return getLocalizedBrandValue(APP_BRAND_SHORT_TITLES, language);
+}
+
+function getLocalizedBrandScanTitle(language = getAppLanguage()) {
+  return getLocalizedBrandValue(APP_BRAND_SCAN_TITLES, language);
+}
+
+function syncBrandTitle() {
+  const language = getAppLanguage();
+  const languageKey = getTranslationLanguageKey(language);
+  const title = getLocalizedBrandTitle(language);
+  const shortTitle = getLocalizedBrandShortTitle(language);
+  const scanTitle = getLocalizedBrandScanTitle(language);
+  const textLang = languageKey === "ar" ? "ar" : "en";
+  const textDir = languageKey === "ar" ? "rtl" : "ltr";
+
+  document.title = title;
+  document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute("content", title);
+  syncBrandTitleTargets("[data-brand-title]", title, textLang, textDir);
+  syncBrandTitleTargets("[data-brand-title-short]", shortTitle, textLang, textDir);
+  syncBrandTitleTargets("[data-brand-title-scan]", scanTitle, textLang, textDir);
+}
+
+function syncBrandTitleTargets(selector, text, lang, dir) {
+  for (const element of document.querySelectorAll(selector)) {
+    if (element.textContent !== text) element.textContent = text;
+    element.lang = lang;
+    element.dir = dir;
+  }
+}
+
 function isLikelyMobileDevice() {
   return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || window.matchMedia?.("(pointer: coarse)")?.matches;
 }
@@ -2004,6 +2060,7 @@ function applyAppSettings(options = {}) {
   document.body?.classList.toggle("language-en", english);
   document.body?.classList.toggle("language-ar", language === "ar");
   document.body?.classList.toggle("language-fr", language === "fr");
+  syncBrandTitle();
   updateSettingsPanelLanguage();
   syncNavigationLanguage();
   queueTranslateInterface();
@@ -5400,7 +5457,7 @@ function checkSmartMarketNotifications(items = []) {
       { type: "strong-signal" }
     );
     sendBrowserTradeNotification(
-      `the-sfm trader: ${item.symbol}`,
+      `${getLocalizedBrandTitle()}: ${item.symbol}`,
       `${item.actionLabel} بثقة ${formatNumber(item.confidence)}%`
     );
   }

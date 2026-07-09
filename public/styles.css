@@ -9392,7 +9392,7 @@ body::after {
   }
 }
 
-/* THE-SFM trader reference fidelity patch */
+/* SFM Smart Analyzer reference fidelity patch */
 .app-view-hidden {
   display: none !important;
 }
@@ -9632,7 +9632,7 @@ body::after {
   }
 }
 
-/* THE-SFM trader exact reference layer */
+/* SFM Smart Analyzer exact reference layer */
 .header-session-mini {
   display: inline-flex;
   align-items: center;

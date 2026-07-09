@@ -3,6 +3,15 @@ const symbol = params.get("symbol") || "";
 const NUMBER_LOCALE = "ar-KW-u-nu-latn";
 const NUMBER_OPTIONS = { numberingSystem: "latn" };
 const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
+const DETAIL_BRAND_TITLES = {
+  ar: "اس اف ام المحلل الذكي",
+  en: "SFM Smart Analyzer"
+};
+const DETAIL_PAGE_TITLES = {
+  ar: "تفاصيل السهم",
+  en: "Stock details"
+};
+let activeDetailTitleSymbol = symbol;
 
 function normalizeDigits(value) {
   return String(value ?? "")
@@ -103,7 +112,7 @@ function installLatinDigitNormalizer() {
 }
 
 const DETAIL_TEXT_TRANSLATIONS = {
-  "تفاصيل السهم - the-sfm trader": "Stock details - the-sfm trader",
+  "تفاصيل السهم - اس اف ام المحلل الذكي": "Stock details - SFM Smart Analyzer",
   "صفحة تحليل السهم": "Stock analysis page",
   "رجوع للأسواق": "Back to markets",
   "تحميل التحليل": "Loading analysis",
@@ -688,7 +697,8 @@ function renderDetail(data) {
   const finalScore = calculateFinalScore(item);
   const decision = item.decision || buildDecision(item);
 
-  document.title = `${item.symbol} - the-sfm trader`;
+  activeDetailTitleSymbol = item.symbol;
+  syncDetailBrandTitle();
   elements.symbol.textContent = item.symbol;
   elements.name.textContent = localizeInstrumentName(item.name);
   elements.market.textContent = `${localizeMarketLabel(profile, market)} · ${localizeDetailText(profile.exchangeName || item.exchangeName || "--")}`;
@@ -980,6 +990,31 @@ function detailText(arabic, english) {
   return isDetailEnglishLanguage() ? english : arabic;
 }
 
+function getDetailBrandTitle() {
+  return isDetailEnglishLanguage() ? DETAIL_BRAND_TITLES.en : DETAIL_BRAND_TITLES.ar;
+}
+
+function getDetailPageTitle() {
+  return isDetailEnglishLanguage() ? DETAIL_PAGE_TITLES.en : DETAIL_PAGE_TITLES.ar;
+}
+
+function syncDetailBrandTitle(symbolValue = activeDetailTitleSymbol) {
+  const brandTitle = getDetailBrandTitle();
+  const pageTitle = getDetailPageTitle();
+  const cleanSymbol = String(symbolValue || "").trim();
+  const textLang = isDetailEnglishLanguage() ? "en" : "ar";
+  const textDir = isDetailEnglishLanguage() ? "ltr" : "rtl";
+
+  document.title = cleanSymbol ? `${cleanSymbol} - ${brandTitle}` : `${pageTitle} - ${brandTitle}`;
+  document.querySelector('meta[name="apple-mobile-web-app-title"]')?.setAttribute("content", brandTitle);
+
+  for (const element of document.querySelectorAll("[data-brand-title]")) {
+    if (element.textContent !== brandTitle) element.textContent = brandTitle;
+    element.lang = textLang;
+    element.dir = textDir;
+  }
+}
+
 function localizeDetailText(value, fallback = "--") {
   if (value === null || value === undefined || value === "") return fallback;
   const text = String(value);
@@ -1075,6 +1110,7 @@ function applyDetailLanguage() {
   document.documentElement.lang = language;
   document.documentElement.dir = ltr ? "ltr" : "rtl";
   document.body?.classList.toggle("language-en", ltr);
+  syncDetailBrandTitle();
   translateDetailInterface();
 }
 
