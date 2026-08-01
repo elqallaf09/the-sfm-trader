@@ -22,6 +22,10 @@ services:
         sync: false
       - key: SFM_ALLOWED_ORIGINS
         sync: false
+      - key: SFM_OPERATOR_NAME
+        sync: false
+      - key: SFM_LEGAL_CONTACT
+        sync: false
       - key: SFM_ACCESS_LOG
         value: "true"
 

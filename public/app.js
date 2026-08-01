@@ -1,5 +1,6 @@
 ﻿import { API_TOKEN_STORAGE_KEY, createIdempotencyKey, readStateVersion } from "./modules/apiClient.js";
 import { createVisibilityAwarePoller } from "./modules/polling.js";
+import { setUiState } from "./modules/uiState.js";
 import "./modules/webVitals.js";
 
 const marketTabs = document.querySelector("#market-tabs");
@@ -628,6 +629,8 @@ const UI_TEXT_TRANSLATIONS = {
   "تعذر جلب البيانات الآن": "Could not fetch data now",
   "تعذر الرد": "Could not reply",
   "تعذر جلب البيانات": "Could not fetch data",
+  "تعذر تحميل بيانات السوق": "Could not load market data",
+  "إعادة المحاولة": "Retry",
   "جلب البيانات": "fetch data",
   "كل المزودين": "all providers",
   "الرد": "reply",
@@ -837,7 +840,7 @@ const SETTINGS_PANEL_TEXT = {
     "#settings-form > .settings-card:nth-of-type(5) .settings-info-row:nth-of-type(3) strong": "نشطة",
     "#settings-form > .settings-card:nth-of-type(6) .settings-card-head span": "Plan",
     "#settings-form > .settings-card:nth-of-type(6) .settings-card-head strong": "الاشتراك والخطة",
-    "#settings-form > .settings-card:nth-of-type(6) p": "نسخة خاصة للتطوير والمتابعة قبل النشر العام.",
+    "#settings-form > .settings-card:nth-of-type(6) p": "لا توجد باقة مدفوعة أو ترقية مفعلة في هذه النسخة.",
     "#settings-form > .settings-card:nth-of-type(7) .settings-card-head span": "Support",
     "#settings-form > .settings-card:nth-of-type(7) .settings-card-head strong": "الدعم وعن التطبيق",
     "#settings-form > .settings-card:nth-of-type(7) .settings-info-row:nth-of-type(2) span": "التطبيق",
@@ -866,7 +869,7 @@ const SETTINGS_PANEL_TEXT = {
     "#settings-form > .settings-card:nth-of-type(5) .settings-info-row:nth-of-type(3) strong": "Active",
     "#settings-form > .settings-card:nth-of-type(6) .settings-card-head span": "Plan",
     "#settings-form > .settings-card:nth-of-type(6) .settings-card-head strong": "Subscription / plan",
-    "#settings-form > .settings-card:nth-of-type(6) p": "Private build for development and monitoring before public release.",
+    "#settings-form > .settings-card:nth-of-type(6) p": "No paid plan or upgrade is enabled in this build.",
     "#settings-form > .settings-card:nth-of-type(7) .settings-card-head span": "Support",
     "#settings-form > .settings-card:nth-of-type(7) .settings-card-head strong": "Support / about",
     "#settings-form > .settings-card:nth-of-type(7) .settings-info-row:nth-of-type(2) span": "App",
@@ -1512,8 +1515,7 @@ async function init() {
   });
 }
 
-// Temporary legal notices for internal SFM Trading Terminal testing.
-// Full legal pages will be added before public release.
+// Dismissible summaries; full disclosures are linked from the footer.
 function initTemporaryLegalNotices() {
   const noticeRegion = document.querySelector("#temporary-legal-notices");
   if (!noticeRegion) return;
@@ -2698,7 +2700,7 @@ async function loadRecommendations(options = {}) {
   if (cachedData?.recommendations?.length) {
     lastData = cachedData;
     renderRecommendations(cachedData);
-    connectionStatus.textContent = localizeUiText("يعرض آخر تحليل محفوظ");
+    setConnectionStatus("stale", localizeUiText("يعرض آخر تحليل محفوظ"));
     loadingIndicator.textContent = localizeUiText("تحديث بالخلفية");
   }
 
@@ -2717,17 +2719,24 @@ async function loadRecommendations(options = {}) {
     updateRecommendationHistory(data.recommendations || []);
     triggerSmartAlertPopup(data.smartAlerts || []);
     renderRecommendations(data);
-    connectionStatus.textContent = getConnectionStatusText(data);
+    updateConnectionStatus(data);
   } catch (error) {
     if (error?.name === "AbortError" || requestId !== recommendationRequestId) return;
 
     const message = getFriendlyFetchError(error, "تعذر الاتصال بالسيرفر. اضغط تحديث أو أعد فتح الصفحة.");
-    connectionStatus.textContent = localizeUiText(lastData?.recommendations?.length ? "اتصال متقطع - آخر بيانات محفوظة" : "تعذر الاتصال");
+    setConnectionStatus(lastData?.recommendations?.length ? "stale" : "offline", localizeUiText(lastData?.recommendations?.length ? "اتصال متقطع - آخر بيانات محفوظة" : "تعذر الاتصال"));
 
     if (lastData?.recommendations?.length) {
       renderRecommendations(lastData);
     } else {
-      cards.innerHTML = `<div class="empty">${escapeHtml(localizeUiText(message))}</div>`;
+      setUiState(cards, {
+        kind: "error",
+        title: localizeUiText("تعذر تحميل بيانات السوق"),
+        message: localizeUiText(message),
+        actionLabel: localizeUiText("إعادة المحاولة"),
+        actionId: "retry-recommendations"
+      });
+      cards.querySelector('[data-ui-state-action="retry-recommendations"]')?.addEventListener("click", () => loadRecommendations({ force: true, skipGrace: true }));
     }
   } finally {
     if (requestId === recommendationRequestId) {
@@ -2742,6 +2751,17 @@ function getConnectionStatusText(data) {
   if (data?.partial || Number(data?.pendingCount || 0) > 0) return localizeUiText("متصل - تحليل أولي");
   if (data?.cached || data?.stale) return localizeUiText("متصل - آخر بيانات محفوظة");
   return localizeUiText("متصل - بيانات جديدة");
+}
+
+function setConnectionStatus(kind, text) {
+  if (!connectionStatus) return;
+  connectionStatus.textContent = text;
+  connectionStatus.dataset.connectionState = kind;
+}
+
+function updateConnectionStatus(data) {
+  const kind = data?.cached || data?.stale ? "stale" : data?.partial || data?.refreshing || Number(data?.pendingCount || 0) > 0 ? "updating" : "fresh";
+  setConnectionStatus(kind, getConnectionStatusText(data));
 }
 
 function updateAiTradingAgentSummary(data, all = [], buys = [], sells = [], avg = 0) {
@@ -2869,6 +2889,10 @@ function renderRecommendations(data) {
     confidenceFill.style.width = `${item.confidence}%`;
     card.querySelector(".duration").textContent = `المدة: ${item.duration}`;
     card.querySelector(".expected-move").textContent = `الحركة: ${formatPercent(item.expectedMovePct)}`;
+    card.querySelector(".data-source").textContent = isEnglishLanguage()
+      ? `Source: ${item.dataProvenance?.provider || item.dataProvider || "--"}`
+      : `المصدر: ${item.dataProvenance?.provider || item.dataProvider || "--"}`;
+    card.querySelector(".data-freshness").textContent = formatDataFreshness(item.dataProvenance);
     card.querySelector(".rsi").textContent = item.indicators?.rsi14 ?? "--";
     card.querySelector(".momentum").textContent = formatPercent(item.indicators?.momentum20 ?? 0);
     card.querySelector(".volatility").textContent = formatPercent(item.indicators?.volatility20 ?? 0);
@@ -2904,6 +2928,14 @@ function renderRecommendations(data) {
   if (data.unavailable?.length || !all.length) {
     unavailable.innerHTML = renderProviderUnavailableDetails(data);
   }
+}
+
+function formatDataFreshness(provenance = {}) {
+  if (!provenance?.marketTimestamp) return isEnglishLanguage() ? "Freshness: unknown" : "حداثة البيانات: غير معروفة";
+  const label = provenance.freshness === "stale"
+    ? (isEnglishLanguage() ? "stale" : "قديمة")
+    : (isEnglishLanguage() ? "current" : "حديثة");
+  return `${isEnglishLanguage() ? "Market time" : "وقت السوق"}: ${formatDateTime(provenance.marketTimestamp)} · ${label}`;
 }
 
 function renderMarketDataState(data = {}) {
@@ -6556,7 +6588,7 @@ function applyVoiceMarketData(data, marketId) {
   setActiveMarketButton();
   setActiveShariaFilterButton();
   updateSessionClock();
-  connectionStatus.textContent = getConnectionStatusText(data);
+  updateConnectionStatus(data);
 }
 
 function buildLocalRecommendationReply(data, intent) {

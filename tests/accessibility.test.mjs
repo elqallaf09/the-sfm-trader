@@ -4,7 +4,7 @@ import test from "node:test";
 import axe from "axe-core";
 import { JSDOM } from "jsdom";
 
-for (const page of ["index.html", "detail.html"]) {
+for (const page of ["index.html", "detail.html", "privacy.html", "terms.html", "risk-disclosure.html"]) {
   test(`${page} has no critical static accessibility violations`, async () => {
     const html = (await readFile(new URL(`../public/${page}`, import.meta.url), "utf8"))
       .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
