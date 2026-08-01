@@ -373,6 +373,11 @@
               <span>حالة الجلسة</span>
               <strong>نشطة</strong>
             </div>
+            <label class="settings-field">
+              <span>رمز الوصول الخاص</span>
+              <input id="settings-api-token" type="password" minlength="24" autocomplete="off" aria-describedby="settings-api-token-help" />
+              <small id="settings-api-token-help">يُحفظ على هذا الجهاز فقط ويُرسل إلى خادم SFM لحماية بياناتك.</small>
+            </label>
           </section>
 
           <section class="settings-card">
@@ -842,7 +847,8 @@
             </div>
           </div>
           <form id="voice-text-form" class="voice-text-form">
-            <input id="voice-text-command" type="text" placeholder="اسألني: ماذا أشتري اليوم؟" autocomplete="off" />
+            <label class="sr-only" for="voice-text-command">اكتب سؤالك للمساعد</label>
+            <input id="voice-text-command" type="text" placeholder="اسألني: ماذا أشتري اليوم؟" autocomplete="off" aria-label="اكتب سؤالك للمساعد" />
             <button type="submit">إرسال الأمر</button>
           </form>
         </section>
@@ -860,7 +866,8 @@
             </div>
           </div>
           <form id="scalp-form" class="scalp-form">
-            <input id="scalp-symbol" type="text" placeholder="مثال: AAPL أو MSFT أو TSLA" autocomplete="off" />
+            <label class="sr-only" for="scalp-symbol">رمز أصل المضاربة</label>
+            <input id="scalp-symbol" type="text" placeholder="مثال: AAPL أو MSFT أو TSLA" autocomplete="off" aria-label="رمز أصل المضاربة" />
             <button id="scalp-submit" type="submit">حلل المضاربة</button>
           </form>
           <div id="scalp-quick-list" class="scalp-quick-list" aria-label="اختيارات سريعة للمضاربة"></div>
@@ -977,7 +984,8 @@
             </label>
           </div>
           <form id="watchlist-form" class="inline-form">
-            <input id="watchlist-symbol" type="text" inputmode="latin" placeholder="مثال: AMD أو NVDA" autocomplete="off" />
+            <label class="sr-only" for="watchlist-symbol">رمز الأصل لإضافته إلى المفضلة</label>
+            <input id="watchlist-symbol" type="text" inputmode="latin" placeholder="مثال: AMD أو NVDA" autocomplete="off" aria-label="رمز الأصل لإضافته إلى المفضلة" />
             <button type="submit">إضافة</button>
           </form>
           <div id="watchlist-chips" class="chip-row"></div>
@@ -993,9 +1001,12 @@
             </div>
           </div>
           <form id="portfolio-form" class="portfolio-form">
-            <input id="portfolio-symbol" type="text" inputmode="latin" placeholder="رمز السهم" autocomplete="off" />
-            <input id="portfolio-qty" type="number" min="0" step="0.01" placeholder="الكمية" />
-            <input id="portfolio-price" type="number" min="0" step="0.01" placeholder="سعر الشراء" />
+            <label class="sr-only" for="portfolio-symbol">رمز أصل المحفظة</label>
+            <input id="portfolio-symbol" type="text" inputmode="latin" placeholder="رمز السهم" autocomplete="off" aria-label="رمز أصل المحفظة" />
+            <label class="sr-only" for="portfolio-qty">الكمية</label>
+            <input id="portfolio-qty" type="number" min="0" step="0.01" placeholder="الكمية" aria-label="الكمية" />
+            <label class="sr-only" for="portfolio-price">سعر الشراء</label>
+            <input id="portfolio-price" type="number" min="0" step="0.01" placeholder="سعر الشراء" aria-label="سعر الشراء" />
             <button type="submit">إضافة للمحفظة</button>
           </form>
           <div id="portfolio-list" class="portfolio-list"></div>
@@ -1052,16 +1063,16 @@
 
           <div class="tool-row" aria-label="أدوات التوصيات">
             <div class="segmented" role="tablist" aria-label="فلترة الإشارات">
-              <button class="filter-button active" type="button" data-filter="all">الكل</button>
-              <button class="filter-button" type="button" data-filter="buy">شراء</button>
-              <button class="filter-button" type="button" data-filter="sell">بيع</button>
-              <button class="filter-button" type="button" data-filter="hold">انتظار</button>
+              <button class="filter-button active" role="tab" aria-selected="true" type="button" data-filter="all">الكل</button>
+              <button class="filter-button" role="tab" aria-selected="false" type="button" data-filter="buy">شراء</button>
+              <button class="filter-button" role="tab" aria-selected="false" type="button" data-filter="sell">بيع</button>
+              <button class="filter-button" role="tab" aria-selected="false" type="button" data-filter="hold">انتظار</button>
             </div>
             <div class="segmented sharia-segmented" role="tablist" aria-label="فلترة شرعية">
-              <button class="sharia-filter-button active" type="button" data-sharia-filter="all">كل التصنيفات</button>
-              <button class="sharia-filter-button" type="button" data-sharia-filter="compliant">مطابق</button>
-              <button class="sharia-filter-button" type="button" data-sharia-filter="not_compliant">غير مطابق</button>
-              <button class="sharia-filter-button" type="button" data-sharia-filter="doubtful">مختلف عليه</button>
+              <button class="sharia-filter-button active" role="tab" aria-selected="true" type="button" data-sharia-filter="all">كل التصنيفات</button>
+              <button class="sharia-filter-button" role="tab" aria-selected="false" type="button" data-sharia-filter="compliant">مطابق</button>
+              <button class="sharia-filter-button" role="tab" aria-selected="false" type="button" data-sharia-filter="not_compliant">غير مطابق</button>
+              <button class="sharia-filter-button" role="tab" aria-selected="false" type="button" data-sharia-filter="doubtful">مختلف عليه</button>
             </div>
             <label class="search-box">
               <span>بحث</span>
@@ -1357,8 +1368,6 @@
     <script src="/app.js?v=20260624-no-welcome-hero" type="module"></script>
   </body>
 </html>
-
-
 
 
 

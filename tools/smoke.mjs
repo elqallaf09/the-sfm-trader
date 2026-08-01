@@ -1,8 +1,10 @@
 const baseUrl = (process.env.SFM_BASE_URL || "http://127.0.0.1:4173").replace(/\/$/, "");
 const timeoutMs = Number(process.env.SFM_SMOKE_TIMEOUT_MS || 25_000);
+const apiToken = String(process.env.SFM_API_TOKEN || "").trim();
 
 const checks = [
   { path: "/", type: "text", name: "home" },
+  { path: "/api/health", type: "json", name: "health", validate: (data) => data.ok === true },
   { path: "/manifest.webmanifest", type: "json", name: "manifest", validate: (data) => data.name && data.icons },
   { path: "/api/markets", type: "json", name: "markets", validate: (data) => Array.isArray(data.markets) && data.markets.length > 0 },
   { path: "/api/recommendations?market=us", type: "json", name: "us recommendations", validate: validateRecommendationsPayload },
@@ -71,6 +73,7 @@ async function fetchWithTimeout(url, ms) {
   try {
     return await fetch(url, {
       cache: "no-store",
+      headers: apiToken ? { authorization: `Bearer ${apiToken}` } : {},
       signal: controller.signal
     });
   } finally {

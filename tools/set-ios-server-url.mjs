@@ -13,10 +13,17 @@ if (!nextUrl) {
   process.exit(1);
 }
 
+const parsedUrl = new URL(nextUrl);
+const insecureAllowed = process.env.ALLOW_INSECURE_IOS_SERVER === "true";
+if (parsedUrl.protocol !== "https:" && !insecureAllowed) {
+  console.error("Release iOS server URL must use HTTPS. Set ALLOW_INSECURE_IOS_SERVER=true only for local debug builds.");
+  process.exit(1);
+}
+
 const config = JSON.parse(await readFile(configPath, "utf8"));
 config.server = config.server || {};
 config.server.url = nextUrl;
-config.server.cleartext = nextUrl.startsWith("http://");
+config.server.cleartext = parsedUrl.protocol !== "https:";
 
 await writeFile(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
 console.log(`Updated iOS server URL to: ${nextUrl}`);

@@ -7,6 +7,8 @@ const syntaxFiles = [
   "src/dataProviders.mjs",
   "src/markets.mjs",
   "src/economicCalendar.mjs",
+  "src/security.mjs",
+  "src/fileStore.mjs",
   "public/app.js",
   "public/detail.js",
   "tools/set-ios-server-url.mjs",
@@ -78,6 +80,28 @@ for (const file of ["public/app.js", "public/detail.js"]) {
   } else {
     console.log(`[latin-digits ok] ${file}`);
   }
+}
+
+const serverSource = readFileSync("server.mjs", "utf8");
+const appSource = readFileSync("public/app.js", "utf8");
+const capacitorConfig = JSON.parse(readFileSync("capacitor.config.json", "utf8"));
+if (!serverSource.includes("requireIdentity(request, response)") || serverSource.includes('"access-control-allow-origin": "*"')) {
+  failed = true;
+  console.error("[security failed] protected API identity or CORS guard is missing");
+} else {
+  console.log("[security ok] protected API identity and restricted CORS");
+}
+if (/const\s+staticNews\s*=/.test(appSource)) {
+  failed = true;
+  console.error("[truthfulness failed] static news must not appear as live market news");
+} else {
+  console.log("[truthfulness ok] no static news masquerading as live content");
+}
+if (capacitorConfig.server?.cleartext || /^http:\/\//i.test(capacitorConfig.server?.url || "")) {
+  failed = true;
+  console.error("[ios security failed] release Capacitor config contains cleartext server settings");
+} else {
+  console.log("[ios security ok] no cleartext release server settings");
 }
 
 if (failed) {

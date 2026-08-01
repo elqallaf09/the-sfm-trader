@@ -4,13 +4,6 @@
   <dict>
     <key>CAPACITOR_DEBUG</key>
     <string>$(CAPACITOR_DEBUG)</string>
-    <key>NSAppTransportSecurity</key>
-    <dict>
-      <key>NSAllowsArbitraryLoads</key>
-      <true />
-      <key>NSAllowsLocalNetworking</key>
-      <true />
-    </dict>
     <key>NSMicrophoneUsageDescription</key>
     <string>the-sfm trader يحتاج المايك لتشغيل المساعد الصوتي وتحليل أوامرك الصوتية.</string>
     <key>NSSpeechRecognitionUsageDescription</key>

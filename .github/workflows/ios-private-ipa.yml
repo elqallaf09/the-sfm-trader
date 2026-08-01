@@ -6,7 +6,7 @@ on:
       server_url:
         description: "the-sfm trader server URL. Use HTTPS for TestFlight/App Store."
         required: true
-        default: "http://192.168.255.180:4173"
+        default: "https://trader.the-sfm.com"
       export_method:
         description: "Xcode export method. Common: app-store-connect, release-testing, debugging. Older Xcode: app-store, ad-hoc, development."
         required: true
