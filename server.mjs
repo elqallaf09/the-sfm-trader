@@ -13,6 +13,7 @@ import { getMarketSummaries, markets } from "./src/markets.mjs";
 import { createUserFileStore } from "./src/fileStore.mjs";
 import { createSecurity, securityHeaders } from "./src/security.mjs";
 import { configureHttpServer, readJsonBody } from "./src/http.mjs";
+import { createBoundedCache } from "./src/boundedCache.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,9 +23,12 @@ const production = process.env.NODE_ENV === "production";
 const security = createSecurity({ production });
 const userStore = createUserFileStore(process.env.SFM_DATA_DIR || path.join(__dirname, ".data"));
 const preferredPort = Number(process.env.PORT || 4173);
-const cache = new Map();
 const CACHE_TTL_MS = 90_000;
 const STALE_CACHE_TTL_MS = 10 * 60_000;
+const cache = createBoundedCache({
+  maxEntries: Number(process.env.SFM_MARKET_CACHE_MAX_ENTRIES || 250),
+  maxAgeMs: STALE_CACHE_TTL_MS
+});
 const FIRST_RESPONSE_BUDGET_MS = Number(process.env.FIRST_RESPONSE_BUDGET_MS || 5_000);
 const UI_RECOMMENDATION_REFRESH_MS = Number(process.env.UI_RECOMMENDATION_REFRESH_MS || 12_000);
 const ANALYSIS_CONCURRENCY = Number(process.env.ANALYSIS_CONCURRENCY || 4);
@@ -34,7 +38,10 @@ const OLLAMA_ENABLED = String(process.env.OLLAMA_ENABLED || "true").toLowerCase(
 const SHARIA_API_URL = (process.env.SHARIA_API_URL || "").replace(/\/$/, "");
 const SHARIA_API_KEY = process.env.SHARIA_API_KEY || "";
 let ollamaUnavailableUntil = 0;
-const shariaCache = new Map();
+const shariaCache = createBoundedCache({
+  maxEntries: Number(process.env.SFM_SHARIA_CACHE_MAX_ENTRIES || 1_000),
+  maxAgeMs: 24 * 60 * 60 * 1000
+});
 const staticAssetCache = new Map();
 const aggregateMarketIds = new Set(["gcc", "world"]);
 const canonicalMarketPriority = [

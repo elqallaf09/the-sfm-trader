@@ -10,6 +10,7 @@ const syntaxFiles = [
   "src/security.mjs",
   "src/fileStore.mjs",
   "src/http.mjs",
+  "src/boundedCache.mjs",
   "public/app.js",
   "public/detail.js",
   "tools/set-ios-server-url.mjs",
@@ -86,6 +87,7 @@ for (const file of ["public/app.js", "public/detail.js"]) {
 const serverSource = readFileSync("server.mjs", "utf8");
 const appSource = readFileSync("public/app.js", "utf8");
 const detailSource = readFileSync("public/detail.js", "utf8");
+const serviceWorkerSource = readFileSync("public/service-worker.js", "utf8");
 const capacitorConfig = JSON.parse(readFileSync("capacitor.config.json", "utf8"));
 if (!serverSource.includes("requireIdentity(request, response)") || serverSource.includes('"access-control-allow-origin": "*"')) {
   failed = true;
@@ -104,6 +106,12 @@ if (/localStorage\.getItem\(API_TOKEN_STORAGE_KEY\)/.test(`${appSource}\n${detai
   console.error("[credential storage failed] API tokens must not persist in localStorage");
 } else {
   console.log("[credential storage ok] API tokens are session-scoped");
+}
+if (!serviceWorkerSource.includes("Promise.allSettled") || !serviceWorkerSource.includes("response.type === \"basic\"")) {
+  failed = true;
+  console.error("[pwa resilience failed] service worker must tolerate partial precache failures and cache only same-origin basic responses");
+} else {
+  console.log("[pwa resilience ok] service worker uses resilient and origin-safe caching");
 }
 if (capacitorConfig.server?.cleartext || /^http:\/\//i.test(capacitorConfig.server?.url || "")) {
   failed = true;

@@ -1,4 +1,4 @@
-const CACHE_NAME = "the-sfm-trader-v20260801-hardening-2";
+const CACHE_NAME = "the-sfm-trader-v20260801-hardening-4";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -16,7 +16,9 @@ const STATIC_ASSETS = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(STATIC_ASSETS.map((asset) => cache.add(asset)))
+    )
   );
   self.skipWaiting();
 });
@@ -35,12 +37,17 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (request.method !== "GET") return;
+  if (request.headers.has("range")) return;
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
 
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() => caches.match("/index.html"))
+      fetch(request).catch(async () =>
+        (await caches.match(request)) ||
+        (await caches.match(url.pathname === "/detail.html" ? "/detail.html" : "/index.html")) ||
+        Response.error()
+      )
     );
     return;
   }
@@ -50,7 +57,7 @@ self.addEventListener("fetch", (event) => {
   if (isAsset) {
     event.respondWith(
       caches.match(request).then((cached) => cached || fetch(request).then((response) => {
-        if (response.ok) {
+        if (response.ok && response.type === "basic") {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
@@ -63,7 +70,7 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     fetch(request)
       .then((response) => {
-        if (response.ok) {
+        if (response.ok && response.type === "basic") {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
