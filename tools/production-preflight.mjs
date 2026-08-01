@@ -1,4 +1,4 @@
-const required = ["DATABASE_URL", "SFM_AUTH_TOKENS", "SFM_ALLOWED_ORIGINS"];
+const required = ["DATABASE_URL", "SFM_AUTH_TOKENS", "SFM_ALLOWED_ORIGINS", "SFM_OPERATOR_NAME", "SFM_LEGAL_CONTACT"];
 const missing = required.filter((name) => !String(process.env[name] || "").trim());
 if (missing.length) throw new Error(`Missing production configuration: ${missing.join(", ")}`);
 if (String(process.env.SFM_STORAGE_DRIVER || "postgres").toLowerCase() !== "postgres") {
@@ -21,4 +21,11 @@ if (!tokens || typeof tokens !== "object" || Array.isArray(tokens) || !Object.ke
 }
 if (Object.keys(tokens).some((token) => token.length < 24)) throw new Error("Every production token must be at least 24 characters");
 
-console.log(JSON.stringify({ ok: true, storage: "postgres", allowedOrigins: origins.length, configuredUsers: Object.keys(tokens).length }));
+const operatorName = String(process.env.SFM_OPERATOR_NAME).trim();
+const legalContact = String(process.env.SFM_LEGAL_CONTACT).trim();
+if (operatorName.length < 2) throw new Error("SFM_OPERATOR_NAME must identify the service operator");
+if (!/^mailto:[^@\s]+@[^@\s]+\.[^@\s]+$|^https:\/\//i.test(legalContact)) {
+  throw new Error("SFM_LEGAL_CONTACT must be an HTTPS URL or mailto address");
+}
+
+console.log(JSON.stringify({ ok: true, storage: "postgres", allowedOrigins: origins.length, configuredUsers: Object.keys(tokens).length, operatorConfigured: true }));

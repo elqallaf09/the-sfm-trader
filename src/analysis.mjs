@@ -1,4 +1,5 @@
 import { fetchChart } from "./dataProviders.mjs";
+import { buildMarketDataProvenance } from "./marketDataProvenance.mjs";
 
 const TIMEFRAME_CONFIGS = [
   { id: "1m", label: "دقيقة", range: "1d", interval: "1m", weight: 0.06, minBars: 25 },
@@ -20,6 +21,7 @@ const TP1_ATR_MULTIPLE = 0.9;   // هدف أول قريب = احتمال إصا�
 const TP2_ATR_MULTIPLE = 2.2;   // هدف ثاني للسوينق
 const SL_ATR_MULTIPLE = 1.8;    // وقف واسع خلف الهيكل السعري
 const BACKTEST_HORIZON = 15;    // عدد الشموع لمحاكاة أول ملامسة
+const BACKTEST_TRANSACTION_COST_BPS = clampEnv("BACKTEST_TRANSACTION_COST_BPS", 10, 0, 100);
 
 function clampEnv(name, fallback, min, max) {
   const value = Number(process.env[name]);
@@ -56,7 +58,27 @@ export async function analyzeSymbol(asset, options = {}) {
   tradePlan = buildTradePlan(currentPrice, expectedPrice, indicators, recommendation, timeframeAnalyses);
   const risk = buildRiskProfile(indicators, recommendation.score, recommendation.agreementPct);
   const analysisQuality = buildAnalysisQuality(timeframeAnalyses, recommendation, indicators, backtest, dataHealth);
-  const decision = buildDecisionSummary(recommendation, risk, tradePlan, analysisQuality, dataHealth);
+  const decision = {
+    ...buildDecisionSummary(recommendation, risk, tradePlan, analysisQuality, dataHealth),
+    evidence: {
+      confidence: recommendation.confidence,
+      timeframeAgreementPct: recommendation.agreementPct,
+      dataHealthScore: dataHealth.score,
+      analysisQualityScore: analysisQuality.score,
+      riskLevel: risk.level,
+      riskReward: tradePlan.riskReward,
+      backtestWinRate: backtest.winRate,
+      backtestSamples: backtest.samples
+    }
+  };
+  const updatedAt = new Date().toISOString();
+  const dataProvenance = buildMarketDataProvenance({
+    provider: meta.dataProvider || "Yahoo Finance",
+    symbol: asset.symbol,
+    marketTimestamp: primaryFrame.latestTimestamp,
+    retrievedAt: updatedAt,
+    stale: dataHealth.staleFrames.includes(primaryFrame.label)
+  });
 
   return {
     symbol: asset.symbol,
@@ -84,7 +106,8 @@ export async function analyzeSymbol(asset, options = {}) {
     action: recommendation.action,
     actionLabel: recommendation.actionLabel,
     duration: recommendation.duration,
-    updatedAt: new Date().toISOString(),
+    updatedAt,
+    dataProvenance,
     marketState: meta.marketState || "",
     latestVolume,
     averageVolume20: round(indicators.averageVolume20, 2),
@@ -800,6 +823,8 @@ function backtestSignals(closes, highs, lows, volumes) {
     const takeProfit = entry + direction * atrValue * TP1_ATR_MULTIPLE;
     const stopLoss = entry - direction * atrValue * SL_ATR_MULTIPLE;
     let outcome = null;
+    let exitPrice = null;
+    let exitReason = "horizon";
 
     // محاكاة أول ملامسة: أيهما يُلمس أولا، الهدف الأول أم الوقف؟
     for (let step = index + 1; step <= index + horizonDays; step += 1) {
@@ -810,23 +835,25 @@ function backtestSignals(closes, highs, lows, volumes) {
       const hitStop = direction === 1 ? low <= stopLoss : high >= stopLoss;
       const hitTarget = direction === 1 ? high >= takeProfit : low <= takeProfit;
 
-      if (hitStop) { outcome = false; break; } // تحفظي: عند تلامس الاثنين بنفس الشمعة تُحسب خسارة
-      if (hitTarget) { outcome = true; break; }
+      if (hitStop) { outcome = false; exitPrice = stopLoss; exitReason = "stop"; break; } // تحفظي: عند تلامس الاثنين بنفس الشمعة تُحسب خسارة
+      if (hitTarget) { outcome = true; exitPrice = takeProfit; exitReason = "target"; break; }
     }
 
     if (outcome === null) {
-      const exit = closes[index + horizonDays];
-      outcome = direction === 1 ? exit > entry : exit < entry;
+      exitPrice = closes[index + horizonDays];
+      outcome = direction === 1 ? exitPrice > entry : exitPrice < entry;
     }
 
-    const exitPrice = outcome ? takeProfit : stopLoss;
-    const returnPct = pctChange(entry, exitPrice);
-    if (!Number.isFinite(returnPct)) continue;
+    const grossReturnPct = pctChange(entry, exitPrice) * direction;
+    const netReturnPct = grossReturnPct - BACKTEST_TRANSACTION_COST_BPS / 100;
+    if (!Number.isFinite(netReturnPct)) continue;
 
     samples.push({
       action: signal.action,
       success: outcome,
-      returnPct: returnPct * direction
+      returnPct: netReturnPct,
+      grossReturnPct,
+      exitReason
     });
   }
 
@@ -839,12 +866,15 @@ function backtestSignals(closes, highs, lows, volumes) {
       horizonDays,
       tpAtrMultiple: TP1_ATR_MULTIPLE,
       slAtrMultiple: SL_ATR_MULTIPLE,
+      transactionCostBps: BACKTEST_TRANSACTION_COST_BPS,
+      methodology: "walk-forward first-touch; entry indicators use past data only; same-bar collisions count as stop; unresolved trades close at horizon",
       label: "بيانات غير كافية"
     };
   }
 
   const wins = samples.filter((sample) => sample.success).length;
   const avgReturnPct = samples.reduce((sum, sample) => sum + sample.returnPct, 0) / samples.length;
+  const grossAvgReturnPct = samples.reduce((sum, sample) => sum + sample.grossReturnPct, 0) / samples.length;
   const winRate = round((wins / samples.length) * 100, 1);
 
   return {
@@ -852,9 +882,12 @@ function backtestSignals(closes, highs, lows, volumes) {
     wins,
     winRate,
     avgReturnPct: round(avgReturnPct, 2),
+    grossAvgReturnPct: round(grossAvgReturnPct, 2),
     horizonDays,
     tpAtrMultiple: TP1_ATR_MULTIPLE,
     slAtrMultiple: SL_ATR_MULTIPLE,
+    transactionCostBps: BACKTEST_TRANSACTION_COST_BPS,
+    methodology: "walk-forward first-touch; entry indicators use past data only; same-bar collisions count as stop; unresolved trades close at horizon",
     label: `${winRate}% إصابة الهدف الأول`
   };
 }

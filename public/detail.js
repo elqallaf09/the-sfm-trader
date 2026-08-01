@@ -1,4 +1,5 @@
 import { API_TOKEN_STORAGE_KEY } from "./modules/apiClient.js";
+import { setUiState } from "./modules/uiState.js";
 import "./modules/webVitals.js";
 
 const params = new URLSearchParams(window.location.search);
@@ -752,6 +753,9 @@ function renderGeneralInfo(profile, market, item) {
     ${renderInfoRow(detailText("البورصة", "Exchange"), localizeDetailText(profile.exchangeName || item.exchangeName || "--"))}
     ${renderInfoRow(detailText("العملة", "Currency"), profile.currency || item.currency || "--")}
     ${renderInfoRow(detailText("حالة السوق", "Market status"), localizeDetailText(item.marketState || "--"))}
+    ${renderInfoRow(detailText("مصدر بيانات السوق", "Market data source"), item.dataProvenance?.provider || item.dataProvider || "--")}
+    ${renderInfoRow(detailText("وقت بيانات السوق", "Market data time"), item.dataProvenance?.marketTimestamp ? formatDateTime(item.dataProvenance.marketTimestamp) : "--")}
+    ${renderInfoRow(detailText("حالة الحداثة", "Freshness"), detailText(item.dataProvenance?.freshness === "stale" ? "قديمة" : item.dataProvenance?.freshness === "current" ? "حديثة" : "غير معروفة", item.dataProvenance?.freshness || "unknown"))}
     ${renderInfoRow(detailText("ملاحظة المزود", "Provider note"), localizeDetailText(item.providerDelayNote || market.note || "--"))}
     ${renderInfoRow(detailText("حجم التداول النسبي", "Relative volume"), item.relativeVolume ? `${formatNumber(item.relativeVolume, { maximumFractionDigits: 2 })}x` : "--")}
     ${renderInfoRow("VWAP", item.indicators?.vwap ? formatMoney(item.indicators.vwap, item.currency) : "--")}
@@ -777,7 +781,7 @@ function renderTimeframes(timeframes) {
   const frames = timeframes.filter((frame) => wanted.has(frame.id));
 
   if (!frames.length) {
-    elements.timeframes.innerHTML = `<div class="empty">${escapeHtml(detailText("الفريمات غير مكتملة لهذا الرمز حالياً.", "Timeframes are currently incomplete for this symbol."))}</div>`;
+    setUiState(elements.timeframes, { kind: "empty", message: detailText("الفريمات غير مكتملة لهذا الرمز حالياً.", "Timeframes are currently incomplete for this symbol."), compact: true });
     return;
   }
 
@@ -813,7 +817,7 @@ function renderTimeframes(timeframes) {
 function renderOutlook(item) {
   const outlook = item.upsideOutlook || [];
   if (!outlook.length) {
-    elements.outlook.innerHTML = `<div class="empty">${escapeHtml(detailText("لا توجد أهداف شهرية متاحة لهذا الرمز.", "No monthly targets are available for this symbol."))}</div>`;
+    setUiState(elements.outlook, { kind: "empty", message: detailText("لا توجد أهداف شهرية متاحة لهذا الرمز.", "No monthly targets are available for this symbol."), compact: true });
     return;
   }
 
@@ -838,10 +842,20 @@ function renderBacktest(item) {
     ${renderInfoRow(detailText("عدد العينات", "Samples"), item.backtest?.samples ?? "--")}
     ${renderInfoRow(detailText("أفق الاختبار", "Test horizon"), item.backtest?.horizonDays ? detailText(`${item.backtest.horizonDays} يوم`, `${item.backtest.horizonDays} days`) : "--")}
     ${renderInfoRow(detailText("متوسط العائد", "Average return"), Number.isFinite(item.backtest?.avgReturnPct) ? formatPercent(item.backtest.avgReturnPct) : "--")}
+    ${renderInfoRow(detailText("تكلفة التداول المفترضة", "Assumed trading cost"), Number.isFinite(item.backtest?.transactionCostBps) ? `${formatNumber(item.backtest.transactionCostBps)} bps` : "--")}
+    ${renderInfoRow(detailText("المنهجية", "Methodology"), localizeBacktestMethodology(item.backtest?.methodology))}
     ${renderInfoRow(detailText("جودة التحليل", "Analysis quality"), item.analysisQuality ? `${item.analysisQuality.score}% · ${localizeDetailText(item.analysisQuality.label)}` : "--")}
     ${renderInfoRow(detailText("خطة التنفيذ", "Execution plan"), localizeDetailText(item.tradePlan?.note || "--"))}
     ${renderInfoRow(detailText("ملاحظات المخاطرة", "Risk notes"), localizeJoinedList(item.risk?.notes, "--"))}
   `;
+}
+
+function localizeBacktestMethodology(methodology) {
+  if (!methodology) return "--";
+  return detailText(
+    "اختبار walk-forward دون استخدام بيانات مستقبلية؛ تلامس الهدف والوقف في الشمعة نفسها يُحسب كوقف، والصفقة غير المحسومة تُغلق عند نهاية الأفق.",
+    "Walk-forward without future data; a same-bar target/stop collision counts as a stop, and unresolved trades close at the horizon."
+  );
 }
 
 function buildDecision(item) {
@@ -893,7 +907,14 @@ function renderInfoRow(label, value) {
 
 function showError(message) {
   elements.status.textContent = detailText("تعذر التحميل", "Loading failed");
-  document.querySelector("#detail-content").innerHTML = `<div class="empty">${escapeHtml(localizeDetailText(message))}</div>`;
+  setUiState(document.querySelector("#detail-content"), {
+    kind: "error",
+    title: detailText("تعذر تحميل تفاصيل الأصل", "Could not load asset details"),
+    message: localizeDetailText(message),
+    actionLabel: detailText("إعادة المحاولة", "Retry"),
+    actionId: "retry-detail"
+  });
+  document.querySelector('[data-ui-state-action="retry-detail"]')?.addEventListener("click", loadDetail);
   applyDetailLanguage();
 }
 

@@ -42,7 +42,7 @@
         <div class="top-actions">
           <div class="status-pill" aria-live="polite">
             <span class="pulse"></span>
-            <span id="connection-status">جاري الاتصال</span>
+            <span id="connection-status" role="status" aria-live="polite" data-connection-state="updating">جاري الاتصال</span>
           </div>
           <button id="notification-button" class="notification-button" type="button" aria-expanded="false" aria-controls="notification-panel">
             <span>الإشعارات</span>
@@ -231,16 +231,15 @@
             </svg>
           </div>
           <div>
-            <strong>AI PRO</strong>
-            <span>Unlock full power</span>
-            <button id="sidebar-upgrade-btn" type="button">Upgrade Now</button>
+            <strong>SFM ACCESS</strong>
+            <span>Private authenticated build</span>
           </div>
         </div>
         <div class="sidebar-user-card">
           <div class="sidebar-avatar" aria-hidden="true">SFM</div>
           <div class="sidebar-user-info">
             <strong id="sidebar-user-name" data-brand-title>اس اف ام المحلل الذكي</strong>
-            <span>Premium Member</span>
+            <span>Authenticated user</span>
           </div>
 <span class="sidebar-online-dot" role="status" aria-label="متصل" title="Online"></span>
         </div>
@@ -385,8 +384,8 @@
               <span>Plan</span>
               <strong>الاشتراك والخطة</strong>
             </div>
-            <div class="settings-plan-badge">Private Trader</div>
-            <p>نسخة خاصة للتطوير والمتابعة قبل النشر العام.</p>
+            <div class="settings-plan-badge">Private Access</div>
+            <p>لا توجد باقة مدفوعة أو ترقية مفعلة في هذه النسخة.</p>
           </section>
 
           <section class="settings-card settings-card-wide">
@@ -1020,7 +1019,7 @@
               <p id="disclaimer">هذه تحليلات آلية تعليمية وليست نصيحة مالية.</p>
             </div>
             <div class="recommendation-card-actions">
-              <div id="loading-indicator" class="loading-indicator">تحميل</div>
+              <div id="loading-indicator" class="loading-indicator" role="status" aria-live="polite">تحميل</div>
             </div>
           </div>
 
@@ -1076,7 +1075,7 @@
           </aside>
         </section>
 
-        <section id="temporary-legal-notices" class="temporary-legal-notices" aria-label="تنبيهات داخلية مؤقتة">
+        <section id="temporary-legal-notices" class="temporary-legal-notices" aria-label="تنبيهات قانونية مهمة">
           <article class="terminal-legal-notice" data-legal-notice="risk">
             <span class="notice-icon notice-icon-shield" aria-hidden="true">
               <svg viewBox="0 0 24 24">
@@ -1132,6 +1131,7 @@
 
       <footer class="site-footer" aria-label="توقيع المنصة">
         <span data-brand-title>اس اف ام المحلل الذكي</span>
+        <nav class="legal-links" aria-label="روابط قانونية"><a href="/risk-disclosure.html">المخاطر</a><a href="/privacy.html">الخصوصية</a><a href="/terms.html">الشروط</a></nav>
         <strong>Powered by M.ALQ</strong>
       </footer>
 
@@ -1330,6 +1330,8 @@
           <div class="meta-row">
             <span class="duration"></span>
             <span class="expected-move"></span>
+            <span class="data-source"></span>
+            <span class="data-freshness"></span>
           </div>
           <ul class="reasons"></ul>
         </div>
@@ -1339,11 +1341,6 @@
     <script src="/app.js?v=20260624-no-welcome-hero" type="module"></script>
   </body>
 </html>
-
-
-
-
-
 
 
 

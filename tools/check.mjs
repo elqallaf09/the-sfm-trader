@@ -15,15 +15,18 @@ const syntaxFiles = [
   "src/postgresStore.mjs",
   "src/staticServer.mjs",
   "src/metrics.mjs",
+  "src/marketDataProvenance.mjs",
   "public/app.js",
   "public/detail.js",
   "public/modules/apiClient.js",
   "public/modules/polling.js",
+  "public/modules/uiState.js",
   "public/modules/webVitals.js",
   "tools/set-ios-server-url.mjs",
   "tools/smoke.mjs",
   "tools/migrate.mjs",
   "tools/production-preflight.mjs",
+  "tools/normalize-terminal-css.mjs",
   "tests/postgres.integration.mjs"
 ];
 
@@ -99,6 +102,7 @@ const appSource = readFileSync("public/app.js", "utf8");
 const detailSource = readFileSync("public/detail.js", "utf8");
 const serviceWorkerSource = readFileSync("public/service-worker.js", "utf8");
 const indexSource = readFileSync("public/index.html", "utf8");
+const stylesSource = readFileSync("public/styles.css", "utf8");
 const capacitorConfig = JSON.parse(readFileSync("capacitor.config.json", "utf8"));
 if (!serverSource.includes("requireIdentity(request, response)") || serverSource.includes('"access-control-allow-origin": "*"')) {
   failed = true;
@@ -135,6 +139,12 @@ if (!serviceWorkerSource.includes("Promise.allSettled") || !serviceWorkerSource.
   console.error("[pwa resilience failed] service worker must tolerate partial precache failures and cache only same-origin basic responses");
 } else {
   console.log("[pwa resilience ok] service worker uses resilient and origin-safe caching");
+}
+if (/\.loading-indicator\s*\{[^}]*display\s*:\s*none\s*!important/i.test(stylesSource)) {
+  failed = true;
+  console.error("[ux state failed] loading status must remain visible");
+} else {
+  console.log("[ux state ok] loading status remains visible");
 }
 if (capacitorConfig.server?.cleartext || /^http:\/\//i.test(capacitorConfig.server?.url || "")) {
   failed = true;

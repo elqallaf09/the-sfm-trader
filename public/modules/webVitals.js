@@ -1,3 +1,5 @@
+import { API_TOKEN_STORAGE_KEY } from "./apiClient.js";
+
 const supported = typeof PerformanceObserver !== "undefined";
 const latest = new Map();
 
@@ -6,9 +8,12 @@ function report(name, value, rating) {
   const key = `${name}:${Math.round(value)}`;
   if (latest.get(name) === key) return;
   latest.set(name, key);
+  const token = window.sessionStorage.getItem(API_TOKEN_STORAGE_KEY);
+  const headers = new Headers({ "content-type": "application/json" });
+  if (token) headers.set("authorization", `Bearer ${token}`);
   fetch("/api/telemetry/web-vitals", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers,
     body: JSON.stringify({ name, value, rating, page: window.location.pathname }),
     keepalive: true
   }).catch(() => {});
