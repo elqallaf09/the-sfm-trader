@@ -12,6 +12,7 @@ import { applyEconomicNewsOverlayToRecommendations, getEconomicCalendarForMarket
 import { getMarketSummaries, markets } from "./src/markets.mjs";
 import { createUserFileStore } from "./src/fileStore.mjs";
 import { createSecurity, securityHeaders } from "./src/security.mjs";
+import { configureHttpServer, readJsonBody } from "./src/http.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -289,10 +290,17 @@ const server = http.createServer(async (request, response) => {
 
     return await serveStatic(response, url.pathname);
   } catch (error) {
-    console.error("[server error]", error);
+    const statusCode = Number(error.statusCode || 500);
+    if (statusCode >= 500) console.error("[server error]", error);
     const safe = /^[؀-ۿ\w\s،.]{1,120}$/.test(error.message) ? error.message : "حدث خطأ غير متوقع";
-    return sendJson(response, { error: safe }, Number(error.statusCode || 500), request);
+    return sendJson(response, { error: safe }, statusCode, request);
   }
+});
+configureHttpServer(server, {
+  requestTimeoutMs: process.env.SFM_REQUEST_TIMEOUT_MS,
+  headersTimeoutMs: process.env.SFM_HEADERS_TIMEOUT_MS,
+  keepAliveTimeoutMs: process.env.SFM_KEEP_ALIVE_TIMEOUT_MS,
+  maxRequestsPerSocket: process.env.SFM_MAX_REQUESTS_PER_SOCKET
 });
 
 function requireIdentity(request, response) {
@@ -321,7 +329,7 @@ startServer(preferredPort);
 
 function startServer(port, attempt = 0) {
   server.once("error", (error) => {
-    if (error.code === "EADDRINUSE" && attempt < 20) {
+    if (!production && error.code === "EADDRINUSE" && attempt < 20) {
       const nextPort = port + 1;
       console.log(`Port ${port} is busy. Trying http://localhost:${nextPort}`);
       startServer(nextPort, attempt + 1);
@@ -334,6 +342,21 @@ function startServer(port, attempt = 0) {
 
   server.listen(port, () => {
     console.log(`the-sfm trader is running on http://localhost:${port}`);
+  });
+}
+
+let shuttingDown = false;
+for (const signal of ["SIGTERM", "SIGINT"]) {
+  process.once(signal, () => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    const forcedExit = setTimeout(() => process.exit(1), 10_000);
+    forcedExit.unref();
+    server.close((error) => {
+      clearTimeout(forcedExit);
+      if (error) console.error("[shutdown error]", error);
+      process.exit(error ? 1 : 0);
+    });
   });
 }
 
@@ -2380,27 +2403,6 @@ function encodeCachedStaticBody(request, cachedAsset, extension) {
   if (!compressible || !acceptsBrotli || cachedAsset.file.length < 1024) return { body: cachedAsset.file, compressed: false };
   cachedAsset.brotli ||= brotliCompressSync(cachedAsset.file, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 4 } });
   return { body: cachedAsset.brotli, compressed: true };
-}
-
-async function readJsonBody(request) {
-  let body = "";
-  for await (const chunk of request) {
-    body += chunk;
-    if (body.length > 1_000_000) {
-      const error = new Error("حجم الطلب أكبر من المسموح");
-      error.statusCode = 413;
-      throw error;
-    }
-  }
-
-  if (!body.trim()) return {};
-  try {
-    return JSON.parse(body);
-  } catch {
-    const error = new Error("صيغة الطلب غير صالحة");
-    error.statusCode = 400;
-    throw error;
-  }
 }
 
 function sendJson(response, payload, status = 200, request = null) {
