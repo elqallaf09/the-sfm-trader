@@ -1,4 +1,16 @@
-﻿const marketTabs = document.querySelector("#market-tabs");
+﻿const API_TOKEN_STORAGE_KEY = "the-sfm-trader-api-token";
+const nativeFetch = window.fetch.bind(window);
+window.fetch = (input, init = {}) => {
+  const url = typeof input === "string" ? input : input?.url || "";
+  const sameOriginApi = url.startsWith("/api/") || url.startsWith(`${window.location.origin}/api/`);
+  if (!sameOriginApi) return nativeFetch(input, init);
+  const token = window.localStorage.getItem(API_TOKEN_STORAGE_KEY) || "";
+  const headers = new Headers(init.headers || (typeof input !== "string" ? input.headers : undefined));
+  if (token) headers.set("authorization", `Bearer ${token}`);
+  return nativeFetch(input, { ...init, headers });
+};
+
+const marketTabs = document.querySelector("#market-tabs");
 const introOverlay = document.querySelector("#intro-overlay");
 const introGreeting = document.querySelector("#intro-greeting");
 const introMessage = document.querySelector("#intro-message");
@@ -52,6 +64,7 @@ const settingsForm = document.querySelector("#settings-form");
 const settingsLanguage = document.querySelector("#settings-language");
 const settingsLanguageChoices = Array.from(document.querySelectorAll("[data-language-option]"));
 const settingsDisplayName = document.querySelector("#settings-display-name");
+const settingsApiToken = document.querySelector("#settings-api-token");
 const settingsPreview = document.querySelector("#settings-preview");
 const settingsEyebrow = document.querySelector("#settings-eyebrow");
 const settingsTitle = document.querySelector("#settings-title");
@@ -1421,9 +1434,21 @@ async function init() {
 
   await loadMarkets();
   await loadRecommendations({ force: true });
-  timer = window.setInterval(() => loadRecommendations({ background: true }), RECOMMENDATIONS_REFRESH_MS);
-  watchlistTimer = window.setInterval(() => loadWatchlistData(), WATCHLIST_REFRESH_MS);
-  sharedTradePollTimer = window.setInterval(() => loadSharedTradeState({ poll: true }), SHARED_TRADE_POLL_MS);
+  timer = window.setInterval(() => {
+    if (!document.hidden) loadRecommendations({ background: true });
+  }, RECOMMENDATIONS_REFRESH_MS);
+  watchlistTimer = window.setInterval(() => {
+    if (!document.hidden) loadWatchlistData();
+  }, WATCHLIST_REFRESH_MS);
+  sharedTradePollTimer = window.setInterval(() => {
+    if (!document.hidden) loadSharedTradeState({ poll: true });
+  }, SHARED_TRADE_POLL_MS);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      loadRecommendations({ background: true });
+      loadSharedTradeState({ poll: true });
+    }
+  });
   refreshButton.addEventListener("click", () => loadRecommendations({ force: true }));
   notificationButton?.addEventListener("click", toggleNotificationPanel);
   mobileNotificationButton?.addEventListener("click", toggleNotificationPanel);
@@ -1470,7 +1495,11 @@ async function init() {
   for (const button of document.querySelectorAll(".filter-button")) {
     button.addEventListener("click", () => {
       activeFilter = button.dataset.filter;
-      document.querySelectorAll(".filter-button").forEach((item) => item.classList.toggle("active", item === button));
+      document.querySelectorAll(".filter-button").forEach((item) => {
+        const selected = item === button;
+        item.classList.toggle("active", selected);
+        item.setAttribute("aria-selected", String(selected));
+      });
       renderRecommendations(lastData);
     });
   }
@@ -1869,6 +1898,9 @@ function initSettingsPanel() {
       displayName: settingsDisplayName?.value
     });
     saveStored(APP_SETTINGS_STORAGE_KEY, appSettings);
+    const apiToken = String(settingsApiToken?.value || "").trim();
+    if (apiToken) window.localStorage.setItem(API_TOKEN_STORAGE_KEY, apiToken);
+    else window.localStorage.removeItem(API_TOKEN_STORAGE_KEY);
     applyAppSettings();
     refreshLocalizedDynamicInterface();
     setSettingsPanelOpen(false);
@@ -1930,6 +1962,7 @@ function setSettingsPanelOpen(open) {
 function syncSettingsForm() {
   if (settingsLanguage) settingsLanguage.value = getAppLanguage();
   if (settingsDisplayName) settingsDisplayName.value = getUserDisplayName();
+  if (settingsApiToken) settingsApiToken.value = window.localStorage.getItem(API_TOKEN_STORAGE_KEY) || "";
   syncLanguageChoices();
   updateSettingsPreview();
 }
@@ -7076,7 +7109,9 @@ function setActiveMarketButton() {
 
 function setActiveShariaFilterButton() {
   for (const button of document.querySelectorAll(".sharia-filter-button")) {
-    button.classList.toggle("active", button.dataset.shariaFilter === activeShariaFilter);
+    const selected = button.dataset.shariaFilter === activeShariaFilter;
+    button.classList.toggle("active", selected);
+    button.setAttribute("aria-selected", String(selected));
   }
 }
 
@@ -8842,21 +8877,13 @@ function updateRightPanelNews() {
   const newsEl = document.getElementById("rdp-news-list");
   if (!newsEl || newsEl.dataset.populated === "1") return;
 
-  const staticNews = [
-    { title: "Fed Signals Potential Rate Cut in Q3 2025", time: "5 minutes ago", impact: "high" },
-    { title: "AI Stocks Lead Tech Market Rally", time: "12 minutes ago", impact: "medium" },
-    { title: "Gulf Markets Open Higher on Oil Gains", time: "18 minutes ago", impact: "medium" },
-    { title: "Oil Prices Rise on Geopolitical Tensions", time: "24 minutes ago", impact: "high" },
-  ];
-  newsEl.innerHTML = staticNews.map((n) => `
-    <div class="rdp-news-item">
-      <div class="rdp-news-dot">📰</div>
-      <div class="rdp-news-text">
-        <p>${escapeHtml(n.title)}</p>
-        <span>${escapeHtml(n.time)}</span>
-      </div>
-      <span class="rdp-news-impact ${n.impact}">${n.impact === "high" ? "HIGH IMPACT" : "MED IMPACT"}</span>
-    </div>`).join("");
+  newsEl.innerHTML = `<div class="rdp-news-item rdp-news-unavailable">
+    <div class="rdp-news-dot" aria-hidden="true">i</div>
+    <div class="rdp-news-text">
+      <p>${escapeHtml(localizeUiText("لا توجد أخبار حية موثقة الآن"))}</p>
+      <span>${escapeHtml(localizeUiText("تظهر هنا فقط الأخبار المؤرخة والواردة من مزود موثوق."))}</span>
+    </div>
+  </div>`;
   newsEl.dataset.populated = "1";
 }
 
@@ -9486,9 +9513,6 @@ function updateMarketOverviewBubbles(all = []) {
     sfmFinalRenderRecommendations(data);
   };
 })();
-
-
-
 
 
 

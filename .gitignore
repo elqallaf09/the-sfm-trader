@@ -2,6 +2,7 @@ node_modules/
 .DS_Store
 
 # Local runtime data
+.data/
 the-sfm-trader-notifications.json
 the-sfm-trader-shared-state.json
 the-sfm-trader-server*.log

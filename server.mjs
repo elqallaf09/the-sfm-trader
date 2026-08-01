@@ -1,20 +1,25 @@
 ﻿import http from "node:http";
 import { spawn } from "node:child_process";
+import crypto from "node:crypto";
+import { brotliCompressSync, constants as zlibConstants } from "node:zlib";
 import { existsSync, readFileSync } from "node:fs";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { analyzeSymbol } from "./src/analysis.mjs";
 import { getConfiguredProvider } from "./src/dataProviders.mjs";
 import { applyEconomicNewsOverlayToRecommendations, getEconomicCalendarForMarket } from "./src/economicCalendar.mjs";
 import { getMarketSummaries, markets } from "./src/markets.mjs";
+import { createUserFileStore } from "./src/fileStore.mjs";
+import { createSecurity, securityHeaders } from "./src/security.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const publicDir = path.join(__dirname, "public");
-const sharedStatePath = path.join(__dirname, "the-sfm-trader-shared-state.json");
-const notificationLogPath = path.join(__dirname, "the-sfm-trader-notifications.json");
 loadEnvFile(path.join(__dirname, ".env"));
+const production = process.env.NODE_ENV === "production";
+const security = createSecurity({ production });
+const userStore = createUserFileStore(process.env.SFM_DATA_DIR || path.join(__dirname, ".data"));
 const preferredPort = Number(process.env.PORT || 4173);
 const cache = new Map();
 const CACHE_TTL_MS = 90_000;
@@ -50,6 +55,7 @@ const canonicalMarketPriority = [
   "asia"
 ];
 const symbolExecutionMarketCache = new Map();
+const readOnlyApiPaths = new Set(["/api/health", "/api/markets", "/api/recommendations", "/api/economic-calendar", "/api/watchlist", "/api/asset", "/api/ollama-status"]);
 const symbolAliases = {
   APPLE: "AAPL",
   APPL: "AAPL",
@@ -189,6 +195,33 @@ function loadEnvFile(filePath) {
 const server = http.createServer(async (request, response) => {
   try {
     const url = new URL(request.url, `http://${request.headers.host}`);
+    const requestId = request.headers["x-request-id"] || crypto.randomUUID();
+    response.setHeader("x-request-id", requestId);
+    if (request.method === "OPTIONS") return handleOptions(request, response);
+    if (url.pathname.startsWith("/api/")) {
+      if (request.headers.origin && !security.corsOrigin(request)) {
+        return sendJson(response, { error: "Origin not allowed" }, 403, request);
+      }
+      const rateScope = ["/api/recommendations", "/api/watchlist", "/api/asset", "/api/voice-command"].includes(url.pathname) ? "analysis" : "default";
+      const rate = security.checkRateLimit(request, rateScope);
+      response.setHeader("x-ratelimit-remaining", String(rate.remaining));
+      response.setHeader("x-ratelimit-reset", String(Math.ceil(rate.resetAt / 1000)));
+      if (!rate.allowed) return sendJson(response, { error: "طلبات كثيرة جدًا. حاول بعد قليل." }, 429, request);
+    }
+
+    if (url.pathname === "/api/health") {
+      return sendJson(response, {
+        ok: true,
+        service: "the-sfm-trader",
+        authentication: production ? "required" : "development",
+        configuredUsers: security.configuredUsers,
+        timestamp: new Date().toISOString()
+      }, 200, request);
+    }
+
+    if (readOnlyApiPaths.has(url.pathname) && request.method !== "GET") {
+      return sendJson(response, { error: "Method not allowed" }, 405, request);
+    }
 
     if (url.pathname === "/api/markets") {
       return sendJson(response, {
@@ -219,11 +252,15 @@ const server = http.createServer(async (request, response) => {
     }
 
     if (url.pathname === "/api/followed-trades") {
-      return await handleFollowedTrades(request, response);
+      const identity = requireIdentity(request, response);
+      if (!identity) return;
+      return await handleFollowedTrades(request, response, identity.userId);
     }
 
     if (url.pathname === "/api/notifications") {
-      return await handleNotifications(request, response);
+      const identity = requireIdentity(request, response);
+      if (!identity) return;
+      return await handleNotifications(request, response, identity.userId);
     }
 
     if (url.pathname === "/api/asset") {
@@ -236,17 +273,45 @@ const server = http.createServer(async (request, response) => {
     }
 
     if (url.pathname === "/api/voice-command" && request.method === "POST") {
+      const identity = requireIdentity(request, response);
+      if (!identity) return;
       const payload = await readJsonBody(request);
       return await handleVoiceCommand(response, payload);
+    }
+
+    if (url.pathname.startsWith("/api/")) {
+      return sendJson(response, { error: "API endpoint not found" }, 404, request);
     }
 
     return await serveStatic(response, url.pathname);
   } catch (error) {
     console.error("[server error]", error);
     const safe = /^[؀-ۿ\w\s،.]{1,120}$/.test(error.message) ? error.message : "حدث خطأ غير متوقع";
-    return sendJson(response, { error: safe }, 500);
+    return sendJson(response, { error: safe }, Number(error.statusCode || 500), request);
   }
 });
+
+function requireIdentity(request, response) {
+  const identity = security.authenticate(request);
+  if (!identity) {
+    sendJson(response, { error: "المصادقة مطلوبة" }, 401, request);
+    return null;
+  }
+  return identity;
+}
+
+function handleOptions(request, response) {
+  const origin = security.corsOrigin(request);
+  if (request.headers.origin && !origin) return sendJson(response, { error: "Origin not allowed" }, 403, request);
+  response.writeHead(204, {
+    ...securityHeaders("text/plain; charset=utf-8", { hsts: production }),
+    ...(origin ? { "access-control-allow-origin": origin, vary: "Origin" } : {}),
+    "access-control-allow-methods": "GET,POST,DELETE,OPTIONS",
+    "access-control-allow-headers": "authorization,content-type,x-request-id",
+    "access-control-max-age": "600"
+  });
+  response.end();
+}
 
 startServer(preferredPort);
 
@@ -796,9 +861,9 @@ function completeWatchlistJobInBackground(cacheKey, assets, job, economicCalenda
   });
 }
 
-async function handleFollowedTrades(request, response) {
+async function handleFollowedTrades(request, response, userId) {
   if (request.method === "GET") {
-    return sendJson(response, await readSharedTradeState());
+    return sendJson(response, await readSharedTradeState(userId), 200, request);
   }
 
   if (request.method !== "POST") {
@@ -807,23 +872,17 @@ async function handleFollowedTrades(request, response) {
 
   const payload = await readJsonBody(request);
   const state = normalizeSharedTradeState(payload);
-  await writeSharedTradeState(state);
-  return sendJson(response, state);
+  await writeSharedTradeState(userId, state);
+  return sendJson(response, state, 200, request);
 }
 
-async function readSharedTradeState() {
-  try {
-    const raw = await readFile(sharedStatePath, "utf8");
-    return normalizeSharedTradeState(JSON.parse(raw));
-  } catch {
-    return normalizeSharedTradeState({});
-  }
+async function readSharedTradeState(userId) {
+  return normalizeSharedTradeState(await userStore.read(userId, "followed-trades", {}));
 }
 
-async function writeSharedTradeState(state) {
+async function writeSharedTradeState(userId, state) {
   const normalized = normalizeSharedTradeState(state);
-  await writeFile(sharedStatePath, `${JSON.stringify(normalized, null, 2)}\n`, "utf8");
-  return normalized;
+  return userStore.write(userId, "followed-trades", normalized);
 }
 
 function normalizeSharedTradeState(payload = {}) {
@@ -922,15 +981,15 @@ function normalizeIsoDate(value) {
   return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
 }
 
-async function handleNotifications(request, response) {
+async function handleNotifications(request, response, userId) {
   if (request.method === "GET") {
-    return sendJson(response, await readNotificationLog());
+    return sendJson(response, await readNotificationLog(userId), 200, request);
   }
 
   if (request.method === "DELETE") {
     const cleared = { notifications: [], updatedAt: new Date().toISOString() };
-    await writeNotificationLog(cleared.notifications);
-    return sendJson(response, cleared);
+    await writeNotificationLog(userId, cleared.notifications);
+    return sendJson(response, cleared, 200, request);
   }
 
   if (request.method !== "POST") {
@@ -939,36 +998,27 @@ async function handleNotifications(request, response) {
 
   const payload = await readJsonBody(request);
   const notifications = normalizeNotificationLog(payload.notifications || []);
-  await writeNotificationLog(notifications);
+  await writeNotificationLog(userId, notifications);
   return sendJson(response, {
     notifications,
     updatedAt: new Date().toISOString()
-  });
+  }, 200, request);
 }
 
-async function readNotificationLog() {
-  try {
-    const raw = await readFile(notificationLogPath, "utf8");
-    const parsed = JSON.parse(raw);
-    return {
-      notifications: normalizeNotificationLog(parsed.notifications || []),
-      updatedAt: parsed.updatedAt || new Date().toISOString()
-    };
-  } catch {
-    return {
-      notifications: [],
-      updatedAt: new Date().toISOString()
-    };
-  }
+async function readNotificationLog(userId) {
+  const parsed = await userStore.read(userId, "notifications", {});
+  return {
+    notifications: normalizeNotificationLog(parsed.notifications || []),
+    updatedAt: parsed.updatedAt || new Date().toISOString()
+  };
 }
 
-async function writeNotificationLog(notifications) {
+async function writeNotificationLog(userId, notifications) {
   const payload = {
     notifications: normalizeNotificationLog(notifications),
     updatedAt: new Date().toISOString()
   };
-  await writeFile(notificationLogPath, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
-  return payload;
+  return userStore.write(userId, "notifications", payload);
 }
 
 function normalizeNotificationLog(notifications) {
@@ -2288,15 +2338,21 @@ async function serveStatic(response, pathname) {
   try {
     const file = await readFile(requestedPath);
     const ext = path.extname(requestedPath);
+    const html = ext === ".html";
+    const longLived = [".png", ".jpg", ".jpeg", ".svg", ".ico", ".woff", ".woff2"].includes(ext);
+    const encoded = encodeResponseBody(response.req, file, ext);
     response.writeHead(200, {
-      "content-type": mimeTypes[ext] || "application/octet-stream",
-      "cache-control": "no-store"
+      ...securityHeaders(mimeTypes[ext] || "application/octet-stream", { html, hsts: production }),
+      "cache-control": html ? "no-cache" : longLived ? "public, max-age=31536000, immutable" : "public, max-age=300, stale-while-revalidate=86400",
+      ...(encoded.compressed ? { "content-encoding": "br", vary: "Accept-Encoding" } : {})
     });
-    response.end(file);
+    response.end(encoded.body);
   } catch {
+    if (path.extname(requestedPath)) return sendText(response, "Not found", 404);
     const fallback = await readFile(path.join(publicDir, "index.html"));
-    response.writeHead(200, { "content-type": mimeTypes[".html"], "cache-control": "no-store" });
-    response.end(fallback);
+    const encoded = encodeResponseBody(response.req, fallback, ".html");
+    response.writeHead(200, { ...securityHeaders(mimeTypes[".html"], { html: true, hsts: production }), "cache-control": "no-cache", ...(encoded.compressed ? { "content-encoding": "br", vary: "Accept-Encoding" } : {}) });
+    response.end(encoded.body);
   }
 }
 
@@ -2305,7 +2361,9 @@ async function readJsonBody(request) {
   for await (const chunk of request) {
     body += chunk;
     if (body.length > 1_000_000) {
-      throw new Error("حجم الطلب أكبر من المسموح");
+      const error = new Error("حجم الطلب أكبر من المسموح");
+      error.statusCode = 413;
+      throw error;
     }
   }
 
@@ -2313,20 +2371,36 @@ async function readJsonBody(request) {
   try {
     return JSON.parse(body);
   } catch {
-    throw new Error("صيغة الطلب غير صالحة");
+    const error = new Error("صيغة الطلب غير صالحة");
+    error.statusCode = 400;
+    throw error;
   }
 }
 
-function sendJson(response, payload, status = 200) {
+function sendJson(response, payload, status = 200, request = null) {
+  const activeRequest = request || response.req;
+  const origin = activeRequest ? security.corsOrigin(activeRequest) : "";
+  const encoded = encodeResponseBody(activeRequest, Buffer.from(JSON.stringify(payload)), ".json");
   response.writeHead(status, {
-    "content-type": "application/json; charset=utf-8",
+    ...securityHeaders("application/json; charset=utf-8", { hsts: production }),
     "cache-control": "no-store",
-    "access-control-allow-origin": "*"
+    ...(origin ? { "access-control-allow-origin": origin, vary: "Origin, Accept-Encoding" } : encoded.compressed ? { vary: "Accept-Encoding" } : {}),
+    ...(encoded.compressed ? { "content-encoding": "br" } : {})
   });
-  response.end(JSON.stringify(payload));
+  response.end(encoded.body);
 }
 
 function sendText(response, text, status = 200) {
-  response.writeHead(status, { "content-type": "text/plain; charset=utf-8" });
+  response.writeHead(status, securityHeaders("text/plain; charset=utf-8", { hsts: production }));
   response.end(text);
+}
+
+function encodeResponseBody(request, body, extension) {
+  const compressible = [".html", ".css", ".js", ".json", ".svg", ".webmanifest"].includes(extension);
+  const acceptsBrotli = /(?:^|,)\s*br\s*(?:,|$)/i.test(String(request?.headers?.["accept-encoding"] || ""));
+  if (!compressible || !acceptsBrotli || body.length < 1024) return { body, compressed: false };
+  return {
+    body: brotliCompressSync(body, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 4 } }),
+    compressed: true
+  };
 }
