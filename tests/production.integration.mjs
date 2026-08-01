@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import net from "node:net";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 
 const token = "integration-private-token-123456789";
 const port = await getFreePort();
 const baseUrl = `http://127.0.0.1:${port}`;
+const dataDir = await mkdtemp(path.join(tmpdir(), "sfm-production-integration-"));
 const output = [];
 const child = spawn(process.execPath, ["server.mjs"], {
   cwd: process.cwd(),
@@ -14,6 +18,8 @@ const child = spawn(process.execPath, ["server.mjs"], {
     PORT: String(port),
     SFM_AUTH_TOKENS: JSON.stringify({ [token]: "integration-user" }),
     SFM_ALLOWED_ORIGINS: "https://trader.the-sfm.com",
+    SFM_STORAGE_DRIVER: "file",
+    SFM_DATA_DIR: dataDir,
     OLLAMA_ENABLED: "false"
   },
   stdio: ["ignore", "pipe", "pipe", "ipc"]
@@ -35,10 +41,44 @@ try {
   const unauthorized = await fetch(`${baseUrl}/api/followed-trades`);
   assert.equal(unauthorized.status, 401);
 
+  const unauthorizedMetrics = await fetch(`${baseUrl}/api/metrics`);
+  assert.equal(unauthorizedMetrics.status, 401);
+
   const authorized = await fetch(`${baseUrl}/api/followed-trades`, {
     headers: { authorization: `Bearer ${token}` }
   });
   assert.equal(authorized.status, 200);
+  assert.equal(authorized.headers.get("x-state-version"), "0");
+
+  const mutationHeaders = {
+    authorization: `Bearer ${token}`,
+    "content-type": "application/json",
+    "if-match": '"0"',
+    "idempotency-key": "integration-request-0001"
+  };
+  const statePayload = JSON.stringify({ followedTradeKeys: ["AAPL:buy"], followedEntries: [] });
+  const createdState = await fetch(`${baseUrl}/api/followed-trades`, { method: "POST", headers: mutationHeaders, body: statePayload });
+  assert.equal(createdState.status, 200);
+  assert.equal(createdState.headers.get("x-state-version"), "1");
+  const replayedState = await fetch(`${baseUrl}/api/followed-trades`, { method: "POST", headers: mutationHeaders, body: statePayload });
+  assert.equal(replayedState.status, 200);
+  assert.equal(replayedState.headers.get("idempotency-replayed"), "true");
+  const conflictState = await fetch(`${baseUrl}/api/followed-trades`, {
+    method: "POST",
+    headers: { ...mutationHeaders, "idempotency-key": "integration-request-0002" },
+    body: JSON.stringify({ followedTradeKeys: ["MSFT:buy"], followedEntries: [] })
+  });
+  assert.equal(conflictState.status, 409);
+
+  const vital = await fetch(`${baseUrl}/api/telemetry/web-vitals`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+    body: JSON.stringify({ name: "LCP", value: 1800, rating: "good", page: "/" })
+  });
+  assert.equal(vital.status, 202);
+  const metrics = await fetch(`${baseUrl}/api/metrics`, { headers: { authorization: `Bearer ${token}` } });
+  assert.equal(metrics.status, 200);
+  assert.equal((await metrics.json()).webVitals[0].name, "LCP");
 
   const blockedOrigin = await fetch(`${baseUrl}/api/markets`, {
     headers: { origin: "https://attacker.example" }
@@ -70,9 +110,11 @@ try {
   child.send({ type: "shutdown" });
   const result = await exit;
   assert.equal(result.code, 0);
+  await rm(dataDir, { recursive: true, force: true });
   console.log("Production integration passed.");
 } catch (error) {
   if (child.exitCode === null) child.kill("SIGKILL");
+  await rm(dataDir, { recursive: true, force: true }).catch(() => {});
   console.error(output.join(""));
   throw error;
 }

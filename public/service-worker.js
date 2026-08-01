@@ -1,4 +1,4 @@
-const CACHE_NAME = "the-sfm-trader-v20260801-hardening-4";
+const CACHE_NAME = "the-sfm-trader-v20260801-roadmap-1";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -8,6 +8,9 @@ const STATIC_ASSETS = [
   "/cinema.css?v=20260801-hardening-2",
   "/app.js",
   "/detail.js",
+  "/modules/apiClient.js",
+  "/modules/polling.js",
+  "/modules/webVitals.js",
   "/manifest.webmanifest",
   "/assets/sfm-trader-logo.svg",
   "/the-sfm-trader-icon-256.png",

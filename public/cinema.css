@@ -255,13 +255,11 @@ body::after {
 
 /* ── 9. Sparklines — glowing chart lines ────────────────────── */
 .live-pulse-sparkline polyline,
-.home-rec-sparkline polyline,
 .sparkline polyline {
   filter: drop-shadow(0 0 3px var(--cin-green)) !important;
 }
 
-.is-down .live-pulse-sparkline polyline,
-.sell .home-rec-sparkline polyline {
+.is-down .live-pulse-sparkline polyline {
   filter: drop-shadow(0 0 3px var(--cin-red)) !important;
 }
 
@@ -598,8 +596,7 @@ body::after {
 }
 
 /* ── 30. AI Agent / Voice rail button ───────────────────────── */
-.rail-voice,
-.rail-ai-card {
+.rail-voice {
   background:
     radial-gradient(circle at 50% 28%, rgba(0,180,255,0.35), rgba(3,10,18,0.9)) !important;
   border-color: rgba(0,180,255,0.7) !important;
