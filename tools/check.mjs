@@ -9,6 +9,7 @@ const syntaxFiles = [
   "src/economicCalendar.mjs",
   "src/security.mjs",
   "src/fileStore.mjs",
+  "src/http.mjs",
   "public/app.js",
   "public/detail.js",
   "tools/set-ios-server-url.mjs",
