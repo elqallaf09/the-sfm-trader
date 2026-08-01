@@ -22,6 +22,8 @@ const syntaxFiles = [
   "public/modules/webVitals.js",
   "tools/set-ios-server-url.mjs",
   "tools/smoke.mjs",
+  "tools/migrate.mjs",
+  "tools/production-preflight.mjs",
   "tests/postgres.integration.mjs"
 ];
 

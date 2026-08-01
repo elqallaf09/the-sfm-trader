@@ -41,6 +41,17 @@ npm start
 npm run smoke
 ```
 
+## نشر Production
+
+يوفر `Dockerfile` صورة تشغيل غير root، ويشغّل فحص إعدادات الإنتاج والترحيلات الآمنة قبل بدء الخدمة. ملف `render.yaml` ينشئ خدمة الويب وقاعدة PostgreSQL، لكنه يتطلب إدخال `SFM_AUTH_TOKENS` و`SFM_ALLOWED_ORIGINS` كأسرار في لوحة Render.
+
+```bash
+npm run preflight:production
+npm run migrate
+```
+
+يسجل مشغّل الترحيلات checksum لكل ملف داخل `sfm_schema_migrations`، ويمنع تشغيل ترحيلين بالتزامن باستخدام PostgreSQL advisory lock. لا تعدّل ملف ترحيل سبق تطبيقه؛ أضف ملفًا جديدًا بدلًا منه.
+
 يشمل `npm run verify` اختبار تكامل Production يشغل خادماً مؤقتاً ويتحقق من المصادقة وCORS ورؤوس الأمان وETag والإغلاق الآمن. لا يحتاج الاختبار إلى أسرار حقيقية أو اتصال بمزود بيانات خارجي.
 
 يعمل CI تلقائيا على كل Pull Request ويشغل فحص الصياغة واختبارات الوحدة وتدقيق الاعتماديات. نقطة فحص الخدمة: `/api/health`.

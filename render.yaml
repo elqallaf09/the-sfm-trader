@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: the-sfm-trader
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: frankfurt
+    healthCheckPath: /api/ready
+    autoDeployTrigger: checksPass
+    preDeployCommand: node tools/production-preflight.mjs && node tools/migrate.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SFM_STORAGE_DRIVER
+        value: postgres
+      - key: DATABASE_URL
+        fromDatabase:
+          name: the-sfm-trader-db
+          property: connectionString
+      - key: SFM_DB_SSL_MODE
+        value: require
+      - key: SFM_AUTH_TOKENS
+        sync: false
+      - key: SFM_ALLOWED_ORIGINS
+        sync: false
+      - key: SFM_ACCESS_LOG
+        value: "true"
+
+databases:
+  - name: the-sfm-trader-db
+    databaseName: the_sfm_trader
+    user: sfm_trader
+    plan: basic-256mb
+    region: frankfurt
+    postgresMajorVersion: "17"
+    ipAllowList: []
