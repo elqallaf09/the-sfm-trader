@@ -42,3 +42,5 @@ jobs:
       - run: npm run verify
       - run: npm run audit:css
       - run: npm audit --audit-level=high
+      - name: Build production container
+        run: docker build --tag the-sfm-trader:${{ github.sha }} .

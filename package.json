@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
+    "preflight:production": "node tools/production-preflight.mjs",
+    "migrate": "node tools/migrate.mjs",
     "check": "node tools/check.mjs",
     "test": "node --test tests/*.test.mjs",
     "test:integration": "node tests/production.integration.mjs",

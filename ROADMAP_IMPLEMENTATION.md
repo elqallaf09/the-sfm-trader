@@ -28,3 +28,5 @@ This repository implements the approved remediation plan as one release candidat
 3. Run `npm ci && npm run verify && npm audit --audit-level=high`.
 4. Deploy to staging, validate `/api/ready`, authenticated `/api/metrics`, conflicts/retries, and provider freshness.
 5. Roll out gradually and monitor latency, error rate, provider/storage health, and LCP/INP/CLS.
+
+The repository now includes a non-root production `Dockerfile`, a Render Blueprint, configuration preflight checks, serialized checksum-tracked migrations, and a CI container build gate.

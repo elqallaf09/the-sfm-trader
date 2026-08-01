@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import pg from "pg";
 import { createPostgresStateStore } from "../src/postgresStore.mjs";
 
@@ -11,7 +12,12 @@ if (!connectionString) {
 
 const pool = new pg.Pool({ connectionString });
 try {
-  await pool.query(await readFile(new URL("../migrations/001_user_state.sql", import.meta.url), "utf8"));
+  await promisify(execFile)(process.execPath, ["tools/migrate.mjs"], {
+    cwd: process.cwd(),
+    env: { ...process.env, DATABASE_URL: connectionString, SFM_DB_SSL_MODE: "disable" }
+  });
+  const migration = await pool.query("SELECT checksum FROM sfm_schema_migrations WHERE name='001_user_state.sql'");
+  assert.equal(migration.rowCount, 1);
   await pool.query("TRUNCATE sfm_idempotency_keys, sfm_user_state");
   const store = createPostgresStateStore({ pool });
   const first = await store.writeVersioned("user-a", "notifications", [{ id: 1 }], {
