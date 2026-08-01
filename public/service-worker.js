@@ -1,11 +1,11 @@
-const CACHE_NAME = "the-sfm-trader-v20260630-cinema";
+const CACHE_NAME = "the-sfm-trader-v20260801-hardening-2";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/detail.html",
-  "/styles.css?v=20260630-cinema",
-  "/desktop-balance.css?v=20260630-cinema",
-  "/cinema.css?v=20260630-cinema",
+  "/styles.css?v=20260801-hardening-2",
+  "/desktop-balance.css?v=20260801-hardening-2",
+  "/cinema.css?v=20260801-hardening-2",
   "/app.js",
   "/detail.js",
   "/manifest.webmanifest",
@@ -35,6 +35,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
 
   if (request.method !== "GET") return;
+  if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
 
   if (request.mode === "navigate") {

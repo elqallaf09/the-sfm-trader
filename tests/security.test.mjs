@@ -29,9 +29,20 @@ test("rate limiter separates scopes and blocks excess calls", () => {
   assert.equal(security.checkRateLimit(request(), "default").allowed, true);
 });
 
+test("rate limiter ignores spoofed forwarding headers unless a trusted proxy is configured", () => {
+  const direct = createSecurity({ production: false, rateLimitMax: 1, trustProxy: false });
+  assert.equal(direct.checkRateLimit(request({ "x-forwarded-for": "198.51.100.1" }), "default").allowed, true);
+  assert.equal(direct.checkRateLimit(request({ "x-forwarded-for": "198.51.100.2" }), "default").allowed, false);
+
+  const proxied = createSecurity({ production: false, rateLimitMax: 1, trustProxy: true });
+  assert.equal(proxied.checkRateLimit(request({ "x-forwarded-for": "198.51.100.1" }), "default").allowed, true);
+  assert.equal(proxied.checkRateLimit(request({ "x-forwarded-for": "198.51.100.2" }), "default").allowed, true);
+});
+
 test("security headers include browser hardening", () => {
   const headers = securityHeaders("text/html", { html: true, hsts: true });
   assert.match(headers["content-security-policy"], /frame-ancestors 'none'/);
+  assert.match(headers["content-security-policy"], /font-src 'self' https:\/\/fonts\.gstatic\.com/);
   assert.equal(headers["x-content-type-options"], "nosniff");
   assert.match(headers["strict-transport-security"], /max-age/);
 });

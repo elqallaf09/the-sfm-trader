@@ -9,7 +9,9 @@ export function createSecurity(options = {}) {
   const allowedOrigins = new Set(parseList(options.allowedOrigins ?? process.env.SFM_ALLOWED_ORIGINS));
   const rateLimitMax = positiveNumber(options.rateLimitMax ?? process.env.SFM_RATE_LIMIT_MAX, 120);
   const analysisRateLimitMax = positiveNumber(options.analysisRateLimitMax ?? process.env.SFM_ANALYSIS_RATE_LIMIT_MAX, 30);
+  const trustProxy = booleanValue(options.trustProxy ?? process.env.SFM_TRUST_PROXY, false);
   const buckets = new Map();
+  let lastSweepAt = 0;
   if (production && tokenMap.size === 0) {
     throw new Error("SFM_AUTH_TOKENS must configure at least one production user");
   }
@@ -24,7 +26,13 @@ export function createSecurity(options = {}) {
 
   function checkRateLimit(request, scope = "default") {
     const now = Date.now();
-    const key = `${scope}:${clientAddress(request)}`;
+    if (now - lastSweepAt >= DEFAULT_WINDOW_MS) {
+      for (const [bucketKey, bucket] of buckets) {
+        if (now >= bucket.resetAt) buckets.delete(bucketKey);
+      }
+      lastSweepAt = now;
+    }
+    const key = `${scope}:${clientAddress(request, trustProxy)}`;
     const max = scope === "analysis" ? analysisRateLimitMax : rateLimitMax;
     const current = buckets.get(key);
     if (!current || now >= current.resetAt) {
@@ -57,7 +65,7 @@ export function securityHeaders(contentType, options = {}) {
     "cross-origin-resource-policy": "same-origin"
   };
   if (options.html) {
-    headers["content-security-policy"] = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; media-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'";
+    headers["content-security-policy"] = "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; media-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'";
   }
   if (options.hsts) headers["strict-transport-security"] = "max-age=31536000; includeSubDomains";
   return headers;
@@ -85,9 +93,14 @@ function parseList(value) {
   return String(value || "").split(",").map((item) => item.trim()).filter(Boolean);
 }
 
-function clientAddress(request) {
-  const forwarded = String(request.headers["x-forwarded-for"] || "").split(",")[0].trim();
+function clientAddress(request, trustProxy) {
+  const forwarded = trustProxy ? String(request.headers["x-forwarded-for"] || "").split(",")[0].trim() : "";
   return forwarded || request.socket?.remoteAddress || "unknown";
+}
+
+function booleanValue(value, fallback) {
+  if (value === undefined || value === null || value === "") return fallback;
+  return String(value).toLowerCase() === "true";
 }
 
 function positiveNumber(value, fallback) {

@@ -34,6 +34,7 @@ const SHARIA_API_URL = (process.env.SHARIA_API_URL || "").replace(/\/$/, "");
 const SHARIA_API_KEY = process.env.SHARIA_API_KEY || "";
 let ollamaUnavailableUntil = 0;
 const shariaCache = new Map();
+const staticAssetCache = new Map();
 const aggregateMarketIds = new Set(["gcc", "world"]);
 const canonicalMarketPriority = [
   "kuwait",
@@ -206,7 +207,10 @@ const server = http.createServer(async (request, response) => {
       const rate = security.checkRateLimit(request, rateScope);
       response.setHeader("x-ratelimit-remaining", String(rate.remaining));
       response.setHeader("x-ratelimit-reset", String(Math.ceil(rate.resetAt / 1000)));
-      if (!rate.allowed) return sendJson(response, { error: "طلبات كثيرة جدًا. حاول بعد قليل." }, 429, request);
+      if (!rate.allowed) {
+        response.setHeader("retry-after", String(Math.max(1, Math.ceil((rate.resetAt - Date.now()) / 1000))));
+        return sendJson(response, { error: "طلبات كثيرة جدًا. حاول بعد قليل." }, 429, request);
+      }
     }
 
     if (url.pathname === "/api/health") {
@@ -2336,14 +2340,28 @@ async function serveStatic(response, pathname) {
   }
 
   try {
-    const file = await readFile(requestedPath);
+    let cachedAsset = production ? staticAssetCache.get(requestedPath) : null;
+    if (!cachedAsset) {
+      const file = await readFile(requestedPath);
+      cachedAsset = {
+        file,
+        etag: `"${crypto.createHash("sha256").update(file).digest("base64url")}"`,
+        brotli: null
+      };
+      if (production) staticAssetCache.set(requestedPath, cachedAsset);
+    }
     const ext = path.extname(requestedPath);
     const html = ext === ".html";
     const longLived = [".png", ".jpg", ".jpeg", ".svg", ".ico", ".woff", ".woff2"].includes(ext);
-    const encoded = encodeResponseBody(response.req, file, ext);
+    if (response.req.headers["if-none-match"] === cachedAsset.etag) {
+      response.writeHead(304, { etag: cachedAsset.etag, "cache-control": html ? "no-cache" : "public, max-age=300" });
+      return response.end();
+    }
+    const encoded = encodeCachedStaticBody(response.req, cachedAsset, ext);
     response.writeHead(200, {
       ...securityHeaders(mimeTypes[ext] || "application/octet-stream", { html, hsts: production }),
-      "cache-control": html ? "no-cache" : longLived ? "public, max-age=31536000, immutable" : "public, max-age=300, stale-while-revalidate=86400",
+      etag: cachedAsset.etag,
+      "cache-control": html ? "no-cache" : longLived ? "public, max-age=86400, stale-while-revalidate=604800" : "public, max-age=300, stale-while-revalidate=86400",
       ...(encoded.compressed ? { "content-encoding": "br", vary: "Accept-Encoding" } : {})
     });
     response.end(encoded.body);
@@ -2354,6 +2372,14 @@ async function serveStatic(response, pathname) {
     response.writeHead(200, { ...securityHeaders(mimeTypes[".html"], { html: true, hsts: production }), "cache-control": "no-cache", ...(encoded.compressed ? { "content-encoding": "br", vary: "Accept-Encoding" } : {}) });
     response.end(encoded.body);
   }
+}
+
+function encodeCachedStaticBody(request, cachedAsset, extension) {
+  const compressible = [".html", ".css", ".js", ".json", ".svg", ".webmanifest"].includes(extension);
+  const acceptsBrotli = /(?:^|,)\s*br\s*(?:,|$)/i.test(String(request?.headers?.["accept-encoding"] || ""));
+  if (!compressible || !acceptsBrotli || cachedAsset.file.length < 1024) return { body: cachedAsset.file, compressed: false };
+  cachedAsset.brotli ||= brotliCompressSync(cachedAsset.file, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 4 } });
+  return { body: cachedAsset.brotli, compressed: true };
 }
 
 async function readJsonBody(request) {

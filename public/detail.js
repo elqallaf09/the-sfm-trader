@@ -1,10 +1,11 @@
 const API_TOKEN_STORAGE_KEY = "the-sfm-trader-api-token";
+window.localStorage.removeItem(API_TOKEN_STORAGE_KEY);
 const nativeFetch = window.fetch.bind(window);
 window.fetch = (input, init = {}) => {
   const url = typeof input === "string" ? input : input?.url || "";
   const sameOriginApi = url.startsWith("/api/") || url.startsWith(`${window.location.origin}/api/`);
   if (!sameOriginApi) return nativeFetch(input, init);
-  const token = window.localStorage.getItem(API_TOKEN_STORAGE_KEY) || "";
+  const token = window.sessionStorage.getItem(API_TOKEN_STORAGE_KEY) || "";
   const headers = new Headers(init.headers || (typeof input !== "string" ? input.headers : undefined));
   if (token) headers.set("authorization", `Bearer ${token}`);
   return nativeFetch(input, { ...init, headers });
