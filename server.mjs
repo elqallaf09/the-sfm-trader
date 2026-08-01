@@ -7,7 +7,7 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { analyzeSymbol } from "./src/analysis.mjs";
-import { getConfiguredProvider } from "./src/dataProviders.mjs";
+import { getConfiguredProvider, getProviderHealth } from "./src/dataProviders.mjs";
 import { applyEconomicNewsOverlayToRecommendations, getEconomicCalendarForMarket } from "./src/economicCalendar.mjs";
 import { getMarketSummaries, markets } from "./src/markets.mjs";
 import { createStateStore } from "./src/stateStore.mjs";
@@ -249,6 +249,7 @@ const server = http.createServer(async (request, response) => {
         status: ready ? "ready" : "shutting_down",
         service: "the-sfm-trader",
         provider: getConfiguredProvider(),
+        providerHealth: getProviderHealth(),
         storage,
         cacheEntries: cache.size,
         shariaCacheEntries: shariaCache.size,

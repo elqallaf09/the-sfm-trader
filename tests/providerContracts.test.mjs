@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { fetchChart, getConfiguredProvider } from "../src/dataProviders.mjs";
+import { fetchChart, getConfiguredProvider, getProviderHealth } from "../src/dataProviders.mjs";
 
 test("Yahoo provider adapter preserves the normalized chart contract", async (context) => {
   const fixture = JSON.parse(await readFile(new URL("./fixtures/yahoo-chart.json", import.meta.url), "utf8"));
@@ -21,4 +21,6 @@ test("Yahoo provider adapter preserves the normalized chart contract", async (co
   assert.equal(result.meta.symbol, "SFMTEST");
   assert.equal(result.meta.dataProvider, "Yahoo Finance");
   assert.deepEqual(result.indicators.quote[0].close, [100, 101, 102.5]);
+  assert.equal(getProviderHealth().status, "healthy");
+  assert.ok(getProviderHealth().lastSuccessAt);
 });

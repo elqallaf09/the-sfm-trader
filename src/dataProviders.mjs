@@ -14,6 +14,7 @@ const PROVIDER_MIN_START_GAP_MS = Math.max(0, Number(process.env.PROVIDER_MIN_ST
 const providerQueue = [];
 let providerActiveRequests = 0;
 let providerLastStartAt = 0;
+const providerHealth = new Map();
 
 export async function fetchChart(symbol, options = {}) {
   const preferred = (process.env.DATA_PROVIDER || "yahoo").toLowerCase();
@@ -22,11 +23,15 @@ export async function fetchChart(symbol, options = {}) {
 
   for (const provider of providers) {
     try {
-      if (provider === "twelvedata") return await fetchTwelveDataChart(symbol, options);
-      if (provider === "finnhub") return await fetchFinnhubChart(symbol, options);
-      if (provider === "alphavantage") return await fetchAlphaVantageChart(symbol, options);
-      return await fetchYahooChart(symbol, options);
+      let result;
+      if (provider === "twelvedata") result = await fetchTwelveDataChart(symbol, options);
+      else if (provider === "finnhub") result = await fetchFinnhubChart(symbol, options);
+      else if (provider === "alphavantage") result = await fetchAlphaVantageChart(symbol, options);
+      else result = await fetchYahooChart(symbol, options);
+      recordProviderResult(provider, true);
+      return result;
     } catch (error) {
+      recordProviderResult(provider, false, error);
       errors.push(`${provider}: ${error.message}`);
     }
   }
@@ -40,6 +45,41 @@ export function getConfiguredProvider() {
   if (preferred === "finnhub" && process.env.FINNHUB_API_KEY) return "finnhub";
   if (preferred === "alphavantage" && process.env.ALPHA_VANTAGE_API_KEY) return "alphavantage";
   return "yahoo";
+}
+
+export function getProviderHealth() {
+  const configured = getConfiguredProvider();
+  const state = providerHealth.get(configured);
+  return {
+    provider: configured,
+    status: !state
+      ? "unknown"
+      : state.consecutiveFailures >= 3
+        ? "unhealthy"
+        : state.consecutiveFailures > 0
+          ? "degraded"
+          : state.lastSuccessAt
+            ? "healthy"
+            : "unknown",
+    lastSuccessAt: state?.lastSuccessAt || null,
+    lastFailureAt: state?.lastFailureAt || null,
+    consecutiveFailures: state?.consecutiveFailures || 0,
+    lastError: state?.lastError || null
+  };
+}
+
+function recordProviderResult(provider, success, error = null) {
+  const current = providerHealth.get(provider) || { consecutiveFailures: 0 };
+  if (success) {
+    current.lastSuccessAt = new Date().toISOString();
+    current.consecutiveFailures = 0;
+    current.lastError = null;
+  } else {
+    current.lastFailureAt = new Date().toISOString();
+    current.consecutiveFailures += 1;
+    current.lastError = String(error?.message || "Provider request failed").slice(0, 160);
+  }
+  providerHealth.set(provider, current);
 }
 
 function getProviderOrder(preferred) {
