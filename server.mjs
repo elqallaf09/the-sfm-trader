@@ -1,7 +1,8 @@
 ﻿import http from "node:http";
 import { spawn } from "node:child_process";
 import crypto from "node:crypto";
-import { brotliCompressSync, constants as zlibConstants } from "node:zlib";
+import { brotliCompress, brotliCompressSync, constants as zlibConstants } from "node:zlib";
+import { promisify } from "node:util";
 import { existsSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -20,6 +21,9 @@ const __dirname = path.dirname(__filename);
 const publicDir = path.join(__dirname, "public");
 loadEnvFile(path.join(__dirname, ".env"));
 const production = process.env.NODE_ENV === "production";
+const processStartedAt = Date.now();
+const accessLogEnabled = String(process.env.SFM_ACCESS_LOG || "false").toLowerCase() === "true";
+const brotliCompressAsync = promisify(brotliCompress);
 const security = createSecurity({ production });
 const userStore = createUserFileStore(process.env.SFM_DATA_DIR || path.join(__dirname, ".data"));
 const preferredPort = Number(process.env.PORT || 4173);
@@ -64,7 +68,7 @@ const canonicalMarketPriority = [
   "asia"
 ];
 const symbolExecutionMarketCache = new Map();
-const readOnlyApiPaths = new Set(["/api/health", "/api/markets", "/api/recommendations", "/api/economic-calendar", "/api/watchlist", "/api/asset", "/api/ollama-status"]);
+const readOnlyApiPaths = new Set(["/api/health", "/api/ready", "/api/markets", "/api/recommendations", "/api/economic-calendar", "/api/watchlist", "/api/asset", "/api/ollama-status"]);
 const symbolAliases = {
   APPLE: "AAPL",
   APPL: "AAPL",
@@ -203,9 +207,16 @@ function loadEnvFile(filePath) {
 
 const server = http.createServer(async (request, response) => {
   try {
-    const url = new URL(request.url, `http://${request.headers.host}`);
+    const url = new URL(request.url, "http://localhost");
     const requestId = request.headers["x-request-id"] || crypto.randomUUID();
     response.setHeader("x-request-id", requestId);
+    if (accessLogEnabled) {
+      const requestStartedAt = performance.now();
+      response.once("finish", () => console.log(JSON.stringify({
+        type: "http_request", requestId, method: request.method, path: url.pathname,
+        status: response.statusCode, durationMs: Math.round((performance.now() - requestStartedAt) * 10) / 10
+      })));
+    }
     if (request.method === "OPTIONS") return handleOptions(request, response);
     if (url.pathname.startsWith("/api/")) {
       if (request.headers.origin && !security.corsOrigin(request)) {
@@ -224,11 +235,27 @@ const server = http.createServer(async (request, response) => {
     if (url.pathname === "/api/health") {
       return sendJson(response, {
         ok: true,
+        status: "alive",
         service: "the-sfm-trader",
         authentication: production ? "required" : "development",
-        configuredUsers: security.configuredUsers,
+        usersConfigured: security.configuredUsers > 0,
+        uptimeSeconds: Math.floor((Date.now() - processStartedAt) / 1000),
         timestamp: new Date().toISOString()
       }, 200, request);
+    }
+
+    if (url.pathname === "/api/ready") {
+      const ready = !shuttingDown;
+      return sendJson(response, {
+        ok: ready,
+        status: ready ? "ready" : "shutting_down",
+        service: "the-sfm-trader",
+        provider: getConfiguredProvider(),
+        cacheEntries: cache.size,
+        shariaCacheEntries: shariaCache.size,
+        uptimeSeconds: Math.floor((Date.now() - processStartedAt) / 1000),
+        timestamp: new Date().toISOString()
+      }, ready ? 200 : 503, request);
     }
 
     if (readOnlyApiPaths.has(url.pathname) && request.method !== "GET") {
@@ -353,19 +380,21 @@ function startServer(port, attempt = 0) {
 }
 
 let shuttingDown = false;
-for (const signal of ["SIGTERM", "SIGINT"]) {
-  process.once(signal, () => {
-    if (shuttingDown) return;
-    shuttingDown = true;
-    const forcedExit = setTimeout(() => process.exit(1), 10_000);
-    forcedExit.unref();
-    server.close((error) => {
-      clearTimeout(forcedExit);
-      if (error) console.error("[shutdown error]", error);
-      process.exit(error ? 1 : 0);
-    });
+function shutDownServer() {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  const forcedExit = setTimeout(() => process.exit(1), 10_000);
+  forcedExit.unref();
+  server.close((error) => {
+    clearTimeout(forcedExit);
+    if (error) console.error("[shutdown error]", error);
+    process.exit(error ? 1 : 0);
   });
 }
+for (const signal of ["SIGTERM", "SIGINT"]) process.once(signal, shutDownServer);
+if (process.send) process.on("message", (message) => {
+  if (message?.type === "shutdown") shutDownServer();
+});
 
 async function handleRecommendations(response, marketId) {
   const market = markets[marketId];
@@ -2412,10 +2441,11 @@ function encodeCachedStaticBody(request, cachedAsset, extension) {
   return { body: cachedAsset.brotli, compressed: true };
 }
 
-function sendJson(response, payload, status = 200, request = null) {
+async function sendJson(response, payload, status = 200, request = null) {
   const activeRequest = request || response.req;
   const origin = activeRequest ? security.corsOrigin(activeRequest) : "";
-  const encoded = encodeResponseBody(activeRequest, Buffer.from(JSON.stringify(payload)), ".json");
+  const encoded = await encodeJsonResponseBody(activeRequest, Buffer.from(JSON.stringify(payload)));
+  if (response.destroyed || response.writableEnded) return;
   response.writeHead(status, {
     ...securityHeaders("application/json; charset=utf-8", { hsts: production }),
     "cache-control": "no-store",
@@ -2423,6 +2453,16 @@ function sendJson(response, payload, status = 200, request = null) {
     ...(encoded.compressed ? { "content-encoding": "br" } : {})
   });
   response.end(encoded.body);
+}
+
+async function encodeJsonResponseBody(request, body) {
+  const acceptsBrotli = /(?:^|,)\s*br\s*(?:,|$)/i.test(String(request?.headers?.["accept-encoding"] || ""));
+  if (!acceptsBrotli || body.length < 1024) return { body, compressed: false };
+  try {
+    return { body: await brotliCompressAsync(body, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 4 } }), compressed: true };
+  } catch {
+    return { body, compressed: false };
+  }
 }
 
 function sendText(response, text, status = 200) {

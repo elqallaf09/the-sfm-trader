@@ -10,10 +10,10 @@ ios/App/App.xcodeproj
 
 - يفتح منصة the-sfm trader داخل تطبيق iPhone مستقل.
 - يستخدم الأيقونة والـ splash الخاصين بـ the-sfm trader.
-- مضبوط حالياً على رابط السيرفر المحلي:
+- إعداد Release لا يحتوي رابط HTTP أو عنوان IP ثابت. رابط الإنتاج المعتمد:
 
 ```text
-http://192.168.255.180:4173
+https://trader.the-sfm.com
 ```
 
 ## التشغيل على الآيفون الخاص
@@ -48,12 +48,12 @@ CLOUD_IOS_BUILD.md
    - اختر جهازك من أعلى Xcode.
    - اضغط Run.
 
-## إذا تغير IP الكمبيوتر
+## اختبار Debug على شبكة محلية
 
-غير الرابط في:
+لا تعدّل إعداد Release يدويًا. استخدم الأداة مع السماح المؤقت بالاتصال غير المشفر، ثم أعد الإعداد إلى HTTPS قبل البناء النهائي:
 
 ```text
-capacitor.config.json
+ALLOW_INSECURE_IOS_SERVER=true npm run ios:set-url -- http://192.168.1.50:4173
 ```
 
 ثم شغل:
@@ -66,12 +66,11 @@ npm run ios:sync
 
 قبل رفعه إلى App Store نحتاج:
 
-- استضافة backend على رابط HTTPS ثابت.
-- تغيير `server.url` من IP محلي إلى رابط HTTPS.
+- استضافة backend على رابط HTTPS ثابت وضبط أسرار الإنتاج.
 - إضافة Privacy Policy.
 - تجهيز وصف وصور App Store.
 - مراجعة نصوص المخاطر: التطبيق تعليمي وليس نصيحة مالية.
-- إزالة السماح العام للـ HTTP من `Info.plist` قبل النشر الرسمي.
+- التأكد أن `Info.plist` لا يحتوي سماحًا عامًا لاتصالات HTTP (الفحص الآلي يتحقق من ذلك).
 
 ## TestFlight
 

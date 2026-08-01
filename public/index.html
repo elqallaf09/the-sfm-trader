@@ -29,7 +29,7 @@
           <h1 data-brand-title>اس اف ام المحلل الذكي</h1>
           <p class="brand-subtitle">منصة تداول وتحليل ذكية</p>
         </div>
-        <form class="terminal-search" role="search" action="javascript:void(0)">
+        <form class="terminal-search" role="search" action="/">
           <span aria-hidden="true">⌕</span>
           <input id="terminal-symbol-search" type="search" autocomplete="off" inputmode="search" placeholder="ابحث عن أصل، سهم، رمز أو سوق..." aria-label="بحث عن رمز أو سوق">
           <kbd>Ctrl K</kbd>
@@ -376,7 +376,7 @@
             <label class="settings-field">
               <span>رمز الوصول الخاص</span>
               <input id="settings-api-token" type="password" minlength="24" autocomplete="off" aria-describedby="settings-api-token-help" />
-              <small id="settings-api-token-help">يُحفظ على هذا الجهاز فقط ويُرسل إلى خادم SFM لحماية بياناتك.</small>
+              <small id="settings-api-token-help">يُحفظ مؤقتًا خلال جلسة المتصفح الحالية فقط ويُرسل إلى خادم SFM لحماية بياناتك.</small>
             </label>
           </section>
 
@@ -449,23 +449,23 @@
             </div>
           </div>
           <div class="world-map-canvas" aria-hidden="true">
-            <div class="mo-bubble mo-nasdaq"><span>NASDAQ</span><span class="mo-bubble-change up" id="moc-nasdaq">+1.27%</span></div>
-            <div class="mo-bubble mo-sp500"><span>S&P 500</span><span class="mo-bubble-change up" id="moc-sp500">+1.04%</span></div>
-            <div class="mo-bubble mo-ftse"><span>FTSE 100</span><span class="mo-bubble-change up" id="moc-ftse">+0.23%</span></div>
-            <div class="mo-bubble mo-dax"><span>DAX 40</span><span class="mo-bubble-change up" id="moc-dax">+0.31%</span></div>
-            <div class="mo-bubble mo-nikkei"><span>NIKKEI 225</span><span class="mo-bubble-change down" id="moc-nikkei">-0.17%</span></div>
-            <div class="mo-bubble mo-asx"><span>ASX 200</span><span class="mo-bubble-change up" id="moc-asx">+0.56%</span></div>
+            <div class="mo-bubble mo-nasdaq"><span>NASDAQ</span><span class="mo-bubble-change" id="moc-nasdaq">--</span></div>
+            <div class="mo-bubble mo-sp500"><span>S&amp;P 500</span><span class="mo-bubble-change" id="moc-sp500">--</span></div>
+            <div class="mo-bubble mo-ftse"><span>FTSE 100</span><span class="mo-bubble-change" id="moc-ftse">--</span></div>
+            <div class="mo-bubble mo-dax"><span>DAX 40</span><span class="mo-bubble-change" id="moc-dax">--</span></div>
+            <div class="mo-bubble mo-nikkei"><span>NIKKEI 225</span><span class="mo-bubble-change" id="moc-nikkei">--</span></div>
+            <div class="mo-bubble mo-asx"><span>ASX 200</span><span class="mo-bubble-change" id="moc-asx">--</span></div>
           </div>
           <div class="mo-sentiment-hud">
             <div class="mo-sentiment-card">
               <p>Market Sentiment</p>
-              <strong id="mo-sentiment-label">BULLISH</strong>
-              <em id="mo-sentiment-pct">72%</em>
+              <strong id="mo-sentiment-label">--</strong>
+              <em id="mo-sentiment-pct">--</em>
             </div>
             <div class="mo-sentiment-card">
               <p>AI Confidence</p>
-              <strong id="mo-confidence-label">HIGH</strong>
-              <em id="mo-confidence-pct">78%</em>
+              <strong id="mo-confidence-label">--</strong>
+              <em id="mo-confidence-pct">--</em>
             </div>
           </div>
         </section>
@@ -475,7 +475,7 @@
           <div class="ai-agent-kpi-strip" aria-label="ملخص حالة وكيل التداول">
             <article>
               <span>حالة الوكيل</span>
-              <strong id="ai-agent-status">نشط</strong>
+              <strong id="ai-agent-status">جاري الاتصال</strong>
               <em>Scanning markets</em>
             </article>
             <article>
@@ -512,37 +512,8 @@
               <h3>نبض السوق الآن</h3>
             </div>
             </div>
-            <div id="live-pulse-grid" class="live-pulse-grid">
-              <article class="live-pulse-card is-up" data-symbol="US30" role="link" tabindex="0" aria-label="US30">
-                <div class="pulse-symbol-row"><strong>US30</strong><span>+0.34%</span></div>
-                <svg class="live-pulse-sparkline" viewBox="0 0 132 42" role="img" aria-label="mini chart"><polyline class="sparkline-line up" points="0,32 12,26 24,30 36,20 48,22 60,15 72,18 84,12 96,14 108,8 120,11 132,5"></polyline></svg>
-                <div class="pulse-price-row"><b>39,872.11</b><em>شراء · 78%</em></div>
-              </article>
-              <article class="live-pulse-card is-up" data-symbol="NAS100" role="link" tabindex="0" aria-label="NAS100">
-                <div class="pulse-symbol-row"><strong>NAS100</strong><span>+0.52%</span></div>
-                <svg class="live-pulse-sparkline" viewBox="0 0 132 42" role="img" aria-label="mini chart"><polyline class="sparkline-line up" points="0,34 12,30 24,23 36,26 48,18 60,10 72,14 84,19 96,15 108,11 120,8 132,12"></polyline></svg>
-                <div class="pulse-price-row"><b>18,234.75</b><em>شراء · 76%</em></div>
-              </article>
-              <article class="live-pulse-card is-up" data-symbol="XAUUSD" role="link" tabindex="0" aria-label="XAUUSD">
-                <div class="pulse-symbol-row"><strong>XAUUSD</strong><span>+0.28%</span></div>
-                <svg class="live-pulse-sparkline" viewBox="0 0 132 42" role="img" aria-label="mini chart"><polyline class="sparkline-line gold" points="0,30 12,25 24,27 36,18 48,23 60,14 72,17 84,21 96,15 108,19 120,13 132,16"></polyline></svg>
-                <div class="pulse-price-row"><b>2,382.45</b><em>شراء · 74%</em></div>
-              </article>
-              <article class="live-pulse-card is-down" data-symbol="EURUSD" role="link" tabindex="0" aria-label="EURUSD">
-                <div class="pulse-symbol-row"><strong>EURUSD</strong><span>-0.21%</span></div>
-                <svg class="live-pulse-sparkline" viewBox="0 0 132 42" role="img" aria-label="mini chart"><polyline class="sparkline-line down" points="0,11 12,14 24,10 36,18 48,20 60,26 72,23 84,30 96,32 108,29 120,35 132,33"></polyline></svg>
-                <div class="pulse-price-row"><b>1.08243</b><em>بيع · 61%</em></div>
-              </article>
-              <article class="live-pulse-card is-up" data-symbol="BTCUSD" role="link" tabindex="0" aria-label="BTCUSD">
-                <div class="pulse-symbol-row"><strong>BTCUSD</strong><span>+1.18%</span></div>
-                <svg class="live-pulse-sparkline" viewBox="0 0 132 42" role="img" aria-label="mini chart"><polyline class="sparkline-line up" points="0,31 12,26 24,28 36,19 48,13 60,16 72,12 84,18 96,10 108,14 120,8 132,11"></polyline></svg>
-                <div class="pulse-price-row"><b>67,345.12</b><em>شراء · 82%</em></div>
-              </article>
-              <article class="live-pulse-card is-up" data-symbol="S&P500" role="link" tabindex="0" aria-label="S&P500">
-                <div class="pulse-symbol-row"><strong>S&amp;P500</strong><span>+0.31%</span></div>
-                <svg class="live-pulse-sparkline" viewBox="0 0 132 42" role="img" aria-label="mini chart"><polyline class="sparkline-line up" points="0,35 12,33 24,25 36,28 48,21 60,18 72,22 84,16 96,13 108,17 120,9 132,6"></polyline></svg>
-                <div class="pulse-price-row"><b>5,321.41</b><em>شراء · 75%</em></div>
-              </article>
+            <div id="live-pulse-grid" class="live-pulse-grid" aria-busy="true">
+              <div class="empty">جاري تحميل بيانات السوق الموثقة…</div>
             </div>
             <div id="pulse-status-card" class="pulse-status-card" aria-live="polite">
               <span id="pulse-session-state">حالة السوق</span>
@@ -1368,9 +1339,6 @@
     <script src="/app.js?v=20260624-no-welcome-hero" type="module"></script>
   </body>
 </html>
-
-
-
 
 
 
