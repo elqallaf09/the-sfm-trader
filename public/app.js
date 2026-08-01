@@ -4171,16 +4171,22 @@ function renderLivePulseStrip(data) {
 
   if (!items.length) {
     livePulseSignature = nextSignature;
+    livePulseGrid.innerHTML = `<div class="empty">${escapeHtml(localizeUiText("لا توجد بيانات نبض موثقة حالياً."))}</div>`;
+    livePulseGrid.setAttribute("aria-busy", "false");
     attachDetailOpeners(livePulseGrid);
     return;
   }
 
-  if (nextSignature === livePulseSignature) return;
+  if (nextSignature === livePulseSignature) {
+    livePulseGrid.setAttribute("aria-busy", "false");
+    return;
+  }
   livePulseSignature = nextSignature;
 
   livePulseGrid.innerHTML = items.length
     ? items.map(renderLivePulseCard).join("")
     : `<div class="empty">${escapeHtml(localizeUiText("لا توجد بيانات نبض حالياً."))}</div>`;
+  livePulseGrid.setAttribute("aria-busy", "false");
   attachDetailOpeners(livePulseGrid);
   queueTranslateInterface();
 }
@@ -8900,6 +8906,8 @@ function updateMarketOverviewBubbles(all = []) {
   };
 
   const sentimentEl = document.getElementById("mo-sentiment-label");
+  const sentimentPctEl = document.getElementById("mo-sentiment-pct");
+  const confidenceLabelEl = document.getElementById("mo-confidence-label");
   const confEl = document.getElementById("mo-confidence-pct");
 
   all.forEach((item) => {
@@ -8917,9 +8925,11 @@ function updateMarketOverviewBubbles(all = []) {
     const bullPct = Math.round((buys / all.length) * 100);
     const label = bullPct > 55 ? "BULLISH" : buys < all.length * 0.35 ? "BEARISH" : "NEUTRAL";
     sentimentEl.textContent = label;
+    if (sentimentPctEl) sentimentPctEl.textContent = `${bullPct}%`;
     if (confEl) {
       const avgConf = Math.round(all.reduce((s, r) => s + (r.confidence || 0), 0) / all.length);
       confEl.textContent = `${avgConf}%`;
+      if (confidenceLabelEl) confidenceLabelEl.textContent = avgConf >= 75 ? "HIGH" : avgConf >= 55 ? "MEDIUM" : "LOW";
     }
   }
 }
@@ -9514,4 +9524,3 @@ function updateMarketOverviewBubbles(all = []) {
     sfmFinalRenderRecommendations(data);
   };
 })();
-

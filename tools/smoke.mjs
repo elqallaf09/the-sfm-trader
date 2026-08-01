@@ -5,6 +5,7 @@ const apiToken = String(process.env.SFM_API_TOKEN || "").trim();
 const checks = [
   { path: "/", type: "text", name: "home" },
   { path: "/api/health", type: "json", name: "health", validate: (data) => data.ok === true },
+  { path: "/api/ready", type: "json", name: "readiness", validate: (data) => data.ok === true && data.status === "ready" },
   { path: "/manifest.webmanifest", type: "json", name: "manifest", validate: (data) => data.name && data.icons },
   { path: "/api/markets", type: "json", name: "markets", validate: (data) => Array.isArray(data.markets) && data.markets.length > 0 },
   { path: "/api/recommendations?market=us", type: "json", name: "us recommendations", validate: validateRecommendationsPayload },

@@ -86,7 +86,7 @@ APP_STORE_CONNECT_API_KEY_BASE64
 4. اترك `server_url` على:
 
 ```text
-http://192.168.255.180:4173
+https://trader.the-sfm.com
 ```
 
 إذا بتجرب TestFlight من خارج البيت لاحقاً، لازم يكون السيرفر HTTPS ثابت، مثال:

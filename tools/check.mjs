@@ -88,6 +88,7 @@ const serverSource = readFileSync("server.mjs", "utf8");
 const appSource = readFileSync("public/app.js", "utf8");
 const detailSource = readFileSync("public/detail.js", "utf8");
 const serviceWorkerSource = readFileSync("public/service-worker.js", "utf8");
+const indexSource = readFileSync("public/index.html", "utf8");
 const capacitorConfig = JSON.parse(readFileSync("capacitor.config.json", "utf8"));
 if (!serverSource.includes("requireIdentity(request, response)") || serverSource.includes('"access-control-allow-origin": "*"')) {
   failed = true;
@@ -95,11 +96,23 @@ if (!serverSource.includes("requireIdentity(request, response)") || serverSource
 } else {
   console.log("[security ok] protected API identity and restricted CORS");
 }
+if (serverSource.includes("request.headers.host")) {
+  failed = true;
+  console.error("[host validation failed] URL parsing must not trust the incoming Host header");
+} else {
+  console.log("[host validation ok] request routing ignores untrusted Host values");
+}
 if (/const\s+staticNews\s*=/.test(appSource)) {
   failed = true;
   console.error("[truthfulness failed] static news must not appear as live market news");
 } else {
   console.log("[truthfulness ok] no static news masquerading as live content");
+}
+if (/\+(?:1\.27|1\.04|0\.34|0\.52|1\.18)%|39,872\.11|67,345\.12/.test(indexSource)) {
+  failed = true;
+  console.error("[truthful initial UI failed] static market prices or changes must not appear as live data");
+} else {
+  console.log("[truthful initial UI ok] live market widgets start without fabricated values");
 }
 if (/localStorage\.getItem\(API_TOKEN_STORAGE_KEY\)/.test(`${appSource}\n${detailSource}`)) {
   failed = true;
