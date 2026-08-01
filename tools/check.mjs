@@ -11,10 +11,18 @@ const syntaxFiles = [
   "src/fileStore.mjs",
   "src/http.mjs",
   "src/boundedCache.mjs",
+  "src/stateStore.mjs",
+  "src/postgresStore.mjs",
+  "src/staticServer.mjs",
+  "src/metrics.mjs",
   "public/app.js",
   "public/detail.js",
+  "public/modules/apiClient.js",
+  "public/modules/polling.js",
+  "public/modules/webVitals.js",
   "tools/set-ios-server-url.mjs",
-  "tools/smoke.mjs"
+  "tools/smoke.mjs",
+  "tests/postgres.integration.mjs"
 ];
 
 const jsonFiles = [

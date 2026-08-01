@@ -25,7 +25,9 @@ http://localhost:4173
 NODE_ENV=production
 SFM_AUTH_TOKENS={"رمز-عشوائي-طويل-لا-يقل-عن-24-حرفا":"user-1"}
 SFM_ALLOWED_ORIGINS=https://trader.the-sfm.com
-SFM_DATA_DIR=/مسار/تخزين/دائم
+SFM_STORAGE_DRIVER=postgres
+DATABASE_URL=postgresql://user:password@host:5432/the_sfm_trader
+SFM_DB_SSL_MODE=require
 ```
 
 بعد الدخول، يوضع رمز الوصول في الإعدادات > الأمان. الخادم يخزن حالة كل مستخدم في نطاق مستقل ويستخدم كتابة ذرية. التخزين المحلي الافتراضي مناسب لخادم واحد فقط؛ عند التوسع الأفقي يجب استبدال `src/fileStore.mjs` بمستودع قاعدة بيانات يطبق القيود والعزل نفسه.
@@ -47,7 +49,9 @@ npm run smoke
 
 - `server.mjs`: طبقة HTTP والتوجيه والتجميع الحالية.
 - `src/security.mjs`: المصادقة، CORS، حدود الطلبات ورؤوس الأمان.
-- `src/fileStore.mjs`: تخزين ذري ومعزول حسب المستخدم وقابل للاستبدال بقاعدة بيانات.
+- `src/stateStore.mjs`: اختيار مستودع الحالة (PostgreSQL للإنتاج أو ملفات محلية للتطوير).
+- `src/postgresStore.mjs`: تخزين PostgreSQL بمعاملات ونسخ optimistic وidempotency.
+- `migrations/001_user_state.sql`: جداول user-scoped وقيود وفهارس ومفاتيح idempotency.
 - `src/dataProviders.mjs`: مزودو بيانات السوق وسياسة fallback.
 - `src/analysis.mjs`: التحليل الفني وإنشاء التوصيات.
 - `public/`: واجهة الويب وPWA.

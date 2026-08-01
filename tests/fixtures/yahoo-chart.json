@@ -1,0 +1,10 @@
+{
+  "chart": {
+    "result": [{
+      "meta": { "symbol": "SFMTEST", "currency": "USD", "exchangeName": "TEST", "regularMarketPrice": 102.5 },
+      "timestamp": [1700000000, 1700086400, 1700172800],
+      "indicators": { "quote": [{ "close": [100, 101, 102.5], "high": [101, 102, 103], "low": [99, 100, 101], "volume": [1000, 1200, 1100] }] }
+    }],
+    "error": null
+  }
+}

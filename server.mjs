@@ -4,17 +4,18 @@ import crypto from "node:crypto";
 import { brotliCompress, brotliCompressSync, constants as zlibConstants } from "node:zlib";
 import { promisify } from "node:util";
 import { existsSync, readFileSync } from "node:fs";
-import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { analyzeSymbol } from "./src/analysis.mjs";
 import { getConfiguredProvider } from "./src/dataProviders.mjs";
 import { applyEconomicNewsOverlayToRecommendations, getEconomicCalendarForMarket } from "./src/economicCalendar.mjs";
 import { getMarketSummaries, markets } from "./src/markets.mjs";
-import { createUserFileStore } from "./src/fileStore.mjs";
+import { createStateStore } from "./src/stateStore.mjs";
 import { createSecurity, securityHeaders } from "./src/security.mjs";
 import { configureHttpServer, readJsonBody } from "./src/http.mjs";
 import { createBoundedCache } from "./src/boundedCache.mjs";
+import { createStaticServer } from "./src/staticServer.mjs";
+import { createMetrics } from "./src/metrics.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,10 +23,12 @@ const publicDir = path.join(__dirname, "public");
 loadEnvFile(path.join(__dirname, ".env"));
 const production = process.env.NODE_ENV === "production";
 const processStartedAt = Date.now();
+const metrics = createMetrics({ startedAt: processStartedAt });
 const accessLogEnabled = String(process.env.SFM_ACCESS_LOG || "false").toLowerCase() === "true";
 const brotliCompressAsync = promisify(brotliCompress);
 const security = createSecurity({ production });
-const userStore = createUserFileStore(process.env.SFM_DATA_DIR || path.join(__dirname, ".data"));
+const serveStatic = createStaticServer({ publicDir, production, securityHeaders });
+const userStore = createStateStore({ dataDir: process.env.SFM_DATA_DIR || path.join(__dirname, ".data") });
 const preferredPort = Number(process.env.PORT || 4173);
 const CACHE_TTL_MS = 90_000;
 const STALE_CACHE_TTL_MS = 10 * 60_000;
@@ -46,7 +49,6 @@ const shariaCache = createBoundedCache({
   maxEntries: Number(process.env.SFM_SHARIA_CACHE_MAX_ENTRIES || 1_000),
   maxAgeMs: 24 * 60 * 60 * 1000
 });
-const staticAssetCache = new Map();
 const aggregateMarketIds = new Set(["gcc", "world"]);
 const canonicalMarketPriority = [
   "kuwait",
@@ -180,17 +182,6 @@ const voiceSessionKnowledge = {
   healthcare: { name: "أسهم الرعاية الصحية والطب", type: "regular", timeZone: "America/New_York", label: "نيويورك", days: [1, 2, 3, 4, 5], open: "09:30", close: "16:00" }
 };
 
-const mimeTypes = {
-  ".html": "text/html; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".webmanifest": "application/manifest+json; charset=utf-8",
-  ".svg": "image/svg+xml; charset=utf-8",
-  ".png": "image/png",
-  ".ico": "image/x-icon"
-};
-
 function loadEnvFile(filePath) {
   if (!existsSync(filePath)) return;
 
@@ -210,8 +201,14 @@ const server = http.createServer(async (request, response) => {
     const url = new URL(request.url, "http://localhost");
     const requestId = request.headers["x-request-id"] || crypto.randomUUID();
     response.setHeader("x-request-id", requestId);
+    const requestStartedAt = performance.now();
+    response.once("finish", () => metrics.observeRequest({
+      method: request.method,
+      path: url.pathname,
+      status: response.statusCode,
+      durationMs: performance.now() - requestStartedAt
+    }));
     if (accessLogEnabled) {
-      const requestStartedAt = performance.now();
       response.once("finish", () => console.log(JSON.stringify({
         type: "http_request", requestId, method: request.method, path: url.pathname,
         status: response.statusCode, durationMs: Math.round((performance.now() - requestStartedAt) * 10) / 10
@@ -245,17 +242,42 @@ const server = http.createServer(async (request, response) => {
     }
 
     if (url.pathname === "/api/ready") {
-      const ready = !shuttingDown;
+      const storage = await userStore.health().catch((error) => ({ ok: false, driver: userStore.driver, error: error.message }));
+      const ready = !shuttingDown && storage.ok;
       return sendJson(response, {
         ok: ready,
         status: ready ? "ready" : "shutting_down",
         service: "the-sfm-trader",
         provider: getConfiguredProvider(),
+        storage,
         cacheEntries: cache.size,
         shariaCacheEntries: shariaCache.size,
         uptimeSeconds: Math.floor((Date.now() - processStartedAt) / 1000),
         timestamp: new Date().toISOString()
       }, ready ? 200 : 503, request);
+    }
+
+    if (url.pathname === "/api/metrics") {
+      if (request.method !== "GET") return sendJson(response, { error: "Method not allowed" }, 405, request);
+      const identity = requireIdentity(request, response);
+      if (!identity) return;
+      return sendJson(response, metrics.snapshot(), 200, request);
+    }
+
+    if (url.pathname === "/api/telemetry/web-vitals" && request.method === "POST") {
+      const identity = requireIdentity(request, response);
+      if (!identity) return;
+      const payload = await readJsonBody(request);
+      const accepted = metrics.observeWebVital({
+        name: String(payload.name || "").toUpperCase(),
+        value: Number(payload.value),
+        rating: String(payload.rating || "unknown"),
+        page: String(payload.page || "/")
+      });
+      return sendJson(response, { accepted }, accepted ? 202 : 400, request);
+    }
+    if (url.pathname === "/api/telemetry/web-vitals") {
+      return sendJson(response, { error: "Method not allowed" }, 405, request);
     }
 
     if (readOnlyApiPaths.has(url.pathname) && request.method !== "GET") {
@@ -322,7 +344,7 @@ const server = http.createServer(async (request, response) => {
       return sendJson(response, { error: "API endpoint not found" }, 404, request);
     }
 
-    return await serveStatic(response, url.pathname);
+    return await serveStatic(request, response, url.pathname);
   } catch (error) {
     const statusCode = Number(error.statusCode || 500);
     if (statusCode >= 500) console.error("[server error]", error);
@@ -353,7 +375,8 @@ function handleOptions(request, response) {
     ...securityHeaders("text/plain; charset=utf-8", { hsts: production }),
     ...(origin ? { "access-control-allow-origin": origin, vary: "Origin" } : {}),
     "access-control-allow-methods": "GET,POST,DELETE,OPTIONS",
-    "access-control-allow-headers": "authorization,content-type,x-request-id",
+    "access-control-allow-headers": "authorization,content-type,x-request-id,if-match,idempotency-key",
+    "access-control-expose-headers": "etag,x-state-version,idempotency-replayed,x-request-id,x-ratelimit-remaining,x-ratelimit-reset,retry-after",
     "access-control-max-age": "600"
   });
   response.end();
@@ -385,9 +408,10 @@ function shutDownServer() {
   shuttingDown = true;
   const forcedExit = setTimeout(() => process.exit(1), 10_000);
   forcedExit.unref();
-  server.close((error) => {
+  server.close(async (error) => {
     clearTimeout(forcedExit);
     if (error) console.error("[shutdown error]", error);
+    await userStore.close().catch((closeError) => console.error("[storage close error]", closeError));
     process.exit(error ? 1 : 0);
   });
 }
@@ -926,7 +950,8 @@ function completeWatchlistJobInBackground(cacheKey, assets, job, economicCalenda
 
 async function handleFollowedTrades(request, response, userId) {
   if (request.method === "GET") {
-    return sendJson(response, await readSharedTradeState(userId), 200, request);
+    const snapshot = await readSharedTradeState(userId);
+    return sendVersionedJson(response, snapshot, 200, request);
   }
 
   if (request.method !== "POST") {
@@ -935,17 +960,18 @@ async function handleFollowedTrades(request, response, userId) {
 
   const payload = await readJsonBody(request);
   const state = normalizeSharedTradeState(payload);
-  await writeSharedTradeState(userId, state);
-  return sendJson(response, state, 200, request);
+  const saved = await writeSharedTradeState(userId, state, mutationOptions(request));
+  return sendVersionedJson(response, saved, 200, request);
 }
 
 async function readSharedTradeState(userId) {
-  return normalizeSharedTradeState(await userStore.read(userId, "followed-trades", {}));
+  const snapshot = await userStore.readVersioned(userId, "followed-trades", {});
+  return { ...snapshot, value: normalizeSharedTradeState(snapshot.value) };
 }
 
-async function writeSharedTradeState(userId, state) {
+async function writeSharedTradeState(userId, state, options = {}) {
   const normalized = normalizeSharedTradeState(state);
-  return userStore.write(userId, "followed-trades", normalized);
+  return userStore.writeVersioned(userId, "followed-trades", normalized, options);
 }
 
 function normalizeSharedTradeState(payload = {}) {
@@ -964,7 +990,7 @@ function normalizeSharedTradeState(payload = {}) {
     followedEntries: entries.filter((entry) => keys.includes(entry.key) && !removedSet.has(entry.key)),
     followedTradeAlerts: alerts,
     removedFollowedTradeKeys: removedKeys,
-    updatedAt: new Date().toISOString()
+    updatedAt: payload.updatedAt ? normalizeIsoDate(payload.updatedAt) : null
   };
 }
 
@@ -1046,13 +1072,14 @@ function normalizeIsoDate(value) {
 
 async function handleNotifications(request, response, userId) {
   if (request.method === "GET") {
-    return sendJson(response, await readNotificationLog(userId), 200, request);
+    const snapshot = await readNotificationLog(userId);
+    return sendVersionedJson(response, snapshot, 200, request);
   }
 
   if (request.method === "DELETE") {
     const cleared = { notifications: [], updatedAt: new Date().toISOString() };
-    await writeNotificationLog(userId, cleared.notifications);
-    return sendJson(response, cleared, 200, request);
+    const saved = await writeNotificationLog(userId, cleared.notifications, mutationOptions(request));
+    return sendVersionedJson(response, saved, 200, request);
   }
 
   if (request.method !== "POST") {
@@ -1061,27 +1088,27 @@ async function handleNotifications(request, response, userId) {
 
   const payload = await readJsonBody(request);
   const notifications = normalizeNotificationLog(payload.notifications || []);
-  await writeNotificationLog(userId, notifications);
-  return sendJson(response, {
+  const saved = await writeNotificationLog(userId, notifications, mutationOptions(request));
+  return sendVersionedJson(response, { ...saved, value: {
     notifications,
-    updatedAt: new Date().toISOString()
-  }, 200, request);
+    updatedAt: saved.updatedAt || new Date().toISOString()
+  } }, 200, request);
 }
 
 async function readNotificationLog(userId) {
-  const parsed = await userStore.read(userId, "notifications", {});
-  return {
-    notifications: normalizeNotificationLog(parsed.notifications || []),
-    updatedAt: parsed.updatedAt || new Date().toISOString()
-  };
+  const snapshot = await userStore.readVersioned(userId, "notifications", {});
+  return { ...snapshot, value: {
+    notifications: normalizeNotificationLog(snapshot.value.notifications || []),
+    updatedAt: snapshot.value.updatedAt || snapshot.updatedAt || null
+  } };
 }
 
-async function writeNotificationLog(userId, notifications) {
+async function writeNotificationLog(userId, notifications, options = {}) {
   const payload = {
     notifications: normalizeNotificationLog(notifications),
     updatedAt: new Date().toISOString()
   };
-  return userStore.write(userId, "notifications", payload);
+  return userStore.writeVersioned(userId, "notifications", payload, options);
 }
 
 function normalizeNotificationLog(notifications) {
@@ -2390,57 +2417,6 @@ function buildBacktestSummary(recommendations) {
   };
 }
 
-async function serveStatic(response, pathname) {
-  const safePath = pathname === "/" ? "/index.html" : pathname;
-  const requestedPath = path.normalize(path.join(publicDir, safePath));
-
-  if (!requestedPath.toLowerCase().startsWith(publicDir.toLowerCase())) {
-    return sendText(response, "Forbidden", 403);
-  }
-
-  try {
-    let cachedAsset = production ? staticAssetCache.get(requestedPath) : null;
-    if (!cachedAsset) {
-      const file = await readFile(requestedPath);
-      cachedAsset = {
-        file,
-        etag: `"${crypto.createHash("sha256").update(file).digest("base64url")}"`,
-        brotli: null
-      };
-      if (production) staticAssetCache.set(requestedPath, cachedAsset);
-    }
-    const ext = path.extname(requestedPath);
-    const html = ext === ".html";
-    const longLived = [".png", ".jpg", ".jpeg", ".svg", ".ico", ".woff", ".woff2"].includes(ext);
-    if (response.req.headers["if-none-match"] === cachedAsset.etag) {
-      response.writeHead(304, { etag: cachedAsset.etag, "cache-control": html ? "no-cache" : "public, max-age=300" });
-      return response.end();
-    }
-    const encoded = encodeCachedStaticBody(response.req, cachedAsset, ext);
-    response.writeHead(200, {
-      ...securityHeaders(mimeTypes[ext] || "application/octet-stream", { html, hsts: production }),
-      etag: cachedAsset.etag,
-      "cache-control": html ? "no-cache" : longLived ? "public, max-age=86400, stale-while-revalidate=604800" : "public, max-age=300, stale-while-revalidate=86400",
-      ...(encoded.compressed ? { "content-encoding": "br", vary: "Accept-Encoding" } : {})
-    });
-    response.end(encoded.body);
-  } catch {
-    if (path.extname(requestedPath)) return sendText(response, "Not found", 404);
-    const fallback = await readFile(path.join(publicDir, "index.html"));
-    const encoded = encodeResponseBody(response.req, fallback, ".html");
-    response.writeHead(200, { ...securityHeaders(mimeTypes[".html"], { html: true, hsts: production }), "cache-control": "no-cache", ...(encoded.compressed ? { "content-encoding": "br", vary: "Accept-Encoding" } : {}) });
-    response.end(encoded.body);
-  }
-}
-
-function encodeCachedStaticBody(request, cachedAsset, extension) {
-  const compressible = [".html", ".css", ".js", ".json", ".svg", ".webmanifest"].includes(extension);
-  const acceptsBrotli = /(?:^|,)\s*br\s*(?:,|$)/i.test(String(request?.headers?.["accept-encoding"] || ""));
-  if (!compressible || !acceptsBrotli || cachedAsset.file.length < 1024) return { body: cachedAsset.file, compressed: false };
-  cachedAsset.brotli ||= brotliCompressSync(cachedAsset.file, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 4 } });
-  return { body: cachedAsset.brotli, compressed: true };
-}
-
 async function sendJson(response, payload, status = 200, request = null) {
   const activeRequest = request || response.req;
   const origin = activeRequest ? security.corsOrigin(activeRequest) : "";
@@ -2449,10 +2425,36 @@ async function sendJson(response, payload, status = 200, request = null) {
   response.writeHead(status, {
     ...securityHeaders("application/json; charset=utf-8", { hsts: production }),
     "cache-control": "no-store",
-    ...(origin ? { "access-control-allow-origin": origin, vary: "Origin, Accept-Encoding" } : encoded.compressed ? { vary: "Accept-Encoding" } : {}),
+    ...(origin ? {
+      "access-control-allow-origin": origin,
+      "access-control-expose-headers": "etag,x-state-version,idempotency-replayed,x-request-id,x-ratelimit-remaining,x-ratelimit-reset,retry-after",
+      vary: "Origin, Accept-Encoding"
+    } : encoded.compressed ? { vary: "Accept-Encoding" } : {}),
     ...(encoded.compressed ? { "content-encoding": "br" } : {})
   });
   response.end(encoded.body);
+}
+
+function sendVersionedJson(response, snapshot, status = 200, request = null) {
+  const version = Number(snapshot.version || 0);
+  response.setHeader("etag", `"${version}"`);
+  response.setHeader("x-state-version", String(version));
+  if (snapshot.replayed) response.setHeader("idempotency-replayed", "true");
+  return sendJson(response, snapshot.value, status, request);
+}
+
+function mutationOptions(request) {
+  const rawMatch = String(request.headers["if-match"] || "").replace(/^W\//, "").replace(/^"|"$/g, "");
+  const expectedVersion = rawMatch === "" || rawMatch === "*" ? undefined : Number(rawMatch);
+  if (expectedVersion !== undefined && (!Number.isInteger(expectedVersion) || expectedVersion < 0)) {
+    const error = new Error("قيمة If-Match غير صالحة");
+    error.statusCode = 400;
+    throw error;
+  }
+  return {
+    expectedVersion,
+    idempotencyKey: String(request.headers["idempotency-key"] || "").trim()
+  };
 }
 
 async function encodeJsonResponseBody(request, body) {

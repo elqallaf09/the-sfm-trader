@@ -1,15 +1,6 @@
-﻿const API_TOKEN_STORAGE_KEY = "the-sfm-trader-api-token";
-window.localStorage.removeItem(API_TOKEN_STORAGE_KEY);
-const nativeFetch = window.fetch.bind(window);
-window.fetch = (input, init = {}) => {
-  const url = typeof input === "string" ? input : input?.url || "";
-  const sameOriginApi = url.startsWith("/api/") || url.startsWith(`${window.location.origin}/api/`);
-  if (!sameOriginApi) return nativeFetch(input, init);
-  const token = window.sessionStorage.getItem(API_TOKEN_STORAGE_KEY) || "";
-  const headers = new Headers(init.headers || (typeof input !== "string" ? input.headers : undefined));
-  if (token) headers.set("authorization", `Bearer ${token}`);
-  return nativeFetch(input, { ...init, headers });
-};
+﻿import { API_TOKEN_STORAGE_KEY, createIdempotencyKey, readStateVersion } from "./modules/apiClient.js";
+import { createVisibilityAwarePoller } from "./modules/polling.js";
+import "./modules/webVitals.js";
 
 const marketTabs = document.querySelector("#market-tabs");
 const introOverlay = document.querySelector("#intro-overlay");
@@ -1282,7 +1273,6 @@ REQUIRED_MARKET_CATEGORY_DEFINITIONS.forEach((item, index) => {
 
 let activeMarket = "us";
 let activeAppView = "home";
-let timer = null;
 let sessionClockTimer = null;
 let isLoading = false;
 let recommendationRequestController = null;
@@ -1301,10 +1291,11 @@ let followedTradeKeys = new Set(loadStored("the-sfm-trader-followed-trades", [])
 let followedTradeAlerts = new Set(loadStored("the-sfm-trader-followed-alerts", []));
 let removedFollowedTradeKeys = new Set(loadStored("the-sfm-trader-removed-followed-trades", []));
 let sharedTradeSaveTimer = null;
-let sharedTradePollTimer = null;
 let sharedTradeStateLoaded = false;
+let sharedTradeStateVersion = 0;
 let notificationLog = normalizeNotificationLog(loadStored("the-sfm-trader-notifications", []));
 let notificationSaveTimer = null;
+let notificationStateVersion = 0;
 let notificationPanelOpen = false;
 let scalpLoading = false;
 let expandedSignalCards = new Set(loadStored("the-sfm-trader-expanded-cards", []));
@@ -1316,7 +1307,6 @@ appSettings = applyUrlSettingsOverride(appSettings);
 let watchlistData = null;
 let watchlistLoading = false;
 let watchlistLastLoadedAt = 0;
-let watchlistTimer = null;
 let voiceActive = false;
 let voiceRecognition = null;
 let voiceStream = null;
@@ -1435,21 +1425,24 @@ async function init() {
 
   await loadMarkets();
   await loadRecommendations({ force: true });
-  timer = window.setInterval(() => {
-    if (!document.hidden) loadRecommendations({ background: true });
-  }, RECOMMENDATIONS_REFRESH_MS);
-  watchlistTimer = window.setInterval(() => {
-    if (!document.hidden) loadWatchlistData();
-  }, WATCHLIST_REFRESH_MS);
-  sharedTradePollTimer = window.setInterval(() => {
-    if (!document.hidden) loadSharedTradeState({ poll: true });
-  }, SHARED_TRADE_POLL_MS);
-  document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) {
-      loadRecommendations({ background: true });
-      loadSharedTradeState({ poll: true });
+  createVisibilityAwarePoller([
+    {
+      name: "recommendations",
+      intervalMs: RECOMMENDATIONS_REFRESH_MS,
+      run: () => loadRecommendations({ background: true })
+    },
+    {
+      name: "watchlist",
+      intervalMs: WATCHLIST_REFRESH_MS,
+      refreshOnForeground: false,
+      run: () => loadWatchlistData()
+    },
+    {
+      name: "shared-trades",
+      intervalMs: SHARED_TRADE_POLL_MS,
+      run: () => loadSharedTradeState({ poll: true })
     }
-  });
+  ]).start();
   refreshButton.addEventListener("click", () => loadRecommendations({ force: true }));
   notificationButton?.addEventListener("click", toggleNotificationPanel);
   mobileNotificationButton?.addEventListener("click", toggleNotificationPanel);
@@ -4897,6 +4890,7 @@ async function loadSharedTradeState(options = {}) {
     const localEntriesBeforeMerge = getFollowedTradeEntries().length;
     const response = await fetch("/api/followed-trades", { cache: "no-store" });
     if (!response.ok) throw new Error("shared trade state unavailable");
+    sharedTradeStateVersion = readStateVersion(response, sharedTradeStateVersion);
 
     const data = await response.json();
     const remoteRemovedKeys = Array.isArray(data.removedFollowedTradeKeys) ? data.removedFollowedTradeKeys : [];
@@ -5027,11 +5021,22 @@ async function saveSharedTradeState(force = false) {
   if (!force && !payload.followedTradeKeys.length && !payload.followedEntries.length) return;
 
   try {
-    await fetch("/api/followed-trades", {
+    const response = await fetch("/api/followed-trades", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "if-match": `"${sharedTradeStateVersion}"`,
+        "idempotency-key": createIdempotencyKey("trades")
+      },
       body: JSON.stringify(payload)
     });
+    if (response.status === 409) {
+      sharedTradeStateLoaded = false;
+      await loadSharedTradeState({ poll: true });
+      return;
+    }
+    if (!response.ok) throw new Error("shared trade state save failed");
+    sharedTradeStateVersion = readStateVersion(response, sharedTradeStateVersion + 1);
     sharedTradeStateLoaded = true;
   } catch {
     sharedTradeStateLoaded = false;
@@ -5327,6 +5332,7 @@ async function loadNotificationLog() {
   try {
     const response = await fetch("/api/notifications", { cache: "no-store" });
     if (!response.ok) throw new Error("notifications unavailable");
+    notificationStateVersion = readStateVersion(response, notificationStateVersion);
 
     const data = await response.json();
     notificationLog = normalizeNotificationLog([
@@ -5404,11 +5410,21 @@ function scheduleNotificationSave(options = {}) {
 
 async function saveNotificationLogToServer() {
   try {
-    await fetch("/api/notifications", {
+    const response = await fetch("/api/notifications", {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        "if-match": `"${notificationStateVersion}"`,
+        "idempotency-key": createIdempotencyKey("notifications")
+      },
       body: JSON.stringify({ notifications: notificationLog })
     });
+    if (response.status === 409) {
+      await loadNotificationLog();
+      return;
+    }
+    if (!response.ok) throw new Error("notification save failed");
+    notificationStateVersion = readStateVersion(response, notificationStateVersion + 1);
   } catch {
     // يبقى السجل محفوظاً داخل المتصفح حتى يرجع الاتصال بالسيرفر.
   }
@@ -5420,7 +5436,15 @@ async function clearNotificationLog() {
   renderNotificationCenter();
 
   try {
-    await fetch("/api/notifications", { method: "DELETE" });
+    const response = await fetch("/api/notifications", {
+      method: "DELETE",
+      headers: {
+        "if-match": `"${notificationStateVersion}"`,
+        "idempotency-key": createIdempotencyKey("notifications-clear")
+      }
+    });
+    if (!response.ok) throw new Error("notification clear failed");
+    notificationStateVersion = readStateVersion(response, notificationStateVersion + 1);
   } catch {
     scheduleNotificationSave({ force: true });
   }
