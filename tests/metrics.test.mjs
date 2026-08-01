@@ -13,3 +13,16 @@ test("metrics aggregate request latency and validated web vitals", () => {
   assert.equal(snapshot.requests[0].averageDurationMs, 20);
   assert.equal(snapshot.webVitals[0].average, 1200);
 });
+
+test("metrics bound attacker-controlled series cardinality", () => {
+  const metrics = createMetrics({ maxRequestSeries: 2, maxVitalSeries: 1 });
+  for (let index = 0; index < 5; index += 1) {
+    metrics.observeRequest({ method: "GET", path: `/api/unknown-${index}`, status: 404, durationMs: 1 });
+    metrics.observeWebVital({ name: "LCP", value: 1000 + index, page: `/page-${index}` });
+  }
+  const snapshot = metrics.snapshot();
+  assert.equal(snapshot.cardinality.requestSeries, 2);
+  assert.equal(snapshot.cardinality.vitalSeries, 1);
+  assert.equal(snapshot.cardinality.droppedRequestSeries, 3);
+  assert.equal(snapshot.cardinality.droppedVitalSeries, 4);
+});
