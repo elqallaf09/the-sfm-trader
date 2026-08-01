@@ -84,6 +84,7 @@ for (const file of ["public/app.js", "public/detail.js"]) {
 
 const serverSource = readFileSync("server.mjs", "utf8");
 const appSource = readFileSync("public/app.js", "utf8");
+const detailSource = readFileSync("public/detail.js", "utf8");
 const capacitorConfig = JSON.parse(readFileSync("capacitor.config.json", "utf8"));
 if (!serverSource.includes("requireIdentity(request, response)") || serverSource.includes('"access-control-allow-origin": "*"')) {
   failed = true;
@@ -96,6 +97,12 @@ if (/const\s+staticNews\s*=/.test(appSource)) {
   console.error("[truthfulness failed] static news must not appear as live market news");
 } else {
   console.log("[truthfulness ok] no static news masquerading as live content");
+}
+if (/localStorage\.getItem\(API_TOKEN_STORAGE_KEY\)/.test(`${appSource}\n${detailSource}`)) {
+  failed = true;
+  console.error("[credential storage failed] API tokens must not persist in localStorage");
+} else {
+  console.log("[credential storage ok] API tokens are session-scoped");
 }
 if (capacitorConfig.server?.cleartext || /^http:\/\//i.test(capacitorConfig.server?.url || "")) {
   failed = true;
