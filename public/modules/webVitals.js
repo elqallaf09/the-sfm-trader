@@ -1,4 +1,5 @@
 import { API_TOKEN_STORAGE_KEY } from "./apiClient.js";
+import { fetchResponseWithPolicy } from "./requestPolicy.js";
 
 const supported = typeof PerformanceObserver !== "undefined";
 const latest = new Map();
@@ -11,12 +12,15 @@ function report(name, value, rating) {
   const token = window.sessionStorage.getItem(API_TOKEN_STORAGE_KEY);
   const headers = new Headers({ "content-type": "application/json" });
   if (token) headers.set("authorization", `Bearer ${token}`);
-  fetch("/api/telemetry/web-vitals", {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ name, value, rating, page: window.location.pathname }),
-    keepalive: true
-  }).catch(() => {});
+  fetchResponseWithPolicy("/api/telemetry/web-vitals", {
+    timeoutMs: 10_000,
+    requestInit: {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ name, value, rating, page: window.location.pathname }),
+      keepalive: true
+    }
+  }).then((response) => response.body?.cancel()).catch(() => {});
 }
 
 function rating(name, value) {
