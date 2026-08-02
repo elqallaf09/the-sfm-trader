@@ -179,15 +179,6 @@ body[data-app-view="home"] :is(.rdp-pick-info, .rdp-pick-info strong, .rdp-pick-
   }
   body[data-app-view="home"] .command-center-grid { overflow-x: auto !important; }
 }
-@media (min-width: 1024px) and (max-width: 1180px) {
-  /* Restore the redesign's desktop summaries against the legacy tablet hide rule. */
-  body[data-app-view="home"] main > section#command-center-section#command-center-section#command-center-section.command-center-band,
-  body[data-app-view="home"] main > section#home-heatmap-section#home-heatmap-section#home-heatmap-section.home-heatmap-section,
-  body[data-app-view="home"] main > section#economic-news-section#economic-news-section#economic-news-section.economic-news-band,
-  body[data-app-view="home"] main > section#home-deck-section#home-deck-section#home-deck-section.home-deck-section .home-deck-panel:last-child {
-    display: grid !important;
-  }
-}
 @media (max-width: 1023px) {
   body[data-app-view="home"] main { gap: 12px !important; }
   body[data-app-view="home"] .topbar { min-height: 58px !important; padding: 0 12px !important; }
@@ -204,4 +195,121 @@ body[data-app-view="home"] :is(.rdp-pick-info, .rdp-pick-info strong, .rdp-pick-
     animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Home V3 — implementation of the approved terminal mockup. */
+body[data-app-view="home"] #terminal-home-v3.terminal-home-v3 {
+  display: grid !important; gap: 14px !important; padding: 0 !important;
+  border: 0 !important; background: transparent !important; overflow: visible !important;
+}
+.v3-overview-grid,.v3-bottom-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.terminal-home-v3 :is(.v3-market-reading,.v3-market-pulse,.v3-opportunities,.v3-heatmap-panel,.v3-followed-panel,.v3-calendar-panel) {
+  min-width:0; padding:18px; border:1px solid var(--v2-line-soft); border-radius:var(--v2-radius);
+  background:linear-gradient(145deg,rgba(14,29,46,.98),rgba(7,17,29,.98));
+}
+.v3-section-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; }
+.v3-section-head div { min-width:0; }
+.v3-section-head span { display:block; margin-bottom:4px; color:var(--v2-muted); font-size:11px; line-height:1.4; }
+.v3-section-head h2 { margin:0; color:var(--v2-text); font-size:clamp(18px,1.4vw,24px); line-height:1.3; }
+.v3-section-head>b { padding:7px 13px; border:1px solid rgba(104,169,255,.3); border-radius:999px; color:#b9d4ff; background:rgba(104,169,255,.1); font-size:12px; }
+.v3-view-all { flex:0 0 auto; color:var(--v2-teal); font-size:12px; font-weight:800; text-decoration:none; }
+.v3-view-all:is(:hover,:focus-visible) { text-decoration:underline; }
+
+.v3-reading-body { display:grid; grid-template-columns:180px minmax(0,1fr); gap:24px; align-items:center; }
+.v3-confidence-ring { --v3-confidence:0%; position:relative; width:164px; aspect-ratio:1; display:grid; place-content:center; justify-self:center; text-align:center; border-radius:50%; background:conic-gradient(var(--v2-teal) var(--v3-confidence),rgba(47,214,192,.12) 0); }
+.v3-confidence-ring::after { content:""; position:absolute; inset:12px; border-radius:inherit; background:#0b1a2a; }
+.v3-confidence-ring :is(strong,span) { position:relative; z-index:1; }
+.v3-confidence-ring strong { color:var(--v2-text); font-size:42px; line-height:1; direction:ltr; }
+.v3-confidence-ring span { margin-top:8px; color:var(--v2-muted); font-size:12px; }
+.v3-reading-copy p { min-height:58px; margin:0 0 18px; color:#c5d3df; font-size:14px; line-height:1.9; }
+.v3-signal-counts { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.v3-signal-counts div { min-height:76px; padding:11px; border:1px solid var(--v2-line); border-radius:12px; background:rgba(12,28,45,.78); }
+.v3-signal-counts span { display:block; color:var(--v2-muted); font-size:11px; }
+.v3-signal-counts strong { display:block; margin-top:6px; color:var(--v2-text); font-size:24px; direction:ltr; }
+.v3-signal-counts .buy strong { color:var(--v2-teal); } .v3-signal-counts .sell strong { color:#ff7180; } .v3-signal-counts .hold strong { color:#94b8ff; }
+
+.v3-market-pulse { display:grid; grid-template-rows:auto minmax(160px,1fr) auto; }
+.v3-pulse-chart { min-height:160px; } .v3-pulse-chart svg { width:100%; height:100%; overflow:visible; }
+.v3-pulse-chart line { stroke:rgba(149,168,186,.25); stroke-width:.6; stroke-dasharray:2 2; }
+.v3-pulse-chart polyline { fill:none; stroke:var(--v2-teal); stroke-width:2; vector-effect:non-scaling-stroke; filter:drop-shadow(0 3px 6px rgba(47,214,192,.22)); }
+.v3-market-pulse footer { display:flex; justify-content:space-between; gap:12px; color:var(--v2-muted); font-size:11px; }
+.v3-market-pulse footer span { color:var(--v2-teal); font-weight:800; } .v3-market-pulse footer em { font-style:normal; }
+
+.v3-opportunity-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.v3-opportunity-card { min-height:152px; padding:15px; border:1px solid var(--v2-line-soft); border-radius:14px; background:rgba(12,28,45,.78); cursor:pointer; }
+.v3-opportunity-card:is(:hover,:focus-visible) { border-color:rgba(47,214,192,.5); transform:translateY(-1px); }
+.v3-opportunity-card header { display:grid; grid-template-columns:42px minmax(0,1fr) auto; gap:10px; align-items:center; }
+.v3-opportunity-card header div { min-width:0; } .v3-opportunity-card header strong { display:block; color:var(--v2-text); font-size:20px; direction:ltr; }
+.v3-opportunity-card header span:not(.asset-logo) { display:block; overflow:hidden; color:var(--v2-muted); font-size:10px; white-space:nowrap; text-overflow:ellipsis; }
+.v3-opportunity-card header b { padding:5px 10px; border-radius:999px; color:#bad1ff; background:rgba(104,169,255,.12); font-size:11px; }
+.v3-opportunity-card.buy header b { color:#79efd9; background:rgba(47,214,192,.12); } .v3-opportunity-card.sell header b { color:#ff9ca7; background:rgba(255,113,128,.12); }
+.v3-opportunity-metrics { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:20px; }
+.v3-opportunity-metrics div { min-width:0; border-inline-start:1px solid var(--v2-line-soft); } .v3-opportunity-metrics div:first-child { border-inline-start:0; }
+.v3-opportunity-metrics span { display:block; color:var(--v2-muted); font-size:10px; } .v3-opportunity-metrics strong { display:block; margin-top:5px; overflow:hidden; color:var(--v2-text); font-size:12px; direction:ltr; white-space:nowrap; text-overflow:ellipsis; }
+
+.v3-heatmap-grid { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); gap:9px; }
+.v3-heat-item { min-height:88px; padding:12px; display:grid; grid-template-columns:1fr auto; gap:5px 8px; border:1px solid rgba(104,169,255,.2); border-radius:12px; background:rgba(104,169,255,.07); cursor:pointer; }
+.v3-heat-item.buy { border-color:rgba(47,214,192,.28); background:rgba(47,214,192,.08); } .v3-heat-item.sell { border-color:rgba(255,113,128,.28); background:rgba(255,113,128,.08); }
+.v3-heat-item strong { color:var(--v2-text); font-size:14px; direction:ltr; } .v3-heat-item b { color:var(--v2-teal); font-size:12px; direction:ltr; }
+.v3-heat-item.sell b { color:#ff8e9b; } .v3-heat-item span { color:var(--v2-muted); font-size:10px; } .v3-heat-item em { color:#a9c3ee; font-size:10px; font-style:normal; direction:ltr; }
+
+.v3-followed-list,.v3-calendar-list { display:grid; gap:9px; }
+.v3-follow-row { min-height:44px; padding:9px 11px; display:grid; grid-template-columns:minmax(64px,1fr) auto auto auto; gap:12px; align-items:center; border-bottom:1px solid var(--v2-line-soft); cursor:pointer; }
+.v3-follow-row strong { color:var(--v2-text); direction:ltr; } .v3-follow-row span { color:var(--v2-teal); font-size:11px; } .v3-follow-row b { color:#cbd8e4; font-size:11px; direction:ltr; } .v3-follow-row em { color:var(--v2-muted); font-size:10px; font-style:normal; }
+.v3-calendar-list { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.v3-calendar-event { min-height:108px; padding:12px; border:1px solid var(--v2-line-soft); border-radius:12px; background:rgba(12,28,45,.7); }
+.v3-calendar-event.high { border-color:rgba(255,113,128,.35); } .v3-calendar-event header { display:flex; justify-content:space-between; gap:8px; color:var(--v2-muted); font-size:9px; }
+.v3-calendar-event strong { display:block; min-height:36px; margin:12px 0; color:var(--v2-text); font-size:11px; line-height:1.6; }
+.v3-calendar-event>b { padding:4px 8px; border:1px solid rgba(217,183,101,.5); border-radius:999px; color:#e5c878; font-size:9px; } .v3-calendar-event.high>b { border-color:rgba(255,113,128,.5); color:#ff9ca7; }
+.v3-empty-state { grid-column:1/-1; min-height:100px; display:grid; place-items:center; padding:18px; color:var(--v2-muted); text-align:center; }
+
+@media (min-width:1024px) {
+  body[data-app-view="home"] .app-shell.sfm-dashboard { --stable-rail:118px !important; direction:ltr !important; grid-template-columns:minmax(0,1fr) var(--stable-rail) !important; grid-template-rows:auto 0 minmax(0,auto) auto !important; grid-template-areas:"topbar rail" "ticker rail" "main rail" "footer rail" !important; }
+  body[data-app-view="home"] .app-shell.sfm-dashboard>:is(.topbar,main,.site-footer) { direction:rtl !important; }
+  body[data-app-view="home"] .app-shell.sfm-dashboard>.desktop-trading-rail { left:auto !important; right:14px !important; direction:rtl !important; }
+  body[data-app-view="home"] .app-shell.sfm-dashboard>.right-dashboard-panel { display:none !important; }
+}
+@media (max-width:1279px) {
+  .v3-reading-body { grid-template-columns:145px minmax(0,1fr); gap:16px; } .v3-confidence-ring { width:138px; } .v3-confidence-ring strong { font-size:34px; }
+  .v3-heatmap-grid { grid-template-columns:repeat(4,minmax(0,1fr)); } .v3-bottom-grid { grid-template-columns:1fr; }
+}
+@media (max-width:760px) {
+  body[data-app-view="home"] #terminal-home-v3.terminal-home-v3 { gap:10px !important; }
+  .v3-overview-grid,.v3-bottom-grid,.v3-opportunity-grid { grid-template-columns:1fr; gap:10px; }
+  .terminal-home-v3 :is(.v3-market-reading,.v3-market-pulse,.v3-opportunities,.v3-heatmap-panel,.v3-followed-panel,.v3-calendar-panel) { padding:14px; border-radius:16px; }
+  .v3-reading-body { grid-template-columns:1fr; } .v3-confidence-ring { width:148px; } .v3-market-pulse { grid-template-rows:auto 130px auto; } .v3-pulse-chart { min-height:130px; }
+  .v3-opportunity-card:nth-child(n+2) { display:none; } .v3-heatmap-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .v3-heat-item:nth-child(n+5) { display:none; }
+  .v3-calendar-list { grid-template-columns:1fr; } .v3-calendar-event:nth-child(n+2) { display:none; } .v3-follow-row { grid-template-columns:1fr auto; } .v3-follow-row :is(b,em) { display:none; }
+}
+
+/*
+  The legacy Home revision uses a long chain of :not(#id) selectors with
+  !important display rules. Keep the V3 view and its app-view-hidden siblings
+  above that legacy cascade without changing the behavior of other routes.
+*/
+body[data-app-view="home"] main > section#terminal-home-v3#terminal-home-v3#terminal-home-v3#terminal-home-v3#terminal-home-v3#terminal-home-v3#terminal-home-v3#terminal-home-v3.terminal-home-v3 {
+  display: grid !important;
+}
+
+body[data-app-view="home"] main > section:is(
+  #market-overview-section,
+  #sfm-live-floor,
+  #markets-section,
+  #command-center-section,
+  #home-heatmap-section,
+  #home-deck-section,
+  #economic-news-section
+).app-view-hidden {
+  display: none !important;
+}
+
+/* The terminal theme repeats these IDs five times in its Home-only display rules. */
+body[data-app-view="home"] main > section#economic-news-section#economic-news-section#economic-news-section#economic-news-section#economic-news-section#economic-news-section.app-view-hidden,
+body[data-app-view="home"] main > section#recommendations-section#recommendations-section#recommendations-section#recommendations-section#recommendations-section#recommendations-section.app-view-hidden {
+  display: none !important;
+}
+
+/* layout-stability.css uses three heatmap IDs in its compact breakpoint. */
+body[data-app-view="home"] main > section#home-heatmap-section#home-heatmap-section#home-heatmap-section#home-heatmap-section.app-view-hidden {
+  display: none !important;
 }

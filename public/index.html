@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="/styles.css?v=20260801-hardening-2" />
     <link rel="stylesheet" href="/cinema.css?v=20260801-hardening-2" />
     <link rel="stylesheet" href="/layout-stability.css?v=20260802-dashboard-data-ux-4" />
-    <link rel="stylesheet" href="/dashboard-v2.css?v=20260802-terminal-redesign-2" />
+    <link rel="stylesheet" href="/dashboard-v2.css?v=20260802-terminal-home-v3" />
   </head>
   <body class="notranslate" translate="no">
     <a class="skip-link" href="#main-content">تجاوز إلى المحتوى الرئيسي</a>
@@ -436,6 +436,66 @@
       </section>
 
       <main id="main-content" tabindex="-1">
+        <section id="terminal-home-v3" class="terminal-home-v3" aria-label="لوحة قراءة السوق">
+          <div class="v3-overview-grid">
+            <article class="v3-market-reading">
+              <header class="v3-section-head">
+                <div><span>تحليل SFM الذكي</span><h2>قراءة السوق الآن</h2></div>
+                <b id="v3-market-bias">--</b>
+              </header>
+              <div class="v3-reading-body">
+                <div class="v3-confidence-ring" id="v3-confidence-ring"><strong id="v3-confidence">--</strong><span>ثقة التحليل</span></div>
+                <div class="v3-reading-copy">
+                  <p id="v3-market-summary">بانتظار وصول بيانات موثوقة من مزود السوق.</p>
+                  <div class="v3-signal-counts">
+                    <div class="buy"><span>شراء</span><strong id="v3-buy-count">--</strong></div>
+                    <div class="sell"><span>بيع</span><strong id="v3-sell-count">--</strong></div>
+                    <div class="hold"><span>انتظار</span><strong id="v3-hold-count">--</strong></div>
+                  </div>
+                </div>
+              </div>
+            </article>
+            <article class="v3-market-pulse">
+              <header class="v3-section-head">
+                <div><span>توزيع حركة الأصول المحللة</span><h2>نبض السوق</h2></div>
+                <b id="v3-pulse-change">--</b>
+              </header>
+              <div id="v3-pulse-chart" class="v3-pulse-chart"></div>
+              <footer><span id="v3-pulse-label">--</span><em id="v3-pulse-updated">آخر تحديث --</em></footer>
+            </article>
+          </div>
+
+          <article class="v3-opportunities">
+            <header class="v3-section-head">
+              <div><span>أعلى النتائج حسب قوة التحليل</span><h2>أفضل الفرص</h2></div>
+              <a href="#view-recommendations" class="v3-view-all" data-v3-view="recommendations">عرض جميع الفرص</a>
+            </header>
+            <div id="v3-opportunity-grid" class="v3-opportunity-grid"></div>
+          </article>
+
+          <article class="v3-heatmap-panel">
+            <header class="v3-section-head">
+              <div><span>مقارنة مختصرة للحركة والثقة</span><h2>خريطة حرارة الفرص</h2></div>
+              <span id="v3-heatmap-leader">--</span>
+            </header>
+            <div id="v3-heatmap-grid" class="v3-heatmap-grid"></div>
+          </article>
+
+          <div class="v3-bottom-grid">
+            <article class="v3-followed-panel">
+              <header class="v3-section-head"><div><span>آخر الحالات المحفوظة</span><h2>الصفقات المتابعة</h2></div></header>
+              <div id="v3-followed-list" class="v3-followed-list"></div>
+            </article>
+            <article class="v3-calendar-panel">
+              <header class="v3-section-head">
+                <div><span>أحداث موثقة من التقويم الاقتصادي</span><h2>الأخبار الاقتصادية القادمة</h2></div>
+                <a href="#view-calendar" class="v3-view-all" data-v3-view="calendar">عرض التقويم</a>
+              </header>
+              <div id="v3-calendar-list" class="v3-calendar-list"></div>
+            </article>
+          </div>
+        </section>
+
         <section id="market-overview-section" class="market-overview-band" aria-label="نظرة عامة على الأسواق العالمية">
           <div class="mo-head">
             <div>
@@ -1341,6 +1401,6 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260802-dashboard-data-ux-3" type="module"></script>
+    <script src="/app.js?v=20260802-terminal-home-v3" type="module"></script>
   </body>
 </html>

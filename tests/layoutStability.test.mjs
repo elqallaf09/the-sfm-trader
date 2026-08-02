@@ -32,7 +32,7 @@ test("desktop dashboard keeps rail, main, summary and footer in named grid areas
 test("offline shell includes the authoritative layout stylesheet", async () => {
   const worker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
   assert.match(worker, /layout-stability\.css\?v=20260802-dashboard-data-ux-4/);
-  assert.match(worker, /dashboard-v2\.css\?v=20260802-terminal-redesign/);
+  assert.match(worker, /dashboard-v2\.css\?v=20260802-terminal-home-v3/);
 });
 
 test("terminal redesign prioritizes readable summaries over dense home tables", async () => {
@@ -42,11 +42,44 @@ test("terminal redesign prioritizes readable summaries over dense home tables", 
   assert.match(css, /\.home-heat-cell:nth-child\(n \+ 9\)/);
   assert.match(css, /\.economic-news-card:nth-child\(n \+ 4\)/);
   assert.match(css, /\.market-band \{ display: none !important; \}/);
-  assert.match(css, /@media \(min-width: 1024px\) and \(max-width: 1180px\)/);
-  assert.match(css, /section#home-heatmap-section#home-heatmap-section#home-heatmap-section\.home-heatmap-section/);
-  assert.match(css, /section#home-deck-section#home-deck-section#home-deck-section\.home-deck-section \.home-deck-panel:last-child/);
+  assert.doesNotMatch(css, /Restore the redesign's desktop summaries against the legacy tablet hide rule/);
   assert.match(css, /@media \(max-width: 1023px\)/);
   assert.match(css, /prefers-reduced-motion: reduce/);
+});
+
+test("home v3 implements the approved RTL terminal hierarchy", async () => {
+  const [html, app, css] = await Promise.all([
+    readFile(new URL("../public/index.html", import.meta.url), "utf8"),
+    readFile(new URL("../public/app.js", import.meta.url), "utf8"),
+    readFile(new URL("../public/dashboard-v2.css", import.meta.url), "utf8")
+  ]);
+  assert.match(html, /id="terminal-home-v3"/);
+  assert.match(html, /id="v3-confidence"/);
+  assert.match(html, /id="v3-opportunity-grid"/);
+  assert.match(html, /id="v3-heatmap-grid"/);
+  assert.match(html, /id="v3-calendar-list"/);
+  assert.match(html, /href="#view-calendar" class="v3-view-all" data-v3-view="calendar"/);
+  assert.match(app, /home:\s*\["#terminal-home-v3", "#temporary-legal-notices"\]/);
+  assert.match(app, /function renderTerminalHomeV3\(/);
+  assert.match(app, /safeRenderPanel\("واجهة قراءة السوق", \(\) => renderTerminalHomeV3\(data\)\)/);
+  assert.match(app, /Waiting for verified market-provider data\. The terminal will not display substitute prices or signals\./);
+  assert.match(css, /grid-template-areas:"topbar rail" "ticker rail" "main rail" "footer rail"/);
+  assert.match(css, /section#terminal-home-v3#terminal-home-v3#terminal-home-v3#terminal-home-v3/);
+  assert.match(css, /#sfm-live-floor,\s*#markets-section,\s*#command-center-section/);
+  assert.match(css, /section#economic-news-section#economic-news-section#economic-news-section#economic-news-section#economic-news-section#economic-news-section\.app-view-hidden/);
+  assert.match(css, /section#recommendations-section#recommendations-section#recommendations-section#recommendations-section#recommendations-section#recommendations-section\.app-view-hidden/);
+  assert.match(css, /section#home-heatmap-section#home-heatmap-section#home-heatmap-section#home-heatmap-section\.app-view-hidden/);
+  assert.doesNotMatch(css, /Restore the redesign's desktop summaries against the legacy tablet hide rule/);
+  assert.match(css, /\.app-shell\.sfm-dashboard>\.right-dashboard-panel \{ display:none !important; \}/);
+});
+
+test("home v3 uses truthful runtime data instead of mock values", async () => {
+  const app = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
+  assert.match(app, /const items = getDashboardRecommendations\(data\)/);
+  assert.match(app, /data\.economicCalendar \|\| \{\}/);
+  assert.match(app, /recommendationHistory\.filter\(\(entry\) => followedTradeKeys\.has\(entry\.key\)\)/);
+  assert.match(app, /لن تعرض المنصة أسعاراً أو إشارات بديلة/);
+  assert.doesNotMatch(app, /v3-confidence[^\n]*62%/);
 });
 
 test("home dashboard remains compact while recommendation details stay in their own view", async () => {
