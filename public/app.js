@@ -4,6 +4,7 @@ import { setUiState } from "./modules/uiState.js";
 import "./modules/webVitals.js";
 import { initMarketBackground } from "./modules/marketBackground.js";
 import { createBoundedMemoryCache } from "./modules/boundedMemoryCache.js";
+import { fetchJsonWithPolicy } from "./modules/requestPolicy.js";
 
 const marketTabs = document.querySelector("#market-tabs");
 const introOverlay = document.querySelector("#intro-overlay");
@@ -7347,32 +7348,12 @@ function formatCompactNumber(value) {
 }
 
 async function fetchJson(url, options = {}) {
-  const retries = Number.isFinite(options.retries) ? options.retries : 0;
-  const retryDelayMs = Number.isFinite(options.retryDelayMs) ? options.retryDelayMs : 500;
-  let lastError = null;
-
-  for (let attempt = 0; attempt <= retries; attempt += 1) {
-    try {
-      const response = await fetch(url, { cache: "no-store", signal: options.signal });
-      const text = await response.text();
-      const data = text ? JSON.parse(text) : {};
-
-      if (!response.ok) {
-        throw new Error(data.error || `تعذر تحميل البيانات (${response.status})`);
-      }
-
-      return data;
-    } catch (error) {
-      if (error?.name === "AbortError") throw error;
-
-      lastError = error;
-      if (attempt < retries) {
-        await wait(retryDelayMs);
-      }
-    }
+  try {
+    return await fetchJsonWithPolicy(url, options);
+  } catch (error) {
+    if (options.signal?.aborted) throw error;
+    throw new Error(getFriendlyFetchError(error, options.fallbackMessage));
   }
-
-  throw new Error(getFriendlyFetchError(lastError, options.fallbackMessage));
 }
 
 function getFriendlyFetchError(error, fallbackMessage = "تعذر الاتصال بالسيرفر. تأكد أن التطبيق يعمل ثم حاول مرة ثانية.") {
@@ -7387,10 +7368,6 @@ function getFriendlyFetchError(error, fallbackMessage = "تعذر الاتصال
   }
 
   return message;
-}
-
-function wait(ms) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 function escapeHtml(value) {
