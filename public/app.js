@@ -3981,7 +3981,10 @@ function renderV3HeatItem(item) {
 
 function renderV3PulseChart(items) {
   if (!items.length) return renderV3EmptyState("بانتظار بيانات حركة الأصول.");
-  const values = items.slice(0, 20).map((item) => Number(item.expectedMovePct || 0));
+  const values = items.slice(0, 20)
+    .map((item) => Number(item.expectedMovePct || 0))
+    .filter(Number.isFinite)
+    .sort((a, b) => a - b);
   const max = Math.max(1, ...values.map((value) => Math.abs(value)));
   const points = values.map((value, index) => {
     const x = values.length === 1 ? 50 : (index / (values.length - 1)) * 100;
