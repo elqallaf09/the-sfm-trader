@@ -21,9 +21,30 @@ test("homepage exposes keyboard navigation and mobile disclosure state", async (
 
 test("homepage animation pauses for hidden and reduced-motion states", async () => {
   const source = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
+  const backgroundSource = await readFile(new URL("../public/modules/marketBackground.js", import.meta.url), "utf8");
 
-  assert.match(source, /prefers-reduced-motion: reduce/);
-  assert.match(source, /document\.hidden/);
-  assert.match(source, /cancelAnimationFrame\(animationFrame\)/);
+  assert.match(backgroundSource, /prefers-reduced-motion: reduce/);
+  assert.match(backgroundSource, /documentRef\.hidden/);
+  assert.match(backgroundSource, /cancelAnimationFrame\(animationFrame\)/);
   assert.match(source, /init\(\)\.catch\(handleBootstrapFailure\)/);
+});
+
+test("homepage background module is included in the offline application shell", async () => {
+  const worker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
+  assert.match(worker, /\/modules\/marketBackground\.js/);
+});
+
+test("offline application shell matches the versioned page entry scripts", async () => {
+  const [home, detail, worker] = await Promise.all([
+    readFile(new URL("../public/index.html", import.meta.url), "utf8"),
+    readFile(new URL("../public/detail.html", import.meta.url), "utf8"),
+    readFile(new URL("../public/service-worker.js", import.meta.url), "utf8")
+  ]);
+  const homeScript = home.match(/<script src="([^"]*app\.js[^"]*)"/)?.[1];
+  const detailScript = detail.match(/<script src="([^"]*detail\.js[^"]*)"/)?.[1];
+
+  assert.ok(homeScript);
+  assert.ok(detailScript);
+  assert.ok(worker.includes(`"${homeScript}"`));
+  assert.ok(worker.includes(`"${detailScript}"`));
 });

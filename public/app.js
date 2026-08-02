@@ -2,6 +2,7 @@
 import { createVisibilityAwarePoller } from "./modules/polling.js";
 import { setUiState } from "./modules/uiState.js";
 import "./modules/webVitals.js";
+import { initMarketBackground } from "./modules/marketBackground.js";
 
 const marketTabs = document.querySelector("#market-tabs");
 const introOverlay = document.querySelector("#intro-overlay");
@@ -2103,6 +2104,14 @@ function applyAppSettings(options = {}) {
   document.body?.classList.toggle("language-en", english);
   document.body?.classList.toggle("language-ar", language === "ar");
   document.body?.classList.toggle("language-fr", language === "fr");
+  const skipLink = document.querySelector(".skip-link");
+  if (skipLink) {
+    skipLink.textContent = language === "fr"
+      ? "Aller au contenu principal"
+      : english
+        ? "Skip to main content"
+        : "تجاوز إلى المحتوى الرئيسي";
+  }
   syncBrandTitle();
   updateSettingsPanelLanguage();
   syncNavigationLanguage();
@@ -7242,118 +7251,6 @@ function drawSparkline(canvas, values = [], action) {
   context.beginPath();
   context.arc(x, y, 3.5, 0, Math.PI * 2);
   context.fill();
-}
-
-function initMarketBackground() {
-  const canvas = document.querySelector("#market-bg");
-  const context = canvas?.getContext?.("2d");
-  if (!canvas || !context) return;
-  const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-  let animationFrame = 0;
-  let resizeFrame = 0;
-  const rows = Array.from({ length: 8 }, (_, index) => ({
-    y: 80 + index * 92,
-    phase: Math.random() * 100,
-    speed: 0.35 + Math.random() * 0.45,
-    color: index % 3 === 0 ? "53, 194, 164" : index % 3 === 1 ? "255, 107, 107" : "90, 167, 255"
-  }));
-
-  function resize() {
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = Math.floor(window.innerWidth * dpr);
-    canvas.height = Math.floor(window.innerHeight * dpr);
-    canvas.style.width = `${window.innerWidth}px`;
-    canvas.style.height = `${window.innerHeight}px`;
-    context.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-
-  function frame() {
-    animationFrame = 0;
-    if (document.hidden || reducedMotion?.matches) return;
-    context.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    drawGrid(context);
-
-    for (const row of rows) {
-      row.phase += row.speed;
-      drawMarketLine(context, row);
-      drawCandles(context, row);
-    }
-
-    animationFrame = window.requestAnimationFrame(frame);
-  }
-
-  function scheduleResize() {
-    if (resizeFrame) return;
-    resizeFrame = window.requestAnimationFrame(() => {
-      resizeFrame = 0;
-      resize();
-    });
-  }
-
-  function syncAnimation() {
-    if (document.hidden || reducedMotion?.matches) {
-      if (animationFrame) window.cancelAnimationFrame(animationFrame);
-      animationFrame = 0;
-      context.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      return;
-    }
-    if (!animationFrame) animationFrame = window.requestAnimationFrame(frame);
-  }
-
-  window.addEventListener("resize", scheduleResize, { passive: true });
-  document.addEventListener("visibilitychange", syncAnimation);
-  reducedMotion?.addEventListener?.("change", syncAnimation);
-  resize();
-  syncAnimation();
-}
-
-function drawGrid(context) {
-  context.strokeStyle = "rgba(135, 154, 172, 0.055)";
-  context.lineWidth = 1;
-
-  for (let x = 0; x < window.innerWidth; x += 72) {
-    context.beginPath();
-    context.moveTo(x, 0);
-    context.lineTo(x, window.innerHeight);
-    context.stroke();
-  }
-
-  for (let y = 0; y < window.innerHeight; y += 72) {
-    context.beginPath();
-    context.moveTo(0, y);
-    context.lineTo(window.innerWidth, y);
-    context.stroke();
-  }
-}
-
-function drawMarketLine(context, row) {
-  context.strokeStyle = `rgba(${row.color}, 0.22)`;
-  context.lineWidth = 1.5;
-  context.beginPath();
-
-  for (let x = -20; x <= window.innerWidth + 20; x += 18) {
-    const wave = Math.sin((x + row.phase * 3) * 0.012) * 18 + Math.cos((x - row.phase) * 0.027) * 9;
-    const y = (row.y + row.phase * 0.12 + wave) % (window.innerHeight + 120);
-    if (x === -20) context.moveTo(x, y);
-    else context.lineTo(x, y);
-  }
-
-  context.stroke();
-}
-
-function drawCandles(context, row) {
-  for (let x = ((row.phase * 7) % 90) - 90; x < window.innerWidth + 90; x += 90) {
-    const mid = (row.y + Math.sin((x + row.phase) * 0.02) * 20) % (window.innerHeight + 120);
-    const height = 18 + Math.abs(Math.sin((x + row.phase) * 0.04)) * 34;
-    const up = Math.sin((x + row.phase) * 0.03) > 0;
-    context.strokeStyle = up ? "rgba(101, 217, 141, 0.24)" : "rgba(255, 107, 107, 0.2)";
-    context.fillStyle = up ? "rgba(101, 217, 141, 0.12)" : "rgba(255, 107, 107, 0.1)";
-    context.beginPath();
-    context.moveTo(x, mid - height * 0.65);
-    context.lineTo(x, mid + height * 0.65);
-    context.stroke();
-    context.fillRect(x - 5, mid - height * 0.28, 10, height * 0.56);
-  }
 }
 
 function formatMoney(value, currency) {
