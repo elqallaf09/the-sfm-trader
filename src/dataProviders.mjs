@@ -12,6 +12,7 @@ const responseCache = createBoundedCache({
   maxEntries: positiveInteger(process.env.PROVIDER_CACHE_MAX_ENTRIES, 250),
   maxAgeMs: RESPONSE_CACHE_TTL_MS
 });
+const inFlightResponses = new Map();
 const PROVIDER_REQUEST_TIMEOUT_MS = positiveInteger(process.env.PROVIDER_REQUEST_TIMEOUT_MS, 3_500);
 const PROVIDER_MAX_ATTEMPTS = positiveInteger(process.env.PROVIDER_MAX_ATTEMPTS, 2);
 const PROVIDER_MAX_CONCURRENT = positiveInteger(process.env.PROVIDER_MAX_CONCURRENT, 3);
@@ -389,6 +390,18 @@ async function fetchJson(url) {
     return structuredClone(cached.data);
   }
 
+  let pending = inFlightResponses.get(url);
+  if (!pending) {
+    pending = loadJson(url);
+    inFlightResponses.set(url, pending);
+    pending.finally(() => {
+      if (inFlightResponses.get(url) === pending) inFlightResponses.delete(url);
+    }).catch(() => {});
+  }
+  return structuredClone(await pending);
+}
+
+async function loadJson(url) {
   let response;
   for (let attempt = 0; attempt < PROVIDER_MAX_ATTEMPTS; attempt += 1) {
     try {
@@ -417,7 +430,7 @@ async function fetchJson(url) {
 
   const data = await response.json();
   responseCache.set(url, { createdAt: Date.now(), data });
-  return structuredClone(data);
+  return data;
 }
 
 function fetchWithTimeout(url) {

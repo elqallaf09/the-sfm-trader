@@ -58,3 +58,35 @@ test("provider response cache is bounded and evicts least-recently-used entries"
 
   assert.equal(requests, 4);
 });
+
+test("concurrent requests for one provider URL share a single upstream request", async (context) => {
+  const fixture = JSON.parse(await readFile(new URL("./fixtures/yahoo-chart.json", import.meta.url), "utf8"));
+  const originalFetch = globalThis.fetch;
+  const originalProvider = process.env.DATA_PROVIDER;
+  const originalGap = process.env.PROVIDER_MIN_START_GAP_MS;
+  context.after(() => {
+    globalThis.fetch = originalFetch;
+    if (originalProvider === undefined) delete process.env.DATA_PROVIDER;
+    else process.env.DATA_PROVIDER = originalProvider;
+    if (originalGap === undefined) delete process.env.PROVIDER_MIN_START_GAP_MS;
+    else process.env.PROVIDER_MIN_START_GAP_MS = originalGap;
+  });
+  process.env.DATA_PROVIDER = "yahoo";
+  process.env.PROVIDER_MIN_START_GAP_MS = "0";
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests += 1;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    return new Response(JSON.stringify(fixture), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  const provider = await import(`../src/dataProviders.mjs?request-coalescing=${Date.now()}`);
+
+  const results = await Promise.all(Array.from({ length: 8 }, () => (
+    provider.fetchChart("COALESCE", { range: "5d", interval: "1d" })
+  )));
+
+  assert.equal(requests, 1);
+  assert.equal(results.length, 8);
+  assert.notEqual(results[0], results[1]);
+  assert.deepEqual(results[0], results[1]);
+});
