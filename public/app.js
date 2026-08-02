@@ -1332,7 +1332,22 @@ initAdaptiveViewport();
 initMarketBackground();
 initIntroCeremony();
 registerPwaServiceWorker();
-init();
+init().catch(handleBootstrapFailure);
+
+function handleBootstrapFailure(error) {
+  console.error("[homepage bootstrap]", error);
+  setConnectionStatus("offline", localizeUiText("تعذر تشغيل الصفحة"));
+  if (cards) {
+    setUiState(cards, {
+      kind: "error",
+      title: localizeUiText("تعذر تشغيل الصفحة الرئيسية"),
+      message: localizeUiText("أعد تحميل الصفحة. إذا استمرت المشكلة فتحقق من اتصال الخادم."),
+      actionLabel: localizeUiText("إعادة تحميل الصفحة"),
+      actionId: "reload-homepage"
+    });
+    cards.querySelector('[data-ui-state-action="reload-homepage"]')?.addEventListener("click", () => window.location.reload());
+  }
+}
 
 function initAdaptiveViewport() {
   const root = document.documentElement;
@@ -1419,8 +1434,7 @@ async function init() {
   renderWatchlist();
   loadWatchlistData(true);
   renderPortfolio();
-  await loadSharedTradeState();
-  await loadNotificationLog();
+  await Promise.all([loadSharedTradeState(), loadNotificationLog()]);
   renderNotificationCenter();
   renderHistory();
   renderVoiceMonitor();
@@ -5528,6 +5542,8 @@ function setNotificationPanelOpen(open) {
   notificationPanel.hidden = !notificationPanelOpen;
   notificationButton.setAttribute("aria-expanded", String(notificationPanelOpen));
   notificationButton.classList.toggle("is-open", notificationPanelOpen);
+  mobileNotificationButton?.setAttribute("aria-expanded", String(notificationPanelOpen));
+  mobileNotificationButton?.classList.toggle("is-open", notificationPanelOpen);
   if (notificationPanelOpen) setSettingsPanelOpen(false);
 }
 
@@ -7230,7 +7246,11 @@ function drawSparkline(canvas, values = [], action) {
 
 function initMarketBackground() {
   const canvas = document.querySelector("#market-bg");
-  const context = canvas.getContext("2d");
+  const context = canvas?.getContext?.("2d");
+  if (!canvas || !context) return;
+  const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+  let animationFrame = 0;
+  let resizeFrame = 0;
   const rows = Array.from({ length: 8 }, (_, index) => ({
     y: 80 + index * 92,
     phase: Math.random() * 100,
@@ -7239,7 +7259,7 @@ function initMarketBackground() {
   }));
 
   function resize() {
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
     canvas.width = Math.floor(window.innerWidth * dpr);
     canvas.height = Math.floor(window.innerHeight * dpr);
     canvas.style.width = `${window.innerWidth}px`;
@@ -7248,6 +7268,8 @@ function initMarketBackground() {
   }
 
   function frame() {
+    animationFrame = 0;
+    if (document.hidden || reducedMotion?.matches) return;
     context.clearRect(0, 0, window.innerWidth, window.innerHeight);
     drawGrid(context);
 
@@ -7257,12 +7279,32 @@ function initMarketBackground() {
       drawCandles(context, row);
     }
 
-    window.requestAnimationFrame(frame);
+    animationFrame = window.requestAnimationFrame(frame);
   }
 
-  window.addEventListener("resize", resize);
+  function scheduleResize() {
+    if (resizeFrame) return;
+    resizeFrame = window.requestAnimationFrame(() => {
+      resizeFrame = 0;
+      resize();
+    });
+  }
+
+  function syncAnimation() {
+    if (document.hidden || reducedMotion?.matches) {
+      if (animationFrame) window.cancelAnimationFrame(animationFrame);
+      animationFrame = 0;
+      context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      return;
+    }
+    if (!animationFrame) animationFrame = window.requestAnimationFrame(frame);
+  }
+
+  window.addEventListener("resize", scheduleResize, { passive: true });
+  document.addEventListener("visibilitychange", syncAnimation);
+  reducedMotion?.addEventListener?.("change", syncAnimation);
   resize();
-  frame();
+  syncAnimation();
 }
 
 function drawGrid(context) {
@@ -9508,16 +9550,22 @@ function updateMarketOverviewBubbles(all = []) {
 
   function sfmFinalOpenRecommendationDrawer() {
     if (!sfmFinalDrawer) return;
+    sfmFinalDrawer.returnFocusTo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     sfmFinalDrawer.classList.add("is-open");
     sfmFinalDrawer.setAttribute("aria-hidden", "false");
+    sfmFinalDrawer.inert = false;
     document.body.classList.add("recommendation-drawer-open");
+    sfmFinalDrawer.querySelector("[data-recommendation-close]")?.focus();
   }
 
   function sfmFinalCloseRecommendationDrawer() {
     if (!sfmFinalDrawer) return;
     sfmFinalDrawer.classList.remove("is-open");
     sfmFinalDrawer.setAttribute("aria-hidden", "true");
+    sfmFinalDrawer.inert = true;
     document.body.classList.remove("recommendation-drawer-open");
+    sfmFinalDrawer.returnFocusTo?.focus?.();
+    sfmFinalDrawer.returnFocusTo = null;
   }
 
   function sfmFinalSetupRecommendationDrawer() {
@@ -9538,6 +9586,19 @@ function updateMarketOverviewBubbles(all = []) {
     document.addEventListener("keydown", (event) => {
       if (!sfmFinalDrawer.classList.contains("is-open")) return;
       if (event.key === "Escape") sfmFinalCloseRecommendationDrawer();
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(sfmFinalDrawer.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"))
+        .filter((element) => !element.hidden && !element.hasAttribute("disabled"));
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     });
   }
 
