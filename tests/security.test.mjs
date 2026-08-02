@@ -22,6 +22,15 @@ test("development has an explicit isolated local identity", () => {
   assert.deepEqual(security.authenticate(request()), { userId: "local-development", authenticated: false });
 });
 
+test("development permits only same-origin browser API requests without an allowlist", () => {
+  const security = createSecurity({ production: false });
+  const local = request({ origin: "http://127.0.0.1:4173", host: "127.0.0.1:4173" });
+  const crossOrigin = request({ origin: "https://untrusted.example", host: "127.0.0.1:4173" });
+
+  assert.equal(security.corsOrigin(local), "http://127.0.0.1:4173");
+  assert.equal(security.corsOrigin(crossOrigin), "");
+});
+
 test("rate limiter separates scopes and blocks excess calls", () => {
   const security = createSecurity({ production: false, rateLimitMax: 2, analysisRateLimitMax: 1 });
   assert.equal(security.checkRateLimit(request(), "analysis").allowed, true);

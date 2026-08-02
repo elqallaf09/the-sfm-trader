@@ -23,6 +23,7 @@ const syntaxFiles = [
   "public/modules/uiState.js",
   "public/modules/webVitals.js",
   "public/modules/marketBackground.js",
+  "public/modules/boundedMemoryCache.js",
   "tools/set-ios-server-url.mjs",
   "tools/smoke.mjs",
   "tools/migrate.mjs",

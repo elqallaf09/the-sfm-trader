@@ -27,11 +27,14 @@ test("homepage animation pauses for hidden and reduced-motion states", async () 
   assert.match(backgroundSource, /documentRef\.hidden/);
   assert.match(backgroundSource, /cancelAnimationFrame\(animationFrame\)/);
   assert.match(source, /init\(\)\.catch\(handleBootstrapFailure\)/);
+  assert.match(source, /تعذر تحديث الأسواق - وضع عدم الاتصال/);
+  assert.match(source, /renderMarketTabs\(lastMarkets\)/);
 });
 
 test("homepage background module is included in the offline application shell", async () => {
   const worker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
   assert.match(worker, /\/modules\/marketBackground\.js/);
+  assert.match(worker, /\/modules\/boundedMemoryCache\.js/);
 });
 
 test("offline application shell matches the versioned page entry scripts", async () => {

@@ -448,7 +448,7 @@ body[data-app-view="home"] .app-shell > main {
   overflow: visible !important;
 }
 
-body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#temporary-legal-notices) {
+body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#economic-news-section):not(#recommendations-section):not(#temporary-legal-notices) {
   display: none !important;
 }
 
@@ -13851,7 +13851,7 @@ body:not(.intro-running) .intro-overlay {
 }
 
 @media (min-width: 761px) {
-  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#temporary-legal-notices) {
+  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#economic-news-section):not(#recommendations-section):not(#temporary-legal-notices) {
     display: none !important;
   }
 }
@@ -14092,7 +14092,7 @@ body:not(.intro-running) .intro-overlay {
     order: 5 !important;
   }
 
-  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#temporary-legal-notices) {
+  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#economic-news-section):not(#recommendations-section):not(#temporary-legal-notices) {
     display: none !important;
   }
 
@@ -15020,7 +15020,7 @@ body[data-app-view="home"] .home-deck-panel {
     padding: 0 !important;
   }
 
-  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#temporary-legal-notices) {
+  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#economic-news-section):not(#recommendations-section):not(#temporary-legal-notices) {
     display: none !important;
   }
 
@@ -17608,7 +17608,7 @@ body:not(.intro-running) .app-shell {
     overflow: visible !important;
   }
 
-  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#temporary-legal-notices) {
+  body[data-app-view="home"] main > section:not(#sfm-live-floor):not(#markets-section):not(#command-center-section):not(#home-heatmap-section):not(#home-deck-section):not(#economic-news-section):not(#recommendations-section):not(#temporary-legal-notices) {
     display: none !important;
   }
 
@@ -22391,4 +22391,11 @@ body[data-app-view] .app-shell,
 
 @media (prefers-reduced-motion: reduce) {
   .ui-state-loading .ui-state-icon { animation: none; }
+}
+
+@media (max-width: 760px) {
+  .settings-panel,
+  .notification-panel {
+    z-index: 150 !important;
+  }
 }
