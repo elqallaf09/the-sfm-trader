@@ -1,0 +1,147 @@
+/* Authoritative application-shell geometry. Keep this file loaded after legacy theme layers. */
+@media (min-width: 1024px) {
+  body:not(.intro-running) .app-shell.sfm-dashboard,
+  body[data-app-view] .app-shell.sfm-dashboard {
+    --stable-rail: clamp(96px, 6vw, 112px);
+    --stable-aside: clamp(238px, 17vw, 286px);
+    width: min(1880px, calc(100vw - 28px)) !important;
+    max-width: none !important;
+    min-height: calc(100dvh - 28px) !important;
+    height: auto !important;
+    margin: 14px auto !important;
+    padding: 14px !important;
+    display: grid !important;
+    grid-template-columns: var(--stable-rail) minmax(0, 1fr) var(--stable-aside) !important;
+    /* The legacy ticker is intentionally hidden; reserve no grid row for it. */
+    grid-template-rows: auto 0 minmax(0, auto) auto !important;
+    grid-template-areas:
+      "rail topbar topbar"
+      "rail ticker ticker"
+      "rail main right"
+      "rail footer footer" !important;
+    gap: 12px 14px !important;
+    overflow: clip !important;
+    align-items: start !important;
+  }
+
+  body:not(.intro-running) .app-shell.sfm-dashboard > .topbar,
+  body[data-app-view] .app-shell.sfm-dashboard > .topbar {
+    grid-area: topbar !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  body:not(.intro-running) .app-shell.sfm-dashboard > .ticker-band,
+  body[data-app-view] .app-shell.sfm-dashboard > .ticker-band {
+    grid-area: ticker !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  body:not(.intro-running) .app-shell.sfm-dashboard > .desktop-trading-rail,
+  body[data-app-view] .app-shell.sfm-dashboard > .desktop-trading-rail {
+    grid-area: rail !important;
+    /* An in-flow full-height rail makes its spanning grid area inflate header/footer rows. */
+    position: absolute !important;
+    display: flex !important;
+    top: 14px !important;
+    left: 14px !important;
+    width: var(--stable-rail) !important;
+    max-width: none !important;
+    flex: 0 0 var(--stable-rail) !important;
+    min-width: 0 !important;
+    height: calc(100dvh - 28px) !important;
+    max-height: calc(100dvh - 28px) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    align-self: start !important;
+  }
+
+  body:not(.intro-running) .app-shell.sfm-dashboard > main,
+  body[data-app-view] .app-shell.sfm-dashboard > main {
+    grid-area: main !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    align-self: start !important;
+  }
+
+  body:not(.intro-running) .app-shell.sfm-dashboard > .right-dashboard-panel,
+  body[data-app-view] .app-shell.sfm-dashboard > .right-dashboard-panel {
+    grid-area: right !important;
+    display: flex !important;
+    position: sticky !important;
+    top: 14px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    max-height: calc(100dvh - 28px) !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    align-self: start !important;
+  }
+
+  body:not(.intro-running) .app-shell.sfm-dashboard > .site-footer,
+  body[data-app-view] .app-shell.sfm-dashboard > .site-footer {
+    grid-area: footer !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1439px) {
+  body:not(.intro-running) .app-shell.sfm-dashboard,
+  body[data-app-view] .app-shell.sfm-dashboard {
+    --stable-rail: 92px;
+    grid-template-columns: var(--stable-rail) minmax(0, 1fr) !important;
+    grid-template-areas:
+      "rail topbar"
+      "rail ticker"
+      "rail main"
+      "rail right"
+      "rail footer" !important;
+  }
+
+  body:not(.intro-running) .app-shell.sfm-dashboard > .right-dashboard-panel,
+  body[data-app-view] .app-shell.sfm-dashboard > .right-dashboard-panel {
+    position: static !important;
+    max-height: none !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  body:not(.intro-running) .app-shell.sfm-dashboard,
+  body[data-app-view] .app-shell.sfm-dashboard {
+    display: block !important;
+    width: min(100%, calc(100vw - 20px)) !important;
+    min-height: auto !important;
+    height: auto !important;
+    margin: 10px auto calc(88px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: 12px !important;
+    overflow: visible !important;
+  }
+
+  body:not(.intro-running) .app-shell.sfm-dashboard > main,
+  body[data-app-view] .app-shell.sfm-dashboard > main {
+    padding-bottom: 16px !important;
+  }
+
+  body:not(.intro-running) .app-shell.sfm-dashboard > .site-footer,
+  body[data-app-view] .app-shell.sfm-dashboard > .site-footer {
+    display: flex !important;
+    min-height: 42px !important;
+    margin: 0 !important;
+  }
+
+  body:not(.intro-running) .app-shell.sfm-dashboard > .desktop-trading-rail,
+  body[data-app-view] .app-shell.sfm-dashboard > .desktop-trading-rail,
+  body:not(.intro-running) .app-shell.sfm-dashboard > .right-dashboard-panel,
+  body[data-app-view] .app-shell.sfm-dashboard > .right-dashboard-panel {
+    display: none !important;
+  }
+}

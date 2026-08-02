@@ -6,6 +6,7 @@ const STATIC_ASSETS = [
   "/styles.css?v=20260801-hardening-2",
   "/desktop-balance.css?v=20260801-hardening-2",
   "/cinema.css?v=20260801-hardening-2",
+  "/layout-stability.css?v=20260802-dashboard-grid",
   "/app.js?v=20260802-homepage-resilience",
   "/detail.js?v=20260802-homepage-resilience",
   "/modules/apiClient.js",

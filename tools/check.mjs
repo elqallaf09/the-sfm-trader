@@ -106,12 +106,19 @@ const detailSource = readFileSync("public/detail.js", "utf8");
 const serviceWorkerSource = readFileSync("public/service-worker.js", "utf8");
 const indexSource = readFileSync("public/index.html", "utf8");
 const stylesSource = readFileSync("public/styles.css", "utf8");
+const layoutStabilitySource = readFileSync("public/layout-stability.css", "utf8");
 const capacitorConfig = JSON.parse(readFileSync("capacitor.config.json", "utf8"));
 if (!serverSource.includes("requireIdentity(request, response)") || serverSource.includes('"access-control-allow-origin": "*"')) {
   failed = true;
   console.error("[security failed] protected API identity or CORS guard is missing");
 } else {
   console.log("[security ok] protected API identity and restricted CORS");
+}
+if (!layoutStabilitySource.includes('grid-template-areas:') || !layoutStabilitySource.includes('grid-area: right !important')) {
+  failed = true;
+  console.error("[layout failed] authoritative dashboard grid is missing");
+} else {
+  console.log("[layout ok] authoritative dashboard grid is loaded");
 }
 if (serverSource.includes("request.headers.host")) {
   failed = true;
