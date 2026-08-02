@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Readable } from "node:stream";
-import { configureHttpServer, readJsonBody } from "../src/http.mjs";
+import { configureHttpServer, normalizeRequestId, readJsonBody } from "../src/http.mjs";
 
 function request(body, headers = {}) {
   const stream = Readable.from(body === undefined ? [] : [Buffer.from(body)]);
@@ -27,4 +27,11 @@ test("HTTP server limits receive safe defaults and explicit overrides", () => {
   assert.equal(server.headersTimeout, 10_000);
   assert.equal(server.keepAliveTimeout, 5_000);
   assert.equal(server.maxRequestsPerSocket, 250);
+});
+
+test("request IDs accept bounded safe values and replace untrusted input", () => {
+  assert.equal(normalizeRequestId("client-request_123", "fallback"), "client-request_123");
+  assert.equal(normalizeRequestId("short", "fallback"), "fallback");
+  assert.equal(normalizeRequestId("x".repeat(81), "fallback"), "fallback");
+  assert.equal(normalizeRequestId("request id with spaces", "fallback"), "fallback");
 });

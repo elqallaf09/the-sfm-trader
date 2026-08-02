@@ -43,6 +43,14 @@ export function createStaticServer({ publicDir, production, securityHeaders }) {
   }
 
   return async function serveStatic(request, response, pathname) {
+    if (!["GET", "HEAD"].includes(request.method || "GET")) {
+      response.writeHead(405, {
+        ...securityHeaders("text/plain; charset=utf-8", { hsts: production }),
+        allow: "GET, HEAD"
+      });
+      return response.end("Method not allowed");
+    }
+    const headOnly = request.method === "HEAD";
     const safePath = pathname === "/" ? "/index.html" : pathname;
     const requestedPath = path.normalize(path.join(publicDir, safePath));
     const relative = path.relative(publicDir, requestedPath);
@@ -61,7 +69,12 @@ export function createStaticServer({ publicDir, production, securityHeaders }) {
           ? "public, max-age=86400, stale-while-revalidate=604800"
           : "public, max-age=300, stale-while-revalidate=86400";
       if (request.headers["if-none-match"] === asset.etag) {
-        response.writeHead(304, { etag: asset.etag, "cache-control": cacheControl });
+        response.writeHead(304, {
+          ...securityHeaders(MIME_TYPES[extension] || "application/octet-stream", { html, hsts: production }),
+          etag: asset.etag,
+          "cache-control": cacheControl,
+          vary: "Accept-Encoding"
+        });
         return response.end();
       }
       const encoded = encode(request, asset, extension);
@@ -71,7 +84,7 @@ export function createStaticServer({ publicDir, production, securityHeaders }) {
         "cache-control": cacheControl,
         ...(encoded.compressed ? { "content-encoding": "br", vary: "Accept-Encoding" } : {})
       });
-      return response.end(encoded.body);
+      return response.end(headOnly ? undefined : encoded.body);
     } catch {
       if (path.extname(requestedPath)) {
         response.writeHead(404, securityHeaders("text/plain; charset=utf-8", { hsts: production }));
@@ -85,7 +98,7 @@ export function createStaticServer({ publicDir, production, securityHeaders }) {
         "cache-control": "no-cache",
         ...(encoded.compressed ? { "content-encoding": "br", vary: "Accept-Encoding" } : {})
       });
-      return response.end(encoded.body);
+      return response.end(headOnly ? undefined : encoded.body);
     }
   };
 }

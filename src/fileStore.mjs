@@ -72,7 +72,13 @@ export function createUserFileStore(rootDir) {
 
 async function readDocument(filePath) {
   try { return JSON.parse(await readFile(filePath, "utf8")); } catch (error) {
-    if (error.code === "ENOENT" || error instanceof SyntaxError) return null;
+    if (error.code === "ENOENT") return null;
+    if (error instanceof SyntaxError) {
+      const corrupted = new Error("Stored user state is corrupted and was not modified");
+      corrupted.code = "SFM_STATE_CORRUPTED";
+      corrupted.cause = error;
+      throw corrupted;
+    }
     throw error;
   }
 }

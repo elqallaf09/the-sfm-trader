@@ -36,6 +36,10 @@ export function createPostgresStateStore(options = {}) {
       try {
         await client.query("BEGIN");
         if (idempotencyKey) {
+          await client.query(
+            "DELETE FROM sfm_idempotency_keys WHERE user_id=$1 AND namespace=$2 AND expires_at <= now()",
+            [userId, namespace]
+          );
           const replay = await client.query(
             "SELECT request_hash, state_version, response_payload FROM sfm_idempotency_keys WHERE user_id=$1 AND namespace=$2 AND idempotency_key=$3 AND expires_at > now()",
             [userId, namespace, idempotencyKey]

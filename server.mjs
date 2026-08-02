@@ -12,7 +12,7 @@ import { applyEconomicNewsOverlayToRecommendations, getEconomicCalendarForMarket
 import { getMarketSummaries, markets } from "./src/markets.mjs";
 import { createStateStore } from "./src/stateStore.mjs";
 import { createSecurity, securityHeaders } from "./src/security.mjs";
-import { configureHttpServer, readJsonBody } from "./src/http.mjs";
+import { configureHttpServer, normalizeRequestId, readJsonBody } from "./src/http.mjs";
 import { createBoundedCache } from "./src/boundedCache.mjs";
 import { createStaticServer } from "./src/staticServer.mjs";
 import { createMetrics } from "./src/metrics.mjs";
@@ -199,7 +199,7 @@ function loadEnvFile(filePath) {
 const server = http.createServer(async (request, response) => {
   try {
     const url = new URL(request.url, "http://localhost");
-    const requestId = request.headers["x-request-id"] || crypto.randomUUID();
+    const requestId = normalizeRequestId(request.headers["x-request-id"], crypto.randomUUID());
     response.setHeader("x-request-id", requestId);
     const requestStartedAt = performance.now();
     response.once("finish", () => metrics.observeRequest({
@@ -242,14 +242,14 @@ const server = http.createServer(async (request, response) => {
     }
 
     if (url.pathname === "/api/ready") {
-      const storage = await userStore.health().catch((error) => ({ ok: false, driver: userStore.driver, error: error.message }));
+      const storage = await userStore.health().catch(() => ({ ok: false, driver: userStore.driver }));
       const ready = !shuttingDown && storage.ok;
       return sendJson(response, {
         ok: ready,
-        status: ready ? "ready" : "shutting_down",
+        status: ready ? "ready" : shuttingDown ? "shutting_down" : "not_ready",
         service: "the-sfm-trader",
         provider: getConfiguredProvider(),
-        providerHealth: getProviderHealth(),
+        providerHealth: publicProviderHealth(),
         storage,
         cacheEntries: cache.size,
         shariaCacheEntries: shariaCache.size,
@@ -367,6 +367,11 @@ function requireIdentity(request, response) {
     return null;
   }
   return identity;
+}
+
+function publicProviderHealth() {
+  const { lastError: _privateError, ...health } = getProviderHealth();
+  return health;
 }
 
 function handleOptions(request, response) {

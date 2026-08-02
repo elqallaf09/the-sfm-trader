@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { createUserFileStore } from "../src/fileStore.mjs";
@@ -47,4 +47,18 @@ test("file store rejects path traversal", async () => {
   const root = await mkdtemp(path.join(tmpdir(), "sfm-store-"));
   const store = createUserFileStore(root);
   await assert.rejects(store.write("../escape", "notifications", {}), /Invalid user ID/);
+});
+
+test("file store refuses to overwrite corrupted user state", async () => {
+  const root = await mkdtemp(path.join(tmpdir(), "sfm-store-corrupt-"));
+  const userDir = path.join(root, "user-a");
+  const statePath = path.join(userDir, "notifications.json");
+  await mkdir(userDir, { recursive: true });
+  await writeFile(statePath, "{not-json", "utf8");
+  const store = createUserFileStore(root);
+
+  await assert.rejects(store.readVersioned("user-a", "notifications", {}), (error) => error.code === "SFM_STATE_CORRUPTED");
+  await assert.rejects(store.writeVersioned("user-a", "notifications", { notifications: [] }), (error) => error.code === "SFM_STATE_CORRUPTED");
+  assert.equal(await readFile(statePath, "utf8"), "{not-json");
+  await rm(root, { recursive: true, force: true });
 });
