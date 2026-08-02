@@ -1,4 +1,58 @@
 /* Authoritative application-shell geometry. Keep this file loaded after legacy theme layers. */
+body[data-app-view="home"] #recommendations-section {
+  display: none !important;
+}
+
+body[data-app-view="home"] main {
+  gap: 12px !important;
+}
+
+body[data-app-view="home"] .home-heatmap-section,
+body[data-app-view="home"] .home-deck-panel {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+body[data-app-view="home"] .home-heatmap-section {
+  min-height: 156px !important;
+  grid-template-rows: auto minmax(84px, auto) !important;
+}
+
+body[data-app-view="home"] .home-heatmap-grid {
+  min-height: 84px !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+body[data-app-view="home"] .home-recommendations {
+  min-height: 126px !important;
+  overflow: visible !important;
+}
+
+body[data-app-view="home"] .home-rec-card,
+body[data-app-view="home"] .home-heat-cell {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+body[data-app-view="home"] .home-heat-cell.hold {
+  border-color: rgba(145, 168, 255, 0.38) !important;
+  background: rgba(79, 101, 183, 0.16) !important;
+}
+
+body[data-app-view="home"] .home-heat-cell.hold span {
+  color: #a9baff !important;
+}
+
+.rdp-empty-state {
+  padding: 16px 10px;
+  color: #9fb0bd;
+  font-size: 12px;
+  line-height: 1.7;
+  text-align: center;
+}
+
 @media (min-width: 1024px) {
   body:not(.intro-running) .app-shell.sfm-dashboard,
   body[data-app-view] .app-shell.sfm-dashboard {
@@ -55,6 +109,15 @@
     overflow-x: hidden !important;
     overflow-y: auto !important;
     align-self: start !important;
+  }
+
+  body[data-app-view] .desktop-trading-rail .rail-link {
+    min-height: 48px !important;
+  }
+
+  body[data-app-view] .desktop-trading-rail .rail-link strong,
+  body[data-app-view] .desktop-trading-rail .rail-link span:not(.rail-icon) {
+    font-size: 11px !important;
   }
 
   body:not(.intro-running) .app-shell.sfm-dashboard > main,

@@ -29,5 +29,28 @@ test("desktop dashboard keeps rail, main, summary and footer in named grid areas
 
 test("offline shell includes the authoritative layout stylesheet", async () => {
   const worker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
-  assert.match(worker, /layout-stability\.css\?v=20260802-dashboard-grid/);
+  assert.match(worker, /layout-stability\.css\?v=20260802-dashboard-data-ux/);
+});
+
+test("home dashboard remains compact while recommendation details stay in their own view", async () => {
+  const [app, css] = await Promise.all([
+    readFile(new URL("../public/app.js", import.meta.url), "utf8"),
+    readFile(new URL("../public/layout-stability.css", import.meta.url), "utf8")
+  ]);
+  const homeGroup = app.match(/home:\s*\[([^\]]+)\]/)?.[1] || "";
+  const recommendationsGroup = app.match(/recommendations:\s*\[([^\]]+)\]/)?.[1] || "";
+
+  assert.doesNotMatch(homeGroup, /#recommendations-section/);
+  assert.match(recommendationsGroup, /#recommendations-section/);
+  assert.match(css, /body\[data-app-view="home"\] #recommendations-section/);
+  assert.match(css, /\.home-rec-card,[\s\S]*\.home-heat-cell \{[\s\S]*opacity: 1 !important/);
+});
+
+test("home panels use unfiltered market data and tolerate incomplete scoring fields", async () => {
+  const app = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
+  assert.match(app, /function getDashboardRecommendations\(/);
+  assert.match(app, /function getDashboardScore\(/);
+  assert.match(app, /return clamp\(Number\(item\?\.confidence \|\| 0\), 0, 100\)/);
+  assert.match(app, /const available = getDashboardRecommendations\(data\)/);
+  assert.match(app, /const visiblePicks = picks\.length/);
 });

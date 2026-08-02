@@ -1125,7 +1125,7 @@ const STORAGE_PREFIX = "the-sfm-trader-";
 const LEGACY_STORAGE_PREFIX = "the-sfm-";
 const TEMPORARY_LEGAL_NOTICE_STORAGE_KEY = "the-sfm-trader-dismissed-legal-notices";
 const APP_VIEW_GROUPS = {
-  home: ["#market-overview-section", "#sfm-live-floor", "#markets-section", "#command-center-section", "#home-heatmap-section", "#home-deck-section", "#economic-news-section", "#recommendations-section", "#temporary-legal-notices"],
+  home: ["#market-overview-section", "#sfm-live-floor", "#markets-section", "#command-center-section", "#home-heatmap-section", "#home-deck-section", "#economic-news-section", "#temporary-legal-notices"],
   markets: ["#markets-section", ".summary-band", ".insight-band", "#calendar-section", "#economic-news-section", "#radar-section"],
   ai: ["#sfm-live-floor", "#command-center-section", "#radar-section", "#smart-alerts-section", "#golden-section", "#recommendations-section"],
   recommendations: ["#markets-section", ".summary-band", ".insight-band", "#command-center-section", "#recommendations-section", "#temporary-legal-notices", "#us-dashboard-section", "#us-outlook-section"],
@@ -2870,7 +2870,7 @@ function renderRecommendations(data) {
   const recommendations = sortRecommendations(filterRecommendations(all));
   const buys = all.filter((item) => item.action === "buy");
   const sells = all.filter((item) => item.action === "sell");
-  const avg = all.length ? Math.round(all.reduce((sum, item) => sum + item.confidence, 0) / all.length) : 0;
+  const avg = all.length ? Math.round(all.reduce((sum, item) => sum + Number(item.confidence || 0), 0) / all.length) : 0;
 
   marketTitle.textContent = localizeUiText(data.market.label);
   marketNote.textContent = localizeUiText(data.market.note);
@@ -3727,9 +3727,10 @@ function renderAssetIcon(kind, label) {
 function renderHomeDeck(data, rankedRecommendations = []) {
   if (!homeRecommendations && !homeFollowedTrades) return;
 
+  const available = getDashboardRecommendations(data);
   const ranked = rankedRecommendations.length
     ? rankedRecommendations
-    : sortRecommendations(filterRecommendations(data?.recommendations || []));
+    : sortRecommendations(available);
   let picks = ranked
     .filter((item) => item?.action !== "hold")
     .slice(0, 3);
@@ -3768,8 +3769,8 @@ function renderHomeDeck(data, rankedRecommendations = []) {
 
 function renderHomeHeatmap(data) {
   if (!homeHeatmapGrid) return;
-  const items = [...(data?.recommendations || [])]
-    .map((item) => ({ item, score: calculateFinalScore(item).score }))
+  const items = getDashboardRecommendations(data)
+    .map((item) => ({ item, score: getDashboardScore(item) }))
     .sort((a, b) => Math.abs(Number(b.item.expectedMovePct || 0)) - Math.abs(Number(a.item.expectedMovePct || 0)) || b.score - a.score)
     .slice(0, 16);
 
@@ -3795,6 +3796,21 @@ function renderHomeHeatmap(data) {
       }).join("")
     : `<div class="empty">${escapeHtml(localizeUiText("لا توجد بيانات كافية لخريطة الحرارة حالياً."))}</div>`;
   attachDetailOpeners(homeHeatmapGrid);
+}
+
+function getDashboardRecommendations(data = {}) {
+  const source = Array.isArray(data?.recommendations) ? data.recommendations : [];
+  return source.filter((item) => item && typeof item === "object" && String(item.symbol || "").trim());
+}
+
+function getDashboardScore(item) {
+  try {
+    const score = Number(calculateFinalScore(item)?.score);
+    return Number.isFinite(score) ? clamp(score, 0, 100) : clamp(Number(item?.confidence || 0), 0, 100);
+  } catch (error) {
+    console.warn("[SFM dashboard] score fallback", item?.symbol, error);
+    return clamp(Number(item?.confidence || 0), 0, 100);
+  }
 }
 
 function renderHomeRecommendationCard(item) {
@@ -4379,7 +4395,7 @@ function renderEconomicNews(calendar) {
 }
 
 function renderTradingAtmosphere(data) {
-  const items = data.recommendations || [];
+  const items = getDashboardRecommendations(data);
   updateSessionClock();
 
   const buy = items.filter((item) => item.action === "buy").length;
@@ -4387,7 +4403,7 @@ function renderTradingAtmosphere(data) {
   const hold = items.length - buy - sell;
   const leader = getTopItem(items, "move");
   const highestScore = items.length
-    ? [...items].sort((a, b) => calculateFinalScore(b).score - calculateFinalScore(a).score)[0]
+    ? [...items].sort((a, b) => getDashboardScore(b) - getDashboardScore(a))[0]
     : null;
   const avgConfidenceValue = items.length
     ? Math.round(items.reduce((sum, item) => sum + Number(item.confidence || 0), 0) / items.length)
@@ -4439,11 +4455,11 @@ function renderTradingAtmosphere(data) {
     floorNextMove.textContent = localizeUiText(nextMoveText);
   }
   if (floorReadiness) floorReadiness.textContent = localizeUiText(readiness);
-  if (floorHeatmapTitle) floorHeatmapTitle.textContent = highestScore ? `${highestScore.symbol} · Score ${calculateFinalScore(highestScore).score}%` : "TOP SIGNALS";
+  if (floorHeatmapTitle) floorHeatmapTitle.textContent = highestScore ? `${highestScore.symbol} · Score ${getDashboardScore(highestScore)}%` : "TOP SIGNALS";
 
   if (floorHeatmap) {
     const heatItems = [...items]
-      .map((item) => ({ item, score: calculateFinalScore(item).score }))
+      .map((item) => ({ item, score: getDashboardScore(item) }))
       .sort((a, b) => b.score - a.score || b.item.confidence - a.item.confidence)
       .slice(0, 12);
     const nextHeatmapSignature = buildFloorHeatmapSignature(heatItems);
@@ -8894,8 +8910,11 @@ function updateRightPanel(all = [], buys = [], sells = []) {
   const topSells = [...sells].sort((a, b) => b.confidence - a.confidence).slice(0, 2);
   const picks = [...topBuys, ...topSells];
 
-  if (picksEl && picks.length) {
-    picksEl.innerHTML = picks.map((item) => `
+  if (picksEl) {
+    const visiblePicks = picks.length
+      ? picks
+      : [...all].sort((a, b) => Number(b.confidence || 0) - Number(a.confidence || 0)).slice(0, 4);
+    picksEl.innerHTML = visiblePicks.length ? visiblePicks.map((item) => `
       <div class="rdp-pick-row">
         <div class="rdp-pick-asset">
           <div class="rdp-pick-logo">${escapeHtml(item.symbol.slice(0, 3))}</div>
@@ -8904,10 +8923,10 @@ function updateRightPanel(all = [], buys = [], sells = []) {
             <span>${escapeHtml((item.name || "").split(" ").slice(0, 2).join(" "))}</span>
           </div>
         </div>
-        <span class="rdp-pick-badge${item.action === "sell" ? " sell" : ""}">${escapeHtml(item.actionLabel || item.action.toUpperCase())}</span>
-        <span class="rdp-pick-confidence">${item.confidence}%</span>
+        <span class="rdp-pick-badge${item.action === "sell" ? " sell" : ""}">${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</span>
+        <span class="rdp-pick-confidence">${formatNumber(Number(item.confidence || 0))}%</span>
         <span class="rdp-pick-timeframe">${escapeHtml(item.duration || "--")}</span>
-      </div>`).join("");
+      </div>`).join("") : `<div class="rdp-empty-state">${escapeHtml(localizeUiText("بانتظار بيانات موثوقة من مزود السوق."))}</div>`;
   }
 
   const total = all.length || 1;
