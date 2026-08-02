@@ -316,6 +316,28 @@ const UI_TEXT_TRANSLATIONS = {
   "صاعد": "Bullish",
   "هابط": "Bearish",
   "محايد": "Neutral",
+  "لوحة قراءة السوق": "Market reading dashboard",
+  "تحليل SFM الذكي": "SFM intelligent analysis",
+  "قراءة السوق الآن": "Market reading now",
+  "ثقة التحليل": "Analysis confidence",
+  "بانتظار وصول بيانات موثوقة من مزود السوق.": "Waiting for verified data from the market provider.",
+  "توزيع حركة الأصول المحللة": "Analyzed asset movement distribution",
+  "أعلى النتائج حسب قوة التحليل": "Top results by analysis strength",
+  "أفضل الفرص": "Top opportunities",
+  "عرض جميع الفرص": "View all opportunities",
+  "مقارنة مختصرة للحركة والثقة": "Compact movement and confidence comparison",
+  "خريطة حرارة الفرص": "Opportunity heatmap",
+  "آخر الحالات المحفوظة": "Latest saved positions",
+  "الصفقات المتابعة": "Followed trades",
+  "أحداث موثقة من التقويم الاقتصادي": "Verified economic calendar events",
+  "الأخبار الاقتصادية القادمة": "Upcoming economic events",
+  "عرض التقويم": "View calendar",
+  "لا توجد فرص موثوقة متاحة حالياً.": "No verified opportunities are currently available.",
+  "تظهر خريطة الحرارة بعد اكتمال تحليل السوق.": "The heatmap appears after market analysis completes.",
+  "بانتظار بيانات حركة الأصول.": "Waiting for asset movement data.",
+  "لا توجد صفقات محفوظة تحت المتابعة.": "No saved trades are currently being followed.",
+  "لا توجد أحداث اقتصادية موثقة قريبة.": "No verified economic events are coming up.",
+  "قيد المتابعة": "Being followed",
   "التوصيات": "Recommendations",
   "المفضلات": "Favorites",
   "المتابعات": "Favorites",
@@ -1133,7 +1155,7 @@ const STORAGE_PREFIX = "the-sfm-trader-";
 const LEGACY_STORAGE_PREFIX = "the-sfm-";
 const TEMPORARY_LEGAL_NOTICE_STORAGE_KEY = "the-sfm-trader-dismissed-legal-notices";
 const APP_VIEW_GROUPS = {
-  home: ["#market-overview-section", "#sfm-live-floor", "#markets-section", "#command-center-section", "#home-heatmap-section", "#home-deck-section", "#economic-news-section", "#temporary-legal-notices"],
+  home: ["#terminal-home-v3", "#temporary-legal-notices"],
   markets: ["#markets-section", ".summary-band", ".insight-band", "#calendar-section", "#economic-news-section", "#radar-section"],
   ai: ["#sfm-live-floor", "#command-center-section", "#radar-section", "#smart-alerts-section", "#golden-section", "#recommendations-section"],
   recommendations: ["#markets-section", ".summary-band", ".insight-band", "#command-center-section", "#recommendations-section", "#temporary-legal-notices", "#us-dashboard-section", "#us-outlook-section"],
@@ -1609,7 +1631,7 @@ function initAppNavigation() {
   const initialView = getAppViewFromHash(window.location.hash) || "home";
   showAppView(initialView, { scroll: false, replace: true });
 
-  document.querySelectorAll(".rail-link, .ios-tab-link, .rdp-view-all").forEach((link) => {
+  document.querySelectorAll(".rail-link, .ios-tab-link, .rdp-view-all, .v3-view-all").forEach((link) => {
     link.addEventListener("click", (event) => {
       const view = getAppViewFromNavigationLink(link);
       if (!view) return;
@@ -2933,6 +2955,7 @@ function renderRecommendations(data) {
   safeRenderPanel("متابعة الصفقات", () => checkFollowedTrades(all));
   safeRenderPanel("إشعارات السوق", () => checkSmartMarketNotifications(all));
   safeRenderPanel("المراقبة الصوتية", () => checkVoiceMonitors(all));
+  safeRenderPanel("واجهة قراءة السوق", () => renderTerminalHomeV3(data));
 
   cards.innerHTML = "";
 
@@ -3848,6 +3871,132 @@ function getDashboardScore(item) {
     console.warn("[SFM dashboard] score fallback", item?.symbol, error);
     return clamp(Number(item?.confidence || 0), 0, 100);
   }
+}
+
+function renderTerminalHomeV3(data = {}) {
+  const root = document.querySelector("#terminal-home-v3");
+  if (!root) return;
+
+  const items = getDashboardRecommendations(data);
+  const buys = items.filter((item) => item.action === "buy");
+  const sells = items.filter((item) => item.action === "sell");
+  const holds = items.filter((item) => item.action !== "buy" && item.action !== "sell");
+  const averageConfidence = items.length
+    ? Math.round(items.reduce((sum, item) => sum + Number(item.confidence || 0), 0) / items.length)
+    : 0;
+  const averageMove = items.length
+    ? items.reduce((sum, item) => sum + Number(item.expectedMovePct || 0), 0) / items.length
+    : 0;
+  const bias = buys.length > sells.length ? "صاعد" : sells.length > buys.length ? "هابط" : "محايد";
+  const ranked = [...items].sort((a, b) => getDashboardScore(b) - getDashboardScore(a));
+
+  const setText = (selector, value) => {
+    const element = root.querySelector(selector);
+    if (element) element.textContent = value;
+  };
+
+  setText("#v3-confidence", items.length ? `${formatNumber(averageConfidence)}%` : "--");
+  setText("#v3-buy-count", formatNumber(buys.length));
+  setText("#v3-sell-count", formatNumber(sells.length));
+  setText("#v3-hold-count", formatNumber(holds.length));
+  setText("#v3-market-bias", localizeUiText(bias));
+  setText("#v3-pulse-change", items.length ? formatPercent(averageMove) : "--");
+  setText("#v3-pulse-label", items.length ? localizeUiText(getMarketPulse(items)) : localizeUiText("بانتظار البيانات"));
+  setText("#v3-pulse-updated", data.generatedAt ? `${localizeUiText("آخر تحديث")} ${formatDateTime(data.generatedAt)}` : localizeUiText("آخر تحديث --"));
+
+  const confidenceRing = root.querySelector("#v3-confidence-ring");
+  if (confidenceRing) confidenceRing.style.setProperty("--v3-confidence", `${clamp(averageConfidence, 0, 100)}%`);
+
+  const marketSummary = items.length
+    ? bias === "محايد"
+      ? `السوق متوازن حالياً؛ ${formatNumber(holds.length)} من ${formatNumber(items.length)} أصلاً بانتظار تأكيد أقوى قبل اتخاذ القرار.`
+      : `يميل السوق إلى اتجاه ${bias} مع ${formatNumber(Math.max(buys.length, sells.length))} إشارات مؤكدة من أصل ${formatNumber(items.length)} أصلاً محللاً.`
+    : "بانتظار وصول بيانات موثوقة من مزود السوق. لن تعرض المنصة أسعاراً أو إشارات بديلة.";
+  setText("#v3-market-summary", localizeUiText(marketSummary));
+
+  const opportunityGrid = root.querySelector("#v3-opportunity-grid");
+  if (opportunityGrid) {
+    opportunityGrid.innerHTML = ranked.length
+      ? ranked.slice(0, 3).map(renderV3Opportunity).join("")
+      : renderV3EmptyState("لا توجد فرص موثوقة متاحة حالياً.");
+    attachDetailOpeners(opportunityGrid);
+  }
+
+  const heatmapGrid = root.querySelector("#v3-heatmap-grid");
+  const heatItems = ranked.slice(0, 8);
+  if (heatmapGrid) {
+    heatmapGrid.innerHTML = heatItems.length
+      ? heatItems.map(renderV3HeatItem).join("")
+      : renderV3EmptyState("تظهر خريطة الحرارة بعد اكتمال تحليل السوق.");
+    attachDetailOpeners(heatmapGrid);
+  }
+  setText("#v3-heatmap-leader", heatItems[0] ? `${heatItems[0].symbol} · ${formatNumber(getDashboardScore(heatItems[0]))}%` : "--");
+
+  const pulseChart = root.querySelector("#v3-pulse-chart");
+  if (pulseChart) pulseChart.innerHTML = renderV3PulseChart(items);
+
+  const followedList = root.querySelector("#v3-followed-list");
+  if (followedList) {
+    const followed = recommendationHistory.filter((entry) => followedTradeKeys.has(entry.key)).slice(0, 3);
+    followedList.innerHTML = followed.length
+      ? followed.map(renderV3FollowedTrade).join("")
+      : renderV3EmptyState("لا توجد صفقات محفوظة تحت المتابعة.");
+    attachDetailOpeners(followedList);
+  }
+
+  const calendarList = root.querySelector("#v3-calendar-list");
+  if (calendarList) {
+    const calendar = data.economicCalendar || {};
+    const events = [...(calendar.hotEvents || []), ...(calendar.upcoming || [])]
+      .filter(Boolean)
+      .filter((event, index, list) => list.findIndex((candidate) => candidate.title === event.title && candidate.isoTime === event.isoTime) === index)
+      .slice(0, 3);
+    calendarList.innerHTML = events.length
+      ? events.map(renderV3CalendarEvent).join("")
+      : renderV3EmptyState(calendar.summary || "لا توجد أحداث اقتصادية موثقة قريبة.");
+  }
+}
+
+function renderV3Opportunity(item) {
+  const visual = getPremiumAssetVisual(item);
+  const tone = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : "hold";
+  const target = item.target1 || item.expectedPrice;
+  return `<article class="v3-opportunity-card ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">
+    <header><span class="asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span><div><strong>${escapeHtml(item.symbol)}</strong><span>${escapeHtml(item.name || item.exchangeName || "")}</span></div><b>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</b></header>
+    <div class="v3-opportunity-metrics"><div><span>${escapeHtml(localizeUiText("السعر الحالي"))}</span><strong>${formatMoney(item.currentPrice, item.currency)}</strong></div><div><span>${escapeHtml(localizeUiText("الهدف"))}</span><strong>${target ? formatMoney(target, item.currency) : "--"}</strong></div><div><span>${escapeHtml(localizeUiText("ثقة التحليل"))}</span><strong>${formatNumber(item.confidence || 0)}%</strong></div></div>
+  </article>`;
+}
+
+function renderV3HeatItem(item) {
+  const tone = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : "hold";
+  return `<article class="v3-heat-item ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link"><strong>${escapeHtml(item.symbol)}</strong><b>${formatPercent(item.expectedMovePct)}</b><span>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</span><em>${formatNumber(getDashboardScore(item))}%</em></article>`;
+}
+
+function renderV3PulseChart(items) {
+  if (!items.length) return renderV3EmptyState("بانتظار بيانات حركة الأصول.");
+  const values = items.slice(0, 20).map((item) => Number(item.expectedMovePct || 0));
+  const max = Math.max(1, ...values.map((value) => Math.abs(value)));
+  const points = values.map((value, index) => {
+    const x = values.length === 1 ? 50 : (index / (values.length - 1)) * 100;
+    const y = 50 - (value / max) * 34;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="${escapeHtml(localizeUiText("توزيع حركة الأصول المحللة"))}"><line x1="0" y1="50" x2="100" y2="50"></line><polyline points="${points}"></polyline></svg>`;
+}
+
+function renderV3FollowedTrade(entry) {
+  const price = Number(entry.lastPrice ?? entry.currentPrice);
+  return `<article class="v3-follow-row" data-symbol="${escapeHtml(entry.symbol)}" tabindex="0" role="link"><strong>${escapeHtml(entry.symbol)}</strong><span>${escapeHtml(localizeUiText(entry.actionLabel || entry.action || "انتظار"))}</span><b>${Number.isFinite(price) ? formatMoney(price, entry.currency || "USD") : "--"}</b><em>${escapeHtml(localizeUiText("قيد المتابعة"))}</em></article>`;
+}
+
+function renderV3CalendarEvent(event) {
+  const impact = event.impact === "high" ? "high" : event.impact === "low" ? "low" : "medium";
+  const impactLabel = impact === "high" ? "عالي" : impact === "low" ? "منخفض" : "متوسط";
+  return `<article class="v3-calendar-event ${impact}"><header><span>${escapeHtml(event.currency || "--")}</span><time>${escapeHtml(event.localTimeLabel || event.time || "--")}</time></header><strong>${escapeHtml(event.title || "--")}</strong><b>${escapeHtml(localizeUiText(impactLabel))}</b></article>`;
+}
+
+function renderV3EmptyState(message) {
+  return `<div class="v3-empty-state">${escapeHtml(localizeUiText(message))}</div>`;
 }
 
 function renderHomeRecommendationCard(item) {
