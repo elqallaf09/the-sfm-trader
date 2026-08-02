@@ -308,6 +308,14 @@ const UI_TEXT_TRANSLATIONS = {
   "إغلاق تنبيه الذكاء الاصطناعي": "Close AI notice",
   "الرئيسية": "Home",
   "الأسواق": "Markets",
+  "أفضل اختيارات الذكاء": "AI Top Picks",
+  "عرض الكل": "View All",
+  "أخبار السوق": "Market News",
+  "تحليل السوق بالذكاء": "AI Market Analysis",
+  "الاتجاه العام للسوق": "Overall Market Bias",
+  "صاعد": "Bullish",
+  "هابط": "Bearish",
+  "محايد": "Neutral",
   "التوصيات": "Recommendations",
   "المفضلات": "Favorites",
   "المتابعات": "Favorites",
@@ -1601,7 +1609,7 @@ function initAppNavigation() {
   const initialView = getAppViewFromHash(window.location.hash) || "home";
   showAppView(initialView, { scroll: false, replace: true });
 
-  document.querySelectorAll(".rail-link, .ios-tab-link").forEach((link) => {
+  document.querySelectorAll(".rail-link, .ios-tab-link, .rdp-view-all").forEach((link) => {
     link.addEventListener("click", (event) => {
       const view = getAppViewFromNavigationLink(link);
       if (!view) return;
@@ -1621,6 +1629,11 @@ function initAppNavigation() {
 
   window.addEventListener("popstate", () => {
     showAppView(getAppViewFromHash(window.location.hash) || "home", { scroll: false, replace: true });
+  });
+
+  window.addEventListener("hashchange", () => {
+    const view = getAppViewFromHash(window.location.hash);
+    if (view && view !== activeAppView) showAppView(view, { scroll: false });
   });
 }
 
@@ -8966,9 +8979,10 @@ function updateRightPanel(all = [], buys = [], sells = []) {
   if (neutPctEl) neutPctEl.textContent = `${neutV}%`;
 
   if (biasLabel) {
-    const label = bullV > 55 ? "BULLISH" : bearV > 55 ? "BEARISH" : "NEUTRAL";
-    biasLabel.textContent = label;
-    biasLabel.className = `rdp-bias-label ${label === "BEARISH" ? "rdp-bearish-label" : label === "NEUTRAL" ? "rdp-neutral-label" : ""}`;
+    const bias = bullV > 55 ? "bullish" : bearV > 55 ? "bearish" : "neutral";
+    const label = bias === "bullish" ? "صاعد" : bias === "bearish" ? "هابط" : "محايد";
+    biasLabel.textContent = localizeUiText(label);
+    biasLabel.className = `rdp-bias-label ${bias === "bearish" ? "rdp-bearish-label" : bias === "neutral" ? "rdp-neutral-label" : ""}`;
   }
 
   updateRightPanelNews();
@@ -9017,8 +9031,8 @@ function updateMarketOverviewBubbles(all = []) {
   if (sentimentEl && all.length) {
     const buys = all.filter((r) => r.action === "buy").length;
     const bullPct = Math.round((buys / all.length) * 100);
-    const label = bullPct > 55 ? "BULLISH" : buys < all.length * 0.35 ? "BEARISH" : "NEUTRAL";
-    sentimentEl.textContent = label;
+    const bias = bullPct > 55 ? "bullish" : buys < all.length * 0.35 ? "bearish" : "neutral";
+    sentimentEl.textContent = localizeUiText(bias === "bullish" ? "صاعد" : bias === "bearish" ? "هابط" : "محايد");
     if (sentimentPctEl) sentimentPctEl.textContent = `${bullPct}%`;
     if (confEl) {
       const avgConf = Math.round(all.reduce((s, r) => s + (r.confidence || 0), 0) / all.length);

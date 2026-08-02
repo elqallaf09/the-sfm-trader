@@ -38,6 +38,30 @@ test("homepage modal controls initialize before market requests settle", async (
   assert.equal((source.match(/mobileSettingsButton\?\.addEventListener/g) || []).length, 1);
 });
 
+test("dashboard summary links use the application view router", async () => {
+  const [html, source] = await Promise.all([
+    readFile(new URL("../public/index.html", import.meta.url), "utf8"),
+    readFile(new URL("../public/app.js", import.meta.url), "utf8")
+  ]);
+  const dom = new JSDOM(html);
+  const links = [...dom.window.document.querySelectorAll(".rdp-view-all")];
+
+  assert.equal(links.length, 2);
+  assert.deepEqual(links.map((link) => link.dataset.navKey), ["recommendations", "news"]);
+  assert.match(source, /\.rail-link, \.ios-tab-link, \.rdp-view-all/);
+  assert.match(source, /window\.addEventListener\("hashchange"/);
+  dom.window.close();
+});
+
+test("Arabic dashboard summary avoids mixed-language headings", async () => {
+  const html = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+  assert.doesNotMatch(html, />AI Top Picks</);
+  assert.doesNotMatch(html, />Market News</);
+  assert.doesNotMatch(html, />Overall Market Bias</);
+  assert.match(html, />أفضل اختيارات الذكاء</);
+  assert.match(html, />الاتجاه العام للسوق</);
+});
+
 test("homepage animation pauses for hidden and reduced-motion states", async () => {
   const source = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
   const backgroundSource = await readFile(new URL("../public/modules/marketBackground.js", import.meta.url), "utf8");
