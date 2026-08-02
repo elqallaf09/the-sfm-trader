@@ -17,6 +17,7 @@ const STATIC_ASSETS = [
   "/risk-disclosure.html",
   "/modules/webVitals.js",
   "/modules/marketBackground.js",
+  "/modules/boundedMemoryCache.js",
   "/manifest.webmanifest",
   "/assets/sfm-trader-logo.svg",
   "/the-sfm-trader-icon-256.png",

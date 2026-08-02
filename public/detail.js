@@ -1,9 +1,10 @@
 import { API_TOKEN_STORAGE_KEY } from "./modules/apiClient.js";
 import { setUiState } from "./modules/uiState.js";
 import "./modules/webVitals.js";
+import { initMarketBackground } from "./modules/marketBackground.js";
 
 const params = new URLSearchParams(window.location.search);
-const symbol = params.get("symbol") || "";
+const symbol = normalizeDetailSymbol(params.get("symbol"));
 const NUMBER_LOCALE = "ar-KW-u-nu-latn";
 const NUMBER_OPTIONS = { numberingSystem: "latn" };
 const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
@@ -16,6 +17,16 @@ const DETAIL_PAGE_TITLES = {
   en: "Stock details"
 };
 let activeDetailTitleSymbol = symbol;
+let detailRequestController = null;
+
+function normalizeDetailSymbol(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, "")
+    .replace(/[^A-Z0-9.^=-]/g, "")
+    .slice(0, 18);
+}
 
 function normalizeDigits(value) {
   return String(value ?? "")
@@ -677,9 +688,26 @@ async function loadDetail() {
   }
 
   try {
+    detailRequestController?.abort();
+    const controller = new AbortController();
+    detailRequestController = controller;
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
     elements.status.textContent = detailText("جاري تحليل السهم", "Analyzing the stock");
     applyDetailLanguage();
-    const response = await fetch(`/api/asset?symbol=${encodeURIComponent(symbol)}`);
+    let response;
+    try {
+      response = await fetch(`/api/asset?symbol=${encodeURIComponent(symbol)}`, {
+        cache: "no-store",
+        signal: controller.signal
+      });
+    } finally {
+      window.clearTimeout(timeout);
+      if (detailRequestController === controller) detailRequestController = null;
+    }
+    const contentType = String(response.headers.get("content-type") || "");
+    if (!contentType.toLowerCase().includes("application/json")) {
+      throw new Error(detailText("استجابة الخادم غير صالحة.", "The server returned an invalid response."));
+    }
     const data = await response.json();
 
     if (!response.ok) {
@@ -690,9 +718,14 @@ async function loadDetail() {
     elements.status.textContent = data.cached ? detailText("بيانات مخزنة لحظياً", "Live cached data") : detailText("تحليل جديد", "Fresh analysis");
     applyDetailLanguage();
   } catch (error) {
-    showError(error.message);
+    const message = error?.name === "AbortError"
+      ? detailText("انتهت مهلة تحميل التحليل. حاول مرة أخرى.", "Analysis loading timed out. Please try again.")
+      : error.message;
+    showError(message);
   }
 }
+
+window.addEventListener("pagehide", () => detailRequestController?.abort(), { once: true });
 
 function renderDetail(data) {
   const item = data.recommendation;
@@ -945,9 +978,10 @@ function calculateFinalScore(item) {
 }
 
 function drawSparkline(canvas, values = [], action) {
-  const context = canvas.getContext("2d");
+  const context = canvas?.getContext?.("2d");
+  if (!canvas || !context) return;
   const rect = canvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
   canvas.width = Math.max(1, Math.floor(rect.width * dpr));
   canvas.height = Math.max(1, Math.floor(rect.height * dpr));
   context.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1302,56 +1336,6 @@ function toDetailDatasetSuffix(attr) {
 window.addEventListener("storage", (event) => {
   if (event.key === APP_SETTINGS_STORAGE_KEY) applyDetailLanguage();
 });
-
-function initMarketBackground() {
-  const canvas = document.querySelector("#market-bg");
-  const context = canvas.getContext("2d");
-  const rows = Array.from({ length: 8 }, (_, index) => ({
-    y: 80 + index * 92,
-    phase: Math.random() * 100,
-    speed: 0.35 + Math.random() * 0.45,
-    color: index % 3 === 0 ? "53, 194, 164" : index % 3 === 1 ? "255, 107, 107" : "90, 167, 255"
-  }));
-
-  function resize() {
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.floor(window.innerWidth * dpr);
-    canvas.height = Math.floor(window.innerHeight * dpr);
-    canvas.style.width = `${window.innerWidth}px`;
-    canvas.style.height = `${window.innerHeight}px`;
-    context.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-
-  function frame() {
-    context.clearRect(0, 0, window.innerWidth, window.innerHeight);
-    context.strokeStyle = "rgba(135, 154, 172, 0.055)";
-    for (let x = 0; x < window.innerWidth; x += 72) {
-      context.beginPath();
-      context.moveTo(x, 0);
-      context.lineTo(x, window.innerHeight);
-      context.stroke();
-    }
-
-    for (const row of rows) {
-      row.phase += row.speed;
-      context.strokeStyle = `rgba(${row.color}, 0.2)`;
-      context.beginPath();
-      for (let x = -20; x <= window.innerWidth + 20; x += 18) {
-        const wave = Math.sin((x + row.phase * 3) * 0.012) * 18 + Math.cos((x - row.phase) * 0.027) * 9;
-        const y = (row.y + row.phase * 0.12 + wave) % (window.innerHeight + 120);
-        if (x === -20) context.moveTo(x, y);
-        else context.lineTo(x, y);
-      }
-      context.stroke();
-    }
-
-    window.requestAnimationFrame(frame);
-  }
-
-  window.addEventListener("resize", resize);
-  resize();
-  frame();
-}
 
 function formatMoney(value, currency) {
   if (value === null || value === undefined || value === "") return "--";

@@ -3,6 +3,7 @@ import { createVisibilityAwarePoller } from "./modules/polling.js";
 import { setUiState } from "./modules/uiState.js";
 import "./modules/webVitals.js";
 import { initMarketBackground } from "./modules/marketBackground.js";
+import { createBoundedMemoryCache } from "./modules/boundedMemoryCache.js";
 
 const marketTabs = document.querySelector("#market-tabs");
 const introOverlay = document.querySelector("#intro-overlay");
@@ -1284,7 +1285,7 @@ let recommendationRequestId = 0;
 let lastRecommendationRefreshAt = 0;
 let lastData = null;
 let lastMarkets = [];
-const recommendationResponseCache = new Map();
+const recommendationResponseCache = createBoundedMemoryCache(30);
 let activeFilter = "all";
 let activeShariaFilter = "all";
 let activeAnalysisMode = loadStored("the-sfm-trader-analysis-mode", "balanced");
