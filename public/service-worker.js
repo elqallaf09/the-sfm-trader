@@ -1,4 +1,4 @@
-const CACHE_NAME = "the-sfm-trader-v20260802-dashboard-data-ux";
+const CACHE_NAME = "the-sfm-trader-v20260802-dashboard-data-ux-5";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -6,8 +6,8 @@ const STATIC_ASSETS = [
   "/styles.css?v=20260801-hardening-2",
   "/desktop-balance.css?v=20260801-hardening-2",
   "/cinema.css?v=20260801-hardening-2",
-  "/layout-stability.css?v=20260802-dashboard-data-ux",
-  "/app.js?v=20260802-dashboard-data-ux",
+  "/layout-stability.css?v=20260802-dashboard-data-ux-4",
+  "/app.js?v=20260802-dashboard-data-ux-3",
   "/detail.js?v=20260802-homepage-resilience",
   "/modules/apiClient.js",
   "/modules/polling.js",

@@ -3,6 +3,11 @@ body[data-app-view="home"] #recommendations-section {
   display: none !important;
 }
 
+/* Match the legacy home selector's specificity so the compact view cannot restore the full table. */
+body[data-app-view="home"] main > section#recommendations-section#recommendations-section#recommendations-section#recommendations-section#recommendations-section.recommendations-band {
+  display: none !important;
+}
+
 body[data-app-view="home"] main {
   gap: 12px !important;
 }
@@ -56,7 +61,7 @@ body[data-app-view="home"] .home-heat-cell.hold span {
 @media (min-width: 1024px) {
   body:not(.intro-running) .app-shell.sfm-dashboard,
   body[data-app-view] .app-shell.sfm-dashboard {
-    --stable-rail: clamp(96px, 6vw, 112px);
+    --stable-rail: clamp(112px, 7vw, 124px);
     --stable-aside: clamp(238px, 17vw, 286px);
     width: min(1880px, calc(100vw - 28px)) !important;
     max-width: none !important;
@@ -120,6 +125,33 @@ body[data-app-view="home"] .home-heat-cell.hold span {
     font-size: 11px !important;
   }
 
+  body[data-app-view] .desktop-trading-rail .sidebar-brand-block {
+    display: grid !important;
+    width: 100% !important;
+    padding: 10px 4px 9px !important;
+    justify-items: center !important;
+    gap: 5px !important;
+    text-align: center !important;
+  }
+
+  body[data-app-view] .desktop-trading-rail .sidebar-brand-text {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  body[data-app-view] .desktop-trading-rail .sidebar-brand-text strong,
+  body[data-app-view] .desktop-trading-rail .sidebar-brand-text span {
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+    white-space: normal !important;
+    text-align: center !important;
+  }
+
+  body[data-app-view] .desktop-trading-rail .sidebar-brand-text strong {
+    font-size: 10px !important;
+    letter-spacing: 0.02em !important;
+  }
+
   body:not(.intro-running) .app-shell.sfm-dashboard > main,
   body[data-app-view] .app-shell.sfm-dashboard > main {
     grid-area: main !important;
@@ -158,7 +190,7 @@ body[data-app-view="home"] .home-heat-cell.hold span {
 @media (min-width: 1024px) and (max-width: 1439px) {
   body:not(.intro-running) .app-shell.sfm-dashboard,
   body[data-app-view] .app-shell.sfm-dashboard {
-    --stable-rail: 92px;
+    --stable-rail: 112px;
     grid-template-columns: var(--stable-rail) minmax(0, 1fr) !important;
     grid-template-areas:
       "rail topbar"
@@ -178,6 +210,23 @@ body[data-app-view="home"] .home-heat-cell.hold span {
 }
 
 @media (max-width: 1023px) {
+  /* The repeated id matches the legacy :not(#...):not(#...):not(#...) selector. */
+  body[data-app-view="home"] main > section#home-heatmap-section#home-heatmap-section#home-heatmap-section.home-heatmap-section,
+  body[data-app-view="home"] main > #home-deck-section.home-deck-section .home-deck-panel:last-child {
+    display: grid !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  body[data-app-view="home"] #home-heatmap-grid.home-heatmap-grid,
+  body[data-app-view="home"] #home-followed-trades.home-followed-trades {
+    min-height: 84px !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
   body:not(.intro-running) .app-shell.sfm-dashboard,
   body[data-app-view] .app-shell.sfm-dashboard {
     display: block !important;

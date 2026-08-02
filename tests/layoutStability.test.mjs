@@ -29,7 +29,7 @@ test("desktop dashboard keeps rail, main, summary and footer in named grid areas
 
 test("offline shell includes the authoritative layout stylesheet", async () => {
   const worker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
-  assert.match(worker, /layout-stability\.css\?v=20260802-dashboard-data-ux/);
+  assert.match(worker, /layout-stability\.css\?v=20260802-dashboard-data-ux-4/);
 });
 
 test("home dashboard remains compact while recommendation details stay in their own view", async () => {
@@ -43,6 +43,11 @@ test("home dashboard remains compact while recommendation details stay in their 
   assert.doesNotMatch(homeGroup, /#recommendations-section/);
   assert.match(recommendationsGroup, /#recommendations-section/);
   assert.match(css, /body\[data-app-view="home"\] #recommendations-section/);
+  assert.match(css, /section#recommendations-section#recommendations-section#recommendations-section/);
+  assert.match(css, /section#home-heatmap-section#home-heatmap-section#home-heatmap-section/);
+  assert.match(css, /\.sidebar-brand-block \{\s*display: grid !important/);
+  assert.match(css, /#home-deck-section\.home-deck-section \.home-deck-panel:last-child/);
+  assert.match(css, /\.home-followed-trades \{\s*min-height: 84px !important/);
   assert.match(css, /\.home-rec-card,[\s\S]*\.home-heat-cell \{[\s\S]*opacity: 1 !important/);
 });
 
@@ -53,4 +58,10 @@ test("home panels use unfiltered market data and tolerate incomplete scoring fie
   assert.match(app, /return clamp\(Number\(item\?\.confidence \|\| 0\), 0, 100\)/);
   assert.match(app, /const available = getDashboardRecommendations\(data\)/);
   assert.match(app, /const visiblePicks = picks\.length/);
+  assert.match(app, /const sfmFinalDashboardRenderer = renderRecommendations/);
+  assert.match(app, /sfmFinalDashboardRenderer\(data\);\s*sfmFinalRenderRecommendations\(data\);/);
+  assert.match(app, /function setHomeDashboardState\(/);
+  assert.match(app, /setHomeDashboardState\("loading"\)/);
+  assert.match(app, /setHomeDashboardState\("offline"\)/);
+  assert.match(app, /No market values are shown until a trusted provider responds/);
 });

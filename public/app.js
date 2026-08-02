@@ -1343,6 +1343,7 @@ init().catch(handleBootstrapFailure);
 function handleBootstrapFailure(error) {
   console.error("[homepage bootstrap]", error);
   setConnectionStatus("offline", localizeUiText("تعذر تشغيل الصفحة"));
+  setHomeDashboardState("offline");
   if (cards) {
     setUiState(cards, {
       kind: "error",
@@ -1430,6 +1431,7 @@ async function init() {
   initTemporaryLegalNotices();
   initLiveFloor();
   initAppNavigation();
+  setHomeDashboardState("loading");
   watchlist = normalizeWatchlist(watchlist);
   voiceMonitors = normalizeWatchlist(voiceMonitors);
   saveStored("the-sfm-trader-watchlist", watchlist);
@@ -2771,6 +2773,8 @@ async function loadRecommendations(options = {}) {
     renderRecommendations(cachedData);
     setConnectionStatus("stale", localizeUiText("يعرض آخر تحليل محفوظ"));
     loadingIndicator.textContent = localizeUiText("تحديث بالخلفية");
+  } else if (!lastData?.recommendations?.length) {
+    setHomeDashboardState("loading");
   }
 
   try {
@@ -2806,6 +2810,7 @@ async function loadRecommendations(options = {}) {
         actionId: "retry-recommendations"
       });
       cards.querySelector('[data-ui-state-action="retry-recommendations"]')?.addEventListener("click", () => loadRecommendations({ force: true, skipGrace: true }));
+      setHomeDashboardState("offline");
     }
   } finally {
     if (requestId === recommendationRequestId) {
@@ -3796,6 +3801,25 @@ function renderHomeHeatmap(data) {
       }).join("")
     : `<div class="empty">${escapeHtml(localizeUiText("لا توجد بيانات كافية لخريطة الحرارة حالياً."))}</div>`;
   attachDetailOpeners(homeHeatmapGrid);
+}
+
+function setHomeDashboardState(kind = "loading") {
+  const english = isEnglishLanguage();
+  const state = kind === "offline"
+    ? {
+        kind: "offline",
+        title: english ? "Market data is unavailable" : "بيانات السوق غير متاحة",
+        message: english ? "No market values are shown until a trusted provider responds." : "لن نعرض أي قيم سوقية حتى يستجيب مزود بيانات موثوق."
+      }
+    : {
+        kind: "loading",
+        title: english ? "Waiting for verified market data" : "بانتظار بيانات سوق موثوقة",
+        message: english ? "Heatmap, opportunities, and followed trades will update when analysis is ready." : "ستتحدث خريطة الحرارة والفرص والصفقات المتابعة عند اكتمال التحليل."
+      };
+
+  for (const panel of [homeHeatmapGrid, homeRecommendations, homeFollowedTrades]) {
+    setUiState(panel, { ...state, compact: true });
+  }
 }
 
 function getDashboardRecommendations(data = {}) {
@@ -9614,7 +9638,9 @@ function updateMarketOverviewBubbles(all = []) {
 
     sfmFinalRenderRecommendationsState(isLoading, hasError, recommendations);
   }
+  const sfmFinalDashboardRenderer = renderRecommendations;
   renderRecommendations = function renderRecommendations(data) {
+    sfmFinalDashboardRenderer(data);
     sfmFinalRenderRecommendations(data);
   };
 })();
