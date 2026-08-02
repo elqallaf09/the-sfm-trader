@@ -1303,6 +1303,9 @@ let notificationLog = normalizeNotificationLog(loadStored("the-sfm-trader-notifi
 let notificationSaveTimer = null;
 let notificationStateVersion = 0;
 let notificationPanelOpen = false;
+let settingsReturnFocus = null;
+let notificationReturnFocus = null;
+let globalSessionTimer = null;
 let scalpLoading = false;
 let expandedSignalCards = new Set(loadStored("the-sfm-trader-expanded-cards", []));
 let alertedKeys = new Set(loadStored("the-sfm-trader-alerted", []));
@@ -1474,6 +1477,7 @@ async function init() {
   mobileNotificationButton?.addEventListener("click", toggleNotificationPanel);
   mobileSettingsButton?.addEventListener("click", () => setSettingsPanelOpen(settingsPanel?.hidden !== false));
   notificationCloseButton?.addEventListener("click", () => setNotificationPanelOpen(false));
+  notificationPanel?.addEventListener("keydown", (event) => handleModalKeydown(event, notificationPanel, () => setNotificationPanelOpen(false)));
   notificationClearButton?.addEventListener("click", clearNotificationLog);
   scalpForm?.addEventListener("submit", handleScalpSubmit);
   searchInput.addEventListener("input", () => renderRecommendations(lastData));
@@ -1905,6 +1909,7 @@ function initSettingsPanel() {
   settingsButton.addEventListener("click", () => setSettingsPanelOpen(settingsPanel.hidden));
   railSettingsButton?.addEventListener("click", () => setSettingsPanelOpen(settingsPanel.hidden));
   settingsCloseButton?.addEventListener("click", () => setSettingsPanelOpen(false));
+  settingsPanel.addEventListener("keydown", (event) => handleModalKeydown(event, settingsPanel, () => setSettingsPanelOpen(false)));
   settingsLanguage?.addEventListener("change", handleSettingsLanguageChange);
   for (const choice of settingsLanguageChoices) {
     choice.addEventListener("click", () => selectSettingsLanguage(choice.dataset.languageOption));
@@ -1960,7 +1965,7 @@ function handleSettingsLanguageChange() {
   refreshLocalizedDynamicInterface();
 }
 
-function setSettingsPanelOpen(open) {
+function setSettingsPanelOpen(open, options = {}) {
   if (!settingsButton || !settingsPanel) return;
 
   const isOpen = Boolean(open);
@@ -1972,9 +1977,38 @@ function setSettingsPanelOpen(open) {
   mobileSettingsButton?.setAttribute("aria-expanded", String(isOpen));
   mobileSettingsButton?.classList.toggle("is-open", isOpen);
   if (isOpen) {
-    setNotificationPanelOpen(false);
+    settingsReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : settingsButton;
+    setNotificationPanelOpen(false, { restoreFocus: false });
     syncSettingsForm();
     window.setTimeout(() => settingsDisplayName?.focus(), 30);
+  } else if (options.restoreFocus !== false) {
+    settingsReturnFocus?.focus?.();
+    settingsReturnFocus = null;
+  }
+}
+
+function handleModalKeydown(event, panel, close) {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    close();
+    return;
+  }
+  if (event.key !== "Tab") return;
+  const focusable = Array.from(panel.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"))
+    .filter((element) => !element.hidden && !element.hasAttribute("disabled") && element.getAttribute("aria-hidden") !== "true");
+  if (!focusable.length) {
+    event.preventDefault();
+    panel.focus();
+    return;
+  }
+  const first = focusable[0];
+  const last = focusable.at(-1);
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
   }
 }
 
@@ -5552,7 +5586,7 @@ function toggleNotificationPanel() {
   setNotificationPanelOpen(!notificationPanelOpen);
 }
 
-function setNotificationPanelOpen(open) {
+function setNotificationPanelOpen(open, options = {}) {
   if (!notificationButton || !notificationPanel) return;
 
   notificationPanelOpen = Boolean(open);
@@ -5561,7 +5595,14 @@ function setNotificationPanelOpen(open) {
   notificationButton.classList.toggle("is-open", notificationPanelOpen);
   mobileNotificationButton?.setAttribute("aria-expanded", String(notificationPanelOpen));
   mobileNotificationButton?.classList.toggle("is-open", notificationPanelOpen);
-  if (notificationPanelOpen) setSettingsPanelOpen(false);
+  if (notificationPanelOpen) {
+    notificationReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : notificationButton;
+    setSettingsPanelOpen(false, { restoreFocus: false });
+    window.setTimeout(() => notificationCloseButton?.focus(), 0);
+  } else if (options.restoreFocus !== false) {
+    notificationReturnFocus?.focus?.();
+    notificationReturnFocus = null;
+  }
 }
 
 function checkSmartMarketNotifications(items = []) {
@@ -7834,7 +7875,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ensureAcceptanceSections();
   renderGlobalSessionCards(new Date());
   if (typeof renderHistory === "function") renderHistory();
-  window.setInterval(() => renderGlobalSessionCards(new Date()), 60000);
+  globalSessionTimer = window.setInterval(() => renderGlobalSessionCards(new Date()), 60000);
   document.addEventListener("change", (event) => {
     if (event.target?.matches?.("#preferred-language, [name='language'], [data-language-option]")) {
       window.setTimeout(() => {
@@ -7846,6 +7887,17 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+window.addEventListener("pagehide", () => {
+  if (sessionClockTimer) {
+    window.clearInterval(sessionClockTimer);
+    sessionClockTimer = null;
+  }
+  if (globalSessionTimer) {
+    window.clearInterval(globalSessionTimer);
+    globalSessionTimer = null;
+  }
+}, { once: true });
 
 /* SFM mobile fixes: real market overview timeframe controls and compact mobile cards. */
 const SFM_MARKET_OVERVIEW_TIMEFRAMES = [

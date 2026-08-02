@@ -77,6 +77,10 @@ function delay(milliseconds, signal) {
       cleanup();
       reject(signal.reason || new DOMException("Aborted", "AbortError"));
     };
+    if (signal?.aborted) {
+      abort();
+      return;
+    }
     signal?.addEventListener("abort", abort, { once: true });
   });
 }

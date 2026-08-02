@@ -19,6 +19,15 @@ test("homepage exposes keyboard navigation and mobile disclosure state", async (
   dom.window.close();
 });
 
+test("homepage modal panels trap and restore keyboard focus", async () => {
+  const source = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
+  assert.match(source, /function handleModalKeydown\(/);
+  assert.match(source, /event\.key === "Escape"/);
+  assert.match(source, /settingsReturnFocus\?\.focus\?\.\(\)/);
+  assert.match(source, /notificationReturnFocus\?\.focus\?\.\(\)/);
+  assert.match(source, /window\.clearInterval\(globalSessionTimer\)/);
+});
+
 test("homepage animation pauses for hidden and reduced-motion states", async () => {
   const source = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
   const backgroundSource = await readFile(new URL("../public/modules/marketBackground.js", import.meta.url), "utf8");

@@ -36,3 +36,20 @@ test("request policy aborts stalled requests within the configured timeout", asy
     fetchRef: (_url, { signal }) => new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(signal.reason), { once: true }))
   }), /انتهت مهلة الاتصال/);
 });
+
+test("request policy does not wait to retry after the caller aborts", async () => {
+  const controller = new AbortController();
+  let requests = 0;
+  const pending = fetchJsonWithPolicy("/api/test", {
+    retries: 2,
+    retryDelayMs: 5_000,
+    signal: controller.signal,
+    fetchRef: async () => {
+      requests += 1;
+      controller.abort();
+      throw new Error("network failed");
+    }
+  });
+  await assert.rejects(pending);
+  assert.equal(requests, 1);
+});
