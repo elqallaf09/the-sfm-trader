@@ -7211,9 +7211,12 @@ function setActiveShariaFilterButton() {
 }
 
 function drawSparkline(canvas, values = [], action) {
+  if (!canvas) return;
   const context = canvas.getContext("2d");
+  if (!context) return;
   const rect = canvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
+  if (rect.width <= 0 || rect.height <= 0) return;
+  const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
   canvas.width = Math.max(1, Math.floor(rect.width * dpr));
   canvas.height = Math.max(1, Math.floor(rect.height * dpr));
   context.scale(dpr, dpr);

@@ -31,6 +31,13 @@ test("homepage animation pauses for hidden and reduced-motion states", async () 
   assert.match(source, /renderMarketTabs\(lastMarkets\)/);
 });
 
+test("homepage sparklines cap pixel density and tolerate unavailable canvases", async () => {
+  const source = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
+  assert.match(source, /if \(!canvas\) return;/);
+  assert.match(source, /if \(!context\) return;/);
+  assert.match(source, /Math\.min\(2, Math\.max\(1, window\.devicePixelRatio \|\| 1\)\)/);
+});
+
 test("homepage background module is included in the offline application shell", async () => {
   const worker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
   assert.match(worker, /\/modules\/marketBackground\.js/);
@@ -50,4 +57,5 @@ test("offline application shell matches the versioned page entry scripts", async
   assert.ok(detailScript);
   assert.ok(worker.includes(`"${homeScript}"`));
   assert.ok(worker.includes(`"${detailScript}"`));
+  assert.match(worker, /event\.waitUntil\(caches\.open\(CACHE_NAME\)\.then\(\(cache\) => cache\.put\(request, clone\)\)\)/);
 });
