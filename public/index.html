@@ -20,6 +20,7 @@
     <link rel="stylesheet" href="/cinema.css?v=20260801-hardening-2" />
   </head>
   <body class="notranslate" translate="no">
+    <a class="skip-link" href="#main-content">تجاوز إلى المحتوى الرئيسي</a>
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
 
     <div class="app-shell sfm-dashboard">
@@ -53,14 +54,14 @@
           </button>
           <button id="refresh-button" class="icon-button" title="تحديث الآن" aria-label="تحديث الآن">↻</button>
         </div>
-        <button id="mobile-notification-button" class="mobile-notification-visual" type="button" aria-label="الإشعارات">
+        <button id="mobile-notification-button" class="mobile-notification-visual" type="button" aria-label="الإشعارات" aria-expanded="false" aria-controls="notification-panel">
           <svg class="mobile-notification-icon" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M18 9a6 6 0 0 0-12 0v4.6L4.5 16v1h15v-1L18 13.6V9Z"></path>
             <path d="M9.3 19a2.8 2.8 0 0 0 5.4 0"></path>
             <circle cx="19" cy="5" r="2.2"></circle>
           </svg>
         </button>
-        <button id="mobile-settings-button" class="mobile-settings-button" type="button" aria-label="الإعدادات"></button>
+        <button id="mobile-settings-button" class="mobile-settings-button" type="button" aria-label="الإعدادات" aria-expanded="false" aria-controls="settings-panel"></button>
       </header>
 
       <aside class="desktop-trading-rail" aria-label="تنقل غرفة التداول">
@@ -245,7 +246,7 @@
         </div>
       </aside>
 
-      <aside id="settings-panel" class="settings-panel" hidden>
+      <aside id="settings-panel" class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
         <div class="settings-panel-head">
           <div>
             <p class="eyebrow" id="settings-eyebrow">SFM SETTINGS</p>
@@ -408,11 +409,11 @@
         </form>
       </aside>
 
-      <aside id="notification-panel" class="notification-panel" hidden>
+      <aside id="notification-panel" class="notification-panel" role="dialog" aria-modal="true" aria-labelledby="notification-title" hidden>
         <div class="notification-panel-head">
           <div>
             <p class="eyebrow">SFM ALERTS</p>
-            <h2>مركز الإشعارات</h2>
+            <h2 id="notification-title">مركز الإشعارات</h2>
           </div>
           <div class="notification-panel-actions">
             <button id="notification-clear-button" class="text-button" type="button">مسح الكل</button>
@@ -432,7 +433,7 @@
         </div>
       </section>
 
-      <main>
+      <main id="main-content" tabindex="-1">
         <section id="market-overview-section" class="market-overview-band" aria-label="نظرة عامة على الأسواق العالمية">
           <div class="mo-head">
             <div>
@@ -1063,11 +1064,11 @@
           <div id="cards" class="cards recommendation-table-shell" aria-live="polite"></div>
           <div id="unavailable" class="unavailable recommendation-unavailable"></div>
 
-          <aside class="recommendation-detail-drawer" data-recommendation-drawer aria-hidden="true">
+          <aside class="recommendation-detail-drawer" data-recommendation-drawer role="dialog" aria-modal="true" aria-labelledby="recommendation-detail-title" aria-hidden="true" inert>
             <div class="recommendation-drawer-backdrop" data-recommendation-close aria-hidden="true"></div>
             <section class="recommendation-drawer-panel">
               <header class="recommendation-drawer-head">
-                <h3>تحليل</h3>
+                <h3 id="recommendation-detail-title">تحليل</h3>
                 <button type="button" class="recommendation-drawer-close" data-recommendation-close aria-label="إغلاق">×</button>
               </header>
               <div id="recommendation-detail-content" class="recommendation-detail-content"></div>
@@ -1341,8 +1342,6 @@
     <script src="/app.js?v=20260624-no-welcome-hero" type="module"></script>
   </body>
 </html>
-
-
 
 
 
