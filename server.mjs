@@ -29,16 +29,16 @@ const brotliCompressAsync = promisify(brotliCompress);
 const security = createSecurity({ production });
 const serveStatic = createStaticServer({ publicDir, production, securityHeaders });
 const userStore = createStateStore({ dataDir: process.env.SFM_DATA_DIR || path.join(__dirname, ".data") });
-const preferredPort = Number(process.env.PORT || 4173);
+const preferredPort = boundedInteger(process.env.PORT, 4173, 1, 65_535);
 const CACHE_TTL_MS = 90_000;
 const STALE_CACHE_TTL_MS = 10 * 60_000;
 const cache = createBoundedCache({
-  maxEntries: Number(process.env.SFM_MARKET_CACHE_MAX_ENTRIES || 250),
+  maxEntries: boundedInteger(process.env.SFM_MARKET_CACHE_MAX_ENTRIES, 250, 1, 10_000),
   maxAgeMs: STALE_CACHE_TTL_MS
 });
-const FIRST_RESPONSE_BUDGET_MS = Number(process.env.FIRST_RESPONSE_BUDGET_MS || 5_000);
-const UI_RECOMMENDATION_REFRESH_MS = Number(process.env.UI_RECOMMENDATION_REFRESH_MS || 12_000);
-const ANALYSIS_CONCURRENCY = Number(process.env.ANALYSIS_CONCURRENCY || 4);
+const FIRST_RESPONSE_BUDGET_MS = boundedInteger(process.env.FIRST_RESPONSE_BUDGET_MS, 5_000, 100, 60_000);
+const UI_RECOMMENDATION_REFRESH_MS = boundedInteger(process.env.UI_RECOMMENDATION_REFRESH_MS, 12_000, 1_000, 300_000);
+const ANALYSIS_CONCURRENCY = boundedInteger(process.env.ANALYSIS_CONCURRENCY, 4, 1, 16);
 const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL || "http://localhost:11434").replace(/\/$/, "");
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "llama3.2:3b";
 const OLLAMA_ENABLED = String(process.env.OLLAMA_ENABLED || "true").toLowerCase() !== "false";
@@ -46,7 +46,7 @@ const SHARIA_API_URL = (process.env.SHARIA_API_URL || "").replace(/\/$/, "");
 const SHARIA_API_KEY = process.env.SHARIA_API_KEY || "";
 let ollamaUnavailableUntil = 0;
 const shariaCache = createBoundedCache({
-  maxEntries: Number(process.env.SFM_SHARIA_CACHE_MAX_ENTRIES || 1_000),
+  maxEntries: boundedInteger(process.env.SFM_SHARIA_CACHE_MAX_ENTRIES, 1_000, 1, 10_000),
   maxAgeMs: 24 * 60 * 60 * 1000
 });
 const aggregateMarketIds = new Set(["gcc", "world"]);
@@ -69,7 +69,10 @@ const canonicalMarketPriority = [
   "europe",
   "asia"
 ];
-const symbolExecutionMarketCache = new Map();
+const symbolExecutionMarketCache = createBoundedCache({
+  maxEntries: boundedInteger(process.env.SFM_SYMBOL_MARKET_CACHE_MAX_ENTRIES, 2_000, 1, 10_000),
+  maxAgeMs: 24 * 60 * 60 * 1000
+});
 const readOnlyApiPaths = new Set(["/api/health", "/api/ready", "/api/markets", "/api/recommendations", "/api/economic-calendar", "/api/watchlist", "/api/asset", "/api/ollama-status"]);
 const symbolAliases = {
   APPLE: "AAPL",
@@ -737,18 +740,19 @@ function isAggregateMarket(marketId) {
 function resolveSymbolExecutionMarketId(symbol, fallbackMarketId = "") {
   const clean = String(symbol || "").trim().toUpperCase();
   if (!clean) return fallbackMarketId;
-  if (symbolExecutionMarketCache.has(clean)) return symbolExecutionMarketCache.get(clean);
+  const cached = symbolExecutionMarketCache.get(clean);
+  if (cached) return cached.marketId;
 
   for (const marketId of canonicalMarketPriority) {
     const marketSymbols = markets[marketId]?.symbols || [];
     if (marketSymbols.some((asset) => String(asset.symbol || "").trim().toUpperCase() === clean)) {
-      symbolExecutionMarketCache.set(clean, marketId);
+      symbolExecutionMarketCache.set(clean, { createdAt: Date.now(), marketId });
       return marketId;
     }
   }
 
   const inferred = inferExecutionMarketFromSymbol(clean) || fallbackMarketId;
-  symbolExecutionMarketCache.set(clean, inferred);
+  symbolExecutionMarketCache.set(clean, { createdAt: Date.now(), marketId: inferred });
   return inferred;
 }
 
@@ -2476,6 +2480,12 @@ async function encodeJsonResponseBody(request, body) {
 function sendText(response, text, status = 200) {
   response.writeHead(status, securityHeaders("text/plain; charset=utf-8", { hsts: production }));
   response.end(text);
+}
+
+function boundedInteger(value, fallback, minimum, maximum) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(maximum, Math.max(minimum, Math.floor(number)));
 }
 
 function encodeResponseBody(request, body, extension) {

@@ -32,7 +32,10 @@ export function createSecurity(options = {}) {
       }
       lastSweepAt = now;
     }
-    const key = `${scope}:${clientAddress(request, trustProxy)}`;
+    const token = readBearerToken(request.headers.authorization);
+    const userId = token ? tokenMap.get(hashToken(token)) : null;
+    const actor = userId ? `user:${userId}` : `ip:${clientAddress(request, trustProxy)}`;
+    const key = `${scope}:${actor}`;
     const max = scope === "analysis" ? analysisRateLimitMax : rateLimitMax;
     const current = buckets.get(key);
     if (!current || now >= current.resetAt) {

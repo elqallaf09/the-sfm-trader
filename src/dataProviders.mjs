@@ -17,6 +17,7 @@ const PROVIDER_REQUEST_TIMEOUT_MS = positiveInteger(process.env.PROVIDER_REQUEST
 const PROVIDER_MAX_ATTEMPTS = positiveInteger(process.env.PROVIDER_MAX_ATTEMPTS, 2);
 const PROVIDER_MAX_CONCURRENT = positiveInteger(process.env.PROVIDER_MAX_CONCURRENT, 3);
 const PROVIDER_MIN_START_GAP_MS = nonNegativeInteger(process.env.PROVIDER_MIN_START_GAP_MS, 240);
+const PROVIDER_MAX_RETRY_DELAY_MS = positiveInteger(process.env.PROVIDER_MAX_RETRY_DELAY_MS, 5_000);
 const providerQueue = [];
 let providerActiveRequests = 0;
 let providerLastStartAt = 0;
@@ -420,7 +421,7 @@ async function loadJson(url) {
 
     if (response.status !== 429) break;
     if (attempt < PROVIDER_MAX_ATTEMPTS - 1) {
-      await delay(800 * (attempt + 1));
+      await delay(providerRetryDelay(response, 800 * (attempt + 1)));
     }
   }
 
@@ -484,6 +485,18 @@ function windowlessDelay(ms) {
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function providerRetryDelay(response, fallback) {
+  const value = String(response?.headers?.get("retry-after") || "").trim();
+  let milliseconds;
+  if (/^\d+(?:\.\d+)?$/.test(value)) {
+    milliseconds = Number(value) * 1000;
+  } else if (value) {
+    milliseconds = Date.parse(value) - Date.now();
+  }
+  const delayMs = Number.isFinite(milliseconds) && milliseconds >= 0 ? milliseconds : fallback;
+  return Math.min(PROVIDER_MAX_RETRY_DELAY_MS, Math.max(0, Math.floor(delayMs)));
 }
 
 function positiveInteger(value, fallback) {

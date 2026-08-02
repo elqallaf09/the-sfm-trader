@@ -39,6 +39,23 @@ test("rate limiter ignores spoofed forwarding headers unless a trusted proxy is 
   assert.equal(proxied.checkRateLimit(request({ "x-forwarded-for": "198.51.100.2" }), "default").allowed, true);
 });
 
+test("rate limiter isolates authenticated users sharing one network address", () => {
+  const security = createSecurity({
+    production: true,
+    rateLimitMax: 1,
+    authTokens: {
+      "first-user-private-token-1234": "first-user",
+      "second-user-private-token-123": "second-user"
+    }
+  });
+  const first = request({ authorization: "Bearer first-user-private-token-1234" }, "203.0.113.10");
+  const second = request({ authorization: "Bearer second-user-private-token-123" }, "203.0.113.10");
+
+  assert.equal(security.checkRateLimit(first).allowed, true);
+  assert.equal(security.checkRateLimit(first).allowed, false);
+  assert.equal(security.checkRateLimit(second).allowed, true);
+});
+
 test("security headers include browser hardening", () => {
   const headers = securityHeaders("text/html", { html: true, hsts: true });
   assert.match(headers["content-security-policy"], /frame-ancestors 'none'/);
