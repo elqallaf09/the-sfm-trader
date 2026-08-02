@@ -36,7 +36,12 @@ try {
 
   const readiness = await fetch(`${baseUrl}/api/ready`);
   assert.equal(readiness.status, 200);
-  assert.equal((await readiness.json()).status, "ready");
+  const readinessPayload = await readiness.json();
+  assert.equal(readinessPayload.status, "ready");
+  assert.equal("lastError" in readinessPayload.providerHealth, false);
+
+  const unsafeRequestId = await fetch(`${baseUrl}/api/health`, { headers: { "x-request-id": "not safe spaces" } });
+  assert.notEqual(unsafeRequestId.headers.get("x-request-id"), "not safe spaces");
 
   const unauthorized = await fetch(`${baseUrl}/api/followed-trades`);
   assert.equal(unauthorized.status, 401);
@@ -101,6 +106,15 @@ try {
 
   const unchanged = await fetch(`${baseUrl}/`, { headers: { "if-none-match": etag } });
   assert.equal(unchanged.status, 304);
+  assert.match(unchanged.headers.get("content-security-policy") || "", /frame-ancestors 'none'/);
+
+  const head = await rawRequest(`${baseUrl}/`, {}, "HEAD");
+  assert.equal(head.statusCode, 200);
+  assert.equal(head.bodyBytes, 0);
+
+  const rejectedStaticMutation = await rawRequest(`${baseUrl}/`, { "content-type": "text/plain" }, "POST");
+  assert.equal(rejectedStaticMutation.statusCode, 405);
+  assert.equal(rejectedStaticMutation.headers.allow, "GET, HEAD");
 
   const compressed = await rawRequest(`${baseUrl}/api/markets`, { "accept-encoding": "br" });
   assert.equal(compressed.statusCode, 200);
@@ -153,12 +167,13 @@ function waitForExit(processHandle, timeoutMs) {
   });
 }
 
-function rawRequest(url, headers) {
+function rawRequest(url, headers, method = "GET") {
   return new Promise(async (resolve, reject) => {
     const { request } = await import("node:http");
-    const operation = request(url, { headers }, (response) => {
-      response.resume();
-      response.once("end", () => resolve({ statusCode: response.statusCode, headers: response.headers }));
+    const operation = request(url, { headers, method }, (response) => {
+      let bodyBytes = 0;
+      response.on("data", (chunk) => { bodyBytes += chunk.length; });
+      response.once("end", () => resolve({ statusCode: response.statusCode, headers: response.headers, bodyBytes }));
     });
     operation.once("error", reject);
     operation.end();

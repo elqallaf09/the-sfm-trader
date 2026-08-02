@@ -38,6 +38,12 @@ export function configureHttpServer(server, options = {}) {
   return server;
 }
 
+export function normalizeRequestId(value, fallback) {
+  const candidate = String(value || "").trim();
+  if (/^[A-Za-z0-9._:-]{8,80}$/.test(candidate)) return candidate;
+  return fallback;
+}
+
 function httpError(message, statusCode) {
   const error = new Error(message);
   error.statusCode = statusCode;
