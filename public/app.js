@@ -3970,13 +3970,14 @@ function renderV3Opportunity(item) {
   const target = item.target1 || item.expectedPrice;
   return `<article class="v3-opportunity-card ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">
     <header><span class="asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span><div><strong>${escapeHtml(item.symbol)}</strong><span>${escapeHtml(item.name || item.exchangeName || "")}</span></div><b>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</b></header>
-    <div class="v3-opportunity-metrics"><div><span>${escapeHtml(localizeUiText("السعر الحالي"))}</span><strong>${formatMoney(item.currentPrice, item.currency)}</strong></div><div><span>${escapeHtml(localizeUiText("الهدف"))}</span><strong>${target ? formatMoney(target, item.currency) : "--"}</strong></div><div><span>${escapeHtml(localizeUiText("ثقة التحليل"))}</span><strong>${formatNumber(item.confidence || 0)}%</strong></div></div>
+    <div class="v3-opportunity-metrics"><div><span>${escapeHtml(localizeUiText("السعر الحالي"))}</span><strong>${formatMoney(item.currentPrice, item.currency)}</strong></div><div><span>${escapeHtml(localizeUiText("الهدف"))}</span><strong>${target ? formatMoney(target, item.currency) : "--"}</strong></div><div class="v3-confidence-metric"><span>${escapeHtml(localizeUiText("ثقة التحليل"))}</span><strong style="--confidence:${clamp(Number(item.confidence || 0), 0, 100)}%">${formatNumber(item.confidence || 0)}%</strong></div></div>
   </article>`;
 }
 
 function renderV3HeatItem(item) {
+  const visual = getPremiumAssetVisual(item);
   const tone = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : "hold";
-  return `<article class="v3-heat-item ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link"><strong>${escapeHtml(item.symbol)}</strong><b>${formatPercent(item.expectedMovePct)}</b><span>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</span><em>${formatNumber(getDashboardScore(item))}%</em></article>`;
+  return `<article class="v3-heat-item ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link"><span class="asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span><strong>${escapeHtml(item.symbol)}</strong><b>${formatPercent(item.expectedMovePct)}</b><span class="v3-heat-action">${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</span><em>◷ ${formatNumber(getDashboardScore(item))}% ${escapeHtml(localizeUiText("ثقة"))}</em></article>`;
 }
 
 function renderV3PulseChart(items) {
@@ -3991,7 +3992,8 @@ function renderV3PulseChart(items) {
     const y = 50 - (value / max) * 34;
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   }).join(" ");
-  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="${escapeHtml(localizeUiText("توزيع حركة الأصول المحللة"))}"><line x1="0" y1="50" x2="100" y2="50"></line><polyline points="${points}"></polyline></svg>`;
+  const areaPoints = `0,84 ${points} 100,84`;
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="${escapeHtml(localizeUiText("توزيع حركة الأصول المحللة"))}"><defs><linearGradient id="v3-pulse-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fd6c0" stop-opacity=".28"></stop><stop offset="1" stop-color="#2fd6c0" stop-opacity="0"></stop></linearGradient></defs><g class="v3-chart-grid"><line x1="0" y1="20" x2="100" y2="20"></line><line x1="0" y1="50" x2="100" y2="50"></line><line x1="0" y1="80" x2="100" y2="80"></line></g><polygon points="${areaPoints}"></polygon><polyline points="${points}"></polyline></svg>`;
 }
 
 function renderV3FollowedTrade(entry) {
@@ -4006,7 +4008,7 @@ function renderV3CalendarEvent(event) {
 }
 
 function renderV3EmptyState(message) {
-  return `<div class="v3-empty-state">${escapeHtml(localizeUiText(message))}</div>`;
+  return `<div class="v3-empty-state"><span aria-hidden="true">◇</span><strong>${escapeHtml(localizeUiText(message))}</strong><small>${escapeHtml(localizeUiText("ستظهر البيانات هنا فور توفر سجل موثوق."))}</small></div>`;
 }
 
 function renderHomeRecommendationCard(item) {

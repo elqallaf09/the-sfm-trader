@@ -32,7 +32,7 @@ test("desktop dashboard keeps rail, main, summary and footer in named grid areas
 test("offline shell includes the authoritative layout stylesheet", async () => {
   const worker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
   assert.match(worker, /layout-stability\.css\?v=20260802-dashboard-data-ux-4/);
-  assert.match(worker, /dashboard-v2\.css\?v=20260802-terminal-home-v3-visual-fix/);
+  assert.match(worker, /dashboard-v2\.css\?v=20260802-terminal-home-v3-mock-parity/);
 });
 
 test("terminal redesign prioritizes readable summaries over dense home tables", async () => {
