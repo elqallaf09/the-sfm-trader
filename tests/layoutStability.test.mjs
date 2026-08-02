@@ -6,8 +6,10 @@ test("dashboard loads one final authoritative layout after legacy theme sheets",
   const html = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
   const styles = [...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map((match) => match[1]);
   const stableIndex = styles.findIndex((value) => value.includes("layout-stability.css"));
+  const redesignIndex = styles.findIndex((value) => value.includes("dashboard-v2.css"));
   assert.ok(stableIndex > styles.findIndex((value) => value.includes("cinema.css")));
   assert.ok(stableIndex > styles.findIndex((value) => value.includes("styles.css")));
+  assert.ok(redesignIndex > stableIndex);
 });
 
 test("desktop dashboard keeps rail, main, summary and footer in named grid areas", async () => {
@@ -30,6 +32,21 @@ test("desktop dashboard keeps rail, main, summary and footer in named grid areas
 test("offline shell includes the authoritative layout stylesheet", async () => {
   const worker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
   assert.match(worker, /layout-stability\.css\?v=20260802-dashboard-data-ux-4/);
+  assert.match(worker, /dashboard-v2\.css\?v=20260802-terminal-redesign/);
+});
+
+test("terminal redesign prioritizes readable summaries over dense home tables", async () => {
+  const css = await readFile(new URL("../public/dashboard-v2.css", import.meta.url), "utf8");
+  assert.match(css, /--stable-aside: clamp\(310px, 19vw, 350px\) !important/);
+  assert.match(css, /\.rdp-pick-row \{[\s\S]*grid-template-areas: "asset signal" "time confidence" !important/);
+  assert.match(css, /\.home-heat-cell:nth-child\(n \+ 9\)/);
+  assert.match(css, /\.economic-news-card:nth-child\(n \+ 4\)/);
+  assert.match(css, /\.market-band \{ display: none !important; \}/);
+  assert.match(css, /@media \(min-width: 1024px\) and \(max-width: 1180px\)/);
+  assert.match(css, /section#home-heatmap-section#home-heatmap-section#home-heatmap-section\.home-heatmap-section/);
+  assert.match(css, /section#home-deck-section#home-deck-section#home-deck-section\.home-deck-section \.home-deck-panel:last-child/);
+  assert.match(css, /@media \(max-width: 1023px\)/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
 });
 
 test("home dashboard remains compact while recommendation details stay in their own view", async () => {
