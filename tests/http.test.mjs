@@ -16,7 +16,10 @@ test("JSON body parser accepts valid JSON and empty bodies", async () => {
 
 test("JSON body parser rejects invalid media types, syntax, and oversized requests", async () => {
   await assert.rejects(readJsonBody(request("text", { "content-type": "text/plain" })), (error) => error.statusCode === 415);
+  await assert.rejects(readJsonBody(request('{"ok":true}')), (error) => error.statusCode === 415);
   await assert.rejects(readJsonBody(request("{", { "content-type": "application/json" })), (error) => error.statusCode === 400);
+  await assert.rejects(readJsonBody(request("[]", { "content-type": "application/json" })), (error) => error.statusCode === 400);
+  await assert.rejects(readJsonBody(request("null", { "content-type": "application/json" })), (error) => error.statusCode === 400);
   await assert.rejects(readJsonBody(request("12345", { "content-type": "application/json", "content-length": "5" }), { maxBytes: 4 }), (error) => error.statusCode === 413);
 });
 

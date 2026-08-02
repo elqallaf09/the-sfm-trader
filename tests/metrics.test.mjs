@@ -26,3 +26,20 @@ test("metrics bound attacker-controlled series cardinality", () => {
   assert.equal(snapshot.cardinality.droppedRequestSeries, 3);
   assert.equal(snapshot.cardinality.droppedVitalSeries, 4);
 });
+
+test("web vitals bound rating keys, values and page labels", () => {
+  const metrics = createMetrics();
+  for (let index = 0; index < 100; index += 1) {
+    assert.equal(metrics.observeWebVital({ name: "lcp", value: 1200, rating: `attacker-${index}`, page: "/dashboard?secret=value" }), true);
+  }
+  assert.equal(metrics.observeWebVital({ name: "LCP", value: 1e308, rating: "good", page: "/" }), false);
+  assert.equal(metrics.observeWebVital({ name: "CLS", value: -1, rating: "good", page: "/" }), false);
+  assert.equal(metrics.observeWebVital({ name: "CLS", value: 101, rating: "good", page: "/" }), false);
+  assert.equal(metrics.observeWebVital({ name: "INP", value: 100, rating: "good", page: "/bad page" }), true);
+
+  const snapshot = metrics.snapshot();
+  const dashboard = snapshot.webVitals.find((item) => item.page === "/dashboard");
+  assert.deepEqual(dashboard.ratings, { unknown: 100 });
+  assert.equal(Number.isFinite(dashboard.average), true);
+  assert.ok(snapshot.webVitals.some((item) => item.page === "/unknown"));
+});
