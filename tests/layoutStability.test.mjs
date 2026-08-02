@@ -73,6 +73,9 @@ test("home v3 implements the approved RTL terminal hierarchy", async () => {
   assert.match(css, /\.app-shell\.sfm-dashboard>\.right-dashboard-panel \{ display:none !important; \}/);
   assert.match(css, /grid-template-areas:"reading pulse"/);
   assert.match(css, /height:320px !important; min-height:320px !important; max-height:320px !important/);
+  assert.match(css, /grid-template-areas: "brand actions session search" !important/);
+  assert.match(css, /\.topbar \.top-actions \{[\s\S]*position: static !important/);
+  assert.match(css, /\.brand-lockup h1 \{[\s\S]*text-overflow: ellipsis !important/);
 });
 
 test("home v3 uses truthful runtime data instead of mock values", async () => {
