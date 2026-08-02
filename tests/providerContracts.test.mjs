@@ -90,3 +90,37 @@ test("concurrent requests for one provider URL share a single upstream request",
   assert.notEqual(results[0], results[1]);
   assert.deepEqual(results[0], results[1]);
 });
+
+test("provider honors bounded Retry-After before retrying rate limits", async (context) => {
+  const fixture = JSON.parse(await readFile(new URL("./fixtures/yahoo-chart.json", import.meta.url), "utf8"));
+  const originalFetch = globalThis.fetch;
+  const originalEnvironment = {
+    DATA_PROVIDER: process.env.DATA_PROVIDER,
+    PROVIDER_MAX_ATTEMPTS: process.env.PROVIDER_MAX_ATTEMPTS,
+    PROVIDER_MIN_START_GAP_MS: process.env.PROVIDER_MIN_START_GAP_MS,
+    PROVIDER_MAX_RETRY_DELAY_MS: process.env.PROVIDER_MAX_RETRY_DELAY_MS
+  };
+  context.after(() => {
+    globalThis.fetch = originalFetch;
+    for (const [key, value] of Object.entries(originalEnvironment)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  process.env.DATA_PROVIDER = "yahoo";
+  process.env.PROVIDER_MAX_ATTEMPTS = "2";
+  process.env.PROVIDER_MIN_START_GAP_MS = "0";
+  process.env.PROVIDER_MAX_RETRY_DELAY_MS = "10";
+  let requests = 0;
+  globalThis.fetch = async () => {
+    requests += 1;
+    if (requests === 1) return new Response("", { status: 429, headers: { "retry-after": "0" } });
+    return new Response(JSON.stringify(fixture), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  const provider = await import(`../src/dataProviders.mjs?retry-after=${Date.now()}`);
+
+  const chart = await provider.fetchChart("RETRY", { range: "5d", interval: "1d" });
+
+  assert.equal(requests, 2);
+  assert.equal(chart.chart.result[0].meta.dataProvider, "Yahoo Finance");
+});

@@ -1,7 +1,9 @@
 const FOREX_FACTORY_CALENDAR_URL = process.env.FOREX_FACTORY_CALENDAR_URL || "https://nfs.faireconomy.media/ff_calendar_thisweek.xml";
 const ECONOMIC_CALENDAR_TZ = process.env.ECONOMIC_CALENDAR_TZ || "America/New_York";
-const ECONOMIC_CALENDAR_CACHE_TTL_MS = Number(process.env.ECONOMIC_CALENDAR_CACHE_TTL_MS || 15 * 60_000);
-const ECONOMIC_CALENDAR_TIMEOUT_MS = Number(process.env.ECONOMIC_CALENDAR_TIMEOUT_MS || 2_500);
+const ECONOMIC_CALENDAR_CACHE_TTL_MS = positiveInteger(process.env.ECONOMIC_CALENDAR_CACHE_TTL_MS, 15 * 60_000);
+const ECONOMIC_CALENDAR_TIMEOUT_MS = positiveInteger(process.env.ECONOMIC_CALENDAR_TIMEOUT_MS, 2_500);
+const ECONOMIC_CALENDAR_MAX_BYTES = positiveInteger(process.env.ECONOMIC_CALENDAR_MAX_BYTES, 2_000_000);
+const ECONOMIC_CALENDAR_RETRY_DELAY_MS = positiveInteger(process.env.ECONOMIC_CALENDAR_RETRY_DELAY_MS, 30_000);
 const HIGH_IMPACT_BLOCK_BEFORE_MIN = 75;
 const HIGH_IMPACT_BLOCK_AFTER_MIN = 90;
 const HIGH_IMPACT_WATCH_MIN = 24 * 60;
@@ -12,6 +14,8 @@ let calendarCache = {
   events: [],
   error: null
 };
+let calendarRefresh = null;
+let calendarRetryAt = 0;
 
 export async function getEconomicCalendarForMarket(marketId = "us", symbols = []) {
   const events = await getEconomicCalendarEvents();
@@ -70,23 +74,40 @@ async function getEconomicCalendarEvents() {
   if (calendarCache.events.length && Date.now() - calendarCache.createdAt < ECONOMIC_CALENDAR_CACHE_TTL_MS) {
     return calendarCache.events;
   }
+  if (Date.now() < calendarRetryAt) return calendarCache.events || [];
 
+  if (!calendarRefresh) {
+    calendarRefresh = refreshEconomicCalendar().finally(() => {
+      calendarRefresh = null;
+    });
+  }
+  return await calendarRefresh;
+}
+
+async function refreshEconomicCalendar() {
+  let timer;
   try {
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), ECONOMIC_CALENDAR_TIMEOUT_MS);
+    timer = setTimeout(() => controller.abort(), ECONOMIC_CALENDAR_TIMEOUT_MS);
     const response = await fetch(FOREX_FACTORY_CALENDAR_URL, {
       signal: controller.signal,
       headers: {
         "user-agent": "the-sfm-trader/1.0 economic-calendar"
       }
     });
-    clearTimeout(timer);
-
     if (!response.ok) {
       throw new Error(`calendar http ${response.status}`);
     }
 
+    const declaredBytes = Number(response.headers.get("content-length") || 0);
+    if (Number.isFinite(declaredBytes) && declaredBytes > ECONOMIC_CALENDAR_MAX_BYTES) {
+      throw new Error("calendar response is too large");
+    }
+
     const buffer = await response.arrayBuffer();
+    if (buffer.byteLength > ECONOMIC_CALENDAR_MAX_BYTES) {
+      throw new Error("calendar response is too large");
+    }
     const xml = new TextDecoder("windows-1252").decode(buffer);
     const events = parseForexFactoryXml(xml)
       .filter((event) => event.timestamp && event.currency && event.impact !== "low")
@@ -97,14 +118,23 @@ async function getEconomicCalendarEvents() {
       events,
       error: null
     };
+    calendarRetryAt = 0;
     return events;
   } catch (error) {
+    calendarRetryAt = Date.now() + ECONOMIC_CALENDAR_RETRY_DELAY_MS;
     calendarCache = {
       ...calendarCache,
       error: error?.message || "تعذر تحميل رزنامة الأخبار"
     };
     return calendarCache.events || [];
+  } finally {
+    if (timer) clearTimeout(timer);
   }
+}
+
+function positiveInteger(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? Math.floor(number) : fallback;
 }
 
 function parseForexFactoryXml(xml) {
