@@ -8,9 +8,6 @@ export async function readJsonBody(request, options = {}) {
   }
 
   const contentType = String(request.headers?.["content-type"] || "");
-  if (contentType && !JSON_CONTENT_TYPE.test(contentType)) {
-    throw httpError("نوع محتوى الطلب غير مدعوم؛ استخدم application/json", 415);
-  }
 
   const chunks = [];
   let bytes = 0;
@@ -23,8 +20,13 @@ export async function readJsonBody(request, options = {}) {
 
   const body = Buffer.concat(chunks).toString("utf8");
   if (!body.trim()) return {};
+  if (!JSON_CONTENT_TYPE.test(contentType)) {
+    throw httpError("نوع محتوى الطلب غير مدعوم؛ استخدم application/json", 415);
+  }
   try {
-    return JSON.parse(body);
+    const parsed = JSON.parse(body);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw httpError("يجب أن يكون الطلب كائن JSON", 400);
+    return parsed;
   } catch {
     throw httpError("صيغة الطلب غير صالحة", 400);
   }

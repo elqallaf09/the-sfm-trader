@@ -19,17 +19,21 @@ export function createMetrics({ startedAt = Date.now(), maxRequestSeries = 250, 
   }
 
   function observeWebVital({ name, value, rating, page }) {
-    if (!/^(CLS|FCP|INP|LCP|TTFB)$/.test(name) || !Number.isFinite(value)) return false;
-    const key = `${name}:${String(page || "/").slice(0, 100)}`;
+    const metricName = String(name || "").toUpperCase();
+    const metricValue = Number(value);
+    if (!/^(CLS|FCP|INP|LCP|TTFB)$/.test(metricName) || !isPlausibleVital(metricName, metricValue)) return false;
+    const normalizedPage = normalizePage(page);
+    const normalizedRating = ["good", "needs-improvement", "poor"].includes(String(rating)) ? String(rating) : "unknown";
+    const key = `${metricName}:${normalizedPage}`;
     if (!webVitals.has(key) && webVitals.size >= maxVitalSeries) {
       droppedVitalSeries += 1;
       return false;
     }
-    const current = webVitals.get(key) || { name, page: String(page || "/"), count: 0, total: 0, max: 0, ratings: {} };
+    const current = webVitals.get(key) || { name: metricName, page: normalizedPage, count: 0, total: 0, max: 0, ratings: {} };
     current.count += 1;
-    current.total += value;
-    current.max = Math.max(current.max, value);
-    current.ratings[rating || "unknown"] = (current.ratings[rating || "unknown"] || 0) + 1;
+    current.total += metricValue;
+    current.max = Math.max(current.max, metricValue);
+    current.ratings[normalizedRating] = (current.ratings[normalizedRating] || 0) + 1;
     webVitals.set(key, current);
     return true;
   }
@@ -58,4 +62,14 @@ export function createMetrics({ startedAt = Date.now(), maxRequestSeries = 250, 
   }
 
   return { observeRequest, observeWebVital, snapshot };
+}
+
+function isPlausibleVital(name, value) {
+  if (!Number.isFinite(value) || value < 0) return false;
+  return name === "CLS" ? value <= 100 : value <= 600_000;
+}
+
+function normalizePage(value) {
+  const page = String(value || "/").split(/[?#]/, 1)[0].slice(0, 100);
+  return /^\/[A-Za-z0-9_./-]*$/.test(page) ? page : "/unknown";
 }
