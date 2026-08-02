@@ -1442,7 +1442,13 @@ async function init() {
   renderVoiceMonitor();
   setActiveAnalysisModeButtons();
 
-  await loadMarkets();
+  try {
+    await loadMarkets();
+  } catch {
+    lastMarkets = [];
+    renderMarketTabs(lastMarkets);
+    setConnectionStatus("offline", localizeUiText("تعذر تحديث الأسواق - وضع عدم الاتصال"));
+  }
   await loadRecommendations({ force: true });
   createVisibilityAwarePoller([
     {
@@ -8991,12 +8997,17 @@ function updateMarketOverviewBubbles(all = []) {
     return "is-neutral";
   }
 
+  function sfmFinalRound(value, decimals = 2) {
+    const factor = 10 ** decimals;
+    return Math.round((value + Number.EPSILON) * factor) / factor;
+  }
+
   function sfmFinalClampPercent(value) {
     const number = sfmFinalSafeNumber(value);
     if (number === null) return null;
     if (!Number.isFinite(number)) return null;
     if (Math.abs(number) > 500) return null;
-    return round(number, 2);
+    return sfmFinalRound(number);
   }
 
   function sfmFinalBuildPercent(fromValue, toValue) {
@@ -9026,7 +9037,7 @@ function updateMarketOverviewBubbles(all = []) {
   function sfmFinalFormatPercent(value, options = {}) {
     const number = sfmFinalSafeNumber(value);
     if (number === null) return sfmFinalRecommendationDash;
-    const rounded = round(number, 2);
+    const rounded = sfmFinalRound(number);
     if (!Number.isFinite(rounded)) return sfmFinalRecommendationDash;
     const prefix = rounded > 0 ? "+" : "";
     const normalized = sfmFinalClampPercent(rounded);
@@ -9453,7 +9464,7 @@ function updateMarketOverviewBubbles(all = []) {
     sfmFinalDrawer.setAttribute("aria-hidden", "false");
     sfmFinalDrawer.inert = false;
     document.body.classList.add("recommendation-drawer-open");
-    sfmFinalDrawer.querySelector("[data-recommendation-close]")?.focus();
+    sfmFinalDrawer.querySelector("button[data-recommendation-close]")?.focus();
   }
 
   function sfmFinalCloseRecommendationDrawer() {
@@ -9502,7 +9513,7 @@ function updateMarketOverviewBubbles(all = []) {
 
   function sfmFinalBindRecommendationDetailButtons() {
     if (!cards) return;
-    cards.querySelectorAll("[data-recommendation-index]").forEach((button) => {
+    cards.querySelectorAll("button.recommendation-detail-button[data-recommendation-index]").forEach((button) => {
       button.addEventListener("click", (event) => {
         const target = event.currentTarget;
         const index = Number(target.getAttribute("data-recommendation-index"));

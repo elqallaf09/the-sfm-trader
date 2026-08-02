@@ -1349,6 +1349,19 @@ function formatMoney(value, currency) {
   })}${normalizedCurrency ? ` ${normalizedCurrency}` : ""}`;
 }
 
+function formatDateTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--";
+  return normalizeDigits(new Intl.DateTimeFormat(NUMBER_LOCALE, {
+    numberingSystem: "latn",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    day: "2-digit",
+    month: "2-digit"
+  }).format(date));
+}
+
 function normalizeCurrencyCode(currency) {
   const code = String(currency || "").trim().toUpperCase();
   const currencyMap = {

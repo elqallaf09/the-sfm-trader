@@ -51,10 +51,23 @@ export function createSecurity(options = {}) {
     const origin = String(request.headers.origin || "");
     if (!origin) return "";
     if (allowedOrigins.has(origin)) return origin;
+    if (!production && isSameOriginRequest(origin, request)) return origin;
     return "";
   }
 
   return { authenticate, checkRateLimit, corsOrigin, production, configuredUsers: tokenMap.size };
+}
+
+function isSameOriginRequest(origin, request) {
+  try {
+    const url = new URL(origin);
+    const host = String(request?.headers?.host || "").trim().toLowerCase();
+    return Boolean(host)
+      && ["http:", "https:"].includes(url.protocol)
+      && url.host.toLowerCase() === host;
+  } catch {
+    return false;
+  }
 }
 
 export function securityHeaders(contentType, options = {}) {

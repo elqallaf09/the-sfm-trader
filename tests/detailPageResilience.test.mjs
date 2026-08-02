@@ -15,4 +15,6 @@ test("detail requests bound symbols and cancel slow navigation", async () => {
   assert.match(source, /window\.addEventListener\("pagehide", \(\) => detailRequestController\?\.abort\(\)/);
   assert.match(source, /content-type/);
   assert.match(source, /Math\.min\(2, window\.devicePixelRatio \|\| 1\)/);
+  assert.match(source, /function formatDateTime\(value\)/);
+  assert.match(source, /formatDateTime\(item\.dataProvenance\.marketTimestamp\)/);
 });
