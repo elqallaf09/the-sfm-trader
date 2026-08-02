@@ -179,6 +179,15 @@ body[data-app-view="home"] :is(.rdp-pick-info, .rdp-pick-info strong, .rdp-pick-
   }
   body[data-app-view="home"] .command-center-grid { overflow-x: auto !important; }
 }
+@media (min-width: 1024px) and (max-width: 1180px) {
+  /* Restore the redesign's desktop summaries against the legacy tablet hide rule. */
+  body[data-app-view="home"] main > section#command-center-section#command-center-section#command-center-section.command-center-band,
+  body[data-app-view="home"] main > section#home-heatmap-section#home-heatmap-section#home-heatmap-section.home-heatmap-section,
+  body[data-app-view="home"] main > section#economic-news-section#economic-news-section#economic-news-section.economic-news-band,
+  body[data-app-view="home"] main > section#home-deck-section#home-deck-section#home-deck-section.home-deck-section .home-deck-panel:last-child {
+    display: grid !important;
+  }
+}
 @media (max-width: 1023px) {
   body[data-app-view="home"] main { gap: 12px !important; }
   body[data-app-view="home"] .topbar { min-height: 58px !important; padding: 0 12px !important; }

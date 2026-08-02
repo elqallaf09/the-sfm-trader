@@ -42,6 +42,9 @@ test("terminal redesign prioritizes readable summaries over dense home tables", 
   assert.match(css, /\.home-heat-cell:nth-child\(n \+ 9\)/);
   assert.match(css, /\.economic-news-card:nth-child\(n \+ 4\)/);
   assert.match(css, /\.market-band \{ display: none !important; \}/);
+  assert.match(css, /@media \(min-width: 1024px\) and \(max-width: 1180px\)/);
+  assert.match(css, /section#home-heatmap-section#home-heatmap-section#home-heatmap-section\.home-heatmap-section/);
+  assert.match(css, /section#home-deck-section#home-deck-section#home-deck-section\.home-deck-section \.home-deck-panel:last-child/);
   assert.match(css, /@media \(max-width: 1023px\)/);
   assert.match(css, /prefers-reduced-motion: reduce/);
 });
