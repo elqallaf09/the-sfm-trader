@@ -18,6 +18,7 @@ const STATIC_ASSETS = [
   "/modules/webVitals.js",
   "/modules/marketBackground.js",
   "/modules/boundedMemoryCache.js",
+  "/modules/requestPolicy.js",
   "/manifest.webmanifest",
   "/assets/sfm-trader-logo.svg",
   "/the-sfm-trader-icon-256.png",
