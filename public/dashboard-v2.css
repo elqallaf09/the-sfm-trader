@@ -1,0 +1,198 @@
+/* SFM Terminal v2 — authoritative home presentation layer. */
+:root {
+  --v2-panel: #0c1928;
+  --v2-panel-soft: #101f31;
+  --v2-line: #20344c;
+  --v2-line-soft: rgba(122, 155, 190, 0.16);
+  --v2-text: #eef5fb;
+  --v2-muted: #95a8ba;
+  --v2-teal: #2fd6c0;
+  --v2-blue: #68a9ff;
+  --v2-radius: 18px;
+}
+
+body[data-app-view="home"] { color: var(--v2-text) !important; background-color: #050c15 !important; }
+body[data-app-view="home"] .app-shell.sfm-dashboard {
+  background: rgba(5, 13, 23, 0.94) !important;
+  border-color: rgba(74, 111, 149, 0.32) !important;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.42) !important;
+}
+body[data-app-view="home"] main { gap: 16px !important; }
+body[data-app-view="home"] main > section,
+body[data-app-view="home"] .home-deck-panel {
+  border: 1px solid var(--v2-line-soft) !important;
+  border-radius: var(--v2-radius) !important;
+  background: linear-gradient(145deg, rgba(14, 29, 46, 0.96), rgba(7, 17, 29, 0.96)) !important;
+  box-shadow: none !important;
+}
+body[data-app-view="home"] main > section::before,
+body[data-app-view="home"] main > section::after { opacity: 0.18 !important; }
+
+body[data-app-view="home"] .topbar {
+  min-height: 72px !important; padding: 0 20px !important;
+  border: 1px solid var(--v2-line-soft) !important; border-radius: var(--v2-radius) !important;
+  background: rgba(8, 19, 32, 0.94) !important; box-shadow: none !important;
+}
+body[data-app-view="home"] .brand-lockup h1 {
+  color: var(--v2-text) !important; font-size: clamp(20px, 1.45vw, 28px) !important;
+  letter-spacing: 0 !important; text-shadow: none !important;
+}
+body[data-app-view="home"] .status-pill,
+body[data-app-view="home"] .top-actions button {
+  min-height: 38px !important; border-color: var(--v2-line) !important;
+  background: rgba(15, 31, 49, 0.82) !important;
+}
+
+body[data-app-view="home"] .sfm-live-floor {
+  min-height: 164px !important; height: auto !important; padding: 16px !important;
+}
+body[data-app-view="home"] .live-pulse-grid { gap: 10px !important; }
+body[data-app-view="home"] :is(.live-pulse-card, .pulse-status-card) {
+  min-height: 112px !important; height: auto !important; padding: 14px !important;
+  border-color: var(--v2-line) !important; border-radius: 14px !important;
+  background: var(--v2-panel) !important; box-shadow: none !important;
+}
+body[data-app-view="home"] :is(.pulse-status-card, .live-pulse-card) strong { color: var(--v2-text) !important; }
+body[data-app-view="home"] .market-band { display: none !important; }
+
+body[data-app-view="home"] .command-center-band {
+  min-height: 190px !important; height: auto !important; padding: 18px !important;
+}
+body[data-app-view="home"] .command-center-band .section-head { margin-bottom: 14px !important; }
+body[data-app-view="home"] :is(.command-center-band, .economic-news-band) .section-head h2,
+body[data-app-view="home"] .home-deck-head h2 {
+  color: var(--v2-text) !important; font-size: 20px !important; line-height: 1.3 !important;
+}
+body[data-app-view="home"] .command-center-grid {
+  grid-template-columns: repeat(5, minmax(150px, 1fr)) !important; gap: 12px !important;
+}
+body[data-app-view="home"] .command-card {
+  min-height: 118px !important; height: auto !important; padding: 14px !important;
+  border: 1px solid var(--v2-line-soft) !important; border-radius: 14px !important;
+  background: var(--v2-panel-soft) !important; box-shadow: none !important;
+}
+
+body[data-app-view="home"] .home-heatmap-section {
+  min-height: 216px !important; padding: 18px !important;
+  grid-template-rows: auto auto !important; gap: 14px !important;
+}
+body[data-app-view="home"] .home-heatmap-grid {
+  display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  grid-auto-rows: minmax(62px, auto) !important; min-height: 136px !important;
+  max-height: none !important; gap: 10px !important;
+}
+body[data-app-view="home"] .home-heat-cell:nth-child(n + 9) { display: none !important; }
+body[data-app-view="home"] .home-heat-cell {
+  min-height: 62px !important; max-height: none !important; padding: 11px 13px !important;
+  grid-template-columns: minmax(0, 1fr) auto !important; grid-template-rows: auto auto !important;
+  border: 1px solid rgba(47, 214, 192, 0.25) !important; border-radius: 13px !important;
+  background: rgba(47, 214, 192, 0.08) !important; box-shadow: none !important;
+}
+body[data-app-view="home"] .home-heat-cell.hold {
+  border-color: rgba(104, 169, 255, 0.26) !important; background: rgba(104, 169, 255, 0.09) !important;
+}
+body[data-app-view="home"] .home-heat-cell strong { font-size: 15px !important; }
+body[data-app-view="home"] .home-heat-cell :is(span, em) { font-size: 13px !important; }
+
+body[data-app-view="home"] .home-deck-section {
+  grid-template-columns: minmax(0, 2fr) minmax(290px, 0.8fr) !important; gap: 14px !important;
+}
+body[data-app-view="home"] .home-deck-panel {
+  min-height: 264px !important; height: auto !important; padding: 18px !important;
+  grid-template-rows: auto minmax(0, 1fr) !important; gap: 14px !important;
+}
+body[data-app-view="home"] .home-recommendations {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 12px !important;
+}
+body[data-app-view="home"] .home-rec-card {
+  min-height: 190px !important; height: auto !important; padding: 15px !important; gap: 13px !important;
+  border-color: rgba(47, 214, 192, 0.22) !important; background: var(--v2-panel-soft) !important;
+  box-shadow: none !important;
+}
+body[data-app-view="home"] .home-rec-top strong { font-size: 21px !important; }
+body[data-app-view="home"] :is(.home-rec-top em, .home-rec-metrics span) {
+  color: var(--v2-muted) !important; font-size: 11px !important;
+}
+body[data-app-view="home"] .home-rec-metrics strong { font-size: 13px !important; }
+body[data-app-view="home"] .home-followed-trades { align-content: start !important; gap: 9px !important; }
+body[data-app-view="home"] .home-follow-row {
+  min-height: 46px !important; height: auto !important; padding: 8px 10px !important;
+  grid-template-columns: minmax(54px, 1fr) auto auto !important;
+  border-color: var(--v2-line-soft) !important; background: rgba(11, 25, 40, 0.9) !important;
+}
+body[data-app-view="home"] .home-follow-row .follow-asset-logo { display: none !important; }
+
+body[data-app-view="home"] .economic-news-band { min-height: 0 !important; padding: 18px !important; }
+body[data-app-view="home"] .economic-news-band .section-head p:not(.eyebrow) {
+  max-width: 760px !important; color: var(--v2-muted) !important; font-size: 13px !important;
+}
+body[data-app-view="home"] .economic-news-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 12px !important;
+}
+body[data-app-view="home"] .economic-news-card:nth-child(n + 4) { display: none !important; }
+body[data-app-view="home"] .economic-news-card {
+  min-height: 98px !important; padding: 14px !important; border-radius: 13px !important;
+  background: rgba(11, 25, 40, 0.88) !important;
+}
+
+body[data-app-view="home"] .right-dashboard-panel {
+  gap: 12px !important; padding: 0 !important; background: transparent !important; border: 0 !important;
+}
+body[data-app-view="home"] .rdp-block {
+  padding: 16px !important; border: 1px solid var(--v2-line-soft) !important;
+  border-radius: 16px !important;
+  background: linear-gradient(145deg, rgba(14, 29, 46, 0.96), rgba(7, 17, 29, 0.96)) !important;
+}
+body[data-app-view="home"] .rdp-block-head h3 { color: var(--v2-text) !important; font-size: 15px !important; }
+body[data-app-view="home"] .rdp-picks-header { display: none !important; }
+body[data-app-view="home"] .rdp-picks-list { gap: 8px !important; }
+body[data-app-view="home"] .rdp-pick-row {
+  min-width: 0 !important; min-height: 70px !important; padding: 10px !important;
+  display: grid !important; grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-areas: "asset signal" "time confidence" !important; gap: 7px 10px !important;
+  border: 1px solid var(--v2-line-soft) !important; border-radius: 12px !important;
+  background: rgba(12, 27, 43, 0.86) !important;
+}
+body[data-app-view="home"] .rdp-pick-asset { grid-area: asset !important; min-width: 0 !important; }
+body[data-app-view="home"] .rdp-pick-badge { grid-area: signal !important; white-space: nowrap !important; }
+body[data-app-view="home"] .rdp-pick-confidence {
+  grid-area: confidence !important; justify-self: end !important; white-space: nowrap !important;
+}
+body[data-app-view="home"] .rdp-pick-timeframe {
+  grid-area: time !important; min-width: 0 !important; overflow: hidden !important;
+  text-overflow: ellipsis !important; white-space: nowrap !important; color: var(--v2-muted) !important;
+}
+body[data-app-view="home"] :is(.rdp-pick-info, .rdp-pick-info strong, .rdp-pick-info span) {
+  min-width: 0 !important; overflow: hidden !important; text-overflow: ellipsis !important;
+  white-space: nowrap !important; overflow-wrap: normal !important; word-break: normal !important;
+}
+
+@media (min-width: 1440px) {
+  body[data-app-view="home"] .app-shell.sfm-dashboard {
+    --stable-rail: 116px !important; --stable-aside: clamp(310px, 19vw, 350px) !important;
+    gap: 14px 18px !important;
+  }
+}
+@media (min-width: 1024px) and (max-width: 1439px) {
+  body[data-app-view="home"] .right-dashboard-panel {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important; margin-top: 4px !important;
+  }
+  body[data-app-view="home"] .command-center-grid { overflow-x: auto !important; }
+}
+@media (max-width: 1023px) {
+  body[data-app-view="home"] main { gap: 12px !important; }
+  body[data-app-view="home"] .topbar { min-height: 58px !important; padding: 0 12px !important; }
+  body[data-app-view="home"] .command-center-band { display: none !important; }
+  body[data-app-view="home"] .home-heatmap-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  body[data-app-view="home"] .home-heat-cell:nth-child(n + 5) { display: none !important; }
+  body[data-app-view="home"] :is(.home-deck-section, .home-recommendations, .economic-news-grid) {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  body[data-app-view="home"] .home-rec-card { min-height: 178px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body[data-app-view="home"] *, body[data-app-view="home"] *::before, body[data-app-view="home"] *::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
