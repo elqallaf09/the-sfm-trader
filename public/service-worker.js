@@ -1,4 +1,4 @@
-const CACHE_NAME = "the-sfm-trader-v20260801-roadmap-2";
+const CACHE_NAME = "the-sfm-trader-v20260802-homepage-resilience";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -6,8 +6,8 @@ const STATIC_ASSETS = [
   "/styles.css?v=20260801-hardening-2",
   "/desktop-balance.css?v=20260801-hardening-2",
   "/cinema.css?v=20260801-hardening-2",
-  "/app.js",
-  "/detail.js",
+  "/app.js?v=20260802-homepage-resilience",
+  "/detail.js?v=20260802-homepage-resilience",
   "/modules/apiClient.js",
   "/modules/polling.js",
   "/modules/uiState.js",
@@ -16,6 +16,7 @@ const STATIC_ASSETS = [
   "/terms.html",
   "/risk-disclosure.html",
   "/modules/webVitals.js",
+  "/modules/marketBackground.js",
   "/manifest.webmanifest",
   "/assets/sfm-trader-logo.svg",
   "/the-sfm-trader-icon-256.png",

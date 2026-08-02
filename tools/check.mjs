@@ -22,6 +22,7 @@ const syntaxFiles = [
   "public/modules/polling.js",
   "public/modules/uiState.js",
   "public/modules/webVitals.js",
+  "public/modules/marketBackground.js",
   "tools/set-ios-server-url.mjs",
   "tools/smoke.mjs",
   "tools/migrate.mjs",
