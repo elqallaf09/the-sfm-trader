@@ -179,15 +179,6 @@ body[data-app-view="home"] :is(.rdp-pick-info, .rdp-pick-info strong, .rdp-pick-
   }
   body[data-app-view="home"] .command-center-grid { overflow-x: auto !important; }
 }
-@media (min-width: 1024px) and (max-width: 1180px) {
-  /* Restore the redesign's desktop summaries against the legacy tablet hide rule. */
-  body[data-app-view="home"] main > section#command-center-section#command-center-section#command-center-section.command-center-band,
-  body[data-app-view="home"] main > section#home-heatmap-section#home-heatmap-section#home-heatmap-section.home-heatmap-section,
-  body[data-app-view="home"] main > section#economic-news-section#economic-news-section#economic-news-section.economic-news-band,
-  body[data-app-view="home"] main > section#home-deck-section#home-deck-section#home-deck-section.home-deck-section .home-deck-panel:last-child {
-    display: grid !important;
-  }
-}
 @media (max-width: 1023px) {
   body[data-app-view="home"] main { gap: 12px !important; }
   body[data-app-view="home"] .topbar { min-height: 58px !important; padding: 0 12px !important; }
@@ -289,4 +280,36 @@ body[data-app-view="home"] #terminal-home-v3.terminal-home-v3 {
   .v3-reading-body { grid-template-columns:1fr; } .v3-confidence-ring { width:148px; } .v3-market-pulse { grid-template-rows:auto 130px auto; } .v3-pulse-chart { min-height:130px; }
   .v3-opportunity-card:nth-child(n+2) { display:none; } .v3-heatmap-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .v3-heat-item:nth-child(n+5) { display:none; }
   .v3-calendar-list { grid-template-columns:1fr; } .v3-calendar-event:nth-child(n+2) { display:none; } .v3-follow-row { grid-template-columns:1fr auto; } .v3-follow-row :is(b,em) { display:none; }
+}
+
+/*
+  The legacy Home revision uses a long chain of :not(#id) selectors with
+  !important display rules. Keep the V3 view and its app-view-hidden siblings
+  above that legacy cascade without changing the behavior of other routes.
+*/
+body[data-app-view="home"] main > section#terminal-home-v3#terminal-home-v3#terminal-home-v3#terminal-home-v3#terminal-home-v3#terminal-home-v3#terminal-home-v3#terminal-home-v3.terminal-home-v3 {
+  display: grid !important;
+}
+
+body[data-app-view="home"] main > section:is(
+  #market-overview-section,
+  #sfm-live-floor,
+  #markets-section,
+  #command-center-section,
+  #home-heatmap-section,
+  #home-deck-section,
+  #economic-news-section
+).app-view-hidden {
+  display: none !important;
+}
+
+/* The terminal theme repeats these IDs five times in its Home-only display rules. */
+body[data-app-view="home"] main > section#economic-news-section#economic-news-section#economic-news-section#economic-news-section#economic-news-section#economic-news-section.app-view-hidden,
+body[data-app-view="home"] main > section#recommendations-section#recommendations-section#recommendations-section#recommendations-section#recommendations-section#recommendations-section.app-view-hidden {
+  display: none !important;
+}
+
+/* layout-stability.css uses three heatmap IDs in its compact breakpoint. */
+body[data-app-view="home"] main > section#home-heatmap-section#home-heatmap-section#home-heatmap-section#home-heatmap-section.app-view-hidden {
+  display: none !important;
 }

@@ -3907,12 +3907,19 @@ function renderTerminalHomeV3(data = {}) {
   const confidenceRing = root.querySelector("#v3-confidence-ring");
   if (confidenceRing) confidenceRing.style.setProperty("--v3-confidence", `${clamp(averageConfidence, 0, 100)}%`);
 
+  const english = isEnglishLanguage();
   const marketSummary = items.length
     ? bias === "محايد"
-      ? `السوق متوازن حالياً؛ ${formatNumber(holds.length)} من ${formatNumber(items.length)} أصلاً بانتظار تأكيد أقوى قبل اتخاذ القرار.`
-      : `يميل السوق إلى اتجاه ${bias} مع ${formatNumber(Math.max(buys.length, sells.length))} إشارات مؤكدة من أصل ${formatNumber(items.length)} أصلاً محللاً.`
-    : "بانتظار وصول بيانات موثوقة من مزود السوق. لن تعرض المنصة أسعاراً أو إشارات بديلة.";
-  setText("#v3-market-summary", localizeUiText(marketSummary));
+      ? english
+        ? `The market is balanced; ${formatNumber(holds.length)} of ${formatNumber(items.length)} assets are waiting for stronger confirmation before a decision.`
+        : `السوق متوازن حالياً؛ ${formatNumber(holds.length)} من ${formatNumber(items.length)} أصلاً بانتظار تأكيد أقوى قبل اتخاذ القرار.`
+      : english
+        ? `The market is trending ${bias === "صاعد" ? "upward" : "downward"} with ${formatNumber(Math.max(buys.length, sells.length))} confirmed signals across ${formatNumber(items.length)} analyzed assets.`
+        : `يميل السوق إلى اتجاه ${bias} مع ${formatNumber(Math.max(buys.length, sells.length))} إشارات مؤكدة من أصل ${formatNumber(items.length)} أصلاً محللاً.`
+    : english
+      ? "Waiting for verified market-provider data. The terminal will not display substitute prices or signals."
+      : "بانتظار وصول بيانات موثوقة من مزود السوق. لن تعرض المنصة أسعاراً أو إشارات بديلة.";
+  setText("#v3-market-summary", marketSummary);
 
   const opportunityGrid = root.querySelector("#v3-opportunity-grid");
   if (opportunityGrid) {
