@@ -32,7 +32,7 @@ test("desktop dashboard keeps rail, main, summary and footer in named grid areas
 test("offline shell includes the authoritative layout stylesheet", async () => {
   const worker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
   assert.match(worker, /layout-stability\.css\?v=20260802-dashboard-data-ux-4/);
-  assert.match(worker, /dashboard-v2\.css\?v=20260802-terminal-home-v3-visual-fix/);
+  assert.match(worker, /dashboard-v2\.css\?v=20260802-terminal-home-v3-mock-parity/);
 });
 
 test("terminal redesign prioritizes readable summaries over dense home tables", async () => {
@@ -73,6 +73,9 @@ test("home v3 implements the approved RTL terminal hierarchy", async () => {
   assert.match(css, /\.app-shell\.sfm-dashboard>\.right-dashboard-panel \{ display:none !important; \}/);
   assert.match(css, /grid-template-areas:"reading pulse"/);
   assert.match(css, /height:320px !important; min-height:320px !important; max-height:320px !important/);
+  assert.match(css, /grid-template-areas: "brand actions session search" !important/);
+  assert.match(css, /\.topbar \.top-actions \{[\s\S]*position: static !important/);
+  assert.match(css, /\.brand-lockup h1 \{[\s\S]*text-overflow: ellipsis !important/);
 });
 
 test("home v3 uses truthful runtime data instead of mock values", async () => {
