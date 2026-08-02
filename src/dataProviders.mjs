@@ -1,3 +1,5 @@
+import { createBoundedCache } from "./boundedCache.mjs";
+
 const YAHOO_CHART_BASES = [
   "https://query1.finance.yahoo.com/v8/finance/chart",
   "https://query2.finance.yahoo.com/v8/finance/chart"
@@ -5,12 +7,15 @@ const YAHOO_CHART_BASES = [
 const FINNHUB_BASE = "https://finnhub.io/api/v1/stock/candle";
 const ALPHA_VANTAGE_BASE = "https://www.alphavantage.co/query";
 const TWELVE_DATA_BASE = "https://api.twelvedata.com";
-const responseCache = new Map();
-const RESPONSE_CACHE_TTL_MS = 45_000;
-const PROVIDER_REQUEST_TIMEOUT_MS = Number(process.env.PROVIDER_REQUEST_TIMEOUT_MS || 3_500);
-const PROVIDER_MAX_ATTEMPTS = Math.max(1, Number(process.env.PROVIDER_MAX_ATTEMPTS || 2));
-const PROVIDER_MAX_CONCURRENT = Math.max(1, Number(process.env.PROVIDER_MAX_CONCURRENT || 3));
-const PROVIDER_MIN_START_GAP_MS = Math.max(0, Number(process.env.PROVIDER_MIN_START_GAP_MS || 240));
+const RESPONSE_CACHE_TTL_MS = positiveInteger(process.env.PROVIDER_CACHE_TTL_MS, 45_000);
+const responseCache = createBoundedCache({
+  maxEntries: positiveInteger(process.env.PROVIDER_CACHE_MAX_ENTRIES, 250),
+  maxAgeMs: RESPONSE_CACHE_TTL_MS
+});
+const PROVIDER_REQUEST_TIMEOUT_MS = positiveInteger(process.env.PROVIDER_REQUEST_TIMEOUT_MS, 3_500);
+const PROVIDER_MAX_ATTEMPTS = positiveInteger(process.env.PROVIDER_MAX_ATTEMPTS, 2);
+const PROVIDER_MAX_CONCURRENT = positiveInteger(process.env.PROVIDER_MAX_CONCURRENT, 3);
+const PROVIDER_MIN_START_GAP_MS = nonNegativeInteger(process.env.PROVIDER_MIN_START_GAP_MS, 240);
 const providerQueue = [];
 let providerActiveRequests = 0;
 let providerLastStartAt = 0;
@@ -380,7 +385,7 @@ function getOutputSize(range, interval) {
 
 async function fetchJson(url) {
   const cached = responseCache.get(url);
-  if (cached && Date.now() - cached.createdAt < RESPONSE_CACHE_TTL_MS) {
+  if (cached) {
     return structuredClone(cached.data);
   }
 
@@ -466,6 +471,16 @@ function windowlessDelay(ms) {
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function positiveInteger(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? Math.floor(number) : fallback;
+}
+
+function nonNegativeInteger(value, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? Math.floor(number) : fallback;
 }
 
 function normalizeProviderResult({ symbol, currency, exchangeName, dataProvider, timestamps, close, high, low, volume }) {
