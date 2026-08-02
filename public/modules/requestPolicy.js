@@ -14,6 +14,44 @@ export function isRetryableStatus(status) {
   return status === 408 || status === 425 || status === 429 || status >= 500;
 }
 
+export async function fetchResponseWithPolicy(url, options = {}) {
+  const retries = boundedInteger(options.retries, 0, 3, 0);
+  const retryDelayMs = boundedInteger(options.retryDelayMs, 0, DEFAULT_MAX_RETRY_DELAY_MS, 500);
+  const timeoutMs = boundedInteger(options.timeoutMs, 1, 60_000, DEFAULT_TIMEOUT_MS);
+  const fetchRef = options.fetchRef || globalThis.fetch;
+  const requestInit = options.requestInit && typeof options.requestInit === "object" ? options.requestInit : {};
+  const acceptedStatuses = new Set(Array.isArray(options.acceptStatuses) ? options.acceptStatuses : []);
+  let lastError;
+
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const controller = new AbortController();
+    const abortFromCaller = () => controller.abort(options.signal?.reason);
+    options.signal?.addEventListener("abort", abortFromCaller, { once: true });
+    const timeout = setTimeout(() => controller.abort(new Error("Request timed out")), timeoutMs);
+    let retryAfterMs = retryDelayMs;
+    try {
+      if (options.signal?.aborted) abortFromCaller();
+      const response = await fetchRef(url, { ...requestInit, cache: requestInit.cache || "no-store", signal: controller.signal });
+      retryAfterMs = parseRetryAfterMs(response.headers.get("retry-after")) ?? retryDelayMs;
+      if (!response.ok && !acceptedStatuses.has(response.status)) {
+        throw createRequestError(`Request failed (${response.status})`, response.status, isRetryableStatus(response.status));
+      }
+      return response;
+    } catch (error) {
+      if (options.signal?.aborted) throw error;
+      lastError = controller.signal.aborted
+        ? createRequestError("Ø§Ù†ØªÙ‡Øª Ù…Ù‡Ù„Ø© Ø§Ù„Ø§ØªØµØ§Ù„ Ø¨Ø§Ù„Ø³ÙŠØ±ÙØ±. Ø­Ø§ÙˆÙ„ Ù…Ø±Ø© Ø£Ø®Ø±Ù‰.", 0, true)
+        : error;
+      if (attempt >= retries || lastError?.retryable === false) break;
+      await delay(retryAfterMs, options.signal);
+    } finally {
+      clearTimeout(timeout);
+      options.signal?.removeEventListener("abort", abortFromCaller);
+    }
+  }
+  throw lastError;
+}
+
 export async function fetchJsonWithPolicy(url, options = {}) {
   const retries = boundedInteger(options.retries, 0, 3, 0);
   const retryDelayMs = boundedInteger(options.retryDelayMs, 0, DEFAULT_MAX_RETRY_DELAY_MS, 500);

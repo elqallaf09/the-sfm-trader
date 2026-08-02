@@ -4,7 +4,7 @@ import { setUiState } from "./modules/uiState.js";
 import "./modules/webVitals.js";
 import { initMarketBackground } from "./modules/marketBackground.js";
 import { createBoundedMemoryCache } from "./modules/boundedMemoryCache.js";
-import { fetchJsonWithPolicy } from "./modules/requestPolicy.js";
+import { fetchJsonWithPolicy, fetchResponseWithPolicy } from "./modules/requestPolicy.js";
 
 const marketTabs = document.querySelector("#market-tabs");
 const introOverlay = document.querySelector("#intro-overlay");
@@ -1424,6 +1424,7 @@ function initTerminalSearch() {
 async function init() {
   installLatinDigitNormalizer();
   initSettingsPanel();
+  initModalPanelControls();
   initTerminalSearch();
   initInterfaceTranslator();
   initTemporaryLegalNotices();
@@ -1473,12 +1474,6 @@ async function init() {
     }
   ]).start();
   refreshButton.addEventListener("click", () => loadRecommendations({ force: true }));
-  notificationButton?.addEventListener("click", toggleNotificationPanel);
-  mobileNotificationButton?.addEventListener("click", toggleNotificationPanel);
-  mobileSettingsButton?.addEventListener("click", () => setSettingsPanelOpen(settingsPanel?.hidden !== false));
-  notificationCloseButton?.addEventListener("click", () => setNotificationPanelOpen(false));
-  notificationPanel?.addEventListener("keydown", (event) => handleModalKeydown(event, notificationPanel, () => setNotificationPanelOpen(false)));
-  notificationClearButton?.addEventListener("click", clearNotificationLog);
   scalpForm?.addEventListener("submit", handleScalpSubmit);
   searchInput.addEventListener("input", () => renderRecommendations(lastData));
   sortSelect.addEventListener("change", () => renderRecommendations(lastData));
@@ -1937,6 +1932,15 @@ function initSettingsPanel() {
 
   syncSettingsForm();
   updateSettingsPanelLanguage();
+}
+
+function initModalPanelControls() {
+  notificationButton?.addEventListener("click", toggleNotificationPanel);
+  mobileNotificationButton?.addEventListener("click", toggleNotificationPanel);
+  mobileSettingsButton?.addEventListener("click", () => setSettingsPanelOpen(settingsPanel?.hidden !== false));
+  notificationCloseButton?.addEventListener("click", () => setNotificationPanelOpen(false));
+  notificationPanel?.addEventListener("keydown", (event) => handleModalKeydown(event, notificationPanel, () => setNotificationPanelOpen(false)));
+  notificationClearButton?.addEventListener("click", clearNotificationLog);
 }
 
 function selectSettingsLanguage(language) {
@@ -4985,7 +4989,7 @@ async function loadSharedTradeState(options = {}) {
     const poll = Boolean(options.poll);
     const localKeysBeforeMerge = followedTradeKeys.size;
     const localEntriesBeforeMerge = getFollowedTradeEntries().length;
-    const response = await fetch("/api/followed-trades", { cache: "no-store" });
+    const response = await fetchResponseWithPolicy("/api/followed-trades", { retries: 1, retryDelayMs: 700 });
     if (!response.ok) throw new Error("shared trade state unavailable");
     sharedTradeStateVersion = readStateVersion(response, sharedTradeStateVersion);
 
@@ -5118,22 +5122,27 @@ async function saveSharedTradeState(force = false) {
   if (!force && !payload.followedTradeKeys.length && !payload.followedEntries.length) return;
 
   try {
-    const response = await fetch("/api/followed-trades", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "if-match": `"${sharedTradeStateVersion}"`,
-        "idempotency-key": createIdempotencyKey("trades")
-      },
-      body: JSON.stringify(payload)
+    const response = await fetchResponseWithPolicy("/api/followed-trades", {
+      acceptStatuses: [409],
+      requestInit: {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "if-match": `"${sharedTradeStateVersion}"`,
+          "idempotency-key": createIdempotencyKey("trades")
+        },
+        body: JSON.stringify(payload)
+      }
     });
     if (response.status === 409) {
+      await response.text();
       sharedTradeStateLoaded = false;
       await loadSharedTradeState({ poll: true });
       return;
     }
     if (!response.ok) throw new Error("shared trade state save failed");
     sharedTradeStateVersion = readStateVersion(response, sharedTradeStateVersion + 1);
+    await response.text();
     sharedTradeStateLoaded = true;
   } catch {
     sharedTradeStateLoaded = false;
@@ -5427,7 +5436,7 @@ function notifyFollowedTrade(entry, current, eventType) {
 
 async function loadNotificationLog() {
   try {
-    const response = await fetch("/api/notifications", { cache: "no-store" });
+    const response = await fetchResponseWithPolicy("/api/notifications", { retries: 1, retryDelayMs: 700 });
     if (!response.ok) throw new Error("notifications unavailable");
     notificationStateVersion = readStateVersion(response, notificationStateVersion);
 
@@ -5507,21 +5516,26 @@ function scheduleNotificationSave(options = {}) {
 
 async function saveNotificationLogToServer() {
   try {
-    const response = await fetch("/api/notifications", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "if-match": `"${notificationStateVersion}"`,
-        "idempotency-key": createIdempotencyKey("notifications")
-      },
-      body: JSON.stringify({ notifications: notificationLog })
+    const response = await fetchResponseWithPolicy("/api/notifications", {
+      acceptStatuses: [409],
+      requestInit: {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "if-match": `"${notificationStateVersion}"`,
+          "idempotency-key": createIdempotencyKey("notifications")
+        },
+        body: JSON.stringify({ notifications: notificationLog })
+      }
     });
     if (response.status === 409) {
+      await response.text();
       await loadNotificationLog();
       return;
     }
     if (!response.ok) throw new Error("notification save failed");
     notificationStateVersion = readStateVersion(response, notificationStateVersion + 1);
+    await response.text();
   } catch {
     // يبقى السجل محفوظاً داخل المتصفح حتى يرجع الاتصال بالسيرفر.
   }
@@ -5533,15 +5547,18 @@ async function clearNotificationLog() {
   renderNotificationCenter();
 
   try {
-    const response = await fetch("/api/notifications", {
-      method: "DELETE",
-      headers: {
-        "if-match": `"${notificationStateVersion}"`,
-        "idempotency-key": createIdempotencyKey("notifications-clear")
+    const response = await fetchResponseWithPolicy("/api/notifications", {
+      requestInit: {
+        method: "DELETE",
+        headers: {
+          "if-match": `"${notificationStateVersion}"`,
+          "idempotency-key": createIdempotencyKey("notifications-clear")
+        }
       }
     });
     if (!response.ok) throw new Error("notification clear failed");
     notificationStateVersion = readStateVersion(response, notificationStateVersion + 1);
+    await response.text();
   } catch {
     scheduleNotificationSave({ force: true });
   }

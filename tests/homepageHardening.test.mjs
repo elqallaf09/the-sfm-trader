@@ -28,6 +28,16 @@ test("homepage modal panels trap and restore keyboard focus", async () => {
   assert.match(source, /window\.clearInterval\(globalSessionTimer\)/);
 });
 
+test("homepage modal controls initialize before market requests settle", async () => {
+  const source = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
+  const controlsInit = source.indexOf("initModalPanelControls();");
+  const marketAwait = source.indexOf("await loadMarkets();");
+
+  assert.ok(controlsInit >= 0 && controlsInit < marketAwait);
+  assert.equal((source.match(/notificationButton\?\.addEventListener\("click", toggleNotificationPanel\)/g) || []).length, 1);
+  assert.equal((source.match(/mobileSettingsButton\?\.addEventListener/g) || []).length, 1);
+});
+
 test("homepage animation pauses for hidden and reduced-motion states", async () => {
   const source = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
   const backgroundSource = await readFile(new URL("../public/modules/marketBackground.js", import.meta.url), "utf8");
