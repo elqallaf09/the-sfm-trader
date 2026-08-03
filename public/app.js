@@ -53,6 +53,7 @@ const notificationList = document.querySelector("#notification-list");
 const notificationClearButton = document.querySelector("#notification-clear-button");
 const notificationCloseButton = document.querySelector("#notification-close-button");
 const settingsButton = document.querySelector("#settings-button");
+const languageQuickToggle = document.querySelector("#language-quick-toggle");
 const railSettingsButton = document.querySelector("#rail-settings-button");
 const settingsPanel = document.querySelector("#settings-panel");
 const settingsCloseButton = document.querySelector("#settings-close-button");
@@ -328,6 +329,7 @@ const UI_TEXT_TRANSLATIONS = {
   "مقارنة مختصرة للحركة والثقة": "Compact movement and confidence comparison",
   "خريطة حرارة الفرص": "Opportunity heatmap",
   "آخر الحالات المحفوظة": "Latest saved positions",
+  "المراكز التي اخترتها للمراقبة": "Positions you chose to monitor",
   "الصفقات المتابعة": "Followed trades",
   "أحداث موثقة من التقويم الاقتصادي": "Verified economic calendar events",
   "الأخبار الاقتصادية القادمة": "Upcoming economic events",
@@ -336,6 +338,12 @@ const UI_TEXT_TRANSLATIONS = {
   "تظهر خريطة الحرارة بعد اكتمال تحليل السوق.": "The heatmap appears after market analysis completes.",
   "بانتظار بيانات حركة الأصول.": "Waiting for asset movement data.",
   "لا توجد صفقات محفوظة تحت المتابعة.": "No saved trades are currently being followed.",
+  "استعرض التوصيات": "Browse recommendations",
+  "الأصول المحللة": "Analyzed assets",
+  "لا توجد بيانات مكتملة": "No complete data",
+  "ثقة التحليل غير متاحة": "Analysis confidence is unavailable",
+  "الإجراء": "Action",
+  "الدخول": "Entry",
   "لا توجد أحداث اقتصادية موثقة قريبة.": "No verified economic events are coming up.",
   "قيد المتابعة": "Being followed",
   "التوصيات": "Recommendations",
@@ -1631,13 +1639,22 @@ function initAppNavigation() {
   const initialView = getAppViewFromHash(window.location.hash) || "home";
   showAppView(initialView, { scroll: false, replace: true });
 
-  document.querySelectorAll(".rail-link, .ios-tab-link, .rdp-view-all, .v3-view-all").forEach((link) => {
+  document.querySelectorAll(".rail-link, .ios-tab-link, .rdp-view-all").forEach((link) => {
     link.addEventListener("click", (event) => {
       const view = getAppViewFromNavigationLink(link);
       if (!view) return;
       event.preventDefault();
       showAppView(view, { push: true });
     });
+  });
+
+  document.addEventListener("click", (event) => {
+    const link = event.target.closest(".v3-view-all");
+    if (!link) return;
+    const view = getAppViewFromNavigationLink(link);
+    if (!view) return;
+    event.preventDefault();
+    showAppView(view, { push: true });
   });
 
   document.querySelectorAll("[data-floor-jump]").forEach((button) => {
@@ -1660,6 +1677,8 @@ function initAppNavigation() {
 }
 
 function getAppViewFromNavigationLink(link) {
+  const v3View = link.dataset.v3View;
+  if (v3View && APP_VIEW_GROUPS[v3View]) return v3View;
   const navKey = link.dataset.navKey;
   if (navKey === "favorites") return "watchlist";
   if (navKey === "portfolio") return "portfolio";
@@ -1694,11 +1713,20 @@ function getAppViewFromHash(hash) {
   return "";
 }
 
+function syncAppViewShell(view) {
+  document.querySelectorAll("[data-app-view-shell]").forEach((element) => {
+    const visible = view !== "home";
+    element.hidden = !visible;
+    element.toggleAttribute("aria-hidden", !visible);
+  });
+}
+
 function showAppView(view, options = {}) {
   const nextView = APP_VIEW_GROUPS[view] ? view : "home";
   const visibleSelectors = APP_VIEW_GROUPS[nextView] || APP_VIEW_GROUPS.home;
   activeAppView = nextView;
   document.body.dataset.appView = nextView;
+  syncAppViewShell(nextView);
 
   document.querySelectorAll("main > section").forEach((section) => {
     const visible = visibleSelectors.some((selector) => section.matches(selector));
@@ -1939,6 +1967,7 @@ function initSettingsPanel() {
   if (!settingsButton || !settingsPanel || !settingsForm) return;
 
   settingsButton.addEventListener("click", () => setSettingsPanelOpen(settingsPanel.hidden));
+  languageQuickToggle?.addEventListener("click", () => selectSettingsLanguage(isArabicLanguage() ? "en" : "ar"));
   railSettingsButton?.addEventListener("click", () => setSettingsPanelOpen(settingsPanel.hidden));
   settingsCloseButton?.addEventListener("click", () => setSettingsPanelOpen(false));
   settingsPanel.addEventListener("keydown", (event) => handleModalKeydown(event, settingsPanel, () => setSettingsPanelOpen(false)));
@@ -2176,6 +2205,13 @@ function syncNavigationLanguage() {
     link.setAttribute("aria-label", label);
     link.setAttribute("title", label);
     link.dataset.tooltip = label;
+  }
+
+  if (languageQuickToggle) {
+    const nextLanguage = isArabicLanguage() ? "EN" : "AR";
+    languageQuickToggle.textContent = nextLanguage;
+    languageQuickToggle.setAttribute("aria-label", isArabicLanguage() ? "Switch language to English" : "التبديل إلى العربية");
+    languageQuickToggle.title = languageQuickToggle.getAttribute("aria-label") || "";
   }
 }
 
@@ -2971,7 +3007,7 @@ function renderRecommendations(data) {
     const visual = getPremiumAssetVisual(item);
     const logo = card.querySelector(".signal-asset-logo");
 
-    card.querySelector(".asset-name").textContent = item.name;
+    card.querySelector(".asset-name").textContent = getOfficialCompanyName(item);
     card.querySelector(".asset-symbol").textContent = `${item.symbol}${item.exchangeName ? ` · ${item.exchangeName}` : ""}`;
     if (logo) {
       logo.className = `asset-logo signal-asset-logo ${visual.className}`;
@@ -3468,6 +3504,28 @@ function getAssetBaseSymbol(symbol = "") {
     .replace(/=.*/, "");
 }
 
+// One local source of truth for company marks used across Home, recommendation, and trade UI.
+// These are small inline SVG/text vector representations, never remote images or emoji.
+const ASSET_BRAND_REGISTRY = Object.freeze({
+  META: { className: "asset-logo-meta", kind: "meta", label: "Meta", companyName: "Meta Platforms" },
+  GOOGL: { className: "asset-logo-google", kind: "google", label: "G", companyName: "Alphabet Inc." },
+  GOOG: { className: "asset-logo-google", kind: "google", label: "G", companyName: "Alphabet Inc." },
+  MSFT: { className: "asset-logo-microsoft", kind: "microsoft", label: "Microsoft", companyName: "Microsoft Corp." },
+  AAPL: { className: "asset-logo-apple", kind: "apple", label: "Apple", companyName: "Apple Inc." },
+  NVDA: { className: "asset-logo-nvidia", kind: "nvidia", label: "NVIDIA", companyName: "NVIDIA Corp." },
+  AMZN: { className: "asset-logo-amazon", kind: "amazon", label: "Amazon", companyName: "Amazon.com Inc." },
+  TSLA: { className: "asset-logo-tesla", kind: "tesla", label: "Tesla", companyName: "Tesla Inc." },
+  NFLX: { className: "asset-logo-netflix", kind: "netflix", label: "Netflix", companyName: "Netflix Inc." },
+  INTC: { className: "asset-logo-intel", kind: "intel", label: "Intel", companyName: "Intel Corp." },
+  AMD: { className: "asset-logo-amd", kind: "amd", label: "AMD", companyName: "Advanced Micro Devices Inc." },
+  ORCL: { className: "asset-logo-oracle", kind: "oracle", label: "Oracle", companyName: "Oracle Corp." },
+  AVGO: { className: "asset-logo-broadcom", kind: "broadcom", label: "Broadcom", companyName: "Broadcom Inc." },
+  LLY: { className: "asset-logo-lilly", kind: "lilly", label: "Lilly", companyName: "Eli Lilly and Co." },
+  GOLD: { className: "asset-logo-gold", kind: "gold", label: "Au", companyName: "Gold" },
+  XAUUSD: { className: "asset-logo-gold", kind: "gold", label: "Au", companyName: "Gold" },
+  "GC=F": { className: "asset-logo-gold", kind: "gold", label: "Au", companyName: "Gold" }
+});
+
 const ASSET_VISUAL_RULES = [
   { symbols: ["XAUUSD", "GC=F"], contains: ["XAU"], names: ["gold"], className: "asset-logo-gold", kind: "gold", label: "Au" },
   { symbols: ["XAGUSD", "SI=F"], contains: ["XAG"], names: ["silver"], className: "asset-logo-silver", kind: "silver", label: "Ag" },
@@ -3514,13 +3572,19 @@ function getAssetVisual(item = {}) {
 
 function getPremiumAssetVisual(item = {}) {
   const visual = resolveAssetVisual(item);
-  return { className: visual.className, html: renderAssetIcon(visual.kind, visual.label) };
+  return {
+    ...visual,
+    companyName: getOfficialCompanyName(item, visual),
+    html: renderAssetLogo(item, { markOnly: true })
+  };
 }
 
 function resolveAssetVisual(item = {}) {
   const symbol = String(item.symbol || "").toUpperCase();
   const name = String(item.name || "").toLowerCase();
   const base = getAssetBaseSymbol(symbol);
+  const registered = ASSET_BRAND_REGISTRY[symbol] || ASSET_BRAND_REGISTRY[base];
+  if (registered) return registered;
   const rule = ASSET_VISUAL_RULES.find((entry) => assetRuleMatches(entry, symbol, base, name));
   if (rule) return rule;
 
@@ -3532,6 +3596,24 @@ function resolveAssetVisual(item = {}) {
   }
 
   return { className: "asset-logo-default", kind: "text", label: (base || symbol).slice(0, 3) || "S" };
+}
+
+function getOfficialCompanyName(item = {}, visual = resolveAssetVisual(item)) {
+  return visual.companyName || String(item.name || item.exchangeName || item.symbol || "");
+}
+
+function renderAssetLogo(item = {}, options = {}) {
+  const visual = resolveAssetVisual(item);
+  const mark = renderAssetIcon(visual.kind, visual.label);
+  if (options.markOnly) return mark;
+
+  const classes = ["asset-logo", visual.className, options.className].filter(Boolean).join(" ");
+  const decorative = options.decorative !== false;
+  const name = getOfficialCompanyName(item, visual);
+  const attributes = decorative
+    ? 'aria-hidden="true"'
+    : `role="img" aria-label="${escapeHtml(`${name} logo`)}"`;
+  return `<span class="${classes}" ${attributes}>${mark}</span>`;
 }
 
 function assetRuleMatches(rule, symbol, base, name) {
@@ -3665,6 +3747,16 @@ function renderAssetIcon(kind, label) {
       </svg>
     `;
   }
+  if (kind === "oracle") return `<span class="asset-logo-wordmark asset-logo-wordmark-oracle">ORACLE</span>`;
+  if (kind === "lilly") return `<span class="asset-logo-wordmark asset-logo-wordmark-lilly">Lilly</span>`;
+  if (kind === "broadcom") {
+    return `
+      <svg class="asset-logo-svg asset-logo-svg-broadcom" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <circle cx="12" cy="12" r="7.4"></circle><path d="M7.2 12c1.5-3.2 2.9-3.2 4.4 0s2.9 3.2 5.2 0"></path>
+        <path d="M7.2 12c1.5 3.2 2.9 3.2 4.4 0s2.9-3.2 5.2 0"></path>
+      </svg>
+    `;
+  }
   if (kind === "google") return `<span class="asset-logo-text asset-logo-text-google">G</span>`;
   if (kind === "amazon") {
     return `
@@ -3789,22 +3881,9 @@ function renderHomeDeck(data, rankedRecommendations = []) {
   const followed = recommendationHistory
     .filter((entry) => followedTradeKeys.has(entry.key))
     .slice(0, 5);
-  const fallback = ranked.slice(0, 3).map((item) => ({
-    key: `${item.symbol}:${item.action}`,
-    symbol: item.symbol,
-    action: item.action,
-    actionLabel: item.actionLabel,
-    lastPrice: item.currentPrice,
-    currentPrice: item.currentPrice,
-    currency: item.currency,
-    observedReturnPct: Number(item.expectedMovePct || 0),
-    confidence: item.confidence
-  }));
-  const rows = followed.length ? followed : fallback;
-
-  homeFollowedTrades.innerHTML = rows.length
-    ? rows.map(renderHomeFollowedTrade).join("")
-    : `<div class="empty">${escapeHtml(localizeUiText("اختر صفقة من آخر إشارات الوكيل للمتابعة."))}</div>`;
+  homeFollowedTrades.innerHTML = followed.length
+    ? followed.map(renderHomeFollowedTrade).join("")
+    : `<div class="empty">${escapeHtml(localizeUiText("لا توجد صفقات محفوظة تحت المتابعة."))}<a href="#view-recommendations" class="v3-view-all" data-v3-view="recommendations">${escapeHtml(localizeUiText("استعرض التوصيات"))}</a></div>`;
   attachDetailOpeners(homeFollowedTrades);
 }
 
@@ -3856,6 +3935,58 @@ function setHomeDashboardState(kind = "loading") {
   for (const panel of [homeHeatmapGrid, homeRecommendations, homeFollowedTrades]) {
     setUiState(panel, { ...state, compact: true });
   }
+
+  setTerminalHomeV3State(kind);
+}
+
+function setTerminalHomeV3State(kind = "loading") {
+  const root = document.querySelector("#terminal-home-v3");
+  if (!root) return;
+
+  const unavailable = kind === "offline" || kind === "unavailable";
+  const state = unavailable ? "unavailable" : "loading";
+  const message = unavailable
+    ? "تعذر الاتصال بمزود بيانات السوق. لا توجد قيم بديلة معروضة."
+    : "جارٍ تحميل بيانات السوق من مزود موثوق.";
+
+  root.dataset.uiState = state;
+  root.setAttribute("aria-busy", String(!unavailable));
+
+  const setText = (selector, value) => {
+    const element = root.querySelector(selector);
+    if (element) element.textContent = localizeUiText(value);
+  };
+
+  setText("#v3-confidence", "--");
+  setText("#v3-market-bias", unavailable ? "غير متاح" : "جارٍ التحميل");
+  setText("#v3-market-summary", message);
+  setText("#v3-buy-count", "--");
+  setText("#v3-sell-count", "--");
+  setText("#v3-hold-count", "--");
+  setText("#v3-pulse-change", "--");
+  setText("#v3-pulse-label", unavailable ? "غير متاح" : "جارٍ التحميل");
+  setText("#v3-pulse-assets", unavailable ? "لا توجد بيانات مكتملة" : "جارٍ تحميل الأصول");
+  setText("#v3-pulse-updated", "آخر تحديث --");
+  setText("#v3-heatmap-leader", "--");
+
+  const confidenceRing = root.querySelector("#v3-confidence-ring");
+  if (confidenceRing) {
+    confidenceRing.style.setProperty("--v3-confidence", "0%");
+    confidenceRing.setAttribute("aria-label", localizeUiText(unavailable ? "ثقة التحليل غير متاحة" : "جارٍ تحميل ثقة التحليل"));
+  }
+
+  const stateMarkup = (panelMessage) => renderV3EmptyState(panelMessage, { kind: state });
+  const panels = [
+    ["#v3-pulse-chart", unavailable ? "بيانات حركة الأصول غير متاحة حالياً." : "جارٍ تحميل توزيع حركة الأصول."],
+    ["#v3-opportunity-grid", unavailable ? "لا توجد فرص موثوقة لعرضها حالياً." : "جارٍ تحميل الفرص الموثقة."],
+    ["#v3-heatmap-grid", unavailable ? "خريطة حركة الأصول غير متاحة حالياً." : "جارٍ تحميل خريطة حركة الأصول."],
+    ["#v3-followed-list", unavailable ? "تعذر تحميل الصفقات المتابعة." : "جارٍ تحميل الصفقات المتابعة."],
+    ["#v3-calendar-list", unavailable ? "الأحداث الاقتصادية غير متاحة حالياً." : "جارٍ تحميل الأحداث الاقتصادية."]
+  ];
+  for (const [selector, panelMessage] of panels) {
+    const panel = root.querySelector(selector);
+    if (panel) panel.innerHTML = stateMarkup(panelMessage);
+  }
 }
 
 function getDashboardRecommendations(data = {}) {
@@ -3889,6 +4020,9 @@ function renderTerminalHomeV3(data = {}) {
     : 0;
   const bias = buys.length > sells.length ? "صاعد" : sells.length > buys.length ? "هابط" : "محايد";
   const ranked = [...items].sort((a, b) => getDashboardScore(b) - getDashboardScore(a));
+  const state = items.length ? (data.cached || data.stale ? "stale" : "fresh") : "empty";
+  root.dataset.uiState = state;
+  root.setAttribute("aria-busy", "false");
 
   const setText = (selector, value) => {
     const element = root.querySelector(selector);
@@ -3902,10 +4036,14 @@ function renderTerminalHomeV3(data = {}) {
   setText("#v3-market-bias", localizeUiText(bias));
   setText("#v3-pulse-change", items.length ? formatPercent(averageMove) : "--");
   setText("#v3-pulse-label", items.length ? localizeUiText(getMarketPulse(items)) : localizeUiText("بانتظار البيانات"));
+  setText("#v3-pulse-assets", items.length ? `${localizeUiText("الأصول المحللة")}: ${formatNumber(items.length)}` : localizeUiText("لا توجد بيانات مكتملة"));
   setText("#v3-pulse-updated", data.generatedAt ? `${localizeUiText("آخر تحديث")} ${formatDateTime(data.generatedAt)}` : localizeUiText("آخر تحديث --"));
 
   const confidenceRing = root.querySelector("#v3-confidence-ring");
-  if (confidenceRing) confidenceRing.style.setProperty("--v3-confidence", `${clamp(averageConfidence, 0, 100)}%`);
+  if (confidenceRing) {
+    confidenceRing.style.setProperty("--v3-confidence", `${clamp(averageConfidence, 0, 100)}%`);
+    confidenceRing.setAttribute("aria-label", items.length ? `${localizeUiText("ثقة التحليل")} ${formatNumber(averageConfidence)}%` : localizeUiText("ثقة التحليل غير متاحة"));
+  }
 
   const english = isEnglishLanguage();
   const marketSummary = items.length
@@ -3947,7 +4085,7 @@ function renderTerminalHomeV3(data = {}) {
     const followed = recommendationHistory.filter((entry) => followedTradeKeys.has(entry.key)).slice(0, 3);
     followedList.innerHTML = followed.length
       ? followed.map(renderV3FollowedTrade).join("")
-      : renderV3EmptyState("لا توجد صفقات محفوظة تحت المتابعة.");
+      : renderV3EmptyState("لا توجد صفقات محفوظة تحت المتابعة.", { view: "recommendations", actionLabel: "استعرض التوصيات" });
     attachDetailOpeners(followedList);
   }
 
@@ -3965,18 +4103,20 @@ function renderTerminalHomeV3(data = {}) {
 }
 
 function renderV3Opportunity(item) {
-  const visual = getPremiumAssetVisual(item);
   const tone = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : "hold";
   const target = item.target1 || item.expectedPrice;
+  const confidence = clamp(Number(item.confidence || 0), 0, 100);
+  const companyName = getOfficialCompanyName(item);
   return `<article class="v3-opportunity-card ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">
-    <header><span class="asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span><div><strong>${escapeHtml(item.symbol)}</strong><span>${escapeHtml(item.name || item.exchangeName || "")}</span></div><b>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</b></header>
-    <div class="v3-opportunity-metrics"><div><span>${escapeHtml(localizeUiText("السعر الحالي"))}</span><strong>${formatMoney(item.currentPrice, item.currency)}</strong></div><div><span>${escapeHtml(localizeUiText("الهدف"))}</span><strong>${target ? formatMoney(target, item.currency) : "--"}</strong></div><div><span>${escapeHtml(localizeUiText("ثقة التحليل"))}</span><strong>${formatNumber(item.confidence || 0)}%</strong></div></div>
+    <header>${renderAssetLogo(item, { className: "v3-asset-logo" })}<div><strong>${escapeHtml(item.symbol)}</strong><span>${escapeHtml(companyName)}</span></div><span class="v3-card-confidence" style="--v3-card-confidence:${confidence}%" aria-label="${escapeHtml(`${localizeUiText("ثقة التحليل")} ${formatNumber(confidence)}%`)}"><i>${formatNumber(confidence)}%</i></span><b>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</b></header>
+    <div class="v3-opportunity-metrics"><div><span>${escapeHtml(localizeUiText("السعر الحالي"))}</span><strong>${formatMoney(item.currentPrice, item.currency)}</strong></div><div><span>${escapeHtml(localizeUiText("الهدف"))}</span><strong>${target ? formatMoney(target, item.currency) : "--"}</strong></div><div><span>${escapeHtml(localizeUiText("الإجراء"))}</span><strong>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</strong></div></div>
   </article>`;
 }
 
 function renderV3HeatItem(item) {
   const tone = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : "hold";
-  return `<article class="v3-heat-item ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link"><strong>${escapeHtml(item.symbol)}</strong><b>${formatPercent(item.expectedMovePct)}</b><span>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</span><em>${formatNumber(getDashboardScore(item))}%</em></article>`;
+  const confidence = clamp(Number(item.confidence || getDashboardScore(item)), 0, 100);
+  return `<article class="v3-heat-item ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">${renderAssetLogo(item, { className: "v3-heat-logo" })}<strong>${escapeHtml(item.symbol)}</strong><b>${formatPercent(item.expectedMovePct)}</b><span>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</span><em>${formatNumber(confidence)}%</em></article>`;
 }
 
 function renderV3PulseChart(items) {
@@ -3991,22 +4131,31 @@ function renderV3PulseChart(items) {
     const y = 50 - (value / max) * 34;
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   }).join(" ");
-  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="${escapeHtml(localizeUiText("توزيع حركة الأصول المحللة"))}"><line x1="0" y1="50" x2="100" y2="50"></line><polyline points="${points}"></polyline></svg>`;
+  const areaPoints = `0,50 ${points} 100,50`;
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="${escapeHtml(localizeUiText("توزيع حركة الأصول المحللة"))}"><defs><linearGradient id="v3-pulse-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#2fd6c0" stop-opacity=".32"></stop><stop offset="100%" stop-color="#2fd6c0" stop-opacity="0"></stop></linearGradient></defs><g class="v3-pulse-grid"><line x1="0" y1="16" x2="100" y2="16"></line><line x1="0" y1="33" x2="100" y2="33"></line><line x1="0" y1="50" x2="100" y2="50"></line><line x1="0" y1="67" x2="100" y2="67"></line><line x1="0" y1="84" x2="100" y2="84"></line></g><polygon points="${areaPoints}"></polygon><polyline points="${points}"></polyline></svg>`;
 }
 
 function renderV3FollowedTrade(entry) {
-  const price = Number(entry.lastPrice ?? entry.currentPrice);
-  return `<article class="v3-follow-row" data-symbol="${escapeHtml(entry.symbol)}" tabindex="0" role="link"><strong>${escapeHtml(entry.symbol)}</strong><span>${escapeHtml(localizeUiText(entry.actionLabel || entry.action || "انتظار"))}</span><b>${Number.isFinite(price) ? formatMoney(price, entry.currency || "USD") : "--"}</b><em>${escapeHtml(localizeUiText("قيد المتابعة"))}</em></article>`;
+  const entryPrice = Number(entry.entryPrice ?? entry.currentPrice);
+  const target = Number(entry.target1 ?? entry.expectedPrice);
+  const status = entry.outcome === "target" ? "وصل الهدف" : entry.outcome === "stop" ? "صفقة خاسرة" : "قيد المتابعة";
+  return `<article class="v3-follow-row" data-symbol="${escapeHtml(entry.symbol)}" tabindex="0" role="link">${renderAssetLogo(entry, { className: "v3-follow-logo" })}<strong>${escapeHtml(entry.symbol)}</strong><span class="v3-follow-action">${escapeHtml(localizeUiText(entry.actionLabel || entry.action || "انتظار"))}</span><span class="v3-follow-price"><small>${escapeHtml(localizeUiText("الدخول"))}</small><b>${Number.isFinite(entryPrice) ? formatMoney(entryPrice, entry.currency || "USD") : "--"}</b></span><span class="v3-follow-price"><small>${escapeHtml(localizeUiText("الهدف"))}</small><b>${Number.isFinite(target) ? formatMoney(target, entry.currency || "USD") : "--"}</b></span><em class="is-${escapeHtml(entry.outcome || "pending")}">${escapeHtml(localizeUiText(status))}</em></article>`;
 }
 
 function renderV3CalendarEvent(event) {
   const impact = event.impact === "high" ? "high" : event.impact === "low" ? "low" : "medium";
   const impactLabel = impact === "high" ? "عالي" : impact === "low" ? "منخفض" : "متوسط";
-  return `<article class="v3-calendar-event ${impact}"><header><span>${escapeHtml(event.currency || "--")}</span><time>${escapeHtml(event.localTimeLabel || event.time || "--")}</time></header><strong>${escapeHtml(event.title || "--")}</strong><b>${escapeHtml(localizeUiText(impactLabel))}</b></article>`;
+  const date = event.date || (event.isoTime ? formatDateTime(event.isoTime).split(" ")[0] : "--");
+  return `<article class="v3-calendar-event ${impact}"><header><span>${escapeHtml(event.currency || "--")}</span><time>${escapeHtml(date)} · ${escapeHtml(event.localTimeLabel || event.time || "--")}</time></header><strong>${escapeHtml(event.title || "--")}</strong><b>${escapeHtml(localizeUiText(impactLabel))}</b></article>`;
 }
 
-function renderV3EmptyState(message) {
-  return `<div class="v3-empty-state">${escapeHtml(localizeUiText(message))}</div>`;
+function renderV3EmptyState(message, options = {}) {
+  const action = options.view
+    ? `<a href="#view-${escapeHtml(options.view)}" class="v3-view-all v3-empty-action" data-v3-view="${escapeHtml(options.view)}">${escapeHtml(localizeUiText(options.actionLabel || "استعرض التوصيات"))}</a>`
+    : "";
+  const kind = options.kind || "empty";
+  const role = kind === "unavailable" ? "alert" : "status";
+  return `<div class="v3-empty-state v3-panel-state" data-ui-state="${escapeHtml(kind)}" role="${role}"><p>${escapeHtml(localizeUiText(message))}</p>${action}</div>`;
 }
 
 function renderHomeRecommendationCard(item) {
@@ -4019,7 +4168,7 @@ function renderHomeRecommendationCard(item) {
         <span class="asset-logo ${visual.className}" aria-hidden="true">${visual.html}</span>
         <div>
           <strong>${escapeHtml(item.symbol)}</strong>
-          <em>${escapeHtml(item.name || item.exchangeName || "")}</em>
+          <em>${escapeHtml(getOfficialCompanyName(item))}</em>
         </div>
         <b class="action-${escapeHtml(item.action)}">${escapeHtml(localizeUiText(item.actionLabel || item.action))}</b>
       </div>
