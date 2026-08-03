@@ -775,7 +775,7 @@ body::after {
     gap: 12px !important;
   }
 
-  .sfm-dashboard .right-dashboard-panel {
+  .sfm-dashboard .right-dashboard-panel:not([hidden]) {
     grid-area: right !important;
     height: 100% !important;
     overflow-y: auto !important;
@@ -1165,7 +1165,7 @@ body::after {
 }
 
 /* ── Right Dashboard Panel ────────────────────────────────── */
-.right-dashboard-panel {
+.right-dashboard-panel:not([hidden]) {
   background: rgba(3,9,18,0.97) !important;
   border-inline-start: 1px solid rgba(255,255,255,0.055) !important;
   display: flex !important;

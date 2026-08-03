@@ -17,11 +17,11 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/desktop-balance.css?v=20260801-hardening-2" />
     <link rel="stylesheet" href="/styles.css?v=20260801-hardening-2" />
-    <link rel="stylesheet" href="/cinema.css?v=20260801-hardening-2" />
-    <link rel="stylesheet" href="/layout-stability.css?v=20260802-dashboard-data-ux-4" />
-    <link rel="stylesheet" href="/dashboard-v2.css?v=20260804-home-v3-premium-parity-9" />
+    <link rel="stylesheet" href="/cinema.css?v=20260804-home-v3-layout-fix-1" />
+    <link rel="stylesheet" href="/layout-stability.css?v=20260804-home-v3-layout-fix-1" />
+    <link rel="stylesheet" href="/dashboard-v2.css?v=20260804-home-v3-layout-fix-2" />
   </head>
-  <body class="notranslate" translate="no">
+  <body class="notranslate" data-app-view="home" translate="no">
     <a class="skip-link" href="#main-content">تجاوز إلى المحتوى الرئيسي</a>
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
 
@@ -439,17 +439,17 @@
       </section>
 
       <main id="main-content" tabindex="-1">
-        <section id="terminal-home-v3" class="terminal-home-v3" aria-label="لوحة قراءة السوق">
+        <section id="terminal-home-v3" class="terminal-home-v3" aria-label="لوحة قراءة السوق" aria-busy="true" data-ui-state="loading">
           <div class="v3-overview-grid">
             <article class="v3-market-reading">
               <header class="v3-section-head">
                 <div><span>تحليل SFM الذكي</span><h2>قراءة السوق الآن</h2></div>
-                <b id="v3-market-bias">--</b>
+                <b id="v3-market-bias">جاري التحميل</b>
               </header>
               <div class="v3-reading-body">
-                <div class="v3-confidence-ring" id="v3-confidence-ring"><strong id="v3-confidence">--</strong><span>ثقة التحليل</span></div>
+                <div class="v3-confidence-ring" id="v3-confidence-ring" role="img" aria-label="جارٍ تحميل ثقة التحليل"><strong id="v3-confidence">--</strong><span>ثقة التحليل</span></div>
                 <div class="v3-reading-copy">
-                  <p id="v3-market-summary">بانتظار وصول بيانات موثوقة من مزود السوق.</p>
+                  <p id="v3-market-summary">جارٍ تحميل بيانات السوق من مزود موثوق.</p>
                   <div class="v3-signal-counts">
                     <div class="buy"><span>شراء</span><strong id="v3-buy-count">--</strong></div>
                     <div class="sell"><span>بيع</span><strong id="v3-sell-count">--</strong></div>
@@ -463,8 +463,8 @@
                 <div><span>توزيع حركة الأصول المحللة</span><h2>نبض السوق</h2></div>
                 <b id="v3-pulse-change">--</b>
               </header>
-              <div id="v3-pulse-chart" class="v3-pulse-chart"></div>
-              <footer><span id="v3-pulse-label">--</span><em id="v3-pulse-assets">--</em><em id="v3-pulse-updated">آخر تحديث --</em></footer>
+              <div id="v3-pulse-chart" class="v3-pulse-chart"><div class="v3-panel-state" data-ui-state="loading" role="status">جارٍ تحميل توزيع حركة الأصول.</div></div>
+              <footer><span id="v3-pulse-label">جارٍ التحميل</span><em id="v3-pulse-assets">--</em><em id="v3-pulse-updated">آخر تحديث --</em></footer>
             </article>
           </div>
 
@@ -473,7 +473,7 @@
               <div><span>أعلى النتائج حسب قوة التحليل</span><h2>أفضل الفرص</h2></div>
               <a href="#view-recommendations" class="v3-view-all" data-v3-view="recommendations">عرض جميع الفرص</a>
             </header>
-            <div id="v3-opportunity-grid" class="v3-opportunity-grid"></div>
+            <div id="v3-opportunity-grid" class="v3-opportunity-grid"><div class="v3-panel-state" data-ui-state="loading" role="status">جارٍ تحميل الفرص الموثقة.</div></div>
           </article>
 
           <article class="v3-heatmap-panel">
@@ -481,20 +481,20 @@
               <div><span>مقارنة مختصرة للحركة والثقة</span><h2>خريطة حرارة الفرص</h2></div>
               <span id="v3-heatmap-leader">--</span>
             </header>
-            <div id="v3-heatmap-grid" class="v3-heatmap-grid"></div>
+            <div id="v3-heatmap-grid" class="v3-heatmap-grid"><div class="v3-panel-state" data-ui-state="loading" role="status">جارٍ تحميل خريطة حركة الأصول.</div></div>
           </article>
 
           <div class="v3-bottom-grid">
             <article class="v3-followed-panel">
               <header class="v3-section-head"><div><span>المراكز التي اخترتها للمراقبة</span><h2>الصفقات المتابعة</h2></div></header>
-              <div id="v3-followed-list" class="v3-followed-list"></div>
+              <div id="v3-followed-list" class="v3-followed-list"><div class="v3-panel-state" data-ui-state="loading" role="status">جارٍ تحميل الصفقات المتابعة.</div></div>
             </article>
             <article class="v3-calendar-panel">
               <header class="v3-section-head">
                 <div><span>أحداث موثقة من التقويم الاقتصادي</span><h2>الأخبار الاقتصادية القادمة</h2></div>
                 <a href="#view-calendar" class="v3-view-all" data-v3-view="calendar">عرض التقويم</a>
               </header>
-              <div id="v3-calendar-list" class="v3-calendar-list"></div>
+              <div id="v3-calendar-list" class="v3-calendar-list"><div class="v3-panel-state" data-ui-state="loading" role="status">جارٍ تحميل الأحداث الاقتصادية.</div></div>
             </article>
           </div>
         </section>
@@ -1201,7 +1201,7 @@
         <strong>Powered by M.ALQ</strong>
       </footer>
 
-      <aside class="right-dashboard-panel" aria-label="ملخص السوق">
+      <aside class="right-dashboard-panel" aria-label="ملخص السوق" data-app-view-shell="legacy-summary" hidden>
 
         <div class="rdp-block">
           <div class="rdp-block-head">
@@ -1404,6 +1404,6 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260804-home-v3-premium-parity-2" type="module"></script>
+    <script src="/app.js?v=20260804-home-v3-layout-fix-1" type="module"></script>
   </body>
 </html>

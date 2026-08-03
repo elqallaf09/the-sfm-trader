@@ -230,7 +230,7 @@ body[data-app-view="home"] .mobile-settings-button {
     padding: 14px !important;
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) var(--stable-rail) !important;
-    grid-template-rows: auto 0 minmax(0, auto) auto !important;
+    grid-template-rows: auto 0 auto auto !important;
     grid-template-areas:
       "topbar rail"
       "ticker rail"
@@ -238,29 +238,54 @@ body[data-app-view="home"] .mobile-settings-button {
       "footer rail" !important;
     gap: 12px 14px !important;
     direction: ltr !important;
-    overflow: clip !important;
+    overflow: visible !important;
   }
 
   body[data-app-view="home"] .app-shell.sfm-dashboard > :is(.topbar, main, .site-footer) {
     direction: rtl !important;
   }
 
+  body[data-app-view="home"] .app-shell.sfm-dashboard > main {
+    grid-area: main !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    align-self: start !important;
+  }
+
+  body[data-app-view="home"] .app-shell.sfm-dashboard > .site-footer {
+    grid-area: footer !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    align-self: start !important;
+  }
+
   body[data-app-view="home"] .app-shell.sfm-dashboard > .desktop-trading-rail {
-    position: relative !important;
+    position: sticky !important;
+    top: 14px !important;
     inset: auto !important;
     grid-area: rail !important;
     display: flex !important;
     width: var(--stable-rail) !important;
+    min-width: var(--stable-rail) !important;
+    max-width: var(--stable-rail) !important;
     height: auto !important;
-    min-height: 100% !important;
-    max-height: none !important;
+    min-height: 0 !important;
+    max-height: calc(100dvh - 28px) !important;
     padding: 10px 8px !important;
-    overflow: visible !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
     border: 1px solid var(--v3-border) !important;
     border-radius: var(--v3-radius) !important;
     background: var(--v3-surface) !important;
     box-shadow: none !important;
     direction: rtl !important;
+    align-self: start !important;
   }
 
   body[data-app-view="home"] .topbar {
@@ -309,7 +334,7 @@ body[data-app-view="home"] .mobile-settings-button {
     width: 100% !important;
     max-width: none !important;
     color: inherit !important;
-    font-size: 9px !important;
+    font-size: 10px !important;
     font-weight: 700 !important;
     line-height: 1.1 !important;
     text-align: center;
@@ -508,6 +533,10 @@ body[data-app-view="home"] #terminal-home-v3.terminal-home-v3 {
 .v3-empty-state { grid-column: 1 / -1; min-height: 106px; display: grid; place-items: center; gap: 10px; padding: 18px; border: 1px dashed var(--v3-border); border-radius: 12px; color: var(--v3-muted); text-align: center; }
 .v3-empty-state p { margin: 0; }
 .v3-empty-action { padding: 7px 10px; border: 1px solid rgba(47, 214, 192, 0.38); border-radius: 9px; background: rgba(47, 214, 192, 0.08); }
+.v3-panel-state { width: 100%; min-height: 100%; align-content: center; }
+.v3-panel-state[data-ui-state="loading"] { border-style: solid; color: var(--v3-muted); }
+.v3-panel-state[data-ui-state="unavailable"] { border-color: rgba(255, 102, 119, 0.42); color: #ffb2bd; }
+.v3-pulse-chart .v3-panel-state { min-height: 100%; }
 
 /* Shared local vector brand marks for all V3 asset displays. */
 body[data-app-view="home"] .terminal-home-v3 .asset-logo {

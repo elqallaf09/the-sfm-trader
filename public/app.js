@@ -1713,11 +1713,20 @@ function getAppViewFromHash(hash) {
   return "";
 }
 
+function syncAppViewShell(view) {
+  document.querySelectorAll("[data-app-view-shell]").forEach((element) => {
+    const visible = view !== "home";
+    element.hidden = !visible;
+    element.toggleAttribute("aria-hidden", !visible);
+  });
+}
+
 function showAppView(view, options = {}) {
   const nextView = APP_VIEW_GROUPS[view] ? view : "home";
   const visibleSelectors = APP_VIEW_GROUPS[nextView] || APP_VIEW_GROUPS.home;
   activeAppView = nextView;
   document.body.dataset.appView = nextView;
+  syncAppViewShell(nextView);
 
   document.querySelectorAll("main > section").forEach((section) => {
     const visible = visibleSelectors.some((selector) => section.matches(selector));
@@ -3926,6 +3935,58 @@ function setHomeDashboardState(kind = "loading") {
   for (const panel of [homeHeatmapGrid, homeRecommendations, homeFollowedTrades]) {
     setUiState(panel, { ...state, compact: true });
   }
+
+  setTerminalHomeV3State(kind);
+}
+
+function setTerminalHomeV3State(kind = "loading") {
+  const root = document.querySelector("#terminal-home-v3");
+  if (!root) return;
+
+  const unavailable = kind === "offline" || kind === "unavailable";
+  const state = unavailable ? "unavailable" : "loading";
+  const message = unavailable
+    ? "تعذر الاتصال بمزود بيانات السوق. لا توجد قيم بديلة معروضة."
+    : "جارٍ تحميل بيانات السوق من مزود موثوق.";
+
+  root.dataset.uiState = state;
+  root.setAttribute("aria-busy", String(!unavailable));
+
+  const setText = (selector, value) => {
+    const element = root.querySelector(selector);
+    if (element) element.textContent = localizeUiText(value);
+  };
+
+  setText("#v3-confidence", "--");
+  setText("#v3-market-bias", unavailable ? "غير متاح" : "جارٍ التحميل");
+  setText("#v3-market-summary", message);
+  setText("#v3-buy-count", "--");
+  setText("#v3-sell-count", "--");
+  setText("#v3-hold-count", "--");
+  setText("#v3-pulse-change", "--");
+  setText("#v3-pulse-label", unavailable ? "غير متاح" : "جارٍ التحميل");
+  setText("#v3-pulse-assets", unavailable ? "لا توجد بيانات مكتملة" : "جارٍ تحميل الأصول");
+  setText("#v3-pulse-updated", "آخر تحديث --");
+  setText("#v3-heatmap-leader", "--");
+
+  const confidenceRing = root.querySelector("#v3-confidence-ring");
+  if (confidenceRing) {
+    confidenceRing.style.setProperty("--v3-confidence", "0%");
+    confidenceRing.setAttribute("aria-label", localizeUiText(unavailable ? "ثقة التحليل غير متاحة" : "جارٍ تحميل ثقة التحليل"));
+  }
+
+  const stateMarkup = (panelMessage) => renderV3EmptyState(panelMessage, { kind: state });
+  const panels = [
+    ["#v3-pulse-chart", unavailable ? "بيانات حركة الأصول غير متاحة حالياً." : "جارٍ تحميل توزيع حركة الأصول."],
+    ["#v3-opportunity-grid", unavailable ? "لا توجد فرص موثوقة لعرضها حالياً." : "جارٍ تحميل الفرص الموثقة."],
+    ["#v3-heatmap-grid", unavailable ? "خريطة حركة الأصول غير متاحة حالياً." : "جارٍ تحميل خريطة حركة الأصول."],
+    ["#v3-followed-list", unavailable ? "تعذر تحميل الصفقات المتابعة." : "جارٍ تحميل الصفقات المتابعة."],
+    ["#v3-calendar-list", unavailable ? "الأحداث الاقتصادية غير متاحة حالياً." : "جارٍ تحميل الأحداث الاقتصادية."]
+  ];
+  for (const [selector, panelMessage] of panels) {
+    const panel = root.querySelector(selector);
+    if (panel) panel.innerHTML = stateMarkup(panelMessage);
+  }
 }
 
 function getDashboardRecommendations(data = {}) {
@@ -3959,6 +4020,9 @@ function renderTerminalHomeV3(data = {}) {
     : 0;
   const bias = buys.length > sells.length ? "صاعد" : sells.length > buys.length ? "هابط" : "محايد";
   const ranked = [...items].sort((a, b) => getDashboardScore(b) - getDashboardScore(a));
+  const state = items.length ? (data.cached || data.stale ? "stale" : "fresh") : "empty";
+  root.dataset.uiState = state;
+  root.setAttribute("aria-busy", "false");
 
   const setText = (selector, value) => {
     const element = root.querySelector(selector);
@@ -4089,7 +4153,9 @@ function renderV3EmptyState(message, options = {}) {
   const action = options.view
     ? `<a href="#view-${escapeHtml(options.view)}" class="v3-view-all v3-empty-action" data-v3-view="${escapeHtml(options.view)}">${escapeHtml(localizeUiText(options.actionLabel || "استعرض التوصيات"))}</a>`
     : "";
-  return `<div class="v3-empty-state"><p>${escapeHtml(localizeUiText(message))}</p>${action}</div>`;
+  const kind = options.kind || "empty";
+  const role = kind === "unavailable" ? "alert" : "status";
+  return `<div class="v3-empty-state v3-panel-state" data-ui-state="${escapeHtml(kind)}" role="${role}"><p>${escapeHtml(localizeUiText(message))}</p>${action}</div>`;
 }
 
 function renderHomeRecommendationCard(item) {
