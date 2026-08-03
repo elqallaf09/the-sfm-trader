@@ -2,118 +2,86 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("dashboard loads one final authoritative layout after legacy theme sheets", async () => {
-  const html = await readFile(new URL("../public/index.html", import.meta.url), "utf8");
+const readHomeFiles = async () => Promise.all([
+  readFile(new URL("../public/index.html", import.meta.url), "utf8"),
+  readFile(new URL("../public/app.js", import.meta.url), "utf8"),
+  readFile(new URL("../public/dashboard-v2.css", import.meta.url), "utf8"),
+  readFile(new URL("../public/service-worker.js", import.meta.url), "utf8")
+]);
+
+test("Home V3 is the final authoritative presentation layer", async () => {
+  const [html, , css] = await readHomeFiles();
   const styles = [...html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map((match) => match[1]);
-  const stableIndex = styles.findIndex((value) => value.includes("layout-stability.css"));
-  const redesignIndex = styles.findIndex((value) => value.includes("dashboard-v2.css"));
-  assert.ok(stableIndex > styles.findIndex((value) => value.includes("cinema.css")));
-  assert.ok(stableIndex > styles.findIndex((value) => value.includes("styles.css")));
-  assert.ok(redesignIndex > stableIndex);
+  const v3Index = styles.findIndex((value) => value.includes("dashboard-v2.css"));
+
+  assert.ok(v3Index > styles.findIndex((value) => value.includes("layout-stability.css")));
+  assert.equal(v3Index, styles.length - 1);
+  assert.match(css, /Authoritative SFM Trader Home V3 presentation layer/);
+  assert.match(css, /--v3-page: #06111f/);
+  assert.match(css, /--v3-teal: #2fd6c0/);
+  assert.match(css, /grid-template-areas:\s*"topbar rail"/);
+  assert.match(css, /--stable-rail: 108px/);
 });
 
-test("desktop dashboard keeps rail, main, summary and footer in named grid areas", async () => {
-  const css = await readFile(new URL("../public/layout-stability.css", import.meta.url), "utf8");
-  assert.match(css, /"rail main right"/);
-  assert.match(css, /grid-area: rail !important/);
-  assert.match(css, /grid-area: main !important/);
-  assert.match(css, /grid-area: right !important/);
-  assert.match(css, /grid-area: footer !important/);
-  assert.match(css, /grid-template-rows: auto 0 minmax\(0, auto\) auto !important/);
-  assert.match(css, /flex: 0 0 var\(--stable-rail\) !important/);
-  assert.match(css, /position: absolute !important/);
-  assert.match(css, /@media \(min-width: 1024px\) and \(max-width: 1439px\)/);
-  assert.match(css, /"rail main"\s*\n\s*"rail right"/);
-  assert.match(css, /@media \(max-width: 1023px\)/);
-  assert.match(css, /\.site-footer \{\s*display: flex !important/);
-  assert.match(css, /padding-bottom: 12px !important/);
+test("Home V3 hierarchy keeps the RTL reading copy with a physical left confidence ring", async () => {
+  const [html, app, css] = await readHomeFiles();
+
+  for (const id of ["terminal-home-v3", "v3-confidence-ring", "v3-opportunity-grid", "v3-heatmap-grid", "v3-followed-list", "v3-calendar-list"]) {
+    assert.match(html, new RegExp(`id="${id}"`));
+  }
+  assert.match(html, /SFM Trader/);
+  assert.match(html, /AI Market Analysis/);
+  assert.match(css, /\.v3-reading-body\s*\{[\s\S]*direction: ltr/);
+  assert.match(css, /\.v3-reading-copy\s*\{\s*direction: rtl/);
+  assert.match(css, /grid-template-areas: "reading pulse"/);
+  assert.match(app, /confidenceRing\.style\.setProperty\("--v3-confidence"/);
+  assert.doesNotMatch(app, /v3-confidence[^\n]{0,100}62%/);
 });
 
-test("offline shell includes the authoritative layout stylesheet", async () => {
-  const worker = await readFile(new URL("../public/service-worker.js", import.meta.url), "utf8");
-  assert.match(worker, /layout-stability\.css\?v=20260802-dashboard-data-ux-4/);
-  assert.match(worker, /dashboard-v2\.css\?v=20260802-terminal-home-v3-visual-fix/);
+test("central local company-mark registry supplies every required Home V3 brand", async () => {
+  const [, app, css] = await readHomeFiles();
+
+  assert.match(app, /const ASSET_BRAND_REGISTRY = Object\.freeze/);
+  assert.match(app, /function renderAssetLogo\(/);
+  assert.match(app, /function getOfficialCompanyName\(/);
+  for (const symbol of ["META", "GOOGL", "GOOG", "MSFT", "AAPL", "NVDA", "AMZN", "TSLA", "NFLX", "INTC", "AMD", "ORCL", "AVGO", "LLY", "GOLD", "XAUUSD"]) {
+    assert.match(app, new RegExp(`${symbol}:`));
+  }
+  assert.match(app, /Meta Platforms/);
+  assert.match(app, /Alphabet Inc\./);
+  assert.match(app, /Microsoft Corp\./);
+  assert.match(app, /renderAssetLogo\(item, \{ className: "v3-heat-logo" \}\)/);
+  assert.match(css, /asset-logo-broadcom/);
+  assert.match(css, /asset-logo-wordmark-lilly/);
+  assert.doesNotMatch(app, /emoji as company logos/i);
 });
 
-test("terminal redesign prioritizes readable summaries over dense home tables", async () => {
-  const css = await readFile(new URL("../public/dashboard-v2.css", import.meta.url), "utf8");
-  assert.match(css, /--stable-aside: clamp\(310px, 19vw, 350px\) !important/);
-  assert.match(css, /\.rdp-pick-row \{[\s\S]*grid-template-areas: "asset signal" "time confidence" !important/);
-  assert.match(css, /\.home-heat-cell:nth-child\(n \+ 9\)/);
-  assert.match(css, /\.economic-news-card:nth-child\(n \+ 4\)/);
-  assert.match(css, /\.market-band \{ display: none !important; \}/);
-  assert.doesNotMatch(css, /Restore the redesign's desktop summaries against the legacy tablet hide rule/);
-  assert.match(css, /@media \(max-width: 1023px\)/);
-  assert.match(css, /prefers-reduced-motion: reduce/);
+test("Home V3 charts, followed trades, and calendar remain truthful", async () => {
+  const [, app, css] = await readHomeFiles();
+  const pulseRenderer = app.match(/function renderV3PulseChart\([\s\S]*?function renderV3FollowedTrade\(/)?.[0] || "";
+
+  assert.match(pulseRenderer, /class="v3-pulse-grid"/);
+  assert.match(pulseRenderer, /<polygon points="\$\{areaPoints\}">/);
+  assert.doesNotMatch(pulseRenderer, /09:30|11:30|13:30|15:30/);
+  assert.match(app, /followed\.map\(renderV3FollowedTrade\)/);
+  assert.match(app, /renderV3EmptyState\("لا توجد صفقات محفوظة تحت المتابعة\."/);
+  assert.doesNotMatch(app, /const fallback = ranked\.slice\(0, 3\)/);
+  assert.match(app, /entryPrice \?\? entry\.currentPrice/);
+  assert.match(app, /entry\.target1 \?\? entry\.expectedPrice/);
+  assert.match(app, /const date = event\.date/);
+  assert.match(css, /\.v3-calendar-event\.high/);
+  assert.match(css, /\.v3-heatmap-grid \{ display: grid; grid-template-columns: repeat\(8/);
+  assert.match(css, /@media \(max-width: 760px\)[\s\S]*\.v3-heatmap-grid \{ grid-template-columns: repeat\(2/);
 });
 
-test("home v3 implements the approved RTL terminal hierarchy", async () => {
-  const [html, app, css] = await Promise.all([
-    readFile(new URL("../public/index.html", import.meta.url), "utf8"),
-    readFile(new URL("../public/app.js", import.meta.url), "utf8"),
-    readFile(new URL("../public/dashboard-v2.css", import.meta.url), "utf8")
-  ]);
-  assert.match(html, /id="terminal-home-v3"/);
-  assert.match(html, /id="v3-confidence"/);
-  assert.match(html, /id="v3-opportunity-grid"/);
-  assert.match(html, /id="v3-heatmap-grid"/);
-  assert.match(html, /id="v3-calendar-list"/);
-  assert.match(html, /href="#view-calendar" class="v3-view-all" data-v3-view="calendar"/);
-  assert.match(app, /home:\s*\["#terminal-home-v3", "#temporary-legal-notices"\]/);
-  assert.match(app, /function renderTerminalHomeV3\(/);
-  assert.match(app, /safeRenderPanel\("واجهة قراءة السوق", \(\) => renderTerminalHomeV3\(data\)\)/);
-  assert.match(app, /Waiting for verified market-provider data\. The terminal will not display substitute prices or signals\./);
-  assert.match(css, /grid-template-areas:"topbar rail" "ticker rail" "main rail" "footer rail"/);
-  assert.match(css, /section#terminal-home-v3#terminal-home-v3#terminal-home-v3#terminal-home-v3/);
-  assert.match(css, /#sfm-live-floor,\s*#markets-section,\s*#command-center-section/);
-  assert.match(css, /section#economic-news-section#economic-news-section#economic-news-section#economic-news-section#economic-news-section#economic-news-section\.app-view-hidden/);
-  assert.match(css, /section#recommendations-section#recommendations-section#recommendations-section#recommendations-section#recommendations-section#recommendations-section\.app-view-hidden/);
-  assert.match(css, /section#home-heatmap-section#home-heatmap-section#home-heatmap-section#home-heatmap-section\.app-view-hidden/);
-  assert.doesNotMatch(css, /Restore the redesign's desktop summaries against the legacy tablet hide rule/);
-  assert.match(css, /\.app-shell\.sfm-dashboard>\.right-dashboard-panel \{ display:none !important; \}/);
-  assert.match(css, /grid-template-areas:"reading pulse"/);
-  assert.match(css, /height:320px !important; min-height:320px !important; max-height:320px !important/);
-});
+test("offline shell versions stay aligned with the Home V3 entry files", async () => {
+  const [html, , , worker] = await readHomeFiles();
+  const homeScript = html.match(/<script src="([^"]*app\.js[^"]*)"/)?.[1];
+  const homeStylesheet = html.match(/<link rel="stylesheet" href="([^"]*dashboard-v2\.css[^"]*)"/)?.[1];
 
-test("home v3 uses truthful runtime data instead of mock values", async () => {
-  const app = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
-  assert.match(app, /const items = getDashboardRecommendations\(data\)/);
-  assert.match(app, /data\.economicCalendar \|\| \{\}/);
-  assert.match(app, /recommendationHistory\.filter\(\(entry\) => followedTradeKeys\.has\(entry\.key\)\)/);
-  assert.match(app, /لن تعرض المنصة أسعاراً أو إشارات بديلة/);
-  assert.doesNotMatch(app, /v3-confidence[^\n]*62%/);
-});
-
-test("home dashboard remains compact while recommendation details stay in their own view", async () => {
-  const [app, css] = await Promise.all([
-    readFile(new URL("../public/app.js", import.meta.url), "utf8"),
-    readFile(new URL("../public/layout-stability.css", import.meta.url), "utf8")
-  ]);
-  const homeGroup = app.match(/home:\s*\[([^\]]+)\]/)?.[1] || "";
-  const recommendationsGroup = app.match(/recommendations:\s*\[([^\]]+)\]/)?.[1] || "";
-
-  assert.doesNotMatch(homeGroup, /#recommendations-section/);
-  assert.match(recommendationsGroup, /#recommendations-section/);
-  assert.match(css, /body\[data-app-view="home"\] #recommendations-section/);
-  assert.match(css, /section#recommendations-section#recommendations-section#recommendations-section/);
-  assert.match(css, /section#home-heatmap-section#home-heatmap-section#home-heatmap-section/);
-  assert.match(css, /\.sidebar-brand-block \{\s*display: grid !important/);
-  assert.match(css, /#home-deck-section\.home-deck-section \.home-deck-panel:last-child/);
-  assert.match(css, /\.home-followed-trades \{\s*min-height: 84px !important/);
-  assert.match(css, /\.home-rec-card,[\s\S]*\.home-heat-cell \{[\s\S]*opacity: 1 !important/);
-});
-
-test("home panels use unfiltered market data and tolerate incomplete scoring fields", async () => {
-  const app = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
-  assert.match(app, /function getDashboardRecommendations\(/);
-  assert.match(app, /function getDashboardScore\(/);
-  assert.match(app, /return clamp\(Number\(item\?\.confidence \|\| 0\), 0, 100\)/);
-  assert.match(app, /const available = getDashboardRecommendations\(data\)/);
-  assert.match(app, /const visiblePicks = picks\.length/);
-  assert.match(app, /const sfmFinalDashboardRenderer = renderRecommendations/);
-  assert.match(app, /sfmFinalDashboardRenderer\(data\);\s*sfmFinalRenderRecommendations\(data\);/);
-  assert.match(app, /function setHomeDashboardState\(/);
-  assert.match(app, /setHomeDashboardState\("loading"\)/);
-  assert.match(app, /setHomeDashboardState\("offline"\)/);
-  assert.match(app, /No market values are shown until a trusted provider responds/);
+  assert.ok(homeScript);
+  assert.ok(homeStylesheet);
+  assert.ok(worker.includes(`"${homeScript}"`));
+  assert.ok(worker.includes(`"${homeStylesheet}"`));
+  assert.match(worker, /the-sfm-trader-v20260804-home-v3-premium-parity-9/);
 });

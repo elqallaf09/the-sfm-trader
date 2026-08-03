@@ -3,11 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>اس اف ام المحلل الذكي</title>
-    <meta name="theme-color" content="#05090d" />
+    <title>SFM Trader</title>
+    <meta name="theme-color" content="#06111f" />
     <meta name="google" content="notranslate" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="اس اف ام المحلل الذكي" />
+    <meta name="apple-mobile-web-app-title" content="SFM Trader" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="/styles.css?v=20260801-hardening-2" />
     <link rel="stylesheet" href="/cinema.css?v=20260801-hardening-2" />
     <link rel="stylesheet" href="/layout-stability.css?v=20260802-dashboard-data-ux-4" />
-    <link rel="stylesheet" href="/dashboard-v2.css?v=20260802-terminal-home-v3-visual-fix" />
+    <link rel="stylesheet" href="/dashboard-v2.css?v=20260804-home-v3-premium-parity-9" />
   </head>
   <body class="notranslate" translate="no">
     <a class="skip-link" href="#main-content">تجاوز إلى المحتوى الرئيسي</a>
@@ -28,9 +28,11 @@
     <div class="app-shell sfm-dashboard">
       <header class="topbar">
         <div class="brand-lockup">
-          <p class="eyebrow">وكيل تحليل الأسواق</p>
-          <h1 data-brand-title>اس اف ام المحلل الذكي</h1>
-          <p class="brand-subtitle">منصة تداول وتحليل ذكية</p>
+          <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 23 12 16l4 4 11-12"></path><path d="M21 8h6v6"></path><path d="M6 27h20"></path></svg></span>
+          <div>
+            <h1>SFM Trader</h1>
+            <p class="brand-subtitle">AI Market Analysis</p>
+          </div>
         </div>
         <form class="terminal-search" role="search" action="/">
           <span aria-hidden="true">⌕</span>
@@ -47,6 +49,7 @@
             <span class="pulse"></span>
             <span id="connection-status" role="status" aria-live="polite" data-connection-state="updating">جاري الاتصال</span>
           </div>
+          <button id="language-quick-toggle" class="language-quick-toggle" type="button" aria-label="تبديل اللغة" title="تبديل اللغة">AR</button>
           <button id="notification-button" class="notification-button" type="button" aria-expanded="false" aria-controls="notification-panel">
             <span>الإشعارات</span>
             <strong id="notification-count">0</strong>
@@ -461,7 +464,7 @@
                 <b id="v3-pulse-change">--</b>
               </header>
               <div id="v3-pulse-chart" class="v3-pulse-chart"></div>
-              <footer><span id="v3-pulse-label">--</span><em id="v3-pulse-updated">آخر تحديث --</em></footer>
+              <footer><span id="v3-pulse-label">--</span><em id="v3-pulse-assets">--</em><em id="v3-pulse-updated">آخر تحديث --</em></footer>
             </article>
           </div>
 
@@ -483,7 +486,7 @@
 
           <div class="v3-bottom-grid">
             <article class="v3-followed-panel">
-              <header class="v3-section-head"><div><span>آخر الحالات المحفوظة</span><h2>الصفقات المتابعة</h2></div></header>
+              <header class="v3-section-head"><div><span>المراكز التي اخترتها للمراقبة</span><h2>الصفقات المتابعة</h2></div></header>
               <div id="v3-followed-list" class="v3-followed-list"></div>
             </article>
             <article class="v3-calendar-panel">
@@ -1401,6 +1404,6 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260802-terminal-home-v3-visual-fix" type="module"></script>
+    <script src="/app.js?v=20260804-home-v3-premium-parity-2" type="module"></script>
   </body>
 </html>
