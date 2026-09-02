@@ -3720,18 +3720,17 @@ function renderAssetIcon(kind, label) {
   if (kind === "nvidia") {
     return `
       <svg class="asset-logo-svg asset-logo-svg-nvidia" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M4 12.2c3.7-4.1 9.5-4.8 16-1.9-3.6-.4-6.1.1-8 1.5 1.7-.4 3.4-.2 5 .6-2.8 2.9-7.1 3.4-10.6 1.3 1.2-.7 2.4-1.2 3.8-1.4-1.9-.3-3.9 0-6.2-.1Z"></path>
-        <circle cx="12.6" cy="12.6" r="1.35"></circle>
+        <path d="M3.8 12.2c3.6-4.4 9.7-5.4 16.4-2.1-3.9-.5-7 .1-9.2 1.9 2-.6 4.1-.3 5.8.8-3 3.4-7.8 4-11.7 1.3 1.5-1 3.1-1.6 4.8-1.8-2.1-.4-4.1-.1-6.1-.1Z"></path>
+        <circle cx="12.7" cy="12.8" r="1.55"></circle>
       </svg>
     `;
   }
   if (kind === "amd") {
     return `
       <svg class="asset-logo-svg asset-logo-svg-amd" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M5 5h6v4H9v2H5Z"></path>
-        <path d="M13 5h6v6h-4V9h-2Z"></path>
-        <path d="M5 13h4v2h2v4H5Z"></path>
-        <path d="M15 13h4v6h-6v-4h2Z"></path>
+        <path d="M12.5 4H20v7.5h-3.1V7.1h-4.4Z"></path>
+        <path d="M20 20h-7.5v-3.1h4.4v-4.4H20Z"></path>
+        <path d="m4 16.8 6.8-6.8 3.2 3.2L7.2 20H4Z"></path>
       </svg>
     `;
   }
@@ -3752,8 +3751,8 @@ function renderAssetIcon(kind, label) {
   if (kind === "broadcom") {
     return `
       <svg class="asset-logo-svg asset-logo-svg-broadcom" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <circle cx="12" cy="12" r="7.4"></circle><path d="M7.2 12c1.5-3.2 2.9-3.2 4.4 0s2.9 3.2 5.2 0"></path>
-        <path d="M7.2 12c1.5 3.2 2.9 3.2 4.4 0s2.9-3.2 5.2 0"></path>
+        <path d="M3.5 12h2.2c1.3-5.2 2.8-5.2 4.3 0s3 5.2 4.5 0 3-5.2 4.4 0h1.6"></path>
+        <path d="M4.4 17.4h15.2"></path>
       </svg>
     `;
   }
@@ -4108,8 +4107,8 @@ function renderV3Opportunity(item) {
   const confidence = clamp(Number(item.confidence || 0), 0, 100);
   const companyName = getOfficialCompanyName(item);
   return `<article class="v3-opportunity-card ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">
-    <header>${renderAssetLogo(item, { className: "v3-asset-logo" })}<div><strong>${escapeHtml(item.symbol)}</strong><span>${escapeHtml(companyName)}</span></div><span class="v3-card-confidence" style="--v3-card-confidence:${confidence}%" aria-label="${escapeHtml(`${localizeUiText("ثقة التحليل")} ${formatNumber(confidence)}%`)}"><i>${formatNumber(confidence)}%</i></span><b>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</b></header>
-    <div class="v3-opportunity-metrics"><div><span>${escapeHtml(localizeUiText("السعر الحالي"))}</span><strong>${formatMoney(item.currentPrice, item.currency)}</strong></div><div><span>${escapeHtml(localizeUiText("الهدف"))}</span><strong>${target ? formatMoney(target, item.currency) : "--"}</strong></div><div><span>${escapeHtml(localizeUiText("الإجراء"))}</span><strong>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</strong></div></div>
+    <header>${renderAssetLogo(item, { className: "v3-asset-logo" })}<div><strong>${escapeHtml(item.symbol)}</strong><span>${escapeHtml(companyName)}</span></div><b>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</b></header>
+    <div class="v3-opportunity-metrics"><div><span>${escapeHtml(localizeUiText("السعر الحالي"))}</span><strong>${formatMoney(item.currentPrice, item.currency)}</strong></div><div><span>${escapeHtml(localizeUiText("الهدف"))}</span><strong>${target ? formatMoney(target, item.currency) : "--"}</strong></div><div class="v3-confidence-metric"><span>${escapeHtml(localizeUiText("ثقة التحليل"))}</span><span class="v3-card-confidence" style="--v3-card-confidence:${confidence}%" aria-label="${escapeHtml(`${localizeUiText("ثقة التحليل")} ${formatNumber(confidence)}%`)}"><i>${formatNumber(confidence)}%</i></span></div></div>
   </article>`;
 }
 

@@ -26,7 +26,10 @@ test("Home V3 is the final authoritative presentation layer", async () => {
   assert.match(css, /--v3-page: #06111f/);
   assert.match(css, /--v3-teal: #2fd6c0/);
   assert.match(css, /grid-template-areas:\s*"topbar rail"/);
-  assert.match(css, /--stable-rail: 108px/);
+  assert.match(css, /--stable-rail: 112px/);
+  assert.match(css, /width: calc\(100vw - 32px\) !important/);
+  assert.match(css, /max-width: none !important/);
+  assert.match(css, /margin: 16px auto !important/);
   assert.match(css, /min-width: var\(--stable-rail\) !important/);
   assert.match(css, /max-width: var\(--stable-rail\) !important/);
   assert.match(css, /min-height: 0 !important/);
@@ -63,6 +66,20 @@ test("Home V3 hierarchy keeps the RTL reading copy with a physical left confiden
   assert.match(css, /grid-template-areas: "reading pulse"/);
   assert.match(app, /confidenceRing\.style\.setProperty\("--v3-confidence"/);
   assert.doesNotMatch(app, /v3-confidence[^\n]{0,100}62%/);
+  assert.match(html, /<h1>SFM Trader<\/h1>/);
+  assert.match(html, /<p class="brand-subtitle">AI Market Analysis<\/p>/);
+  assert.match(html, /<strong>SFM Trader<\/strong>\s*<span>AI Market Analysis<\/span>/);
+});
+
+test("Home V3 opportunity hierarchy uses one action badge and a confidence metric", async () => {
+  const [, app, css] = await readHomeFiles();
+  const renderer = app.match(/function renderV3Opportunity\([\s\S]*?function renderV3HeatItem\(/)?.[0] || "";
+
+  assert.match(renderer, /class="v3-confidence-metric"/);
+  assert.match(renderer, /class="v3-card-confidence"/);
+  assert.equal((renderer.match(/item\.actionLabel \|\| item\.action \|\| "انتظار"/g) || []).length, 1);
+  assert.doesNotMatch(renderer, /localizeUiText\("الإجراء"\)/);
+  assert.match(css, /\.v3-opportunity-card header \{[^}]*grid-template-columns: 46px minmax\(0, 1fr\) auto/);
 });
 
 test("Home V3 header cannot inherit the legacy gold brand treatment", async () => {
@@ -134,7 +151,7 @@ test("offline shell versions stay aligned with the Home V3 entry files", async (
   assert.ok(homeScript);
   assert.ok(worker.includes(`"${homeScript}"`));
   for (const stylesheet of homeStylesheets) assert.ok(worker.includes(`"${stylesheet}"`));
-  assert.match(worker, /the-sfm-trader-v20260804-home-v3-layout-fix-3/);
+  assert.match(worker, /the-sfm-trader-v20260902-home-v3-final-density-1/);
 });
 
 test("Home V3 visual evidence is captured as exact viewport screenshots", async () => {

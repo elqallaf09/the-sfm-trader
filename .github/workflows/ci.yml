@@ -42,5 +42,24 @@ jobs:
       - run: npm run verify
       - run: npm run audit:css
       - run: npm audit --audit-level=high
+      - name: Install visual verification browser
+        run: npx playwright install --with-deps chromium
+      - name: Start visual verification server
+        run: |
+          npm start > /tmp/the-sfm-trader-server.log 2>&1 &
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:4173 >/dev/null && exit 0
+            sleep 1
+          done
+          cat /tmp/the-sfm-trader-server.log
+          exit 1
+      - name: Capture Home V3 viewport evidence
+        run: node tools/capture-home-v3.mjs
+      - name: Upload Home V3 viewport evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: home-v3-final-corrected-${{ github.sha }}
+          path: .artifacts/home-v3
+          if-no-files-found: error
       - name: Build production container
         run: docker build --tag the-sfm-trader:${{ github.sha }} .
