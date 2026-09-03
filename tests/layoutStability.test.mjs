@@ -30,6 +30,7 @@ test("Home V3 is the final authoritative presentation layer", async () => {
   assert.match(css, /width: calc\(100vw - 32px\) !important/);
   assert.match(css, /max-width: none !important/);
   assert.match(css, /margin: 16px auto !important/);
+  assert.match(css, /transform: none !important/);
   assert.match(css, /min-width: var\(--stable-rail\) !important/);
   assert.match(css, /max-width: var\(--stable-rail\) !important/);
   assert.match(css, /min-height: 0 !important/);

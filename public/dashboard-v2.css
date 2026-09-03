@@ -224,6 +224,8 @@ body[data-app-view="home"] .mobile-settings-button {
 @media (min-width: 1024px) {
   body[data-app-view="home"] .app-shell.sfm-dashboard {
     --stable-rail: 112px;
+    transform: none !important;
+    transform-origin: initial !important;
     width: calc(100vw - 32px) !important;
     max-width: none !important;
     min-height: calc(100dvh - 32px) !important;
