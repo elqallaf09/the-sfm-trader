@@ -4101,6 +4101,11 @@ function renderTerminalHomeV3(data = {}) {
   }
 }
 
+if (["127.0.0.1", "localhost"].includes(window.location.hostname)
+  && new URLSearchParams(window.location.search).has("visual-test")) {
+  window.__SFM_RENDER_HOME_V3__ = renderTerminalHomeV3;
+}
+
 function renderV3Opportunity(item) {
   const tone = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : "hold";
   const target = item.target1 || item.expectedPrice;

@@ -75,13 +75,14 @@ try {
       body: JSON.stringify({ available: false })
     }));
 
-    await page.goto(baseUrl, { waitUntil: "networkidle" });
+    const verificationUrl = new URL(baseUrl);
+    verificationUrl.searchParams.set("visual-test", "1");
+    await page.goto(verificationUrl.href, { waitUntil: "networkidle" });
     // Render the deterministic verification payload explicitly after application
     // startup. This keeps fixture data confined to the browser test and avoids a
     // startup race with the app's initial market/request sequence.
     await page.evaluate((data) => {
-      window.showAppView?.("home", { push: false });
-      window.renderTerminalHomeV3?.(data);
+      window.__SFM_RENDER_HOME_V3__?.(data);
     }, fixture);
     await page.locator("#terminal-home-v3[data-ui-state='fresh']").waitFor({ state: "visible", timeout: 20_000 });
 
