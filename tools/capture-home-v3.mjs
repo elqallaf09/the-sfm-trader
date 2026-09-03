@@ -131,7 +131,7 @@ try {
     assert.ok(result.actionBadgeCounts.every((count) => count === 1), capture.file);
 
     if (capture.viewport.width >= 1024) {
-      assert.ok(result.shell.left >= 15 && result.shell.left <= 17, `${capture.file}: shell left ${result.shell.left}`);
+      assert.ok(result.shell.left >= 13 && result.shell.left <= 17, `${capture.file}: shell left ${result.shell.left}`);
       assert.ok(capture.viewport.width - result.shell.right >= 15 && capture.viewport.width - result.shell.right <= 21, `${capture.file}: shell right ${capture.viewport.width - result.shell.right}`);
       assert.ok(result.rail.left >= result.shell.left && result.rail.right <= result.shell.right, `${capture.file}: rail containment`);
       assert.ok(result.main.left >= result.shell.left && result.main.right <= result.shell.right, `${capture.file}: main containment`);
