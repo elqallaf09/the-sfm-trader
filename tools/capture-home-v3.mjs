@@ -64,7 +64,7 @@ try {
       if (message.type() === "error") consoleErrors.push(`${capture.file}: ${message.text()}`);
     });
     page.on("pageerror", (error) => consoleErrors.push(`${capture.file}: ${error.message}`));
-    await page.route("**/api/recommendations?**", (route) => route.fulfill({
+    await page.route("**/api/recommendations*", (route) => route.fulfill({
       status: 200,
       contentType: "application/json",
       body: JSON.stringify(fixture)
@@ -76,6 +76,13 @@ try {
     }));
 
     await page.goto(baseUrl, { waitUntil: "networkidle" });
+    // Render the deterministic verification payload explicitly after application
+    // startup. This keeps fixture data confined to the browser test and avoids a
+    // startup race with the app's initial market/request sequence.
+    await page.evaluate((data) => {
+      window.showAppView?.("home", { push: false });
+      window.renderTerminalHomeV3?.(data);
+    }, fixture);
     await page.locator("#terminal-home-v3[data-ui-state='fresh']").waitFor({ state: "visible", timeout: 20_000 });
 
     const result = await page.evaluate(() => {
