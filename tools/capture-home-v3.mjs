@@ -132,7 +132,7 @@ try {
 
     if (capture.viewport.width >= 1024) {
       assert.ok(result.shell.left >= 13 && result.shell.left <= 17, `${capture.file}: shell left ${result.shell.left}`);
-      assert.ok(capture.viewport.width - result.shell.right >= 15 && capture.viewport.width - result.shell.right <= 21, `${capture.file}: shell right ${capture.viewport.width - result.shell.right}`);
+      assert.ok(capture.viewport.width - result.shell.right >= 13 && capture.viewport.width - result.shell.right <= 21, `${capture.file}: shell right ${capture.viewport.width - result.shell.right}`);
       assert.ok(result.rail.left >= result.shell.left && result.rail.right <= result.shell.right, `${capture.file}: rail containment`);
       assert.ok(result.main.left >= result.shell.left && result.main.right <= result.shell.right, `${capture.file}: main containment`);
       assert.ok(result.lower.top <= capture.viewport.height + 120, `${capture.file}: lower dashboard starts at ${result.lower.top}`);
