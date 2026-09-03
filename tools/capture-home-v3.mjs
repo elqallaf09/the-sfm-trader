@@ -26,7 +26,14 @@ const recommendations = [
   action,
   actionLabel,
   currency: "USD",
-  market: "us"
+  market: "us",
+  reasons: [],
+  timeframes: [],
+  sparkline: [],
+  duration: "3-6 months",
+  target2: null,
+  stopLoss: null,
+  riskReward: null
 }));
 
 const fixture = {
@@ -43,6 +50,7 @@ const fixture = {
     upcoming: []
   },
   smartAlerts: [],
+  unavailable: [],
   market: { id: "us", label: "US Market", supportedSymbols: recommendations }
 };
 
