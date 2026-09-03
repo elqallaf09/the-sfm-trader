@@ -31,6 +31,7 @@ const recommendations = [
 
 const fixture = {
   recommendations,
+  generatedAt: "2026-09-03T12:00:00.000Z",
   cached: false,
   refreshing: false,
   dataStatus: "fresh",
