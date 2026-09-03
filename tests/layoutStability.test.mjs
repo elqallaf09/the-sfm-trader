@@ -27,7 +27,7 @@ test("Home V3 is the final authoritative presentation layer", async () => {
   assert.match(css, /--v3-teal: #2fd6c0/);
   assert.match(css, /grid-template-areas:\s*"topbar rail"/);
   assert.match(css, /--stable-rail: 112px/);
-  assert.match(css, /width: calc\(100vw - 32px\) !important/);
+  assert.match(css, /width: calc\(100% - 32px\) !important/);
   assert.match(css, /max-width: none !important/);
   assert.match(css, /margin: 16px auto !important/);
   assert.match(css, /transform: none !important/);

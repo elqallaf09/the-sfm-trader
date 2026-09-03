@@ -226,7 +226,7 @@ body[data-app-view="home"] .mobile-settings-button {
     --stable-rail: 112px;
     transform: none !important;
     transform-origin: initial !important;
-    width: calc(100vw - 32px) !important;
+    width: calc(100% - 32px) !important;
     max-width: none !important;
     min-height: calc(100dvh - 32px) !important;
     margin: 16px auto !important;
