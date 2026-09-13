@@ -34,6 +34,9 @@ jobs:
       TEST_DATABASE_URL: postgresql://sfm:sfm-ci-password@127.0.0.1:5432/sfm_test
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - run: git diff --check HEAD^ HEAD
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -56,6 +59,7 @@ jobs:
       - name: Capture Home V3 viewport evidence
         run: node tools/capture-home-v3.mjs
       - name: Upload Home V3 viewport evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: home-v3-final-corrected-${{ github.sha }}

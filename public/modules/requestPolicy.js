@@ -40,7 +40,7 @@ export async function fetchResponseWithPolicy(url, options = {}) {
     } catch (error) {
       if (options.signal?.aborted) throw error;
       lastError = controller.signal.aborted
-        ? createRequestError("Ø§Ù†ØªÙ‡Øª Ù…Ù‡Ù„Ø© Ø§Ù„Ø§ØªØµØ§Ù„ Ø¨Ø§Ù„Ø³ÙŠØ±ÙØ±. Ø­Ø§ÙˆÙ„ Ù…Ø±Ø© Ø£Ø®Ø±Ù‰.", 0, true)
+        ? createRequestError("انتهت مهلة الاتصال بالسيرفر. حاول مرة أخرى.", 0, true)
         : error;
       if (attempt >= retries || lastError?.retryable === false) break;
       await delay(retryAfterMs, options.signal);

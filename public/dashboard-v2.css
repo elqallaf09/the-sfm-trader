@@ -221,6 +221,8 @@ body[data-app-view="home"] .mobile-settings-button {
   display: none !important;
 }
 
+body[data-app-view="home"] .utility-icon { display: block; width: 20px; height: 20px; flex: 0 0 20px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+
 /* Desktop navigation rail */
 @media (min-width: 1024px) {
   body[data-app-view="home"] .app-shell.sfm-dashboard {
@@ -228,6 +230,8 @@ body[data-app-view="home"] .mobile-settings-button {
     transform: none !important;
     transform-origin: initial !important;
     width: calc(100% - 32px) !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
     max-width: none !important;
     min-height: calc(100dvh - 32px) !important;
     margin: 16px auto !important;
@@ -248,6 +252,8 @@ body[data-app-view="home"] .mobile-settings-button {
   body[data-app-view="home"] .app-shell.sfm-dashboard > :is(.topbar, main, .site-footer) {
     direction: rtl !important;
   }
+
+  html[dir="ltr"] body[data-app-view="home"] .app-shell.sfm-dashboard > :is(.topbar, main, .site-footer) { direction: ltr !important; }
 
   body[data-app-view="home"] .app-shell.sfm-dashboard > main {
     grid-area: main !important;
@@ -271,8 +277,8 @@ body[data-app-view="home"] .mobile-settings-button {
 
   body[data-app-view="home"] .app-shell.sfm-dashboard > .desktop-trading-rail {
     position: sticky !important;
-    top: 14px !important;
     inset: auto !important;
+    top: 16px !important;
     grid-area: rail !important;
     display: flex !important;
     width: var(--stable-rail) !important;
@@ -531,9 +537,9 @@ body[data-app-view="home"] #terminal-home-v3.terminal-home-v3 {
 .v3-opportunity-card header > b { padding: 6px 10px; border-radius: 999px; color: #bed9ff; background: rgba(104, 169, 255, 0.12); font-size: 11px; white-space: nowrap; }
 .v3-opportunity-card.buy header > b { color: #79efd9; background: rgba(47, 214, 192, 0.12); }
 .v3-opportunity-card.sell header > b { color: #ffabb5; background: rgba(255, 102, 119, 0.12); }
-.v3-card-confidence { --v3-card-confidence: 0%; position: relative; width: 44px; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(var(--v3-teal) var(--v3-card-confidence), rgba(47, 214, 192, 0.13) 0); direction: ltr; }
+.v3-card-confidence { --v3-card-confidence: 0%; position: relative; width: 44px; height: 44px; aspect-ratio: 1; display: grid !important; place-items: center; border-radius: 50%; background: conic-gradient(var(--v3-teal) var(--v3-card-confidence), rgba(47, 214, 192, 0.13) 0); direction: ltr; }
 .v3-card-confidence::after { content: ""; position: absolute; inset: 4px; border-radius: inherit; background: var(--v3-surface); }
-.v3-card-confidence i { position: relative; z-index: 1; color: var(--v3-text); font-size: 9px; font-style: normal; font-weight: 800; }
+.v3-card-confidence i { position: relative; z-index: 1; grid-area: 1 / 1; align-self: center; justify-self: center; color: var(--v3-text); font-size: 9px; font-style: normal; font-weight: 800; }
 .v3-opportunity-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: center; gap: 10px; margin-top: 18px; }
 .v3-opportunity-metrics > div { min-width: 0; padding-inline-start: 9px; border-inline-start: 1px solid var(--v3-border); }
 .v3-opportunity-metrics > div:first-child { padding-inline-start: 0; border-inline-start: 0; }
@@ -602,10 +608,12 @@ body[data-app-view="home"] .terminal-home-v3 .asset-logo {
   line-height: 1 !important;
 }
 
-body[data-app-view="home"] .terminal-home-v3 .asset-logo svg { width: 72% !important; height: 72% !important; fill: currentColor !important; stroke: currentColor !important; stroke-width: 1.55 !important; }
+body[data-app-view="home"] .terminal-home-v3 .asset-logo svg { width: 78% !important; height: 78% !important; fill: none !important; stroke: currentColor !important; stroke-width: 1.55 !important; }
+body[data-app-view="home"] .terminal-home-v3 :is(.asset-logo-apple, .asset-logo-nvidia, .asset-logo-amd, .asset-logo-netflix) svg { fill: currentColor !important; stroke: none !important; }
+body[data-app-view="home"] .terminal-home-v3 .asset-logo-microsoft svg { fill: none !important; stroke: none !important; }
 body[data-app-view="home"] .terminal-home-v3 .asset-logo-google { color: #4285f4 !important; background: #fff !important; }
 body[data-app-view="home"] .terminal-home-v3 .asset-logo-google .asset-logo-text { font-size: 21px; font-weight: 900; background: conic-gradient(from -45deg, #4285f4 0 25%, #34a853 0 50%, #fbbc05 0 75%, #ea4335 0); -webkit-background-clip: text; background-clip: text; color: transparent; }
-body[data-app-view="home"] .terminal-home-v3 .asset-logo-microsoft { color: #fff !important; background: linear-gradient(135deg, #f35325 0 47%, #81bc06 47% 52%, #05a6f0 52% 76%, #ffba08 76%) !important; }
+body[data-app-view="home"] .terminal-home-v3 .asset-logo-microsoft { color: #fff !important; background: #10243a !important; }
 body[data-app-view="home"] .terminal-home-v3 .asset-logo-microsoft svg { color: #fff; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12)); }
 body[data-app-view="home"] .terminal-home-v3 .asset-logo-meta { color: #4f9dff !important; background: #0d2240 !important; }
 body[data-app-view="home"] .terminal-home-v3 .asset-logo-apple { color: #fff !important; background: #1f2935 !important; }
@@ -622,7 +630,7 @@ body[data-app-view="home"] .terminal-home-v3 .asset-logo-gold { color: #f0c75e !
 body[data-app-view="home"] .terminal-home-v3 .asset-logo-wordmark { font-size: 8px; font-weight: 900; letter-spacing: -0.06em; }
 body[data-app-view="home"] .terminal-home-v3 .asset-logo-wordmark-oracle { font-size: 7px; letter-spacing: -0.08em; }
 body[data-app-view="home"] .terminal-home-v3 .asset-logo-wordmark-lilly { font-family: Georgia, serif; font-size: 12px; font-style: italic; letter-spacing: -0.08em; }
-.v3-opportunity-card .v3-asset-logo { width: 46px !important; height: 46px !important; min-width: 46px !important; min-height: 46px !important; }
+body[data-app-view="home"] .terminal-home-v3 .v3-opportunity-card .v3-asset-logo { width: 46px !important; height: 46px !important; min-width: 46px !important; min-height: 46px !important; }
 .v3-heat-item .v3-heat-logo { width: 36px !important; height: 36px !important; min-width: 36px !important; min-height: 36px !important; }
 .v3-follow-row .v3-follow-logo { width: 30px !important; height: 30px !important; min-width: 30px !important; min-height: 30px !important; }
 
@@ -641,17 +649,21 @@ body[data-app-view="home"] :is(a, button, [tabindex]):focus-visible {
 
 @media (max-width: 1023px) {
   body[data-app-view="home"] .app-shell.sfm-dashboard { border-radius: 18px !important; background: var(--v3-page) !important; }
-  body[data-app-view="home"] .topbar { min-height: 0 !important; padding: 12px !important; display: grid !important; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
-  body[data-app-view="home"] .brand-lockup { grid-column: 1; grid-row: 1; }
-  body[data-app-view="home"] .terminal-search { display: flex !important; grid-column: 1 / -1; grid-row: 2; width: 100%; }
+  body[data-app-view="home"] .topbar { min-height: 0 !important; height: auto !important; padding: 12px !important; display: grid !important; grid-template-columns: minmax(0, 1fr) !important; gap: 10px !important; }
+  body[data-app-view="home"] .brand-lockup { grid-column: 1 !important; grid-row: 1 !important; justify-content: center; }
+  body[data-app-view="home"] .terminal-search { display: flex !important; grid-column: 1 / -1; grid-row: 3 !important; width: 100%; }
   body[data-app-view="home"] .header-session-mini { display: none !important; }
-  body[data-app-view="home"] .top-actions { grid-column: 2; grid-row: 1; gap: 6px; }
+  body[data-app-view="home"] .topbar > .top-actions { position: static !important; inset: auto !important; grid-column: 1 !important; grid-row: 2 !important; width: 100% !important; display: flex !important; justify-content: center !important; gap: 8px !important; }
+  body[data-app-view="home"] .topbar :is(#language-quick-toggle, #notification-button, #settings-button, #refresh-button) { display: inline-flex !important; position: static !important; flex: 0 0 auto; min-width: 44px !important; min-height: 44px !important; transform: none !important; }
+  body[data-app-view="home"] :is(#mobile-notification-button, #mobile-settings-button) { display: none !important; }
   body[data-app-view="home"] .top-actions .status-pill,
   body[data-app-view="home"] .top-actions .notification-button span,
   body[data-app-view="home"] .top-actions .settings-button span,
   body[data-app-view="home"] .top-actions .icon-button { display: none !important; }
   body[data-app-view="home"] .top-actions :is(.language-quick-toggle, .notification-button, .settings-button) { min-width: 42px; padding: 0 9px !important; }
   body[data-app-view="home"] .ios-tabbar { overflow-x: hidden !important; }
+  body[data-app-view="home"] .ios-tabbar .ios-tab-link.active { color: var(--v3-teal) !important; }
+  body[data-app-view="home"] .ios-tabbar .ios-tab-link.active::before { background: rgba(47, 214, 192, 0.12) !important; border-color: var(--v3-teal) !important; }
   body[data-app-view="home"] .ios-tab-link[data-tab="voice"],
   body[data-app-view="home"] .ios-tab-link[data-tab="scalp"] { display: none !important; }
 }
@@ -693,7 +705,7 @@ body[data-app-view="home"] :is(a, button, [tabindex]):focus-visible {
   .v3-opportunity-metrics { gap: 4px; }
   .v3-opportunity-metrics > div { padding-inline-start: 5px; }
   .v3-opportunity-metrics strong { font-size: 11px; }
-  .v3-card-confidence { width: 38px; }
+  .v3-card-confidence { width: 38px; height: 38px; }
   .v3-confidence-metric { grid-template-columns: minmax(0, 1fr) 38px; gap: 4px; }
 }
 

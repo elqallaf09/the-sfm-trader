@@ -2,161 +2,241 @@ import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
+import { fixture } from "./fixtures/home-v3.mjs";
 
 const baseUrl = process.env.VISUAL_BASE_URL || "http://127.0.0.1:4173";
 const outputDirectory = path.resolve(process.env.VISUAL_OUTPUT_DIR || ".artifacts/home-v3");
-
-const recommendations = [
-  ["META", "Meta Platforms", 590.24, 562.73, 89, 4.66, "buy", "شراء"],
-  ["MSFT", "Microsoft Corp.", 487.65, 521.79, 86, 7.00, "buy", "شراء"],
-  ["AAPL", "Apple Inc.", 303.42, 314.36, 82, 3.61, "hold", "انتظار"],
-  ["GOOGL", "Alphabet Inc.", 238.40, 247.94, 80, 4.00, "buy", "شراء"],
-  ["AMD", "Advanced Micro Devices Inc.", 168.90, 175.84, 78, 4.11, "buy", "شراء"],
-  ["AVGO", "Broadcom Inc.", 341.80, 357.97, 76, 4.73, "buy", "شراء"],
-  ["LLY", "Eli Lilly and Co.", 724.20, 750.42, 73, 3.62, "hold", "انتظار"],
-  ["NVDA", "NVIDIA Corp.", 181.60, 188.86, 71, 4.00, "buy", "شراء"]
-].map(([symbol, name, currentPrice, target1, confidence, expectedMovePct, action, actionLabel]) => ({
-  symbol,
-  name,
-  currentPrice,
-  target1,
-  expectedPrice: target1,
-  confidence,
-  expectedMovePct,
-  action,
-  actionLabel,
-  currency: "USD",
-  market: "us",
-  reasons: [],
-  timeframes: [],
-  sparkline: [],
-  duration: "3-6 months",
-  target2: null,
-  stopLoss: null,
-  riskReward: null,
-  dataHealth: { score: 100, label: "verified" },
-  timeframeConsensus: { conflict: false }
-}));
-
-const fixture = {
-  recommendations,
-  generatedAt: "2026-09-03T12:00:00.000Z",
-  cached: false,
-  refreshing: false,
-  dataStatus: "fresh",
-  economicCalendar: {
-    hotEvents: [
-      { title: "US Nonfarm Payrolls", currency: "USD", impact: "high", date: "2026-09-04", time: "15:30", localTimeLabel: "15:30" },
-      { title: "ECB Interest Rate Decision", currency: "EUR", impact: "high", date: "2026-09-10", time: "15:15", localTimeLabel: "15:15" }
-    ],
-    upcoming: []
-  },
-  smartAlerts: [],
-  unavailable: [],
-  market: { id: "us", label: "US Market", supportedSymbols: recommendations }
-};
-
 const captures = [
   { file: "home-v3-final-corrected-1680x945.png", viewport: { width: 1680, height: 945 } },
   { file: "home-v3-final-corrected-1440x900.png", viewport: { width: 1440, height: 900 } },
   { file: "home-v3-final-corrected-mobile-390x844.png", viewport: { width: 390, height: 844 } }
 ];
-
 await mkdir(outputDirectory, { recursive: true });
 const browser = await chromium.launch({ headless: true });
-const consoleErrors = [];
 const measurements = [];
+const checks = [];
+const consoleErrors = [];
+let activePage;
+let activeCase = "startup";
+
+async function openPage(viewport, initialMode = "fresh") {
+  const context = await browser.newContext({ viewport, serviceWorkers: "block", reducedMotion: "reduce" });
+  const page = await context.newPage();
+  activePage = page;
+  const state = { mode: initialMode, requests: 0, notifications: [] };
+  page.on("console", message => {
+    if (message.type() !== "error") return;
+    // Expected HTTP failures are asserted by the provider-unavailable scenarios.
+    if (state.mode === "unavailable" && /Failed to load resource:.*503/.test(message.text())) return;
+    consoleErrors.push(message.text());
+  });
+  page.on("pageerror", error => consoleErrors.push(error.stack || error.message));
+  await page.route("**/api/**", async route => {
+    const url = new URL(route.request().url());
+    const respond = (body, status = 200) => route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
+    if (url.pathname === "/api/recommendations") {
+      state.requests++;
+      if (state.mode === "loading") {
+        await new Promise(resolve => setTimeout(resolve, 1200));
+      }
+      if (state.mode === "unavailable") return respond({ error: "Test provider unavailable" }, 503);
+      if (state.mode === "empty") return respond({ recommendations: [], market: { id: "us", label: "US Market" } });
+      if (state.mode === "missing") {
+        const data = structuredClone(fixture);
+        delete data.generatedAt;
+        delete data.unavailable;
+        delete data.market.note;
+        for (const item of data.recommendations) delete item.reasons;
+        return respond(data);
+      }
+      return respond(fixture);
+    }
+    if (url.pathname === "/api/markets") return respond({ markets: [
+      { id: "us", label: "US Market", count: 8, totalSymbols: 8 },
+      { id: "crypto", label: "Crypto", count: 0, totalSymbols: 0 }
+    ] });
+    if (url.pathname === "/api/watchlist") return respond({ ...fixture, market: { ...fixture.market, id: "watchlist" } });
+    if (url.pathname === "/api/notifications") {
+      if (route.request().method() !== "GET") state.notifications = route.request().postDataJSON()?.notifications || [];
+      return respond({ notifications: state.notifications, version: 1 });
+    }
+    if (url.pathname === "/api/followed-trades") return respond({ followedEntries: [], followedTradeKeys: [], followedTradeAlerts: [], removedFollowedTradeKeys: [], version: 1 });
+    if (url.pathname === "/api/ollama-status") return respond({ available: false });
+    if (url.pathname === "/api/metrics/web-vitals") return respond({ ok: true });
+    return route.continue();
+  });
+  await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
+  return { page, context, state };
+}
+
+async function waitState(page, state) {
+  await page.locator('#terminal-home-v3[data-ui-state="' + state + '"]').waitFor({ state: "visible", timeout: 20000 });
+}
+async function waitView(page, view) {
+  await page.waitForFunction(expected => document.body.dataset.appView === expected, view);
+}
+async function modalCheck(page, opener, panel, focusTarget) {
+  activeCase = "modal " + panel;
+  const button = page.locator(opener);
+  await button.click();
+  await page.locator(panel).waitFor({ state: "visible" });
+  await page.waitForFunction(selector => document.querySelector(selector) === document.activeElement, focusTarget);
+  await page.keyboard.press("Escape");
+  await page.locator(panel).waitFor({ state: "hidden" });
+  assert.equal(await button.getAttribute("aria-expanded"), "false");
+  assert.equal(await button.evaluate(el => el === document.activeElement), true);
+  checks.push(activeCase);
+}
 
 try {
   for (const capture of captures) {
-    const context = await browser.newContext({ viewport: capture.viewport, serviceWorkers: "block", colorScheme: "dark" });
-    const page = await context.newPage();
-    page.on("console", (message) => {
-      if (message.type() === "error") consoleErrors.push(`${capture.file}: ${message.text()}`);
+    activeCase = capture.file;
+    const { page, context } = await openPage(capture.viewport);
+    await waitState(page, "fresh");
+    await page.locator(".toast").waitFor({ state: "hidden", timeout: 12000 }).catch(async () => {
+      await page.waitForFunction(() => document.querySelectorAll(".toast").length === 0, null, { timeout: 12000 });
     });
-    page.on("pageerror", (error) => consoleErrors.push(`${capture.file}: ${error.message}`));
-    await page.route("**/api/recommendations*", (route) => route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify(fixture)
-    }));
-    await page.route("**/api/ollama-status", (route) => route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({ available: false })
-    }));
-
-    const verificationUrl = new URL(baseUrl);
-    verificationUrl.searchParams.set("visual-test", "1");
-    await page.goto(verificationUrl.href, { waitUntil: "networkidle" });
-    // Render the deterministic verification payload explicitly after application
-    // startup. This keeps fixture data confined to the browser test and avoids a
-    // startup race with the app's initial market/request sequence.
-    await page.evaluate((data) => {
-      window.__SFM_RENDER_HOME_V3__?.(data);
-    }, fixture);
-    await page.locator("#terminal-home-v3[data-ui-state='fresh']").waitFor({ state: "visible", timeout: 20_000 });
-
+    await page.evaluate(() => document.fonts.ready);
     const result = await page.evaluate(() => {
-      const box = (selector) => {
-        const element = document.querySelector(selector);
-        if (!element) return null;
-        const rect = element.getBoundingClientRect();
-        return { left: rect.left, right: rect.right, top: rect.top, bottom: rect.bottom, width: rect.width, height: rect.height };
+      const box = selector => {
+        const el = document.querySelector(selector);
+        if (!el) return null;
+        const r = el.getBoundingClientRect();
+        return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height };
       };
-      const shell = box(".app-shell.sfm-dashboard");
-      const main = box(".app-shell.sfm-dashboard > main");
-      const rail = box(".desktop-trading-rail");
-      const footer = box(".site-footer");
-      const lower = box(".v3-bottom-grid");
-      const opportunityCards = [...document.querySelectorAll(".v3-opportunity-card")];
+      const visible = el => getComputedStyle(el).display !== "none" && el.getBoundingClientRect().height > 0;
       return {
-        viewport: { width: window.innerWidth, height: window.innerHeight },
-        document: { scrollWidth: document.documentElement.scrollWidth, scrollHeight: document.documentElement.scrollHeight },
-        shell,
-        main,
-        rail,
-        footer,
-        lower,
-        appView: document.body.dataset.appView,
-        brand: document.querySelector(".brand-lockup h1")?.textContent?.trim(),
-        railBrand: document.querySelector(".sidebar-brand-text strong")?.textContent?.trim(),
-        legacyHomeVisible: [...document.querySelectorAll("main > section:not(#terminal-home-v3):not(#temporary-legal-notices)")].some((element) => {
-          const style = getComputedStyle(element);
-          return style.display !== "none" && style.visibility !== "hidden" && element.getBoundingClientRect().height > 0;
-        }),
-        actionBadgeCounts: opportunityCards.map((card) => card.querySelectorAll("header > b").length),
-        duplicateActionMetric: opportunityCards.some((card) => [...card.querySelectorAll(".v3-opportunity-metrics > div > span:first-child")].some((label) => label.textContent?.trim() === "الإجراء")),
-        horizontalOverflow: document.documentElement.scrollWidth !== window.innerWidth,
-        overlay: Boolean(document.querySelector("[data-nextjs-dialog], .vite-error-overlay, #webpack-dev-server-client-overlay"))
+        viewport: { width: innerWidth, height: innerHeight },
+        document: { width: document.documentElement.clientWidth, scrollWidth: document.documentElement.scrollWidth, scrollHeight: document.documentElement.scrollHeight },
+        body: box("body"), shell: box(".app-shell.sfm-dashboard"), main: box("main"),
+        rail: box(".desktop-trading-rail"), topbar: box(".topbar"), footer: box(".site-footer"),
+        home: box("#terminal-home-v3"), lower: box(".v3-bottom-grid"),
+        brand: document.querySelector(".brand-lockup h1").textContent.trim(),
+        brandTransform: getComputedStyle(document.querySelector(".brand-lockup h1")).textTransform,
+        headerColor: getComputedStyle(document.querySelector(".brand-lockup h1")).color,
+        legacyVisible: [...document.querySelectorAll("main > section:not(#terminal-home-v3):not(#temporary-legal-notices)")].filter(visible).map(el => el.id),
+        actions: [...document.querySelectorAll(".v3-opportunity-card")].map(el => el.querySelectorAll("header > b").length),
+        microsoftColors: [...document.querySelectorAll(".v3-opportunity-card .asset-logo-microsoft rect")].map(el => getComputedStyle(el).fill),
+        controls: ["#language-quick-toggle", "#notification-button", "#settings-button", "#refresh-button"].map(selector => ({ selector, visible: visible(document.querySelector(selector)), ...box(selector) }))
       };
     });
-
-    assert.equal(result.appView, "home", capture.file);
-    assert.equal(result.brand, "SFM Trader", capture.file);
-    assert.equal(result.railBrand, "SFM Trader", capture.file);
-    assert.equal(result.legacyHomeVisible, false, capture.file);
-    assert.equal(result.horizontalOverflow, false, capture.file);
-    assert.equal(result.overlay, false, capture.file);
-    assert.equal(result.duplicateActionMetric, false, capture.file);
-    assert.ok(result.actionBadgeCounts.every((count) => count === 1), capture.file);
-
-    if (capture.viewport.width >= 1024) {
-      assert.ok(result.shell.left >= 13 && result.shell.left <= 17, `${capture.file}: shell left ${result.shell.left}`);
-      assert.ok(capture.viewport.width - result.shell.right >= 13 && capture.viewport.width - result.shell.right <= 21, `${capture.file}: shell right ${capture.viewport.width - result.shell.right}`);
-      assert.ok(result.rail.left >= result.shell.left && result.rail.right <= result.shell.right, `${capture.file}: rail containment`);
-      assert.ok(result.main.left >= result.shell.left && result.main.right <= result.shell.right, `${capture.file}: main containment`);
-      assert.ok(result.lower.top <= capture.viewport.height + 120, `${capture.file}: lower dashboard starts at ${result.lower.top}`);
-    }
-
+    // Always preserve evidence before assertions so a layout failure is reviewable.
     await page.screenshot({ path: path.join(outputDirectory, capture.file), fullPage: false });
     measurements.push({ file: capture.file, ...result });
+    assert.equal(result.document.scrollWidth, capture.viewport.width, "Horizontal overflow");
+    assert.equal(result.brand, "SFM Trader");
+    assert.equal(result.brandTransform, "none", "Brand capitalization changed by CSS");
+    assert.equal(result.headerColor, "rgb(255, 255, 255)");
+    assert.deepEqual(result.legacyVisible, []);
+    assert.equal(result.actions.length, 3);
+    assert.deepEqual(result.actions, [1, 1, 1]);
+    assert.deepEqual(result.microsoftColors, ["rgb(242, 80, 34)", "rgb(127, 186, 0)", "rgb(0, 164, 239)", "rgb(255, 185, 0)"]);
+    for (const control of result.controls) {
+      assert.ok(control.visible && control.width >= 40 && control.height >= 40, "Inaccessible control " + control.selector);
+      assert.ok(control.left >= 0 && control.right <= capture.viewport.width, "Clipped control " + control.selector);
+    }
+    if (capture.viewport.width >= 1024) {
+      assert.ok(result.shell.left >= 16 && result.shell.left <= 32, "Shell left " + result.shell.left);
+      assert.ok(capture.viewport.width - result.shell.right >= 16 && capture.viewport.width - result.shell.right <= 32, "Shell right");
+      assert.ok(result.rail.left >= result.shell.left && result.rail.right <= result.shell.right, "Rail containment");
+      assert.ok(Math.abs(result.rail.top - result.topbar.top) <= 1, "Rail/topbar alignment");
+      assert.ok(result.lower.top <= capture.viewport.height + 120, "Lower panels pushed too far below viewport");
+      assert.ok(result.footer.top - result.main.bottom <= 32, "Blank row before footer");
+    }
+    checks.push(capture.file + ": geometry, brand, controls, logo colors");
+    await modalCheck(page, "#settings-button", "#settings-panel", "#settings-display-name");
+    await modalCheck(page, "#notification-button", "#notification-panel", "#notification-close-button");
+    await page.locator("#language-quick-toggle").click();
+    await page.waitForFunction(() => document.documentElement.lang === "en" && document.documentElement.dir === "ltr");
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), capture.viewport.width, "English overflow");
+    await page.locator("#language-quick-toggle").click();
+    await page.waitForFunction(() => document.documentElement.lang === "ar" && document.documentElement.dir === "rtl");
+    checks.push(capture.file + ": language and RTL");
+    const nav = capture.viewport.width >= 1024 ? '.desktop-trading-rail [data-nav-key="opportunities"]' : '.ios-tab-link[data-tab="signals"]';
+    await page.locator(nav).click();
+    await waitView(page, "recommendations");
+    await page.locator("#recommendations-section").waitFor({ state: "visible" });
+    await page.goBack();
+    await waitView(page, "home");
+    await waitState(page, "fresh");
+    if (capture.viewport.width >= 1024) {
+      for (const [key, view, selector] of [
+        ["markets", "markets", "#markets-section"], ["favorites", "watchlist", "#watchlist-section"],
+        ["portfolio", "portfolio", "#portfolio-section"], ["trades", "history", "#history-section"],
+        ["calendar", "calendar", "#calendar-section"]
+      ]) {
+        await page.locator('.desktop-trading-rail [data-nav-key="' + key + '"]').click();
+        await waitView(page, view);
+        await page.locator(selector).waitFor({ state: "visible" });
+        await page.goBack();
+        await waitView(page, "home");
+      }
+      checks.push(capture.file + ": markets, watchlist, portfolio, history, calendar, back navigation");
+    }
+    await page.keyboard.press("Control+k");
+    assert.equal(await page.locator("#terminal-symbol-search").evaluate(el => el === document.activeElement), true);
+    await page.locator("#terminal-symbol-search").fill("msft");
+    const popupPromise = page.waitForEvent("popup");
+    await page.locator("#terminal-symbol-search").press("Enter");
+    const popup = await popupPromise;
+    await popup.waitForURL(/detail\.html\?symbol=MSFT/);
+    await popup.close();
+    checks.push(capture.file + ": search opens normalized symbol");
     await context.close();
   }
+
+  activeCase = "missing optional provider fields";
+  const { page, context, state } = await openPage({ width: 1440, height: 900 }, "missing");
+  await waitState(page, "fresh");
+  assert.match(await page.locator("#v3-pulse-updated").innerText(), /--/);
+  checks.push(activeCase);
+  state.mode = "empty";
+  await page.locator("#refresh-button").click();
+  await waitState(page, "empty");
+  assert.equal(await page.locator(".v3-opportunity-card").count(), 0);
+  await page.locator("#v3-opportunity-grid .v3-panel-state").waitFor({ state: "visible" });
+  checks.push("Empty data clears old cards without crashing");
+  state.mode = "unavailable";
+  await page.locator("#refresh-button").click();
+  await waitState(page, "unavailable");
+  await page.locator("[data-home-retry]").waitFor({ state: "visible" });
+  checks.push("Provider unavailable has retry and no fabricated values");
+  state.mode = "fresh";
+  const before = state.requests;
+  await page.locator("[data-home-retry]").click();
+  await waitState(page, "fresh");
+  assert.ok(state.requests > before);
+  checks.push("Retry recovers through actual API request");
+  state.mode = "unavailable";
+  await page.locator("#refresh-button").click();
+  await waitState(page, "stale");
+  assert.equal(await page.locator("#connection-status").getAttribute("data-connection-state"), "stale");
+  assert.equal(await page.locator(".v3-opportunity-card").count(), 3);
+  checks.push("Network failure retains data and marks it stale");
+  await context.close();
+
+  activeCase = "controls while provider is loading";
+  const loading = await openPage({ width: 390, height: 844 }, "loading");
+  await waitState(loading.page, "loading");
+  await modalCheck(loading.page, "#settings-button", "#settings-panel", "#settings-display-name");
+  await waitState(loading.page, "fresh");
+  await loading.context.close();
+  assert.deepEqual(consoleErrors, [], consoleErrors.join("\n"));
+  console.log(JSON.stringify({ checks, measurements }, null, 2));
+} catch (error) {
+  console.error("Home verification failed:", activeCase, error);
+  console.error("Browser errors:", consoleErrors);
+  if (activePage && !activePage.isClosed()) {
+    await activePage.screenshot({ path: path.join(outputDirectory, "home-v3-failure.png"), fullPage: false });
+    const diagnostic = await activePage.evaluate(() => ({
+      view: document.body.dataset.appView,
+      state: document.querySelector("#terminal-home-v3")?.dataset.uiState,
+      text: document.body.innerText.slice(0, 2500)
+    }));
+    console.error(JSON.stringify(diagnostic));
+  }
+  throw error;
 } finally {
+  await writeFile(path.join(outputDirectory, "home-v3-final-corrected-manifest.json"), JSON.stringify({ captureMode: "viewport", fullPage: false, captures, checks, measurements, consoleErrors }, null, 2) + "\n");
   await browser.close();
 }
-
-assert.deepEqual(consoleErrors, [], consoleErrors.join("\n"));
-await writeFile(path.join(outputDirectory, "home-v3-final-corrected-manifest.json"), `${JSON.stringify({ captureMode: "viewport", fullPage: false, captures, measurements }, null, 2)}\n`);
-console.log(JSON.stringify(measurements, null, 2));

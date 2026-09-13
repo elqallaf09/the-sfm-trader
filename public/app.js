@@ -1470,6 +1470,7 @@ async function init() {
   initLiveFloor();
   initAppNavigation();
   setHomeDashboardState("loading");
+  refreshButton?.addEventListener("click", () => loadRecommendations({ force: true, skipGrace: true }));
   watchlist = normalizeWatchlist(watchlist);
   voiceMonitors = normalizeWatchlist(voiceMonitors);
   saveStored("the-sfm-trader-watchlist", watchlist);
@@ -1481,7 +1482,7 @@ async function init() {
   renderWatchlist();
   loadWatchlistData(true);
   renderPortfolio();
-  await Promise.all([loadSharedTradeState(), loadNotificationLog()]);
+  const sharedStateReady = Promise.all([loadSharedTradeState(), loadNotificationLog()]);
   renderNotificationCenter();
   renderHistory();
   renderVoiceMonitor();
@@ -1494,7 +1495,12 @@ async function init() {
     renderMarketTabs(lastMarkets);
     setConnectionStatus("offline", localizeUiText("تعذر تحديث الأسواق - وضع عدم الاتصال"));
   }
-  await loadRecommendations({ force: true });
+  await loadRecommendations();
+  sharedStateReady.then(() => {
+    renderNotificationCenter();
+    renderHistory();
+    if (lastData) renderTerminalHomeV3(lastData);
+  });
   createVisibilityAwarePoller([
     {
       name: "recommendations",
@@ -1513,7 +1519,6 @@ async function init() {
       run: () => loadSharedTradeState({ poll: true })
     }
   ]).start();
-  refreshButton.addEventListener("click", () => loadRecommendations({ force: true }));
   scalpForm?.addEventListener("submit", handleScalpSubmit);
   searchInput.addEventListener("input", () => renderRecommendations(lastData));
   sortSelect.addEventListener("change", () => renderRecommendations(lastData));
@@ -1680,6 +1685,7 @@ function getAppViewFromNavigationLink(link) {
   const v3View = link.dataset.v3View;
   if (v3View && APP_VIEW_GROUPS[v3View]) return v3View;
   const navKey = link.dataset.navKey;
+  if (navKey === "opportunities") return "recommendations";
   if (navKey === "favorites") return "watchlist";
   if (navKey === "portfolio") return "portfolio";
   if (navKey === "trades") return "history";
@@ -1697,7 +1703,8 @@ function getAppViewFromNavigationLink(link) {
 
 function getAppViewFromHash(hash) {
   const value = String(hash || "");
-  if (value.includes("notification-panel")) return "alerts";
+  if (value.includes("notification-panel") || value === "#view-alerts") return "alerts";
+  if (value.includes("home-heatmap-section")) return "recommendations";
   if (value.includes("education-section") || value.includes("view-education")) return "education";
   if (value.includes("calendar-section") || value.includes("view-calendar")) return "calendar";
   if (value.includes("economic-news-section") || value.includes("view-news")) return "news";
@@ -1735,7 +1742,10 @@ function showAppView(view, options = {}) {
 
   document.querySelectorAll(".rail-link, .ios-tab-link").forEach((link) => {
     const linkView = getAppViewFromNavigationLink(link);
-    link.classList.toggle("active", linkView === nextView || (nextView === "alerts" && linkView === "alerts"));
+    const selected = linkView === nextView;
+    link.classList.toggle("active", selected);
+    if (selected) link.setAttribute("aria-current", "page");
+    else link.removeAttribute("aria-current");
   });
 
   if (nextView === "alerts") {
@@ -2065,7 +2075,9 @@ function handleModalKeydown(event, panel, close) {
   }
   if (event.key !== "Tab") return;
   const focusable = Array.from(panel.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"))
-    .filter((element) => !element.hidden && !element.hasAttribute("disabled") && element.getAttribute("aria-hidden") !== "true");
+    .filter((element) => element.tabIndex >= 0 && element.getClientRects().length > 0
+      && !element.closest("[hidden], [inert]") && !element.hasAttribute("disabled")
+      && getComputedStyle(element).visibility !== "hidden" && element.getAttribute("aria-hidden") !== "true");
   if (!focusable.length) {
     event.preventDefault();
     panel.focus();
@@ -2857,6 +2869,11 @@ async function loadRecommendations(options = {}) {
     });
 
     if (requestId !== recommendationRequestId) return;
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      throw new Error("وصل رد غير مفهوم من السيرفر. حدث الصفحة وحاول مرة ثانية.");
+    }
+    data.recommendations = getDashboardRecommendations(data);
+    data.market = data.market && typeof data.market === "object" ? data.market : {};
 
     lastData = data;
     recommendationResponseCache.set(endpoint, data);
@@ -2871,7 +2888,7 @@ async function loadRecommendations(options = {}) {
     setConnectionStatus(lastData?.recommendations?.length ? "stale" : "offline", localizeUiText(lastData?.recommendations?.length ? "اتصال متقطع - آخر بيانات محفوظة" : "تعذر الاتصال"));
 
     if (lastData?.recommendations?.length) {
-      renderRecommendations(lastData);
+      renderRecommendations({ ...lastData, cached: true, stale: true });
     } else {
       setUiState(cards, {
         kind: "error",
@@ -2948,19 +2965,19 @@ function renderRecommendations(data) {
   const sells = all.filter((item) => item.action === "sell");
   const avg = all.length ? Math.round(all.reduce((sum, item) => sum + Number(item.confidence || 0), 0) / all.length) : 0;
 
-  marketTitle.textContent = localizeUiText(data.market.label);
-  marketNote.textContent = localizeUiText(data.market.note);
+  marketTitle.textContent = localizeUiText(data.market?.label || "السوق");
+  marketNote.textContent = localizeUiText(data.market?.note || "");
   updatedAt.textContent = formatDateTime(data.generatedAt);
-  opportunityCount.textContent = `${all.length} / ${data.market.totalSymbols}`;
+  opportunityCount.textContent = `${all.length} / ${data.market?.totalSymbols ?? "--"}`;
   buyCount.textContent = buys.length;
   sellCount.textContent = sells.length;
   avgConfidence.textContent = all.length ? `${avg}%` : "--";
   updateAiTradingAgentSummary(data, all, buys, sells, avg);
   const providerLabel = data.dataProvider?.active || all[0]?.dataProvider || "--";
   dataProvider.textContent = data.partial || Number(data.pendingCount || 0) > 0
-    ? `${providerLabel} · ${formatNumber(data.analyzedCount || all.length)}/${formatNumber(data.market.totalSymbols || all.length)}`
+    ? `${providerLabel} · ${formatNumber(data.analyzedCount || all.length)}/${formatNumber(data.market?.totalSymbols || all.length)}`
     : providerLabel;
-  disclaimer.textContent = localizeUiText(data.disclaimer);
+  disclaimer.textContent = localizeUiText(data.disclaimer || "");
   marketPulse.textContent = localizeUiText(getMarketPulse(all));
 
   setInsight(bestBuy, getTopItem(buys, "confidence"), "لا توجد إشارة شراء");
@@ -3050,7 +3067,7 @@ function renderRecommendations(data) {
 
     const reasons = card.querySelector(".reasons");
     reasons.innerHTML = "";
-    for (const reason of item.reasons) {
+    for (const reason of Array.isArray(item.reasons) ? item.reasons : []) {
       const li = document.createElement("li");
       li.textContent = reason;
       reasons.appendChild(li);
@@ -3064,16 +3081,9 @@ function renderRecommendations(data) {
 
   attachDetailOpeners(cards);
 
-  if (data.unavailable?.length || !all.length) {
-    unavailable.innerHTML = `<strong>رموز لم تتوفر بياناتها:</strong> ${data.unavailable
-      .map((item) => `${escapeHtml(item.name)} (${escapeHtml(item.symbol)})`)
-      .join("، ")}`;
-  } else {
-    unavailable.innerHTML = "";
-  }
-  if (data.unavailable?.length || !all.length) {
-    unavailable.innerHTML = renderProviderUnavailableDetails(data);
-  }
+  unavailable.innerHTML = data.unavailable?.length || !all.length
+    ? renderProviderUnavailableDetails(data)
+    : "";
 }
 
 function formatDataFreshness(provenance = {}) {
@@ -3800,8 +3810,10 @@ function renderAssetIcon(kind, label) {
   if (kind === "microsoft") {
     return `
       <svg class="asset-logo-svg asset-logo-svg-microsoft" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M4 4h7.3v7.3H4Z"></path><path d="M12.7 4H20v7.3h-7.3Z"></path>
-        <path d="M4 12.7h7.3V20H4Z"></path><path d="M12.7 12.7H20V20h-7.3Z"></path>
+        <rect x="2" y="2" width="9" height="9" fill="#f25022"></rect>
+        <rect x="13" y="2" width="9" height="9" fill="#7fba00"></rect>
+        <rect x="2" y="13" width="9" height="9" fill="#00a4ef"></rect>
+        <rect x="13" y="13" width="9" height="9" fill="#ffb900"></rect>
       </svg>
     `;
   }
@@ -3984,7 +3996,18 @@ function setTerminalHomeV3State(kind = "loading") {
   ];
   for (const [selector, panelMessage] of panels) {
     const panel = root.querySelector(selector);
-    if (panel) panel.innerHTML = stateMarkup(panelMessage);
+    if (panel) {
+      panel.innerHTML = stateMarkup(panelMessage);
+      if (unavailable && selector === "#v3-opportunity-grid") {
+        const retry = document.createElement("button");
+        retry.type = "button";
+        retry.className = "v3-empty-action";
+        retry.dataset.homeRetry = "true";
+        retry.textContent = localizeUiText("إعادة المحاولة");
+        retry.addEventListener("click", () => loadRecommendations({ force: true, skipGrace: true }));
+        panel.querySelector(".v3-panel-state")?.append(retry);
+      }
+    }
   }
 }
 
@@ -4099,11 +4122,6 @@ function renderTerminalHomeV3(data = {}) {
       ? events.map(renderV3CalendarEvent).join("")
       : renderV3EmptyState(calendar.summary || "لا توجد أحداث اقتصادية موثقة قريبة.");
   }
-}
-
-if (["127.0.0.1", "localhost"].includes(window.location.hostname)
-  && new URLSearchParams(window.location.search).has("visual-test")) {
-  window.__SFM_RENDER_HOME_V3__ = renderTerminalHomeV3;
 }
 
 function renderV3Opportunity(item) {
@@ -6281,7 +6299,10 @@ function renderMiniSignalCard(item) {
 }
 
 function attachDetailOpeners(root) {
+  if (!root) return;
   for (const card of root.querySelectorAll("[data-symbol]")) {
+    if (card.dataset.detailBound === "true") continue;
+    card.dataset.detailBound = "true";
     card.addEventListener("click", (event) => {
       if (event.target.closest("button, a, input, select, textarea")) return;
       openDetailPage(card.dataset.symbol);
@@ -7737,6 +7758,9 @@ function formatPercent(value) {
 }
 
 function formatDateTime(value) {
+  if (value === null || value === undefined || value === "") return "--";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "--";
   return normalizeDigits(new Intl.DateTimeFormat(NUMBER_LOCALE, {
     numberingSystem: "latn",
     hour: "2-digit",
@@ -7744,7 +7768,7 @@ function formatDateTime(value) {
     second: "2-digit",
     day: "2-digit",
     month: "2-digit"
-  }).format(new Date(value)));
+  }).format(date));
 }
 
 function normalizeDateString(value) {

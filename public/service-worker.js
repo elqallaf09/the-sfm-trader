@@ -1,14 +1,14 @@
-const CACHE_NAME = "the-sfm-trader-v20260902-home-v3-final-density-1";
+const CACHE_NAME = "the-sfm-trader-v20260913-home-v3-functional-1";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/detail.html",
-  "/styles.css?v=20260801-hardening-2",
+  "/styles.css?v=20260913-home-v3-functional-1",
   "/desktop-balance.css?v=20260801-hardening-2",
   "/cinema.css?v=20260804-home-v3-layout-fix-1",
   "/layout-stability.css?v=20260804-home-v3-layout-fix-1",
-  "/dashboard-v2.css?v=20260902-home-v3-final-density-1",
-  "/app.js?v=20260902-home-v3-final-density-1",
+  "/dashboard-v2.css?v=20260913-home-v3-functional-1",
+  "/app.js?v=20260913-home-v3-functional-1",
   "/detail.js?v=20260802-homepage-resilience",
   "/modules/apiClient.js",
   "/modules/polling.js",

@@ -16,10 +16,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/desktop-balance.css?v=20260801-hardening-2" />
-    <link rel="stylesheet" href="/styles.css?v=20260801-hardening-2" />
+    <link rel="stylesheet" href="/styles.css?v=20260913-home-v3-functional-1" />
     <link rel="stylesheet" href="/cinema.css?v=20260804-home-v3-layout-fix-1" />
     <link rel="stylesheet" href="/layout-stability.css?v=20260804-home-v3-layout-fix-1" />
-    <link rel="stylesheet" href="/dashboard-v2.css?v=20260902-home-v3-final-density-1" />
+    <link rel="stylesheet" href="/dashboard-v2.css?v=20260913-home-v3-functional-1" />
   </head>
   <body class="notranslate" data-app-view="home" translate="no">
     <a class="skip-link" href="#main-content">تجاوز إلى المحتوى الرئيسي</a>
@@ -50,11 +50,13 @@
             <span id="connection-status" role="status" aria-live="polite" data-connection-state="updating">جاري الاتصال</span>
           </div>
           <button id="language-quick-toggle" class="language-quick-toggle" type="button" aria-label="تبديل اللغة" title="تبديل اللغة">AR</button>
-          <button id="notification-button" class="notification-button" type="button" aria-expanded="false" aria-controls="notification-panel">
+          <button id="notification-button" class="notification-button" type="button" aria-label="الإشعارات" aria-expanded="false" aria-controls="notification-panel">
+            <svg class="utility-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0v5l2 3H4l2-3V9M10 21h4"></path></svg>
             <span>الإشعارات</span>
             <strong id="notification-count">0</strong>
           </button>
-          <button id="settings-button" class="settings-button" type="button" aria-expanded="false" aria-controls="settings-panel">
+          <button id="settings-button" class="settings-button" type="button" aria-label="الإعدادات" aria-expanded="false" aria-controls="settings-panel">
+            <svg class="utility-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16"></path><circle cx="9" cy="7" r="3"></circle><circle cx="15" cy="17" r="3"></circle></svg>
             <span>الإعدادات</span>
           </button>
           <button id="refresh-button" class="icon-button" title="تحديث الآن" aria-label="تحديث الآن">↻</button>
@@ -152,7 +154,7 @@
           </span>
           <b>سجل الصفقات</b>
         </a>
-        <a href="#home-heatmap-section" class="rail-link" data-nav-key="opportunities" aria-label="الفرص">
+        <a href="#view-recommendations" class="rail-link" data-nav-key="opportunities" aria-label="الفرص">
           <span class="rail-icon rail-opportunities" aria-hidden="true">
             <svg class="rail-lucide-icon" viewBox="0 0 24 24">
               <path d="M12 2v4"></path>
@@ -1404,6 +1406,6 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260902-home-v3-final-density-1" type="module"></script>
+    <script src="/app.js?v=20260913-home-v3-functional-1" type="module"></script>
   </body>
 </html>
