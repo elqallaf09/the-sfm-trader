@@ -24,8 +24,8 @@ test("Home V3 is the final authoritative presentation layer", async () => {
   assert.ok(v3Index > styles.findIndex((value) => value.includes("layout-stability.css")));
   assert.equal(v3Index, styles.length - 1);
   assert.match(css, /Authoritative SFM Trader Home V3 presentation layer/);
-  assert.match(css, /--v3-page: #06111f/);
-  assert.match(css, /--v3-teal: #2fd6c0/);
+  assert.match(css, /--v3-page: var\(--ui-page\)/);
+  assert.match(css, /--v3-teal: var\(--ui-accent\)/);
   assert.match(css, /grid-template-areas:\s*"topbar rail"/);
   assert.match(css, /--stable-rail: 112px/);
   assert.match(css, /width: calc\(100% - 32px\) !important/);
@@ -153,7 +153,7 @@ test("offline shell versions stay aligned with the Home V3 entry files", async (
   assert.ok(homeScript);
   assert.ok(worker.includes(`"${homeScript}"`));
   for (const stylesheet of homeStylesheets) assert.ok(worker.includes(`"${stylesheet}"`));
-  assert.match(worker, /the-sfm-trader-v20260914-analysis-clarity-1/);
+  assert.match(worker, /the-sfm-trader-v20260914-palette-1/);
 });
 
 test("Home V3 visual evidence is captured as exact viewport screenshots", async () => {

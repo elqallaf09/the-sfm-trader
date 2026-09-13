@@ -1,0 +1,27 @@
+/* Shared dark palette. Status colors describe market meaning; analysis values stay neutral. */
+:root {
+  color-scheme: dark;
+  --ui-page: #06111f;
+  --ui-surface: #0a1a2d;
+  --ui-raised: #0f2238;
+  --ui-inset: #081625;
+  --ui-border: #284159;
+  --ui-border-strong: #3d607c;
+  --ui-text: #e8eef6;
+  --ui-muted: #afc2d6;
+  --ui-accent: #2fd6c0;
+  --ui-accent-soft: #103438;
+  --ui-accent-border: #28766f;
+  --ui-positive: #76dbac;
+  --ui-positive-soft: #123128;
+  --ui-positive-border: #326750;
+  --ui-negative: #ff9aa5;
+  --ui-negative-soft: #34202b;
+  --ui-negative-border: #794452;
+  --ui-warning: #e6c477;
+  --ui-warning-soft: #302a1d;
+  --ui-warning-border: #705f36;
+  --ui-neutral: #afc2d6;
+  --ui-neutral-soft: #132538;
+  --ui-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+}
