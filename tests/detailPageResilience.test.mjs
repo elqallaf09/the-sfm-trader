@@ -4,7 +4,7 @@ import test from "node:test";
 
 test("detail page reuses the lifecycle-safe market background", async () => {
   const source = await readFile(new URL("../public/detail.js", import.meta.url), "utf8");
-  assert.match(source, /import \{ initMarketBackground \} from "\.\/modules\/marketBackground\.js"/);
+  assert.match(source, /import \{ initMarketBackground \} from "\.\/modules\/marketBackground\.js(?:\?v=[^"]+)?"/);
   assert.doesNotMatch(source, /function initMarketBackground\(/);
 });
 

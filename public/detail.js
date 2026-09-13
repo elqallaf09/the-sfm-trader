@@ -1,9 +1,9 @@
-import { getAnalysisMetrics } from "./modules/analysisMetrics.js";
-import { navigateBackFromDetail, safeHomeUrl } from "./modules/detailNavigation.js";
-import { API_TOKEN_STORAGE_KEY } from "./modules/apiClient.js";
-import { setUiState } from "./modules/uiState.js";
-import "./modules/webVitals.js";
-import { initMarketBackground } from "./modules/marketBackground.js";
+import { getAnalysisMetrics } from "./modules/analysisMetrics.js?v=20260914-audit-repair-1";
+import { navigateBackFromDetail, safeHomeUrl } from "./modules/detailNavigation.js?v=20260914-audit-repair-1";
+import { API_TOKEN_STORAGE_KEY } from "./modules/apiClient.js?v=20260914-audit-repair-1";
+import { setUiState } from "./modules/uiState.js?v=20260914-audit-repair-1";
+import "./modules/webVitals.js?v=20260914-audit-repair-1";
+import { initMarketBackground } from "./modules/marketBackground.js?v=20260914-audit-repair-1";
 
 const params = new URLSearchParams(window.location.search);
 const symbol = normalizeDetailSymbol(params.get("symbol"));
@@ -681,23 +681,17 @@ async function loadDetail() {
     return;
   }
 
+  detailRequestController?.abort();
+  const controller = new AbortController();
+  detailRequestController = controller;
+  const timeout = window.setTimeout(() => controller.abort(), 15_000);
   try {
-    detailRequestController?.abort();
-    const controller = new AbortController();
-    detailRequestController = controller;
-    const timeout = window.setTimeout(() => controller.abort(), 15_000);
     elements.status.textContent = detailText("جاري تحليل السهم", "Analyzing the stock");
     applyDetailLanguage();
-    let response;
-    try {
-      response = await fetch(`/api/asset?symbol=${encodeURIComponent(symbol)}`, {
-        cache: "no-store",
-        signal: controller.signal
-      });
-    } finally {
-      window.clearTimeout(timeout);
-      if (detailRequestController === controller) detailRequestController = null;
-    }
+    const response = await fetch(`/api/asset?symbol=${encodeURIComponent(symbol)}`, {
+      cache: "no-store",
+      signal: controller.signal
+    });
     const contentType = String(response.headers.get("content-type") || "");
     if (!contentType.toLowerCase().includes("application/json")) {
       throw new Error(detailText("استجابة الخادم غير صالحة.", "The server returned an invalid response."));
@@ -708,14 +702,19 @@ async function loadDetail() {
       throw new Error(localizeDetailText(data.error || detailText("تعذر تحميل تفاصيل السهم", "Could not load stock details")));
     }
 
+    if (detailRequestController !== controller) return;
     renderDetail(data);
     elements.status.textContent = data.cached ? detailText("بيانات مخزنة لحظياً", "Live cached data") : detailText("تحليل جديد", "Fresh analysis");
     applyDetailLanguage();
   } catch (error) {
+    if (detailRequestController !== controller) return;
     const message = error?.name === "AbortError"
       ? detailText("انتهت مهلة تحميل التحليل. حاول مرة أخرى.", "Analysis loading timed out. Please try again.")
       : error.message;
     showError(message);
+  } finally {
+    window.clearTimeout(timeout);
+    if (detailRequestController === controller) detailRequestController = null;
   }
 }
 

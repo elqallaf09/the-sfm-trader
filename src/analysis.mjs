@@ -1,3 +1,4 @@
+import "./loadEnv.mjs";
 import { fetchChart } from "./dataProviders.mjs";
 import { buildMarketDataProvenance } from "./marketDataProvenance.mjs";
 

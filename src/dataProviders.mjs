@@ -1,3 +1,4 @@
+import "./loadEnv.mjs";
 import { createBoundedCache } from "./boundedCache.mjs";
 
 const YAHOO_CHART_BASES = [
@@ -429,25 +430,33 @@ async function loadJson(url) {
     throw new Error(`تعذر جلب البيانات: ${response?.status ?? "لا استجابة"}`);
   }
 
-  const data = await response.json();
+  const data = response.data;
   responseCache.set(url, { createdAt: Date.now(), data });
   return data;
 }
 
-function fetchWithTimeout(url) {
+async function fetchWithTimeout(url) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROVIDER_REQUEST_TIMEOUT_MS);
-
-  return fetch(url, {
-    signal: controller.signal,
-    headers: {
-      accept: "application/json",
-      "accept-language": "en-US,en;q=0.9,ar;q=0.8",
-      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        accept: "application/json",
+        "accept-language": "en-US,en;q=0.9,ar;q=0.8",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+      }
+    });
+    // The request slot and deadline cover the body, not just the response headers.
+    if (!response.ok) {
+      await response.body?.cancel();
+      return { ok: false, status: response.status, headers: response.headers };
     }
-  }).finally(() => {
+    const data = await response.json();
+    return { ok: true, status: response.status, headers: response.headers, data };
+  } finally {
     clearTimeout(timer);
-  });
+  }
 }
 
 function scheduleProviderRequest(task) {

@@ -1,4 +1,4 @@
-import { renderAssetLogo } from "./assetBranding.js";
+import { renderAssetLogo } from "./assetBranding.js?v=20260914-audit-repair-1";
 
 export function normalizeSearchText(value) {
   return String(value || "").normalize("NFKD").toLowerCase()

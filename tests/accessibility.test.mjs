@@ -13,6 +13,7 @@ for (const page of ["index.html", "detail.html", "privacy.html", "terms.html", "
     dom.window.eval(axe.source);
     const results = await dom.window.axe.run(dom.window.document, {
       runOnly: { type: "tag", values: ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"] },
+      // JSDOM has no layout engine; real rendered contrast is required by capture-home-v3.mjs.
       rules: { "color-contrast": { enabled: false } }
     });
     const serious = results.violations.filter((violation) => ["critical", "serious"].includes(violation.impact));

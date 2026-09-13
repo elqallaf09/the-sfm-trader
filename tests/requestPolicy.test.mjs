@@ -83,3 +83,14 @@ test("request policy does not wait to retry after the caller aborts", async () =
   await assert.rejects(pending);
   assert.equal(requests, 1);
 });
+
+test("state response timeout includes reading the response body", async () => {
+  await assert.rejects(fetchResponseWithPolicy("/api/state", {
+    timeoutMs: 15,
+    fetchRef: async (_url, { signal }) => new Response(new ReadableStream({
+      start(controller) {
+        signal.addEventListener("abort", () => controller.error(signal.reason), { once: true });
+      }
+    }))
+  }), /انتهت مهلة الاتصال/);
+});

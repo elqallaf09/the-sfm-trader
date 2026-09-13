@@ -35,6 +35,9 @@ export function createPostgresStateStore(options = {}) {
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        // A row lock cannot protect the first write because no row exists yet.
+        // Serialize the scope before both the idempotency lookup and version check.
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))", [userId, namespace]);
         if (idempotencyKey) {
           await client.query(
             "DELETE FROM sfm_idempotency_keys WHERE user_id=$1 AND namespace=$2 AND expires_at <= now()",

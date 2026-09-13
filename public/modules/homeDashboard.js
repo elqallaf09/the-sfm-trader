@@ -1,6 +1,7 @@
-import { escapeHtml, safeHttpUrl } from "./html.js";
-import { getAnalysisMetrics } from "./analysisMetrics.js";
-import { renderAssetLogo, getOfficialCompanyName } from "./assetBranding.js";
+import { toNullableNumber } from "./numberValue.js?v=20260914-audit-repair-1";
+import { escapeHtml, safeHttpUrl } from "./html.js?v=20260914-audit-repair-1";
+import { getAnalysisMetrics } from "./analysisMetrics.js?v=20260914-audit-repair-1";
+import { renderAssetLogo, getOfficialCompanyName } from "./assetBranding.js?v=20260914-audit-repair-1";
 
 export function getDashboardRecommendations(data = {}) {
   const source = Array.isArray(data?.recommendations) ? data.recommendations : [];
@@ -222,8 +223,8 @@ function renderV3PulseChart(items) {
 }
 
 function renderV3FollowedTrade(entry) {
-  const entryPrice = Number(entry.entryPrice ?? entry.currentPrice);
-  const target = Number(entry.target1 ?? entry.expectedPrice);
+  const entryPrice = toNullableNumber(entry.entryPrice ?? entry.currentPrice);
+  const target = toNullableNumber(entry.target1 ?? entry.expectedPrice);
   const status = entry.outcome === "target" ? "وصل الهدف" : entry.outcome === "stop" ? "صفقة خاسرة" : "قيد المتابعة";
   return `<article class="v3-follow-row" data-symbol="${escapeHtml(entry.symbol)}" tabindex="0" role="link">${renderAssetLogo(entry, { className: "v3-follow-logo" })}<strong>${escapeHtml(entry.symbol)}</strong><span class="v3-follow-action">${escapeHtml(localizeUiText(entry.actionLabel || entry.action || "انتظار"))}</span><span class="v3-follow-price"><small>${escapeHtml(localizeUiText("الدخول"))}</small><b>${Number.isFinite(entryPrice) ? formatMoney(entryPrice, entry.currency || "USD") : "--"}</b></span><span class="v3-follow-price"><small>${escapeHtml(localizeUiText("الهدف"))}</small><b>${Number.isFinite(target) ? formatMoney(target, entry.currency || "USD") : "--"}</b></span><em class="is-${escapeHtml(entry.outcome || "pending")}">${escapeHtml(localizeUiText(status))}</em></article>`;
 }

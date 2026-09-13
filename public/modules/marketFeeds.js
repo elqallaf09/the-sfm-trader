@@ -1,4 +1,4 @@
-import { escapeHtml, safeHttpUrl } from "./html.js";
+import { escapeHtml, safeHttpUrl } from "./html.js?v=20260914-audit-repair-1";
 
 export function createMarketFeeds({ request, getMarket, onChange, now = Date.now }) {
   let activeRequest = null;
@@ -6,13 +6,14 @@ export function createMarketFeeds({ request, getMarket, onChange, now = Date.now
   let calendarMarket = "";
   let news = { dataState: "loading", articles: [] };
   let loadedAt = 0;
+  let refreshAfterMs = 5 * 60_000;
   let generation = 0;
   const snapshot = () => ({ calendar: calendarMarket === getMarket() ? calendar : { dataState: "loading" }, news });
 
   function load({ force = false } = {}) {
     const market = getMarket();
     if (activeRequest?.market === market) return activeRequest.promise;
-    if (!force && calendarMarket === market && loadedAt && now() - loadedAt < 5 * 60_000) return Promise.resolve(snapshot());
+    if (!force && calendarMarket === market && loadedAt && now() - loadedAt < refreshAfterMs) return Promise.resolve(snapshot());
     const id = ++generation;
     if (calendarMarket !== market) {
       calendar = { dataState: "loading" };
@@ -27,7 +28,11 @@ export function createMarketFeeds({ request, getMarket, onChange, now = Date.now
       .then(value => { if (current()) { news = value; onChange(snapshot()); } })
       .catch(() => { if (current()) { news = { ...news, dataState: news.articles?.length ? "stale" : "unavailable" }; onChange(snapshot()); } });
     const promise = Promise.allSettled([calendarTask, newsTask]).then(() => {
-      if (current()) loadedAt = now();
+      if (current()) {
+        loadedAt = now();
+        const healthy = value => ["fresh", "empty"].includes(value?.dataState) && !value.partial;
+        refreshAfterMs = healthy(calendar) && healthy(news) ? 5 * 60_000 : 30_000;
+      }
       return snapshot();
     }).finally(() => { if (id === generation) activeRequest = null; });
     activeRequest = { market, promise };

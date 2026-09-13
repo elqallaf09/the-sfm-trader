@@ -3,8 +3,7 @@
    Colors reference color-tokens.css; Home layout lives in dashboard-v2.css
    ============================================================ */
 
-/* ── 0. Google Font: Cairo (Arabic) + JetBrains Mono (numbers) ─ */
-@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+/* Fonts are loaded once by the page head, avoiding a blocking CSS @import. */
 
 /* ── 1. Root upgrades ─────────────────────────────────────── */
 :root {
@@ -35,7 +34,7 @@ html, body {
   html, body {
     background-attachment: scroll !important;
     background-position: center top !important;
-  
+
   background: var(--ui-page) !important;
 }
 }
