@@ -1,3 +1,4 @@
+import "./loadEnv.mjs";
 const FOREX_FACTORY_CALENDAR_URL = process.env.FOREX_FACTORY_CALENDAR_URL || "https://nfs.faireconomy.media/ff_calendar_thisweek.json";
 const ECONOMIC_CALENDAR_TZ = process.env.ECONOMIC_CALENDAR_TZ || "America/New_York";
 const ECONOMIC_CALENDAR_CACHE_TTL_MS = positiveInteger(process.env.ECONOMIC_CALENDAR_CACHE_TTL_MS, 15 * 60_000);

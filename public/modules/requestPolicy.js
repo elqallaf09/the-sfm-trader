@@ -1,5 +1,5 @@
 const DEFAULT_TIMEOUT_MS = 15_000;
-const DEFAULT_MAX_RETRY_DELAY_MS = 5_000;
+const DEFAULT_MAX_RETRY_DELAY_MS = 60_000;
 
 export function parseRetryAfterMs(value, now = Date.now(), maximumMs = DEFAULT_MAX_RETRY_DELAY_MS) {
   const text = String(value || "").trim();
@@ -36,7 +36,10 @@ export async function fetchResponseWithPolicy(url, options = {}) {
       if (!response.ok && !acceptedStatuses.has(response.status)) {
         throw createRequestError(`Request failed (${response.status})`, response.status, isRetryableStatus(response.status));
       }
-      return response;
+      // State consumers read JSON after this function returns. Buffer under the
+      // same deadline so a stalled body cannot escape the request timeout.
+      const body = response.body === null ? null : await response.arrayBuffer();
+      return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
     } catch (error) {
       if (options.signal?.aborted) throw error;
       lastError = controller.signal.aborted

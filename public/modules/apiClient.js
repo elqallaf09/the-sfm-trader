@@ -1,7 +1,25 @@
 export const API_TOKEN_STORAGE_KEY = "the-sfm-trader-api-token";
 
 // Tokens are intentionally session-scoped. Remove any value left by older builds.
-window.localStorage.removeItem(API_TOKEN_STORAGE_KEY);
+try { window.localStorage.removeItem(API_TOKEN_STORAGE_KEY); } catch {}
+let volatileToken = "";
+let tokenWasSet = false;
+
+export function getApiToken() {
+  if (tokenWasSet) return volatileToken;
+  try { return window.sessionStorage.getItem(API_TOKEN_STORAGE_KEY) || volatileToken; }
+  catch { return volatileToken; }
+}
+
+export function setApiToken(value) {
+  volatileToken = String(value || "").trim();
+  tokenWasSet = true;
+  try {
+    if (volatileToken) window.sessionStorage.setItem(API_TOKEN_STORAGE_KEY, volatileToken);
+    else window.sessionStorage.removeItem(API_TOKEN_STORAGE_KEY);
+  } catch {}
+}
+
 
 if (!window.__sfmApiClientInstalled) {
   const nativeFetch = window.fetch.bind(window);
@@ -10,7 +28,7 @@ if (!window.__sfmApiClientInstalled) {
     const sameOriginApi = url.startsWith("/api/") || url.startsWith(`${window.location.origin}/api/`);
     if (!sameOriginApi) return nativeFetch(input, init);
 
-    const token = window.sessionStorage.getItem(API_TOKEN_STORAGE_KEY) || "";
+    const token = getApiToken();
     const headers = new Headers(init.headers || (typeof input !== "string" ? input.headers : undefined));
     if (token) headers.set("authorization", `Bearer ${token}`);
     return nativeFetch(input, { ...init, headers });

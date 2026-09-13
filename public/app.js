@@ -1,17 +1,17 @@
-import { createMarketFeeds, renderNewsFeed, renderCalendarFeed } from "./modules/marketFeeds.js";
-import { calculateFinalScore, getAnalysisMetrics } from "./modules/analysisMetrics.js";
-import { API_TOKEN_STORAGE_KEY, createIdempotencyKey, readStateVersion } from "./modules/apiClient.js";
-import { createVisibilityAwarePoller } from "./modules/polling.js";
-import { setUiState } from "./modules/uiState.js";
-import "./modules/webVitals.js";
-import { initMarketBackground } from "./modules/marketBackground.js";
-import { getAssetBaseSymbol, getAssetVisual, getPremiumAssetVisual, resolveAssetVisual, getOfficialCompanyName, renderAssetLogo, renderAssetIcon } from "./modules/assetBranding.js";
-import { saveDetailReturnContext, readDetailReturnContext, detailPageUrl } from "./modules/detailNavigation.js";
-import { createHomeDashboard, getDashboardRecommendations } from "./modules/homeDashboard.js";
-import { createInstrumentSearch } from "./modules/instrumentSearch.js";
-import { createRecommendationListRenderer } from "./modules/recommendationList.js";
-import { createBoundedMemoryCache } from "./modules/boundedMemoryCache.js";
-import { fetchJsonWithPolicy, fetchResponseWithPolicy } from "./modules/requestPolicy.js";
+import { createMarketFeeds, renderNewsFeed, renderCalendarFeed } from "./modules/marketFeeds.js?v=20260914-audit-repair-1";
+import { calculateFinalScore, getAnalysisMetrics, getRecommendationAction } from "./modules/analysisMetrics.js?v=20260914-audit-repair-1";
+import { API_TOKEN_STORAGE_KEY, getApiToken, setApiToken, createIdempotencyKey, readStateVersion } from "./modules/apiClient.js?v=20260914-audit-repair-1";
+import { createVisibilityAwarePoller } from "./modules/polling.js?v=20260914-audit-repair-1";
+import { setUiState } from "./modules/uiState.js?v=20260914-audit-repair-1";
+import "./modules/webVitals.js?v=20260914-audit-repair-1";
+import { initMarketBackground } from "./modules/marketBackground.js?v=20260914-audit-repair-1";
+import { getAssetBaseSymbol, getAssetVisual, getPremiumAssetVisual, resolveAssetVisual, getOfficialCompanyName, renderAssetLogo, renderAssetIcon } from "./modules/assetBranding.js?v=20260914-audit-repair-1";
+import { saveDetailReturnContext, readDetailReturnContext, detailPageUrl } from "./modules/detailNavigation.js?v=20260914-audit-repair-1";
+import { createHomeDashboard, getDashboardRecommendations } from "./modules/homeDashboard.js?v=20260914-audit-repair-1";
+import { createInstrumentSearch } from "./modules/instrumentSearch.js?v=20260914-audit-repair-1";
+import { createRecommendationListRenderer } from "./modules/recommendationList.js?v=20260914-audit-repair-1";
+import { createBoundedMemoryCache } from "./modules/boundedMemoryCache.js?v=20260914-audit-repair-1";
+import { fetchJsonWithPolicy, fetchResponseWithPolicy } from "./modules/requestPolicy.js?v=20260914-audit-repair-1";
 
 const marketTabs = document.querySelector("#market-tabs");
 const introOverlay = document.querySelector("#intro-overlay");
@@ -1526,7 +1526,7 @@ async function init() {
     },
     {
       name: "market-feeds",
-      intervalMs: 5 * 60_000,
+      intervalMs: 60_000,
       run: () => getMarketFeeds().load()
     },
     {
@@ -2036,8 +2036,7 @@ function initSettingsPanel() {
     });
     saveStored(APP_SETTINGS_STORAGE_KEY, appSettings);
     const apiToken = String(settingsApiToken?.value || "").trim();
-    if (apiToken) window.sessionStorage.setItem(API_TOKEN_STORAGE_KEY, apiToken);
-    else window.sessionStorage.removeItem(API_TOKEN_STORAGE_KEY);
+    setApiToken(apiToken);
     applyAppSettings();
     refreshLocalizedDynamicInterface();
     setSettingsPanelOpen(false);
@@ -2139,7 +2138,7 @@ function handleModalKeydown(event, panel, close) {
 function syncSettingsForm() {
   if (settingsLanguage) settingsLanguage.value = getAppLanguage();
   if (settingsDisplayName) settingsDisplayName.value = getUserDisplayName();
-  if (settingsApiToken) settingsApiToken.value = window.sessionStorage.getItem(API_TOKEN_STORAGE_KEY) || "";
+  if (settingsApiToken) settingsApiToken.value = getApiToken();
   syncLanguageChoices();
   updateSettingsPreview();
 }
@@ -5874,7 +5873,7 @@ function localizeTimeframeLabel(value) {
     if (asRange1) {
       return `${asRange1[1]}-${asRange1[2]} أسابيع`;
     }
-  
+
     const asRange2 = source.match(/^weeks?\s+([0-9]+)\s*[–—-]\s*([0-9]+)$/i);
   if (asRange2) {
     return `${asRange2[1]}-${asRange2[2]} أسابيع`;
@@ -8935,29 +8934,14 @@ function updateMarketOverviewBubbles(all = []) {
     return `${Math.round(number)}%`;
   }
 
-  function sfmFinalNormalizeRecommendationAction(item, changePercent, hasCoreData) {
-    if (!hasCoreData) return { key: "pending", label: sfmFinalRecommendationPendingText, className: "is-pending" };
-    const raw = String(item?.action || item?.recommendationAction || "").toLowerCase();
-    if (raw === "buy" || raw === "شراء") {
-      return { key: "buy", label: sfmFinalL("شراء", "Buy"), className: "is-buy" };
-    }
-    if (raw === "sell" || raw === "بيع") {
-      return { key: "sell", label: sfmFinalL("بيع", "Sell"), className: "is-sell" };
-    }
-    if (raw === "hold" || raw === "انتظار" || raw === "wait" || raw === "watch") {
-      return { key: "hold", label: sfmFinalL("انتظار", "Wait"), className: "is-hold" };
-    }
-    if (raw === "avoid" || raw === "مراقبة") {
-      return { key: "watch", label: sfmFinalL("مراقبة", "Watch"), className: "is-watch" };
-    }
-
-    if (Number.isFinite(changePercent)) {
-      if (changePercent > 0.5) return { key: "buy", label: sfmFinalL("شراء", "Buy"), className: "is-buy" };
-      if (changePercent < -0.5) return { key: "sell", label: sfmFinalL("بيع", "Sell"), className: "is-sell" };
-      return { key: "hold", label: sfmFinalL("انتظار", "Wait"), className: "is-hold" };
-    }
-
-    return { key: "watch", label: sfmFinalL("مراقبة", "Watch"), className: "is-watch" };
+  function sfmFinalNormalizeRecommendationAction(item, _changePercent, hasCoreData) {
+    const key = hasCoreData ? getRecommendationAction(item) : "pending";
+    const labels = {
+      buy: sfmFinalL("شراء", "Buy"), sell: sfmFinalL("بيع", "Sell"),
+      hold: sfmFinalL("انتظار", "Wait"), watch: sfmFinalL("مراقبة", "Watch"),
+      pending: sfmFinalRecommendationPendingText
+    };
+    return { key, label: labels[key], className: "is-" + key };
   }
 
   function sfmFinalNormalizeRisk(item) {
@@ -8972,11 +8956,7 @@ function updateMarketOverviewBubbles(all = []) {
       return { label: sfmFinalL("منخفض", "Low"), className: "is-low" };
     }
 
-    const score = sfmFinalSafeNumber(item?.score || item?.risk?.score || item?.riskScore);
-    if (score === null) return { label: sfmFinalRecommendationDash, className: "is-na" };
-    if (score >= 70) return { label: sfmFinalL("منخفض", "Low"), className: "is-low" };
-    if (score >= 40) return { label: sfmFinalL("متوسط", "Medium"), className: "is-medium" };
-    return { label: sfmFinalL("مرتفع", "High"), className: "is-high" };
+    return { label: sfmFinalRecommendationDash, className: "is-na" };
   }
 
   function sfmFinalNormalizeRecommendationRows(items) {

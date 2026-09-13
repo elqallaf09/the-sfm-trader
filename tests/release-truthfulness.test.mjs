@@ -10,6 +10,6 @@ test("UI does not claim an unavailable paid membership or upgrade", async () => 
 
 test("web vital telemetry forwards the session credential in production", async () => {
   const source = await readFile(new URL("../public/modules/webVitals.js", import.meta.url), "utf8");
-  assert.match(source, /API_TOKEN_STORAGE_KEY/);
+  assert.match(source, /getApiToken\(\)/);
   assert.match(source, /headers\.set\("authorization", `Bearer \$\{token\}`\)/);
 });

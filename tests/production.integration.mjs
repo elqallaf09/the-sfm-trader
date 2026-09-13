@@ -43,6 +43,15 @@ try {
   const unsafeRequestId = await fetch(`${baseUrl}/api/health`, { headers: { "x-request-id": "not safe spaces" } });
   assert.notEqual(unsafeRequestId.headers.get("x-request-id"), "not safe spaces");
 
+  for (const endpoint of ["/api/health", "/api/ready", "/api/markets"]) {
+    assert.equal((await fetch(baseUrl + endpoint, { method: "POST" })).status, 405);
+  }
+  assert.equal((await fetch(baseUrl + "/api/not-a-route")).status, 404);
+  assert.equal((await fetch(baseUrl + "/not-a-page")).status, 404);
+  const missingHead = await rawRequest(baseUrl + "/not-a-page", {}, "HEAD");
+  assert.equal(missingHead.statusCode, 404);
+  assert.equal(missingHead.bodyBytes, 0);
+
   const unauthorized = await fetch(`${baseUrl}/api/followed-trades`);
   assert.equal(unauthorized.status, 401);
 
@@ -61,10 +70,18 @@ try {
     "if-match": '"0"',
     "idempotency-key": "integration-request-0001"
   };
-  const statePayload = JSON.stringify({ followedTradeKeys: ["AAPL:buy"], followedEntries: [] });
+  const statePayload = JSON.stringify({
+    followedTradeKeys: ["AAPL:buy"],
+    followedEntries: [{ key: "AAPL:buy", symbol: "AAPL", currentPrice: null, target1: null, confidence: 0,
+      firstSeen: "2026-09-01T12:00:00Z", lastSeen: "2026-09-01T12:00:00Z" }]
+  });
   const createdState = await fetch(`${baseUrl}/api/followed-trades`, { method: "POST", headers: mutationHeaders, body: statePayload });
   assert.equal(createdState.status, 200);
   assert.equal(createdState.headers.get("x-state-version"), "1");
+  const savedEntry = (await createdState.json()).followedEntries[0];
+  assert.equal(savedEntry.currentPrice, null);
+  assert.equal(savedEntry.target1, null);
+  assert.equal(savedEntry.confidence, 0);
   const replayedState = await fetch(`${baseUrl}/api/followed-trades`, { method: "POST", headers: mutationHeaders, body: statePayload });
   assert.equal(replayedState.status, 200);
   assert.equal(replayedState.headers.get("idempotency-replayed"), "true");
@@ -74,6 +91,15 @@ try {
     body: JSON.stringify({ followedTradeKeys: ["MSFT:buy"], followedEntries: [] })
   });
   assert.equal(conflictState.status, 409);
+
+  const notificationHeaders = { ...mutationHeaders, "idempotency-key": "notification-replay-0001" };
+  const notificationBody = JSON.stringify({ notifications: [{ id: "test-notice", title: "Test", message: "Fixture", createdAt: "2026-09-01T12:00:00Z" }] });
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const result = await fetch(baseUrl + "/api/notifications", { method: "POST", headers: notificationHeaders, body: notificationBody });
+    assert.equal(result.status, 200);
+    assert.equal(result.headers.get("x-state-version"), "1");
+    if (attempt) assert.equal(result.headers.get("idempotency-replayed"), "true");
+  }
 
   const vital = await fetch(`${baseUrl}/api/telemetry/web-vitals`, {
     method: "POST",

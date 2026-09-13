@@ -1,6 +1,6 @@
 {
-  "name": "اس اف ام المحلل الذكي",
-  "short_name": "SFM Smart",
+  "name": "SFM Trader",
+  "short_name": "SFM Trader",
   "description": "تطبيق اس اف ام المحلل الذكي الخاص لتحليل ومتابعة الأسواق.",
   "lang": "ar-KW",
   "dir": "rtl",
@@ -10,7 +10,10 @@
   "orientation": "portrait",
   "background_color": "#05090d",
   "theme_color": "#05090d",
-  "categories": ["finance", "productivity"],
+  "categories": [
+    "finance",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "/the-sfm-trader-icon-256.png",

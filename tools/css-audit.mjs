@@ -1,23 +1,22 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import postcss from "postcss";
 
-const cssFiles = ["public/styles.css", "public/desktop-balance.css", "public/cinema.css"];
-const sourceFiles = ["public/index.html", "public/detail.html", "public/app.js", "public/detail.js"];
-const source = sourceFiles.map((file) => readFileSync(file, "utf8")).join("\n");
-const selectors = [];
-
-for (const file of cssFiles) {
-  const css = readFileSync(file, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
-  for (const match of css.matchAll(/(?:^|})\s*([^@}{][^{]*)\{/g)) {
-    for (const selector of match[1].split(",")) selectors.push({ file, selector: selector.trim() });
-  }
+const files = readdirSync("public", { recursive: true }).map(file => "public/" + file);
+const source = files.filter(file => /\.(?:html|js)$/.test(file)).map(file => readFileSync(file, "utf8")).join("\n");
+let rules = 0, important = 0, bytes = 0;
+const unused = new Set();
+for (const file of files.filter(file => file.endsWith(".css"))) {
+  const css = readFileSync(file, "utf8");
+  bytes += Buffer.byteLength(css);
+  const root = postcss.parse(css, { from: file });
+  root.walkRules(rule => {
+    rules++;
+    for (const match of rule.selector.matchAll(/[.#]([a-zA-Z_][\w-]*)/g)) {
+      if (!source.includes(match[1])) unused.add(match[1]);
+    }
+  });
+  root.walkDecls(declaration => { if (declaration.important) important++; });
 }
-
-const simple = selectors.flatMap(({ file, selector }) =>
-  [...selector.matchAll(/([.#])([a-zA-Z_][\w-]*)/g)].map((match) => ({ file, kind: match[1], name: match[2], selector }))
-);
-// Conservative by design: dynamic template strings still count as usage.
-const unused = simple.filter(({ name }) => !source.includes(name));
-const uniqueUnused = [...new Map(unused.map((item) => [`${item.kind}${item.name}`, item])).values()];
-
-console.log(JSON.stringify({ selectors: selectors.length, simpleTokens: simple.length, potentialUnused: uniqueUnused.length, review: uniqueUnused.slice(0, 40) }, null, 2));
-if (selectors.length === 0) process.exitCode = 1;
+console.log(JSON.stringify({ rules, important, bytes, potentialUnused: unused.size, review: [...unused].slice(0, 40) }, null, 2));
+// Prevent another large override layer while existing components are progressively simplified.
+if (!rules || important > 8500) throw new Error("CSS override budget exceeded");

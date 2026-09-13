@@ -1,23 +1,5 @@
 :root {
   color-scheme: dark;
-  --bg: var(--ui-page);
-  --page-top: var(--ui-page);
-  --page-bottom: var(--ui-page);
-  --surface: var(--ui-surface);
-  --surface-solid: var(--ui-surface);
-  --surface-strong: var(--ui-raised);
-  --surface-soft: var(--ui-inset);
-  --line: var(--ui-border);
-  --line-strong: var(--ui-border-strong);
-  --text: var(--ui-text);
-  --muted: var(--ui-muted);
-  --accent: var(--ui-accent);
-  --accent-strong: var(--ui-accent);
-  --danger: var(--ui-negative);
-  --warn: var(--ui-warning);
-  --hold: var(--ui-warning);
-  --blue: var(--ui-accent);
-  --shadow: var(--ui-shadow);
   --ios-safe-top: env(safe-area-inset-top, 0px);
   --ios-safe-bottom: env(safe-area-inset-bottom, 0px);
   --ios-safe-left: env(safe-area-inset-left, 0px);
@@ -28,17 +10,12 @@
 /* Premium terminal rebuild: thesfm trader only. Keep this block last. */
 :root {
   --sfm-terminal-bg: var(--ui-page);
-  --sfm-panel: var(--ui-surface);
   --sfm-panel-soft: var(--ui-inset);
   --sfm-card: var(--ui-surface);
   --sfm-card-strong: var(--ui-raised);
-  --sfm-line: var(--ui-border);
   --sfm-line-strong: var(--ui-border-strong);
-  --sfm-gold: var(--ui-accent);
-  --sfm-gold-soft: var(--ui-accent-soft);
   --sfm-green: var(--ui-positive);
   --sfm-red: var(--ui-negative);
-  --sfm-blue: var(--ui-accent);
   --sfm-text: var(--ui-text);
   --sfm-muted: var(--ui-muted);
   --sfm-radius: 18px;
@@ -51,7 +28,6 @@ body {
   width: 100% !important;
   max-width: 100% !important;
   min-height: 100dvh !important;
-  overflow-x: hidden !important;
   background:
     linear-gradient(90deg, rgba(66, 113, 141, 0.08) 1px, transparent 1px),
     linear-gradient(180deg, rgba(66, 113, 141, 0.06) 1px, transparent 1px),
@@ -184,22 +160,13 @@ body:not(.intro-running) .topbar {
 }
 
 .brand-lockup h1 {
-  margin: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 12px !important;
   color: var(--sfm-gold) !important;
   font-size: clamp(28px, 2vw, 38px) !important;
-  line-height: 1 !important;
   font-weight: 900 !important;
-  letter-spacing: 0 !important;
-  text-transform: lowercase !important;
-  white-space: nowrap !important;
 }
 
 .terminal-search {
   min-width: 0 !important;
-  height: 44px !important;
   padding: 0 12px !important;
   display: flex !important;
   align-items: center !important;
@@ -252,7 +219,6 @@ body:not(.intro-running) .topbar {
 .header-session-mini span {
   width: 8px !important;
   height: 8px !important;
-  border-radius: 999px !important;
   background: var(--sfm-green) !important;
   box-shadow: 0 0 16px rgba(52, 229, 139, 0.72) !important;
 }
@@ -261,12 +227,6 @@ body:not(.intro-running) .topbar {
   color: var(--sfm-text) !important;
   font-size: 16px !important;
   font-weight: 900 !important;
-}
-
-.top-actions {
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
 }
 
 .status-pill,
@@ -319,22 +279,15 @@ body:not(.intro-running) .topbar {
 
 .desktop-trading-rail {
   grid-area: rail !important;
-  width: var(--sfm-rail) !important;
-  min-width: var(--sfm-rail) !important;
   height: 100% !important;
-  min-height: 0 !important;
   padding: 12px 10px !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: stretch !important;
-  gap: 7px !important;
-  overflow-y: auto !important;
   overflow-x: hidden !important;
   border: 1px solid rgba(216, 173, 85, 0.18) !important;
-  border-radius: 18px !important;
   background: linear-gradient(180deg, rgba(2, 8, 12, 0.98), rgba(3, 11, 17, 0.82)) !important;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.025), 0 20px 48px rgba(0, 0, 0, 0.28) !important;
-  scrollbar-width: none !important;
 }
 
 .desktop-trading-rail .rail-top-mark {
@@ -357,8 +310,6 @@ body:not(.intro-running) .topbar {
   padding: 7px 4px !important;
   display: flex !important;
   flex-direction: column !important;
-  align-items: center !important;
-  justify-content: center !important;
   gap: 5px !important;
   color: #c2ccd6 !important;
   text-decoration: none !important;
@@ -378,8 +329,6 @@ body:not(.intro-running) .topbar {
 .desktop-trading-rail .rail-icon {
   width: 24px !important;
   height: 24px !important;
-  display: grid !important;
-  place-items: center !important;
   color: currentColor !important;
 }
 
@@ -442,23 +391,16 @@ body[data-app-view="home"] .sfm-live-floor {
 
 .live-pulse-strip {
   height: auto !important;
-  display: grid !important;
   grid-template-columns: minmax(0, 1fr) 200px !important;
   grid-template-rows: auto 1fr !important;
-  gap: 10px !important;
 }
 
 .live-pulse-head {
-  grid-column: 1 / -1 !important;
   height: 22px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
   margin: 0 !important;
 }
 
 .live-pulse-head h3 {
-  margin: 0 !important;
   font-size: 16px !important;
   font-weight: 900 !important;
 }
@@ -470,11 +412,8 @@ body[data-app-view="home"] .sfm-live-floor {
 
 .live-pulse-grid {
   grid-column: 1 !important;
-  grid-row: 2 !important;
-  display: grid !important;
   grid-template-columns: repeat(6, minmax(128px, 1fr)) !important;
   gap: 9px !important;
-  min-width: 0 !important;
 }
 
 .live-pulse-card,
@@ -490,7 +429,6 @@ body[data-app-view="home"] .sfm-live-floor {
 }
 
 .pulse-status-card {
-  grid-column: 2 !important;
   grid-row: 2 !important;
   display: flex !important;
   flex-direction: column !important;
@@ -503,10 +441,7 @@ body[data-app-view="home"] .sfm-live-floor {
 
 .pulse-symbol-row,
 .pulse-price-row {
-  display: flex !important;
   align-items: center !important;
-  justify-content: space-between !important;
-  gap: 8px !important;
 }
 
 .pulse-symbol-row strong {
@@ -517,8 +452,6 @@ body[data-app-view="home"] .sfm-live-floor {
 
 .pulse-symbol-row span {
   color: var(--sfm-green) !important;
-  font-size: 12px !important;
-  font-weight: 900 !important;
 }
 
 .live-pulse-card.is-down .pulse-symbol-row span {
@@ -526,7 +459,6 @@ body[data-app-view="home"] .sfm-live-floor {
 }
 
 .live-pulse-sparkline {
-  width: 100% !important;
   height: 48px !important;
   margin: 7px 0 4px !important;
   display: block !important;
@@ -577,12 +509,8 @@ body[data-app-view="home"] .sfm-live-floor {
   z-index: 4 !important;
   width: 100% !important;
   min-width: 0 !important;
-  display: flex !important;
   align-items: stretch !important;
-  gap: 10px !important;
   padding: 0 0 8px !important;
-  overflow-x: auto !important;
-  overflow-y: visible !important;
   scrollbar-width: thin !important;
   scrollbar-color: rgba(216, 173, 85, 0.48) rgba(255, 255, 255, 0.05) !important;
 }
@@ -644,14 +572,8 @@ body[data-app-view="home"] .market-button:not(.is-primary-market) {
 }
 
 .market-button-icon {
-  position: relative !important;
   z-index: 4 !important;
   flex: 0 0 36px !important;
-  width: 36px !important;
-  height: 36px !important;
-  display: grid !important;
-  place-items: center !important;
-  border-radius: 999px !important;
   opacity: 1 !important;
   filter: none !important;
   color: inherit !important;
@@ -673,7 +595,6 @@ body[data-app-view="home"] .market-button:not(.is-primary-market) {
 }
 
 .market-button-copy {
-  min-width: 0 !important;
   display: flex !important;
   flex-direction: column !important;
   gap: 3px !important;
@@ -683,11 +604,6 @@ body[data-app-view="home"] .market-button:not(.is-primary-market) {
 
 .market-button-copy strong {
   color: var(--sfm-text) !important;
-  font-size: 13px !important;
-  font-weight: 900 !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
 }
 
 .market-button-copy span {
@@ -807,30 +723,16 @@ body[data-app-view="home"] .market-button:not(.is-primary-market) {
   }
 
   .command-center-grid {
-    display: grid !important;
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    gap: 12px !important;
-    min-height: 146px !important;
-    height: auto !important;
     overflow: visible !important;
   }
 
   .command-card,
   .command-dashboard-card {
     min-width: 0 !important;
-    min-height: 146px !important;
-    height: auto !important;
     overflow: visible !important;
-    display: grid !important;
-    grid-template-rows: auto auto minmax(0, 1fr) !important;
-    align-content: stretch !important;
   }
 
   .command-risk-radar {
-    display: grid !important;
-    place-items: center !important;
-    align-content: center !important;
-    justify-items: center !important;
     overflow: visible !important;
   }
 
@@ -874,7 +776,6 @@ body[data-app-view="home"] .market-button:not(.is-primary-market) {
   }
 
   .market-tabs {
-    overflow-x: auto !important;
     overflow-y: visible !important;
     -webkit-overflow-scrolling: touch !important;
   }
@@ -889,42 +790,9 @@ body[data-app-view="home"] .market-button:not(.is-primary-market) {
 
 /* Final overlap audit layer. Keep this at EOF so older experimental rules cannot clip the terminal. */
 @media (min-width: 761px) {
-  body:not(.intro-running) .market-band,
-  body[data-app-view="home"] .market-band {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
-    overflow: visible !important;
-  }
-
-  body:not(.intro-running) .market-tabs,
-  body[data-app-view="home"] .market-tabs {
-    grid-column: 1 / -1 !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    min-height: 62px !important;
-    height: 62px !important;
-    justify-self: stretch !important;
-    align-self: stretch !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    direction: rtl !important;
-  }
 }
 
 @media (min-width: 1181px) {
-  body:not(.intro-running) .app-shell,
-  body[data-app-view="home"] .app-shell {
-    width: min(1840px, calc(100vw - 28px)) !important;
-    max-width: none !important;
-    min-width: 1180px !important;
-    min-height: calc(100dvh - 28px) !important;
-    overflow: visible !important;
-    transform: none !important;
-    scale: 1 !important;
-    zoom: 1 !important;
-    filter: none !important;
-  }
 
   body:not(.intro-running) .app-shell > main,
   body[data-app-view="home"] .app-shell > main,
@@ -969,22 +837,6 @@ body[data-app-view="home"] .market-button:not(.is-primary-market) {
   body:not(.intro-running) .command-risk-radar .command-gauge,
   body[data-app-view="home"] .command-risk-radar .command-gauge {
     position: relative !important;
-    width: clamp(142px, 10vw, 176px) !important;
-    height: clamp(76px, 6.2vw, 94px) !important;
-    margin: 2px auto 0 !important;
-    display: grid !important;
-    place-items: end center !important;
-    align-self: center !important;
-    border-radius: 999px 999px 18px 18px !important;
-    overflow: hidden !important;
-    background:
-      radial-gradient(circle at 50% 100%, rgba(5, 12, 17, 1) 0 38%, transparent 39%),
-      conic-gradient(from 270deg at 50% 100%,
-        #58df85 0 calc(var(--risk, 50) * 1.8deg),
-        rgba(255, 210, 104, 0.95) calc(var(--risk, 50) * 1.8deg) 132deg,
-        rgba(255, 94, 108, 0.92) 132deg 180deg,
-        rgba(255, 255, 255, 0.08) 180deg 360deg) !important;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), 0 12px 28px rgba(0, 0, 0, 0.28) !important;
   }
 }
 
@@ -1063,11 +915,6 @@ body:not(.intro-running) .home-deck-section {
 }
 
 @media (min-width: 1181px) {
-  body:not(.intro-running) .app-shell,
-  body[data-app-view="home"] .app-shell {
-    overflow: visible !important;
-    min-height: calc(100dvh - 28px) !important;
-  }
 
   body:not(.intro-running) .app-shell > main,
   body[data-app-view="home"] .app-shell > main,
@@ -1203,13 +1050,11 @@ body:not(.intro-running) .home-deck-section {
 .command-center-band .section-head {
   height: 22px !important;
   margin-bottom: 10px !important;
-  display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
 }
 
 .command-center-band .section-head h2 {
-  margin: 0 !important;
   color: var(--sfm-text) !important;
   font-size: 16px !important;
   font-weight: 900 !important;
@@ -1221,10 +1066,7 @@ body:not(.intro-running) .home-deck-section {
 }
 
 .command-center-grid {
-  display: grid !important;
   grid-template-columns: repeat(5, minmax(150px, 1fr)) !important;
-  gap: 10px !important;
-  min-width: 0 !important;
 }
 
 .command-card,
@@ -1236,7 +1078,6 @@ body:not(.intro-running) .home-deck-section {
   border-radius: 14px !important;
   background: linear-gradient(145deg, rgba(8, 22, 34, 0.92), rgba(3, 10, 15, 0.94)) !important;
   box-shadow: none !important;
-  overflow: hidden !important;
 }
 
 .command-card h3,
@@ -1323,7 +1164,6 @@ body:not(.intro-running) .home-deck-section {
 }
 
 .home-deck-head h2 {
-  margin: 0 !important;
   color: var(--sfm-text) !important;
   font-size: 16px !important;
   font-weight: 900 !important;
@@ -1332,22 +1172,17 @@ body:not(.intro-running) .home-deck-section {
 .home-deck-head .eyebrow {
   color: #8fb1c9 !important;
   font-size: 10px !important;
-  letter-spacing: 0 !important;
 }
 
 .home-heatmap-grid {
-  display: grid !important;
   grid-template-columns: repeat(10, minmax(82px, 1fr)) !important;
-  gap: 8px !important;
 }
 
 .home-heat-cell {
   min-height: 42px !important;
   padding: 6px 8px !important;
-  display: grid !important;
   place-items: center !important;
   gap: 2px !important;
-  border-radius: 10px !important;
   border: 1px solid rgba(52, 229, 139, 0.26) !important;
   background: rgba(20, 96, 54, 0.34) !important;
   text-align: center !important;
@@ -1382,7 +1217,6 @@ body:not(.intro-running) .home-deck-section {
 
 .home-deck-section {
   min-height: 214px !important;
-  display: grid !important;
   grid-template-columns: minmax(0, 2.25fr) minmax(300px, 0.82fr) !important;
   gap: var(--sfm-gap) !important;
   align-items: stretch !important;
@@ -1394,9 +1228,7 @@ body:not(.intro-running) .home-deck-section {
 }
 
 .home-recommendations {
-  display: grid !important;
   grid-template-columns: repeat(3, minmax(190px, 1fr)) !important;
-  gap: 10px !important;
 }
 
 .home-rec-card {
@@ -1406,7 +1238,6 @@ body:not(.intro-running) .home-deck-section {
   border: 1px solid rgba(52, 229, 139, 0.30) !important;
   border-radius: 14px !important;
   background: linear-gradient(145deg, rgba(10, 36, 31, 0.8), rgba(4, 11, 17, 0.96)) !important;
-  overflow: hidden !important;
 }
 
 .home-rec-card.sell {
@@ -1421,14 +1252,12 @@ body:not(.intro-running) .home-deck-section {
 
 .home-rec-top {
   display: grid !important;
-  grid-template-columns: 42px minmax(0, 1fr) auto !important;
   align-items: center !important;
   gap: 10px !important;
 }
 
 .home-rec-top strong {
   color: var(--sfm-text) !important;
-  font-size: 20px !important;
   line-height: 1 !important;
   font-weight: 950 !important;
 }
@@ -1467,7 +1296,6 @@ body:not(.intro-running) .home-deck-section {
 .home-rec-metrics {
   margin-top: 14px !important;
   display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 8px !important;
 }
 
@@ -1482,7 +1310,6 @@ body:not(.intro-running) .home-deck-section {
   display: block !important;
   margin-top: 3px !important;
   color: var(--sfm-text) !important;
-  font-size: 12px !important;
   line-height: 1.05 !important;
   font-weight: 900 !important;
   direction: ltr !important;
@@ -1505,11 +1332,6 @@ body:not(.intro-running) .home-deck-section {
   border-radius: 999px !important;
   background: linear-gradient(90deg, var(--sfm-gold), var(--sfm-green)) !important;
   box-shadow: 0 0 10px rgba(52, 229, 139, 0.24) !important;
-}
-
-.home-followed-trades {
-  display: grid !important;
-  gap: 8px !important;
 }
 
 .home-follow-row {
@@ -1578,15 +1400,9 @@ body:not(.intro-running) .home-deck-section {
 }
 
 .asset-logo-svg {
-  width: 25px !important;
-  height: 25px !important;
   position: relative !important;
   z-index: 1 !important;
-  fill: currentColor !important;
-  stroke: currentColor !important;
   stroke-width: 1.35 !important;
-  stroke-linecap: round !important;
-  stroke-linejoin: round !important;
 }
 
 .asset-logo-text,
@@ -1599,11 +1415,6 @@ body:not(.intro-running) .home-deck-section {
   line-height: 1 !important;
   font-weight: 950 !important;
   letter-spacing: 0 !important;
-}
-
-.asset-logo-wordmark-intel {
-  font-size: 13px !important;
-  text-transform: lowercase !important;
 }
 
 .asset-logo-apple { color: #f7f8fb !important; background: linear-gradient(145deg, #303845, #121821) !important; }
@@ -1660,7 +1471,6 @@ body:not(.intro-running) .home-deck-section {
   grid-area: footer !important;
   display: flex !important;
   align-items: center !important;
-  justify-content: center !important;
   min-height: 34px !important;
   padding: 0 !important;
   color: var(--sfm-muted) !important;
@@ -1690,10 +1500,6 @@ body:not(.intro-running) .home-deck-section {
 @media (max-width: 1180px) {
   body:not(.intro-running) .app-shell,
   body[data-app-view="home"] .app-shell {
-    width: min(100%, calc(100vw - 20px)) !important;
-    margin: 10px auto calc(104px + env(safe-area-inset-bottom)) !important;
-    padding: 10px !important;
-    display: block !important;
     min-height: auto !important;
     border-radius: 20px !important;
   }
@@ -1703,14 +1509,7 @@ body:not(.intro-running) .home-deck-section {
   }
 
   body:not(.intro-running) .topbar {
-    position: sticky !important;
-    top: max(8px, env(safe-area-inset-top)) !important;
-    z-index: 40 !important;
-    min-height: 58px !important;
-    grid-template-columns: 42px minmax(0, 1fr) 42px !important;
-    gap: 8px !important;
     padding: 8px 10px !important;
-    margin-bottom: 12px !important;
     border-radius: 17px !important;
   }
 
@@ -1731,7 +1530,6 @@ body:not(.intro-running) .home-deck-section {
 
   .mobile-notification-visual,
   .mobile-settings-button {
-    display: grid !important;
     width: 42px !important;
     height: 42px !important;
     place-items: center !important;
@@ -1782,9 +1580,7 @@ body:not(.intro-running) .home-deck-section {
   }
 
   .live-pulse-grid {
-    display: grid !important;
     grid-template-columns: repeat(3, minmax(128px, 1fr)) !important;
-    gap: 8px !important;
     overflow: visible !important;
   }
 
@@ -1804,11 +1600,6 @@ body:not(.intro-running) .home-deck-section {
     height: 132px !important;
     min-height: 132px !important;
     margin-top: 10px !important;
-  }
-
-  .market-tabs {
-    gap: 9px !important;
-    padding-bottom: 8px !important;
   }
 
   .command-center-band,
@@ -1982,14 +1773,6 @@ body:not(.intro-running) .app-shell * {
 }
 
 @media (min-width: 761px) {
-  body:not(.intro-running) .app-shell {
-    width: min(1880px, calc(100vw - 28px)) !important;
-    max-width: none !important;
-    margin: clamp(10px, 1vw, 18px) auto !important;
-    transform: none !important;
-    scale: 1 !important;
-    zoom: 1 !important;
-  }
 
   body:not(.intro-running) .app-shell::before,
   body:not(.intro-running) .app-shell::after,
@@ -2001,26 +1784,15 @@ body:not(.intro-running) .app-shell * {
   }
 
   body:not(.intro-running) .market-band {
-    height: auto !important;
     min-height: 78px !important;
     overflow: visible !important;
   }
 
   body:not(.intro-running) .market-tabs {
-    display: flex !important;
-    grid-template-columns: none !important;
-    flex-wrap: nowrap !important;
-    gap: 10px !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
     padding: 2px 2px 10px !important;
-    scroll-snap-type: x proximity !important;
   }
 
   body:not(.intro-running) .market-tabs::-webkit-scrollbar-thumb {
-    border-radius: 999px !important;
     background: linear-gradient(90deg, rgba(54, 232, 137, 0.55), rgba(216, 172, 80, 0.72)) !important;
   }
 
@@ -2031,17 +1803,7 @@ body:not(.intro-running) .app-shell * {
     display: flex !important;
     flex: 0 0 clamp(168px, 10.75vw, 224px) !important;
     min-width: clamp(168px, 10.75vw, 224px) !important;
-    width: auto !important;
-    height: 60px !important;
     padding: 0 12px !important;
-    scroll-snap-align: start !important;
-  }
-
-  body:not(.intro-running) .market-button-copy strong {
-    max-width: 100% !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
   }
 
   body:not(.intro-running) .command-center-grid {
@@ -2063,15 +1825,11 @@ body:not(.intro-running) .app-shell * {
   }
 
   body:not(.intro-running) .app-shell {
-    min-height: 100dvh !important;
     padding-top: max(10px, env(safe-area-inset-top)) !important;
   }
 
   body:not(.intro-running) .topbar {
-    position: sticky !important;
-    top: max(6px, env(safe-area-inset-top)) !important;
     z-index: 80 !important;
-    margin-bottom: 12px !important;
   }
 
   body:not(.intro-running) main {
@@ -2092,7 +1850,6 @@ body:not(.intro-running) .app-shell * {
     grid-template-columns: none !important;
     flex-wrap: nowrap !important;
     gap: 8px !important;
-    width: 100% !important;
     max-width: 100% !important;
     overflow-x: auto !important;
     overflow-y: hidden !important;
@@ -2105,20 +1862,11 @@ body:not(.intro-running) .app-shell * {
   body[data-app-view="home"] .market-button.is-secondary-market,
   body[data-app-view="home"] .market-button:not(.is-primary-market) {
     display: flex !important;
-    flex: 0 0 68px !important;
-    min-width: 68px !important;
-    width: 68px !important;
-    height: 58px !important;
-    padding: 0 !important;
-    scroll-snap-align: start !important;
   }
 
   body:not(.intro-running) .command-center-band,
   body[data-app-view="home"] .command-center-band {
-    display: grid !important;
     height: auto !important;
-    min-height: 0 !important;
-    overflow: visible !important;
   }
 
   body:not(.intro-running) .command-card > span,
@@ -2130,7 +1878,6 @@ body:not(.intro-running) .app-shell * {
 
   body:not(.intro-running) .mobile-voice-orb {
     bottom: calc(96px + env(safe-area-inset-bottom)) !important;
-    z-index: 72 !important;
   }
 }
 
@@ -2252,7 +1999,6 @@ input {
   z-index: 1;
   width: min(1480px, 100%);
   margin: 0 auto;
-  padding: 24px;
   transition: filter 420ms ease, opacity 420ms ease, transform 420ms ease;
 }
 
@@ -2813,11 +2559,7 @@ h2 {
 }
 
 .top-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 10px;
 }
 
 .status-pill,
@@ -4187,7 +3929,6 @@ h2 {
 .market-tabs {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 10px;
 }
 
 .market-button {
@@ -4684,9 +4425,6 @@ a.text-button {
 }
 
 .history-group-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
   gap: 12px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--line);
@@ -4707,14 +4445,8 @@ a.text-button {
   min-width: 38px;
   padding: 6px 10px;
   border: 1px solid var(--line);
-  border-radius: 999px;
   background: var(--surface-soft);
   text-align: center;
-}
-
-.history-group-list {
-  display: grid;
-  gap: 10px;
 }
 
 .history-group-empty {
@@ -5562,7 +5294,6 @@ main > section {
   position: sticky;
   top: 8px;
   z-index: 18;
-  align-items: center;
   margin-bottom: 14px;
   padding: 10px 14px;
   border: 1px solid rgba(215, 183, 108, 0.22);
@@ -5581,7 +5312,6 @@ main > section {
 }
 
 .brand-lockup h1 {
-  margin: 0;
   color: #fffaf0;
   font-size: clamp(32px, 3.6vw, 48px);
   text-shadow: 0 0 24px rgba(215, 183, 108, 0.18);
@@ -6042,7 +5772,6 @@ main > section {
   display: grid;
   align-content: start;
   gap: 10px;
-  min-height: 164px;
   padding: 16px;
   border: 1px solid rgba(144, 165, 185, 0.18);
   border-radius: 8px;
@@ -6548,7 +6277,6 @@ main > section {
 
   .topbar {
     top: 6px;
-    padding: 10px;
   }
 
   .brand-lockup h1 {
@@ -6739,7 +6467,6 @@ main > section {
   }
 
   .app-shell {
-    width: 100%;
     max-width: 480px;
     overflow-x: hidden;
     padding:
@@ -6773,7 +6500,6 @@ main > section {
 
   .topbar {
     top: calc(8px + var(--ios-safe-top));
-    display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 10px;
     width: 100%;
@@ -7023,7 +6749,6 @@ main > section {
   .market-button {
     flex: 0 0 184px;
     min-height: 64px;
-    scroll-snap-align: start;
   }
 
   .analysis-mode-button,
@@ -7167,7 +6892,6 @@ main > section {
   }
 
   .ios-tab-link span {
-    position: relative;
     width: 22px;
     height: 18px;
     display: grid;
@@ -7457,7 +7181,6 @@ body::after {
 .live-pulse-head h3 {
   margin: 0;
   color: #fffaf0;
-  font-size: 18px;
 }
 
 .live-pulse-head > span {
@@ -7474,13 +7197,11 @@ body::after {
 .live-pulse-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 10px;
 }
 
 .live-pulse-card {
   display: grid;
   gap: 9px;
-  min-height: 124px;
   padding: 12px;
   border: 1px solid rgba(144, 165, 185, 0.18);
   border-radius: 8px;
@@ -7720,7 +7441,6 @@ body::after {
   .brand-lockup h1 {
     display: flex;
     width: 100%;
-    justify-content: center;
     direction: ltr;
     text-align: center;
   }
@@ -7749,10 +7469,7 @@ body::after {
   .live-pulse-grid {
     display: grid;
     direction: ltr;
-    grid-auto-flow: column;
     grid-auto-columns: minmax(148px, 46vw);
-    grid-template-columns: none;
-    overflow-x: auto;
     padding-bottom: 4px;
     scroll-snap-type: x mandatory;
   }
@@ -7779,10 +7496,7 @@ body::after {
 
   .market-tabs {
     direction: ltr;
-    grid-auto-flow: column;
     grid-auto-columns: minmax(150px, 48vw);
-    grid-template-columns: none;
-    overflow-x: auto;
     padding-bottom: 5px;
     scroll-snap-type: x mandatory;
   }
@@ -8204,7 +7918,6 @@ body::after {
 }
 
 .market-button-icon {
-  display: grid !important;
   place-items: center;
   width: 38px;
   height: 38px;
@@ -8996,12 +8709,6 @@ body::after {
   display: none !important;
 }
 
-.brand-lockup h1::before {
-  border: 0 !important;
-  background: url("/assets/sfm-trader-logo.svg") center / contain no-repeat !important;
-  box-shadow: 0 0 28px rgba(215, 174, 85, 0.22) !important;
-}
-
 .detail-shell .brand-lockup h1 {
   text-transform: lowercase;
 }
@@ -9190,9 +8897,6 @@ body::after {
   }
 
   .market-tabs {
-    grid-auto-flow: row !important;
-    grid-auto-columns: initial !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     overflow: visible !important;
   }
 
@@ -9220,8 +8924,6 @@ body::after {
     left: auto !important;
     inset-inline-start: auto !important;
     inset-inline-end: auto !important;
-    width: 82px !important;
-    height: 82px !important;
   }
 
   .mobile-voice-orb {
@@ -9280,7 +8982,6 @@ body::after {
 }
 
 .command-center-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   gap: 14px !important;
 }
 
@@ -9297,7 +8998,6 @@ body::after {
 }
 
 .command-dashboard-card > span {
-  color: #f7f3ea;
   font-size: 14px;
   font-weight: 950;
 }
@@ -9423,7 +9123,6 @@ body::after {
 .command-performance-value {
   display: block;
   margin-top: 18px;
-  color: #38e889;
   font-size: 38px;
   line-height: 1;
 }
@@ -9575,7 +9274,6 @@ body::after {
     top: 11px !important;
     right: 12px !important;
     z-index: 80 !important;
-    display: block !important;
     width: 40px !important;
     height: 40px !important;
     border: 0 !important;
@@ -9584,56 +9282,33 @@ body::after {
   }
 
   #mobile-notification-button.mobile-notification-visual::before {
-    content: "" !important;
     position: absolute !important;
     left: 10px !important;
     top: 8px !important;
-    width: 17px !important;
-    height: 20px !important;
-    border: 2px solid #dbe7ef !important;
-    border-bottom-width: 3px !important;
-    border-radius: 11px 11px 7px 7px !important;
   }
 
   #mobile-notification-button.mobile-notification-visual::after {
-    content: "" !important;
-    position: absolute !important;
     top: 5px !important;
     right: 4px !important;
     width: 9px !important;
     height: 9px !important;
-    border-radius: 50% !important;
     background: #38e889 !important;
     box-shadow: 0 0 12px rgba(56, 232, 137, 0.75) !important;
   }
 
   .app-shell > header.topbar::after {
-    content: "" !important;
     position: absolute !important;
     top: 19px !important;
     right: 24px !important;
     z-index: 70 !important;
-    display: block !important;
-    width: 17px !important;
-    height: 20px !important;
-    border: 2px solid #dbe7ef !important;
-    border-bottom-width: 3px !important;
-    border-radius: 11px 11px 7px 7px !important;
-    background: transparent !important;
     box-shadow: none !important;
   }
 
   .app-shell > header.topbar .brand-lockup::after {
-    content: "" !important;
     position: absolute !important;
     top: 16px !important;
     right: 16px !important;
     z-index: 75 !important;
-    width: 9px !important;
-    height: 9px !important;
-    border-radius: 50% !important;
-    background: #38e889 !important;
-    box-shadow: 0 0 12px rgba(56, 232, 137, 0.75) !important;
   }
 
   .mobile-header-bell-svg {
@@ -9746,7 +9421,6 @@ body {
     radial-gradient(circle at 13% 15%, rgba(22, 141, 255, 0.1), transparent 24%),
     radial-gradient(circle at 78% 12%, rgba(37, 199, 166, 0.1), transparent 24%),
     linear-gradient(180deg, #061118 0%, #03080d 56%, #020508 100%) !important;
-  background-size: 72px 72px, 72px 72px, auto, auto, auto !important;
 }
 
 body::before {
@@ -9764,12 +9438,10 @@ body::after {
 }
 
 .app-shell {
-  position: relative !important;
   width: min(var(--reference-shell), calc(100vw - 48px)) !important;
   max-width: var(--reference-shell) !important;
   margin: 26px auto 48px !important;
   padding: 0 0 28px 94px !important;
-  box-sizing: border-box !important;
 }
 
 .app-shell > main,
@@ -9795,11 +9467,6 @@ html[dir="ltr"] .app-shell > section {
 }
 
 .topbar {
-  position: relative !important;
-  display: grid !important;
-  grid-template-columns: minmax(260px, 1fr) auto !important;
-  grid-template-rows: auto auto !important;
-  align-items: center !important;
   gap: 12px 18px !important;
   min-height: 104px !important;
   margin: 0 0 14px !important;
@@ -9814,55 +9481,26 @@ html[dir="ltr"] .app-shell > section {
 }
 
 .brand-lockup {
-  grid-column: 1 !important;
-  grid-row: 1 !important;
-  direction: ltr !important;
-  text-align: left !important;
   max-width: none !important;
 }
 
 .brand-lockup h1 {
-  display: inline-flex !important;
-  align-items: center !important;
   gap: 13px !important;
-  margin: 0 !important;
   color: var(--reference-gold) !important;
   font-size: clamp(25px, 2vw, 34px) !important;
-  font-weight: 950 !important;
-  line-height: 1 !important;
-  text-transform: lowercase !important;
-  letter-spacing: 0 !important;
   text-shadow: 0 0 24px rgba(215, 174, 85, 0.18) !important;
 }
 
 .brand-lockup h1::before {
-  content: "" !important;
-  display: inline-block !important;
   flex: 0 0 56px !important;
   width: 56px !important;
   height: 56px !important;
-  border: 0 !important;
   border-radius: 15px !important;
-  background: url("/assets/sfm-trader-logo.svg") center / contain no-repeat !important;
   box-shadow: 0 0 28px rgba(215, 174, 85, 0.22) !important;
 }
 
 .header-session-mini {
-  grid-column: 2 !important;
-  grid-row: 1 !important;
-  justify-self: end !important;
-  align-self: start !important;
   margin: 7px 0 0 !important;
-  direction: ltr !important;
-}
-
-.top-actions {
-  grid-column: 1 / -1 !important;
-  grid-row: 2 !important;
-  direction: ltr !important;
-  display: flex !important;
-  justify-content: flex-start !important;
-  gap: 8px !important;
 }
 
 .top-actions > * {
@@ -9879,17 +9517,11 @@ html[dir="ltr"] .app-shell > section {
 }
 
 .desktop-trading-rail {
-  position: absolute !important;
-  left: 0 !important;
-  right: auto !important;
   top: 118px !important;
-  bottom: auto !important;
   z-index: 24 !important;
   width: 74px !important;
   min-height: 680px !important;
-  padding: 12px 8px !important;
   border: 1px solid rgba(215, 174, 85, 0.18) !important;
-  border-radius: 18px !important;
   background:
     linear-gradient(180deg, rgba(215, 174, 85, 0.075), transparent 18%),
     rgba(2, 7, 11, 0.82) !important;
@@ -9898,7 +9530,6 @@ html[dir="ltr"] .app-shell > section {
 
 .rail-link {
   min-height: 65px !important;
-  border-radius: 14px !important;
   color: #bdcbd6 !important;
 }
 
@@ -9916,7 +9547,6 @@ html[dir="ltr"] .app-shell > section {
 
 .rail-voice {
   min-height: 96px !important;
-  margin-top: 28px !important;
   border-color: rgba(22, 141, 255, 0.66) !important;
   background:
     radial-gradient(circle at 50% 34%, rgba(22, 141, 255, 0.42), transparent 42%),
@@ -9925,9 +9555,6 @@ html[dir="ltr"] .app-shell > section {
 }
 
 .rail-voice .rail-wave {
-  width: 48px !important;
-  height: 48px !important;
-  border-radius: 50% !important;
   border-color: rgba(104, 190, 255, 0.82) !important;
   background:
     radial-gradient(circle, rgba(22, 141, 255, 0.56), rgba(22, 141, 255, 0.16) 56%, rgba(2, 8, 14, 0.94) 62%) !important;
@@ -9969,11 +9596,6 @@ main > section {
 }
 
 .live-pulse-head {
-  grid-column: 1 / -1 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  margin: 0 0 2px !important;
   direction: ltr !important;
 }
 
@@ -9983,27 +9605,11 @@ main > section {
   background: rgba(215, 174, 85, 0.08) !important;
 }
 
-.live-pulse-grid {
-  display: grid !important;
-  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
-  gap: 10px !important;
-  direction: ltr !important;
-}
-
 .live-pulse-card {
-  direction: ltr !important;
-  min-height: 118px !important;
-  padding: 12px !important;
-  border-radius: 10px !important;
   border-color: rgba(126, 153, 174, 0.2) !important;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 62%),
     var(--reference-panel-strong) !important;
-}
-
-.pulse-symbol-row strong,
-.pulse-price-row b {
-  color: #f5f8fb !important;
 }
 
 .pulse-symbol-row span,
@@ -10017,12 +9623,6 @@ main > section {
 
 .pulse-status-card {
   min-height: 118px !important;
-  padding: 14px 16px !important;
-  border-color: rgba(56, 232, 137, 0.46) !important;
-  border-radius: 12px !important;
-  background:
-    radial-gradient(circle at 76% 54%, rgba(56, 232, 137, 0.14), transparent 42%),
-    rgba(4, 14, 17, 0.92) !important;
 }
 
 .pulse-status-card strong {
@@ -10030,27 +9630,16 @@ main > section {
   font-size: clamp(26px, 2.2vw, 34px) !important;
 }
 
-.market-band {
-  padding: 14px !important;
-}
-
 .market-tabs {
-  display: grid !important;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
-  gap: 10px !important;
-  direction: ltr !important;
-  overflow: visible !important;
 }
 
 .market-button {
   min-height: 54px !important;
-  border-radius: 12px !important;
   border-color: rgba(126, 153, 174, 0.18) !important;
-  background: rgba(2, 8, 12, 0.78) !important;
 }
 
 .market-button {
-  direction: rtl !important;
   grid-template-columns: 38px minmax(0, 1fr) !important;
   padding: 8px 11px !important;
 }
@@ -10071,16 +9660,9 @@ main > section {
 }
 
 .command-center-band .section-head {
-  display: flex !important;
   margin-bottom: 12px !important;
   padding-bottom: 0 !important;
   border-bottom: 0 !important;
-}
-
-.command-center-band .section-head h2 {
-  margin: 0 !important;
-  color: #f5f8fb !important;
-  font-size: 17px !important;
 }
 
 .command-center-band .section-head p,
@@ -10090,17 +9672,9 @@ main > section {
   display: none !important;
 }
 
-.command-center-grid {
-  display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  gap: 10px !important;
-  direction: ltr !important;
-}
-
 .command-dashboard-card {
   min-height: 156px !important;
   padding: 13px !important;
-  border-radius: 12px !important;
   border-color: rgba(126, 153, 174, 0.16) !important;
   background:
     radial-gradient(circle at 85% 12%, rgba(37, 199, 166, 0.09), transparent 32%),
@@ -10115,34 +9689,8 @@ main > section {
   margin-bottom: 12px !important;
 }
 
-.home-deck-head h2 {
-  color: #f5f8fb !important;
-  font-size: 17px !important;
-}
-
-.home-deck-head .eyebrow {
-  color: #aebac5 !important;
-}
-
-.home-heatmap-grid {
-  display: grid !important;
-  grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
-  gap: 8px !important;
-  direction: ltr !important;
-}
-
 .home-heat-cell {
   min-height: 55px !important;
-  border-radius: 10px !important;
-}
-
-.home-deck-section {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.8fr) !important;
-  gap: 14px !important;
-  padding: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
 }
 
 .home-deck-panel {
@@ -10150,10 +9698,7 @@ main > section {
 }
 
 .home-rec-card {
-  direction: rtl !important;
   min-height: 192px !important;
-  padding: 13px !important;
-  border-radius: 12px !important;
 }
 
 html[dir="ltr"] .home-rec-card,
@@ -10162,26 +9707,7 @@ html[dir="ltr"] .market-button {
   direction: ltr !important;
 }
 
-.home-rec-top {
-  grid-template-columns: 42px minmax(0, 1fr) auto !important;
-}
-
-.home-rec-top strong {
-  font-size: 20px !important;
-}
-
-.home-rec-metrics strong {
-  font-size: 12px !important;
-}
-
-.home-followed-trades {
-  direction: ltr !important;
-}
-
 .site-footer {
-  justify-content: center !important;
-  margin-top: 18px !important;
-  padding: 18px 0 0 !important;
   border-top: 1px solid rgba(215, 174, 85, 0.16) !important;
   color: #aab7c2 !important;
 }
@@ -10229,7 +9755,6 @@ html[dir="ltr"] .notification-item {
 
 @media (max-width: 1260px) and (min-width: 761px) {
   .app-shell {
-    width: calc(100vw - 32px) !important;
     padding-left: 88px !important;
   }
 
@@ -10255,35 +9780,15 @@ html[dir="ltr"] .notification-item {
 @media (max-width: 760px) {
 
   .app-shell {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
     padding: calc(10px + var(--ios-safe-top)) 12px calc(118px + var(--ios-safe-bottom)) !important;
   }
 
   .topbar {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 50 !important;
-    grid-template-columns: 44px 1fr 44px !important;
-    grid-template-rows: 1fr !important;
-    min-height: 64px !important;
-    margin: 0 -12px 12px !important;
-    padding: 9px 12px !important;
-    border-width: 0 0 1px !important;
-    border-radius: 0 !important;
     background: rgba(2, 8, 12, 0.94) !important;
   }
 
-  .brand-lockup {
-    grid-column: 2 !important;
-    justify-self: center !important;
-  }
-
   .brand-lockup h1 {
-    gap: 0 !important;
     justify-content: center !important;
-    font-size: 18px !important;
   }
 
   .brand-lockup h1::before,
@@ -10297,12 +9802,10 @@ html[dir="ltr"] .notification-item {
   }
 
   .mobile-settings-button {
-    grid-column: 1 !important;
     grid-row: 1 !important;
   }
 
   #mobile-notification-button.mobile-notification-visual {
-    grid-column: 3 !important;
     grid-row: 1 !important;
   }
 
@@ -10338,16 +9841,8 @@ html[dir="ltr"] .notification-item {
   }
 
   #mobile-notification-button.mobile-notification-visual::after {
-    content: "" !important;
-    position: absolute !important;
-    top: 10px !important;
-    right: 8px !important;
     display: block !important;
-    width: 8px !important;
-    height: 8px !important;
-    border-radius: 50% !important;
     background: var(--reference-green) !important;
-    box-shadow: 0 0 12px rgba(56, 232, 137, 0.8) !important;
   }
 
   .mobile-notification-icon {
@@ -10373,19 +9868,11 @@ html[dir="ltr"] .notification-item {
 
   .live-pulse-grid {
     grid-template-columns: repeat(3, minmax(118px, 1fr)) !important;
-    overflow-x: auto !important;
-    padding-bottom: 4px !important;
-  }
-
-  .live-pulse-card {
-    min-height: 104px !important;
-    padding: 10px !important;
   }
 
   .pulse-status-card {
     min-height: 132px !important;
     padding: 18px 118px 18px 18px !important;
-    position: relative !important;
   }
 
   html[dir="ltr"] .pulse-status-card {
@@ -10393,14 +9880,8 @@ html[dir="ltr"] .notification-item {
   }
 
   .pulse-status-card::after {
-    content: "" !important;
-    position: absolute !important;
-    top: 50% !important;
-    right: 22px !important;
     width: 82px !important;
     height: 82px !important;
-    border-radius: 50% !important;
-    transform: translateY(-50%) !important;
     background:
       radial-gradient(circle at center, var(--reference-green) 0 5px, rgba(56, 232, 137, 0.22) 6px 20px, transparent 21px),
       repeating-radial-gradient(circle at center, transparent 0 12px, rgba(56, 232, 137, 0.18) 13px 14px),
@@ -10414,19 +9895,10 @@ html[dir="ltr"] .notification-item {
 
   .market-tabs {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 8px !important;
   }
 
   .market-button {
-    grid-template-columns: 1fr !important;
-    justify-items: center !important;
     min-height: 54px !important;
-    padding: 8px !important;
-  }
-
-  .home-deck-section {
-    grid-template-columns: 1fr !important;
-    gap: 12px !important;
   }
 
   .home-rec-card {
@@ -10445,7 +9917,6 @@ html[dir="ltr"] .notification-item {
 
   .ios-tabbar {
     z-index: 55 !important;
-    border-top: 1px solid rgba(126, 153, 174, 0.15) !important;
     background: rgba(2, 8, 12, 0.96) !important;
   }
 }
@@ -10519,9 +9990,6 @@ html[dir="ltr"] .notification-item {
 
 @media (max-width: 760px) {
   .mobile-settings-button {
-    position: relative !important;
-    overflow: hidden !important;
-    color: transparent !important;
     background:
       linear-gradient(#dbe7ef, #dbe7ef) center 12px / 22px 2px no-repeat,
       linear-gradient(#dbe7ef, #dbe7ef) center 19px / 22px 2px no-repeat,
@@ -10580,9 +10048,7 @@ html[dir="ltr"] .notification-item {
 }
 
 .desktop-trading-rail .rail-link {
-  align-content: center !important;
   justify-content: center !important;
-  gap: 6px !important;
   padding: 8px 4px !important;
 }
 
@@ -10682,8 +10148,6 @@ html[dir="ltr"] .notification-item {
 
 .command-center-grid {
   grid-template-columns: repeat(5, minmax(142px, 1fr)) !important;
-  gap: 10px !important;
-  align-items: stretch !important;
 }
 
 .command-dashboard-card {
@@ -10710,7 +10174,6 @@ html[dir="ltr"] .notification-item {
   display: block;
   margin-top: 5px;
   color: #9eadb9;
-  font-size: 11px !important;
   line-height: 1.2;
   position: relative;
   z-index: 2;
@@ -10749,11 +10212,6 @@ html[dir="ltr"] .notification-item {
   z-index: 2;
 }
 
-.command-number-row b {
-  font-size: 30px !important;
-  line-height: 1 !important;
-}
-
 .command-number-row i {
   width: 18px !important;
   height: 21px !important;
@@ -10765,7 +10223,6 @@ html[dir="ltr"] .notification-item {
   inset-inline: 14px !important;
   bottom: 13px !important;
   width: calc(100% - 28px) !important;
-  height: 40px !important;
   opacity: 0.82;
   z-index: 1;
 }
@@ -10786,8 +10243,6 @@ html[dir="ltr"] .notification-item {
 
 .command-gauge b {
   margin-top: 16px !important;
-  font-size: 25px !important;
-  line-height: 1 !important;
   position: relative;
   z-index: 2;
   text-shadow: 0 0 14px rgba(3, 9, 14, 0.85);
@@ -10802,10 +10257,8 @@ html[dir="ltr"] .notification-item {
 }
 
 .command-performance-value {
-  margin-top: 18px !important;
   color: #38e889;
   font-size: clamp(25px, 2.35vw, 34px) !important;
-  line-height: 1 !important;
   white-space: nowrap;
   position: relative;
   z-index: 2;
@@ -10813,13 +10266,10 @@ html[dir="ltr"] .notification-item {
 }
 
 .command-performance .command-mini-chart-large {
-  bottom: 8px !important;
-  height: 28px !important;
   opacity: 0.74;
 }
 
 .command-globe {
-  bottom: 13px !important;
   width: 76px !important;
   height: 76px !important;
   opacity: 0.88;
@@ -10988,16 +10438,10 @@ body {
 }
 
 .app-shell > main {
-  display: grid !important;
   gap: var(--adaptive-section-gap) !important;
-  width: 100% !important;
-  min-width: 0 !important;
 }
 
 main > section {
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
   margin-block-end: var(--adaptive-section-gap) !important;
   scroll-margin-top: clamp(76px, 8vh, 120px) !important;
 }
@@ -11219,17 +10663,8 @@ main > section {
   }
 
   .app-shell {
-    width: 100% !important;
     min-height: var(--app-vh) !important;
     padding-inline: var(--adaptive-page-pad) !important;
-  }
-
-  .topbar {
-    min-height: 64px !important;
-  }
-
-  .live-pulse-strip {
-    grid-template-columns: 1fr !important;
   }
 
   .live-pulse-grid {
@@ -11249,10 +10684,8 @@ main > section {
   }
 
   .market-tabs {
-    grid-auto-flow: row !important;
     grid-auto-columns: initial !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    overflow-x: hidden !important;
   }
 
   .market-button {
@@ -11365,10 +10798,7 @@ main > section {
   }
 
   .home-deck-section {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
     justify-items: stretch !important;
-    overflow: visible !important;
   }
 
   .home-deck-panel {
@@ -11388,7 +10818,6 @@ main > section {
   }
 
   .home-deck-head h2 {
-    font-size: 20px !important;
     line-height: 1.25 !important;
   }
 
@@ -11398,10 +10827,7 @@ main > section {
   }
 
   .home-recommendations {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
     gap: 12px !important;
-    width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
     direction: rtl !important;
@@ -11409,8 +10835,6 @@ main > section {
   }
 
   .home-rec-card {
-    width: 100% !important;
-    max-width: 100% !important;
     min-width: 0 !important;
     min-height: 0 !important;
     gap: 12px !important;
@@ -11423,7 +10847,6 @@ main > section {
 
   .home-rec-top {
     display: grid !important;
-    grid-template-columns: 42px minmax(0, 1fr) auto !important;
     gap: 9px !important;
     align-items: center !important;
     width: 100% !important;
@@ -11431,8 +10854,6 @@ main > section {
   }
 
   .asset-logo {
-    width: 42px !important;
-    height: 42px !important;
     border-radius: 13px !important;
     font-size: 18px !important;
   }
@@ -11508,25 +10929,17 @@ main > section {
   .site-footer {
     position: relative !important;
     z-index: 1 !important;
-    margin-bottom: calc(104px + var(--ios-safe-bottom)) !important;
     padding-bottom: 12px !important;
   }
 
   .mobile-voice-orb {
     bottom: calc(78px + var(--ios-safe-bottom)) !important;
-    z-index: 64 !important;
-  }
-
-  .ios-tabbar {
-    z-index: 60 !important;
   }
 }
 
 @media (max-width: 390px) {
 
   .asset-logo {
-    width: 38px !important;
-    height: 38px !important;
     font-size: 16px !important;
   }
 
@@ -11557,17 +10970,14 @@ main > section {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    min-height: 0 !important;
     padding: 14px !important;
     border-radius: 14px !important;
     box-sizing: border-box !important;
-    overflow: hidden !important;
     direction: rtl !important;
     text-align: right !important;
   }
 
   .signal-card .card-top {
-    display: grid !important;
     grid-template-columns: minmax(0, 1fr) auto !important;
     align-items: start !important;
     gap: 10px !important;
@@ -11596,9 +11006,6 @@ main > section {
     color: #f7f2e7 !important;
     font-size: clamp(18px, 5.5vw, 22px) !important;
     line-height: 1.1 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
     letter-spacing: 0 !important;
   }
 
@@ -11606,16 +11013,11 @@ main > section {
     max-width: 100% !important;
     margin: 0 !important;
     color: rgba(207, 218, 226, 0.72) !important;
-    font-size: 12px !important;
     line-height: 1.35 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
   }
 
   .signal-card .action-stack {
     justify-items: end !important;
-    gap: 6px !important;
   }
 
   .signal-card .action-badge,
@@ -11750,7 +11152,6 @@ main > section {
 
   .signal-card .reasons {
     margin: 12px 0 0 !important;
-    padding-inline-start: 18px !important;
     overflow-wrap: anywhere !important;
   }
 }
@@ -11830,7 +11231,6 @@ body::before {
 
 main > section {
   width: 100% !important;
-  max-width: 100% !important;
   min-width: 0 !important;
   margin: 0 !important;
   box-sizing: border-box !important;
@@ -11890,27 +11290,16 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
 
 .brand-lockup h1 {
   display: inline-flex !important;
-  align-items: center !important;
-  gap: 12px !important;
   margin: 0 !important;
   color: var(--approved-gold) !important;
   font-size: clamp(24px, 2vw, 34px) !important;
-  font-weight: 950 !important;
   line-height: 1 !important;
-  letter-spacing: 0 !important;
-  text-transform: lowercase !important;
-  white-space: nowrap !important;
   text-shadow: 0 0 24px rgba(217, 174, 85, 0.18) !important;
 }
 
 .brand-lockup h1::before {
-  content: "" !important;
   display: inline-block !important;
-  flex: 0 0 48px !important;
-  width: 48px !important;
-  height: 48px !important;
   border: 0 !important;
-  border-radius: 14px !important;
   background: url("/assets/sfm-trader-logo.svg") center / contain no-repeat !important;
   box-shadow: 0 0 26px rgba(217, 174, 85, 0.24) !important;
 }
@@ -11997,7 +11386,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
 }
 
 .desktop-trading-rail .rail-link {
-  display: grid !important;
   place-items: center !important;
   align-content: center !important;
   gap: 6px !important;
@@ -12024,9 +11412,7 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
   width: 100% !important;
   color: currentColor !important;
   font-size: 10px !important;
-  line-height: 1.25 !important;
   text-align: center !important;
-  white-space: normal !important;
 }
 
 .desktop-trading-rail .rail-icon {
@@ -12070,7 +11456,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
 }
 
 .live-pulse-strip {
-  display: grid !important;
   grid-template-columns: minmax(0, 1fr) 180px !important;
   gap: 12px !important;
   padding: 0 !important;
@@ -12081,9 +11466,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
 
 .live-pulse-head {
   grid-column: 1 / -1 !important;
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
   margin: 0 0 2px !important;
 }
 
@@ -12099,9 +11481,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
 }
 
 .live-pulse-grid {
-  display: grid !important;
-  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
-  gap: 10px !important;
   min-width: 0 !important;
   overflow: hidden !important;
   direction: ltr !important;
@@ -12205,7 +11584,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
 .market-tabs {
   display: grid !important;
   grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
-  gap: 10px !important;
   direction: ltr !important;
   overflow: visible !important;
 }
@@ -12242,7 +11620,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
 
 .market-button-copy strong {
   color: #f6f8fa !important;
-  font-size: 13px !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
@@ -12250,7 +11627,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
 
 .market-button-copy span {
   color: #91a1ae !important;
-  font-size: 11px !important;
 }
 
 .command-center-band .section-head {
@@ -12275,8 +11651,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
 }
 
 .command-center-grid {
-  display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   gap: 10px !important;
   align-items: stretch !important;
   width: 100% !important;
@@ -12444,8 +11818,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
 }
 
 .home-heatmap-grid {
-  display: grid !important;
-  grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
   gap: 8px !important;
   direction: ltr !important;
   max-height: 86px !important;
@@ -12460,7 +11832,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
   max-height: 38px !important;
   padding: 5px 8px !important;
   overflow: hidden !important;
-  border-radius: 10px !important;
 }
 
 .home-heat-cell strong,
@@ -12470,7 +11841,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
 }
 
 .home-deck-section {
-  display: grid !important;
   grid-template-columns: minmax(0, 1.45fr) minmax(280px, 0.8fr) !important;
   gap: 12px !important;
   padding: 0 !important;
@@ -12484,8 +11854,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
 }
 
 .home-recommendations {
-  display: grid !important;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 10px !important;
   direction: ltr !important;
 }
@@ -12540,7 +11908,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
 
 .home-follow-row {
   min-height: 38px !important;
-  grid-template-columns: 1fr auto auto auto !important;
 }
 
 .site-footer {
@@ -12606,7 +11973,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
   }
 
   .topbar {
-    position: sticky !important;
     top: 0 !important;
     z-index: 50 !important;
     grid-template-columns: 44px 1fr 44px !important;
@@ -12629,7 +11995,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
     gap: 0 !important;
     max-width: 100% !important;
     color: var(--approved-gold) !important;
-    font-size: 18px !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
   }
@@ -12727,7 +12092,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
   }
 
   .live-pulse-strip {
-    grid-template-columns: 1fr !important;
     gap: 10px !important;
   }
 
@@ -12741,7 +12105,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
     grid-auto-columns: minmax(118px, 1fr) !important;
     grid-template-columns: none !important;
     gap: 8px !important;
-    overflow-x: auto !important;
     overflow-y: hidden !important;
     padding-bottom: 4px !important;
     scroll-snap-type: x proximity !important;
@@ -12803,7 +12166,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
 
   .home-deck-section {
     display: grid !important;
-    grid-template-columns: 1fr !important;
     gap: 12px !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -12812,10 +12174,6 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
 
   .home-deck-section .home-deck-panel:last-child {
     display: none !important;
-  }
-
-  .home-deck-panel {
-    padding: 12px !important;
   }
 
   .home-deck-head {
@@ -12828,19 +12186,13 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
   }
 
   .home-rec-card {
-    width: 100% !important;
     min-height: 150px !important;
     max-width: 100% !important;
-    gap: 8px !important;
-    padding: 12px !important;
   }
 
   .mobile-voice-orb {
-    display: grid !important;
-    left: 50% !important;
     bottom: calc(42px + var(--ios-safe-bottom)) !important;
     z-index: 64 !important;
-    transform: translateX(-50%) !important;
   }
 
   .ios-tabbar {
@@ -12879,9 +12231,8 @@ html[dir="rtl"] .app-shell > aside:not(.desktop-trading-rail) {
   }
 }
 
-
 /* Approved terminal reference layout: compact thesfm trader dashboard */
-:root{--terminal-max:1188px;--terminal-rail:86px;--terminal-gap:10px;--terminal-bg: var(--ui-page);--terminal-panel: var(--ui-surface);--terminal-card: var(--ui-surface);--terminal-line: var(--ui-border);--terminal-line-strong: var(--ui-border-strong);--terminal-gold: var(--ui-accent);--terminal-gold-soft: var(--ui-accent-soft);--terminal-green: var(--ui-positive);--terminal-green-soft: var(--ui-positive-soft);--terminal-red: var(--ui-negative);--terminal-red-soft: var(--ui-negative-soft);--terminal-blue: var(--ui-accent);--terminal-text: var(--ui-text);--terminal-muted: var(--ui-muted)}
+:root{--terminal-max:1188px;--terminal-rail:86px;--terminal-bg: var(--ui-page);--terminal-panel: var(--ui-surface);--terminal-card: var(--ui-surface);--terminal-line: var(--ui-border);--terminal-line-strong: var(--ui-border-strong);--terminal-gold: var(--ui-accent);--terminal-gold-soft: var(--ui-accent-soft);--terminal-green: var(--ui-positive);--terminal-green-soft: var(--ui-positive-soft);--terminal-red: var(--ui-negative);--terminal-red-soft: var(--ui-negative-soft);--terminal-blue: var(--ui-accent);--terminal-text: var(--ui-text);--terminal-muted: var(--ui-muted)}
 .skip-link{position:fixed!important;z-index:1000!important;top:10px!important;inset-inline-start:10px!important;padding:10px 14px!important;border:2px solid var(--terminal-green)!important;border-radius:10px!important;background:#06131b!important;color:#fff!important;font-weight:900!important;text-decoration:none!important;transform:translateY(-160%)!important;transition:transform .15s ease!important}.skip-link:focus{transform:translateY(0)!important}
 html,body{width:100%!important;max-width:100%!important;overflow-x:hidden!important;background:var(--terminal-bg)!important}body{min-height:100dvh!important;color:var(--terminal-text)!important;font-family:"Cairo",Inter,"Segoe UI",Tahoma,Arial,sans-serif!important;letter-spacing:0!important;background:linear-gradient(90deg,rgba(64,108,135,.075) 1px,transparent 1px),linear-gradient(180deg,rgba(64,108,135,.055) 1px,transparent 1px),radial-gradient(circle at 10% 10%,rgba(22,141,255,.12),transparent 31%),radial-gradient(circle at 78% 6%,rgba(36,204,152,.11),transparent 30%),linear-gradient(180deg,#07131b 0%,#03080d 54%,#020508 100%)!important;background-size:74px 74px,74px 74px,auto,auto,auto!important}body:before{content:""!important;position:fixed!important;inset:0!important;pointer-events:none!important;z-index:0!important;opacity:.42!important;background:repeating-linear-gradient(90deg,transparent 0 60px,rgba(54,232,137,.08) 61px 62px,transparent 63px 122px),radial-gradient(circle at 44% 18%,rgba(216,172,80,.12),transparent 7%),linear-gradient(115deg,transparent 0 42%,rgba(19,83,96,.16) 45% 50%,transparent 53% 100%)!important}body:after{content:""!important;position:fixed!important;inset:0!important;pointer-events:none!important;z-index:0!important;opacity:.34!important;background-image:linear-gradient(180deg,transparent 0 22px,rgba(54,232,137,.16) 22px 42px,transparent 42px 56px),linear-gradient(180deg,transparent 0 18px,rgba(255,93,108,.13) 18px 34px,transparent 34px 52px);background-size:86px 132px,96px 144px;background-position:34px 20px,86px 82px}.app-shell{position:relative!important;z-index:1!important;width:min(var(--terminal-max),calc(100vw - 36px))!important;max-width:var(--terminal-max)!important;margin:16px auto 22px!important;padding:12px!important;display:grid!important;grid-template-columns:var(--terminal-rail) minmax(0,1fr)!important;grid-template-areas:"rail topbar" "rail main" "rail footer"!important;gap:var(--terminal-gap) 12px!important;border:1px solid rgba(216,172,80,.28)!important;border-radius:22px!important;background:linear-gradient(135deg,rgba(4,13,20,.96),rgba(3,9,14,.9)),radial-gradient(circle at 82% 6%,rgba(216,172,80,.11),transparent 25%)!important;box-shadow:0 26px 80px rgba(0,0,0,.48),inset 0 0 0 1px rgba(255,255,255,.025)!important;overflow:visible!important}.app-shell:before,.app-shell:after,.ticker-band,.sfm-live-floor .floor-stage,.sfm-live-floor .floor-action-row,.sfm-live-floor .floor-board,.command-center-band .mode-row{display:none!important}.app-view-hidden{display:none!important}button,a,input,select{font:inherit!important}.topbar{grid-area:topbar!important;min-height:62px!important;height:62px!important;padding:10px 14px!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto auto!important;align-items:center!important;gap:12px!important;border:1px solid var(--terminal-line)!important;border-radius:16px!important;background:rgba(2,8,12,.92)!important;box-shadow:inset 0 0 0 1px rgba(216,172,80,.035)!important;overflow:hidden!important}.brand-lockup{min-width:0!important;display:flex!important;align-items:center!important;gap:11px!important}.brand-lockup .eyebrow,.brand-subtitle{display:none!important}.brand-lockup h1{margin:0!important;display:flex!important;align-items:center!important;gap:10px!important;color:var(--terminal-gold)!important;font-size:clamp(25px,2.35vw,34px)!important;line-height:1!important;font-weight:900!important;letter-spacing:-.01em!important;text-transform:lowercase!important;white-space:nowrap!important}.brand-lockup h1:before{content:""!important;flex:0 0 42px!important;width:42px!important;height:42px!important;border-radius:12px!important;border:1px solid rgba(216,172,80,.9)!important;background:radial-gradient(circle at 67% 35%,rgba(51,226,238,.44),transparent 18%),url("the-sfm-trader-icon-256.png") center/82% 82% no-repeat,linear-gradient(145deg,rgba(216,172,80,.12),rgba(4,12,18,.94))!important;box-shadow:0 0 20px rgba(216,172,80,.2)!important}.header-session-mini{display:flex!important;align-items:center!important;gap:8px!important;color:var(--terminal-muted)!important;font-size:12px!important;white-space:nowrap!important}.header-session-mini span{width:8px!important;height:8px!important;border-radius:999px!important;background:var(--terminal-green)!important;box-shadow:0 0 14px rgba(54,232,137,.75)!important}.header-session-mini strong{color:var(--terminal-text)!important;font-size:15px!important;font-weight:900!important}.header-session-mini em{font-style:normal!important;color:#c5d1da!important}.top-actions{display:flex!important;align-items:center!important;gap:8px!important}.status-pill,.notification-button,.settings-button,.icon-button,.text-button,.primary-button{min-height:34px!important;height:34px!important;border:1px solid var(--terminal-line)!important;border-radius:11px!important;background:rgba(5,12,18,.78)!important;color:var(--terminal-text)!important;padding:0 12px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;text-decoration:none!important;box-shadow:none!important}.status-pill{color:var(--terminal-muted)!important}.status-pill .pulse{width:8px!important;height:8px!important;border-radius:999px!important;background:var(--terminal-green)!important}.notification-button strong{min-width:22px!important;height:22px!important;border-radius:999px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;background:rgba(148,163,184,.13)!important;color:#dce6ef!important;font-size:12px!important}.mobile-notification-visual,.mobile-settings-button{display:none!important}
 .desktop-trading-rail{grid-area:rail!important;width:var(--terminal-rail)!important;min-width:var(--terminal-rail)!important;align-self:stretch!important;padding:12px 10px!important;display:flex!important;flex-direction:column!important;align-items:center!important;gap:8px!important;border:1px solid rgba(216,172,80,.2)!important;border-radius:18px!important;background:linear-gradient(180deg,rgba(4,10,15,.97),rgba(2,7,11,.95))!important;box-shadow:0 22px 56px rgba(0,0,0,.36)!important;overflow:hidden!important;position:relative!important;top:auto!important;left:auto!important;right:auto!important;transform:none!important;z-index:2!important}.rail-top-mark{width:48px!important;height:48px!important;min-height:48px!important;border-radius:13px!important;border:1px solid rgba(216,172,80,.82)!important;display:grid!important;place-items:center!important;color:var(--terminal-gold)!important;background:rgba(216,172,80,.08)!important;margin-bottom:4px!important}.rail-lucide-icon,.tab-lucide-icon{width:22px!important;height:22px!important;stroke:currentColor!important;stroke-width:1.9!important;fill:none!important;stroke-linecap:round!important;stroke-linejoin:round!important}.rail-link{width:62px!important;min-height:58px!important;padding:6px 4px!important;border:1px solid transparent!important;border-radius:13px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:5px!important;color:#bdc9d3!important;text-decoration:none!important;background:transparent!important}.rail-link.active{border-color:rgba(216,172,80,.72)!important;background:rgba(216,172,80,.12)!important;color:var(--terminal-gold)!important;box-shadow:0 0 22px rgba(216,172,80,.12)!important}.rail-icon{width:24px!important;height:24px!important;display:grid!important;place-items:center!important;color:inherit!important;background:transparent!important;border:0!important;box-shadow:none!important}.rail-link b{max-width:100%!important;font-size:10px!important;line-height:1.1!important;font-weight:800!important;text-align:center!important;overflow:hidden!important;text-overflow:ellipsis!important}.rail-voice{margin-top:auto!important;min-height:74px!important;border-color:rgba(23,141,255,.86)!important;color:#dff2ff!important;background:radial-gradient(circle at 50% 22%,rgba(23,141,255,.36),rgba(9,18,28,.86))!important;box-shadow:0 0 26px rgba(23,141,255,.45)!important}.rail-voice .rail-icon{width:38px!important;height:38px!important;border-radius:999px!important;border:1px solid rgba(151,215,255,.74)!important;background:radial-gradient(circle,rgba(23,141,255,.45),rgba(3,10,16,.62))!important}
@@ -12959,8 +12310,6 @@ body:not(.intro-running) .intro-overlay {
 }
 
 .brand-lockup h1 {
-  gap: 10px !important;
-  color: var(--terminal-gold) !important;
   font-size: clamp(25px, 2vw, 32px) !important;
   text-shadow: 0 0 18px rgba(216, 172, 80, 0.18) !important;
 }
@@ -13028,7 +12377,6 @@ body:not(.intro-running) .intro-overlay {
 }
 
 .live-pulse-grid {
-  grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
   gap: 8px !important;
 }
 
@@ -13083,9 +12431,6 @@ body:not(.intro-running) .intro-overlay {
   width: 30px !important;
   height: 30px !important;
   flex-basis: 30px !important;
-  border-radius: 999px !important;
-  overflow: hidden !important;
-  position: relative !important;
 }
 
 .market-icon-premium {
@@ -13097,14 +12442,11 @@ body:not(.intro-running) .intro-overlay {
   color: #5df5a3 !important;
   background: radial-gradient(circle, rgba(54, 232, 137, 0.32), rgba(4, 36, 24, 0.94)) !important;
   font-size: 19px !important;
-  font-weight: 950 !important;
 }
 
 .market-premium-bitcoin {
   color: #fff2ca !important;
   background: radial-gradient(circle, #f3a43c 0 42%, #6d3d0e 100%) !important;
-  font-size: 18px !important;
-  font-weight: 950 !important;
 }
 
 .market-premium-commodity {
@@ -13113,22 +12455,16 @@ body:not(.intro-running) .intro-overlay {
 }
 
 .market-premium-commodity svg {
-  width: 20px !important;
-  height: 20px !important;
   fill: rgba(255, 213, 111, 0.28) !important;
-  stroke: #ffe29a !important;
   stroke-width: 1.8 !important;
 }
 
 .market-premium-flag {
-  position: relative !important;
   isolation: isolate !important;
   background: #f8fafc !important;
 }
 
 .market-premium-flag i {
-  display: block !important;
-  width: 100% !important;
   height: 20% !important;
 }
 
@@ -13138,11 +12474,6 @@ body:not(.intro-running) .intro-overlay {
 }
 
 .market-premium-us b {
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 48% !important;
-  height: 56% !important;
   background: #243a78 !important;
 }
 
@@ -13151,9 +12482,7 @@ body:not(.intro-running) .intro-overlay {
 }
 
 .market-premium-gcc b {
-  color: #062015 !important;
   font-size: 8px !important;
-  font-weight: 950 !important;
   text-shadow: 0 1px rgba(255, 255, 255, 0.5) !important;
 }
 
@@ -13168,7 +12497,6 @@ body:not(.intro-running) .intro-overlay {
 }
 
 .command-center-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   gap: 8px !important;
 }
 
@@ -13211,7 +12539,6 @@ body:not(.intro-running) .intro-overlay {
 }
 
 .home-heatmap-grid {
-  grid-template-columns: repeat(8, minmax(0, 1fr)) !important;
   grid-auto-rows: 35px !important;
   gap: 7px !important;
 }
@@ -13233,7 +12560,6 @@ body:not(.intro-running) .intro-overlay {
 }
 
 .home-recommendations {
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   gap: 8px !important;
 }
 
@@ -13280,10 +12606,7 @@ body:not(.intro-running) .intro-overlay {
 .asset-logo-svg {
   width: 25px !important;
   height: 25px !important;
-  fill: currentColor !important;
-  stroke: currentColor !important;
   stroke-width: 1.4 !important;
-  stroke-linejoin: round !important;
 }
 
 .asset-logo-svg-apple {
@@ -13292,8 +12615,6 @@ body:not(.intro-running) .intro-overlay {
 
 .asset-logo-text {
   font-size: 14px !important;
-  font-weight: 950 !important;
-  letter-spacing: 0 !important;
 }
 
 .asset-logo-apple {
@@ -13301,7 +12622,6 @@ body:not(.intro-running) .intro-overlay {
 }
 
 .asset-logo-gold {
-  color: #ffd66e !important;
   background: radial-gradient(circle, rgba(255, 214, 110, 0.22), rgba(60, 36, 5, 0.88)) !important;
 }
 
@@ -13391,8 +12711,6 @@ body:not(.intro-running) .intro-overlay {
   }
 
   .live-pulse-strip {
-    grid-template-columns: 1fr !important;
-    grid-template-rows: auto auto auto !important;
     gap: 9px !important;
   }
 
@@ -13421,10 +12739,6 @@ body:not(.intro-running) .intro-overlay {
     height: auto !important;
     min-height: 0 !important;
     padding: 11px !important;
-  }
-
-  .market-tabs {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   }
 
   .market-button {
@@ -13488,10 +12802,6 @@ body:not(.intro-running) .intro-overlay {
   }
 
   .ios-tabbar {
-    position: fixed !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
     width: 100vw !important;
     max-width: 100vw !important;
     height: calc(78px + env(safe-area-inset-bottom)) !important;
@@ -14128,7 +13438,6 @@ body:not(.intro-running) .intro-overlay {
   .signal-asset-logo {
     width: 40px !important;
     height: 40px !important;
-    border-radius: 13px !important;
   }
 }
 
@@ -14330,7 +13639,6 @@ body:not(.intro-running) .intro-overlay {
 
 @media (max-width: 760px) {
   .market-tabs {
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
     gap: 8px !important;
   }
 
@@ -14366,9 +13674,6 @@ body:not(.intro-running) .intro-overlay {
   position: relative !important;
   gap: 10px !important;
   color: var(--terminal-gold) !important;
-  letter-spacing: 0 !important;
-  font-weight: 950 !important;
-  text-transform: lowercase !important;
   text-shadow:
     0 1px 0 rgba(255, 240, 184, 0.18),
     0 0 18px rgba(216, 172, 80, 0.26) !important;
@@ -14433,7 +13738,6 @@ body:not(.intro-running) .intro-overlay {
   .brand-lockup h1 {
     gap: 8px !important;
     font-size: 17px !important;
-    line-height: 1 !important;
   }
 
   .brand-lockup h1::before {
@@ -14688,7 +13992,6 @@ body[data-app-view="home"] .home-deck-panel {
 
   body[data-app-view="home"] .command-center-grid {
     display: grid !important;
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
     gap: 8px !important;
     min-width: 0 !important;
   }
@@ -14700,7 +14003,6 @@ body[data-app-view="home"] .home-deck-panel {
     max-height: 108px !important;
     padding: 10px !important;
     border-radius: 12px !important;
-    overflow: hidden !important;
   }
 
   body[data-app-view="home"] .command-card span {
@@ -14760,7 +14062,6 @@ body[data-app-view="home"] .home-deck-panel {
     display: grid !important;
     grid-template-columns: minmax(0, 2.15fr) minmax(250px, 0.85fr) !important;
     gap: 10px !important;
-    overflow: hidden !important;
   }
 
   body[data-app-view="home"] .home-deck-panel {
@@ -14770,7 +14071,6 @@ body[data-app-view="home"] .home-deck-panel {
     padding: 10px 12px !important;
     grid-template-rows: 24px minmax(0, 1fr) !important;
     gap: 8px !important;
-    overflow: hidden !important;
   }
 
   body[data-app-view="home"] .home-recommendations {
@@ -14780,9 +14080,6 @@ body[data-app-view="home"] .home-deck-panel {
   }
 
   body[data-app-view="home"] .home-rec-card {
-    height: 122px !important;
-    min-height: 122px !important;
-    max-height: 122px !important;
     padding: 9px !important;
     grid-template-rows: 34px 45px 14px !important;
     gap: 6px !important;
@@ -14881,8 +14178,6 @@ body[data-app-view="home"] .home-deck-panel {
 
   body[data-app-view="home"] .sfm-live-floor {
     height: auto !important;
-    min-height: 0 !important;
-    padding: 12px !important;
     overflow: hidden !important;
   }
 
@@ -15130,18 +14425,13 @@ body[data-app-view="home"] .home-deck-panel {
     height: 150px !important;
     min-height: 150px !important;
     max-height: 150px !important;
-    padding: 9px 11px !important;
-    grid-template-rows: 20px minmax(0, 1fr) !important;
-    gap: 7px !important;
   }
 
   body[data-app-view="home"] .home-rec-card {
     height: 108px !important;
     min-height: 108px !important;
     max-height: 108px !important;
-    padding: 8px !important;
     grid-template-rows: 31px 40px 13px !important;
-    gap: 5px !important;
   }
 
   body[data-app-view="home"] .home-rec-top {
@@ -15601,9 +14891,7 @@ main > section {
   }
 
   body:not(.intro-running) .app-shell {
-    width: 100% !important;
     max-width: 100vw !important;
-    min-height: 100dvh !important;
     margin: 0 !important;
     padding: 8px 10px 0 !important;
     display: block !important;
@@ -15611,7 +14899,6 @@ main > section {
   }
 
   body:not(.intro-running) .topbar {
-    position: sticky !important;
     top: max(6px, env(safe-area-inset-top)) !important;
     z-index: 60 !important;
     width: 100% !important;
@@ -15658,9 +14945,7 @@ main > section {
   body:not(.intro-running) .market-tabs {
     width: 100% !important;
     display: grid !important;
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
     gap: 7px !important;
-    overflow: visible !important;
   }
 
   body:not(.intro-running) .market-button {
@@ -15942,7 +15227,6 @@ main > section {
   body[data-app-view="home"] .app-shell {
     width: min(1840px, calc(100vw - 24px)) !important;
     max-width: 1840px !important;
-    transform: none !important;
     transform-origin: top center !important;
   }
 
@@ -16014,10 +15298,6 @@ main > section {
     height: 60px !important;
     padding: 0 12px !important;
     scroll-snap-align: start !important;
-  }
-
-  body:not(.intro-running) .market-button-copy {
-    min-width: 0 !important;
   }
 
   body:not(.intro-running) .market-button-copy strong {
@@ -16208,22 +15488,6 @@ main > section {
     overflow-x: hidden !important;
   }
 
-  body:not(.intro-running) .app-shell,
-  body[data-app-view="home"] .app-shell {
-    width: calc(100vw - (var(--terminal-desktop-gutter) * 2)) !important;
-    max-width: none !important;
-    min-height: max(calc(100svh - (var(--terminal-desktop-gutter) * 2)), 940px) !important;
-    height: auto !important;
-    margin: var(--terminal-desktop-gutter) auto !important;
-    padding: clamp(11px, 0.85vw, 16px) !important;
-    grid-template-columns: var(--terminal-desktop-rail) minmax(0, 1fr) !important;
-    grid-template-rows: clamp(62px, 5.5svh, 78px) minmax(0, 1fr) clamp(32px, 3.2svh, 42px) !important;
-    gap: var(--terminal-desktop-gap) clamp(12px, 1vw, 18px) !important;
-    transform: none !important;
-    zoom: 1 !important;
-    overflow: hidden !important;
-  }
-
   body:not(.intro-running) .desktop-trading-rail,
   body[data-app-view="home"] .desktop-trading-rail {
     width: var(--terminal-desktop-rail) !important;
@@ -16241,20 +15505,9 @@ main > section {
     max-height: none !important;
   }
 
-  body:not(.intro-running) .app-shell > main,
-  body[data-app-view="home"] .app-shell > main {
-    height: 100% !important;
-    min-height: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    gap: var(--terminal-desktop-gap) !important;
-    overflow: hidden !important;
-  }
-
   body[data-app-view="home"] .sfm-live-floor {
     flex: 1.08 1 172px !important;
     min-height: clamp(172px, 17.6svh, 204px) !important;
-    padding: clamp(13px, 1vw, 18px) !important;
   }
 
   body[data-app-view="home"] .live-pulse-card {
@@ -16269,43 +15522,21 @@ main > section {
     max-height: none !important;
   }
 
-  body[data-app-view="home"] .market-tabs {
-    padding-bottom: 10px !important;
-  }
-
   body[data-app-view="home"] .market-button {
-    height: clamp(58px, 6.3svh, 72px) !important;
     min-width: clamp(166px, 10.6vw, 238px) !important;
   }
 
   body[data-app-view="home"] .command-center-band {
     flex: 0.98 1 154px !important;
     min-height: clamp(156px, 16.2svh, 190px) !important;
-    padding: clamp(12px, 0.95vw, 16px) !important;
   }
 
   body[data-app-view="home"] .command-center-grid {
-    height: 100% !important;
     grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   }
 
-  body[data-app-view="home"] .command-card,
-  body[data-app-view="home"] .command-dashboard-card {
-    height: 100% !important;
-    min-height: 0 !important;
-    max-height: none !important;
-  }
-
-  body[data-app-view="home"] .home-deck-section {
-    flex: 1.12 1 192px !important;
-    min-height: clamp(188px, 20svh, 238px) !important;
-    gap: var(--terminal-desktop-gap) !important;
-  }
-
   body[data-app-view="home"] .home-rec-card {
-    height: auto !important;
     min-height: 0 !important;
-    max-height: none !important;
   }
 }
 
@@ -16532,7 +15763,6 @@ body:not(.intro-running) .market-icon-badge.market-icon-gcc {
   }
 
   body:not(.intro-running) .mobile-voice-orb {
-    bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
     z-index: 72 !important;
   }
 
@@ -16618,9 +15848,6 @@ body:not(.intro-running) .app-shell {
 }
 
 @media (min-width: 1181px) {
-  body[data-app-view="home"] .home-heatmap-grid {
-    grid-auto-rows: minmax(28px, 1fr) !important;
-  }
 
   body[data-app-view="home"] .home-heat-cell {
     min-height: 0 !important;
@@ -16645,15 +15872,6 @@ body:not(.intro-running) .app-shell {
 }
 
 @media (min-width: 1181px) {
-  body:not(.intro-running) .app-shell,
-  body[data-app-view="home"] .app-shell {
-    min-height: max(calc(100svh - (var(--terminal-desktop-gutter) * 2)), 940px) !important;
-  }
-
-  body[data-app-view="home"] .home-heatmap-section {
-    flex: 0 0 148px !important;
-    min-height: 148px !important;
-  }
 }
 
 /* Desktop compression and overlay hard lock. Keep the trading terminal full-size and uncovered. */
@@ -16695,15 +15913,11 @@ body:not(.intro-running) .app-shell {
   body:not(.intro-running) .app-shell,
   body[data-app-view="home"] .app-shell {
     width: calc(100vw - (var(--terminal-desktop-gutter) * 2)) !important;
-    max-width: none !important;
     min-width: 0 !important;
     min-height: max(calc(100svh - (var(--terminal-desktop-gutter) * 2)), 940px) !important;
     height: auto !important;
     margin: var(--terminal-desktop-gutter) auto !important;
     padding: clamp(11px, 0.85vw, 16px) !important;
-    transform: none !important;
-    scale: 1 !important;
-    zoom: 1 !important;
     filter: none !important;
     backdrop-filter: none !important;
     isolation: isolate !important;
@@ -16747,13 +15961,8 @@ body:not(.intro-running) .app-shell {
 
   body:not(.intro-running) .app-shell > main,
   body[data-app-view="home"] .app-shell > main {
-    width: 100% !important;
-    max-width: none !important;
-    min-width: 0 !important;
     height: 100% !important;
     min-height: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
     gap: var(--terminal-desktop-gap) !important;
     overflow: hidden !important;
   }
@@ -17106,12 +16315,8 @@ body:not(.intro-running) .app-shell {
   }
 
   .market-tabs {
-    display: flex !important;
     align-items: stretch !important;
-    gap: 10px !important;
     padding: 0 0 8px !important;
-    overflow-x: auto !important;
-    overflow-y: visible !important;
     scrollbar-width: thin !important;
     position: relative !important;
     z-index: 10 !important;
@@ -17179,7 +16384,6 @@ body:not(.intro-running) .app-shell {
   }
 
   .command-center-grid {
-    display: grid !important;
     grid-template-columns: repeat(5, minmax(150px, 1fr)) !important;
     gap: 10px !important;
   }
@@ -17203,7 +16407,6 @@ body:not(.intro-running) .app-shell {
     width: 126px !important;
     height: 72px !important;
     margin: 8px auto 0 !important;
-    overflow: hidden !important;
     border-radius: 126px 126px 0 0 !important;
   }
 
@@ -17311,7 +16514,6 @@ body:not(.intro-running) .app-shell {
 
   .live-pulse-grid {
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 8px !important;
   }
 
@@ -17942,7 +17144,7 @@ body[data-app-view="home"] .sfm-live-floor {
 .node-new-york { left: 26%; top: 43%; }
 .node-london { left: 47%; top: 35%; }
 .node-frankfurt { left: 50%; top: 38%; }
-.node-kuwait { left: 58%; top: 51%; }
+.node-kuwait { left: 58%; }
 .node-riyadh { left: 57%; top: 58%; }
 .node-dubai { left: 61%; top: 57%; }
 .node-tokyo { left: 82%; top: 46%; }
@@ -18777,7 +17979,6 @@ html body .app-shell main > section#temporary-legal-notices#temporary-legal-noti
 }
 
 .desktop-trading-rail .rail-link {
-  display: grid !important;
   grid-template-columns: 28px minmax(0, 1fr);
   align-items: center;
   justify-items: start;
@@ -18812,10 +18013,6 @@ html[dir="ltr"] .desktop-trading-rail .rail-link {
 
 .desktop-trading-rail .rail-link b {
   display: block;
-  max-width: none !important;
-  overflow: visible !important;
-  text-overflow: clip !important;
-  white-space: normal !important;
   line-height: 1.25;
   word-break: normal;
 }
@@ -19505,34 +18702,13 @@ html[dir="ltr"] .desktop-trading-rail .rail-link {
     gap: 8px !important;
   }
 
-  .market-timeframe-controls {
-    display: grid !important;
-    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    gap: 6px !important;
-    width: 100% !important;
-  }
-
   .market-timeframe-button {
-    width: 100% !important;
-    min-width: 0 !important;
     min-height: 38px !important;
     padding: 0 !important;
-    font-size: 12px !important;
-    touch-action: manipulation !important;
   }
 
   .terminal-session-map {
-    min-height: 0 !important;
-    height: auto !important;
-    padding: 0 !important;
     border-radius: 18px !important;
-    display: block !important;
-  }
-
-  .terminal-session-map::before,
-  .session-route-layer,
-  .session-map-grid {
-    height: 250px !important;
   }
 
   .session-route-layer,
@@ -19556,7 +18732,6 @@ html[dir="ltr"] .desktop-trading-rail .rail-link {
 
   .global-session-cards {
     position: relative !important;
-    inset: auto !important;
     margin: 252px 8px 8px !important;
     z-index: 3 !important;
   }
@@ -19781,14 +18956,6 @@ html[dir="ltr"] .desktop-trading-rail .rail-link {
     min-width: 0 !important;
   }
 
-  .status-pill-mini,
-  .score-pill {
-    max-width: 100% !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-  }
-
   .recommendations-band .cards,
   #cards.cards {
     overflow: visible !important;
@@ -19804,10 +18971,7 @@ html[dir="ltr"] .desktop-trading-rail .rail-link {
   }
 
   .signal-card .card-top {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
     gap: 9px !important;
-    align-items: stretch !important;
   }
 
   .card-identity,
@@ -19835,19 +18999,11 @@ html[dir="ltr"] .desktop-trading-rail .rail-link {
     font-size: 17px !important;
     line-height: 1.15 !important;
     margin: 0 0 2px !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
   }
 
   .signal-card .asset-symbol {
-    direction: ltr !important;
-    unicode-bidi: plaintext !important;
     font-size: 12px !important;
     line-height: 1.25 !important;
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
   }
 
   .signal-card .action-stack {
@@ -19865,7 +19021,6 @@ html[dir="ltr"] .desktop-trading-rail .rail-link {
     width: auto !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    min-height: 30px !important;
     padding: 6px 9px !important;
     font-size: 11px !important;
   }
@@ -19909,26 +19064,17 @@ html[dir="ltr"] .desktop-trading-rail .rail-link {
   .signal-card .reasons {
     margin: 0 !important;
     max-height: 5.2em !important;
-    overflow: auto !important;
     padding-inline-start: 18px !important;
   }
 
   .site-footer {
     margin: 8px 0 calc(88px + var(--ios-safe-bottom)) !important;
-    padding: 10px !important;
-    min-height: 0 !important;
   }
 }
 
 @media (max-width: 430px) {
   .global-session-card-grid {
     grid-template-columns: minmax(0, 1fr) !important;
-  }
-
-  .terminal-session-map::before,
-  .session-route-layer,
-  .session-map-grid {
-    height: 236px !important;
   }
 
   .global-session-cards {
@@ -20151,7 +19297,6 @@ html[dir="ltr"] .desktop-trading-rail .rail-link {
     padding: calc(6px + var(--sfm-mobile-safe-top)) 10px calc(112px + var(--sfm-mobile-safe-bottom)) !important;
     box-sizing: border-box !important;
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) !important;
     grid-template-rows: auto 1fr auto !important;
     gap: 8px !important;
   }
@@ -21661,7 +20806,7 @@ body[data-app-view] .app-shell,
 @media (max-width: 900px) {
   .recommendation-table-scroll {
     display: none;
-  
+
   scrollbar-color: var(--ui-border-strong) var(--ui-inset);
 }
 
@@ -21682,7 +20827,7 @@ body[data-app-view] .app-shell,
   .recommendation-drawer-panel {
     width: min(100%, 100vw);
     border-inline-start: 0;
-  
+
   background: var(--ui-surface);
 }
 }

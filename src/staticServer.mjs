@@ -67,7 +67,7 @@ export function createStaticServer({ publicDir, production, securityHeaders }) {
         ? "no-cache"
         : LONG_LIVED.has(extension)
           ? "public, max-age=86400, stale-while-revalidate=604800"
-          : "public, max-age=300, stale-while-revalidate=86400";
+          : "no-cache";
       if (request.headers["if-none-match"] === asset.etag) {
         response.writeHead(304, {
           ...securityHeaders(MIME_TYPES[extension] || "application/octet-stream", { html, hsts: production }),
@@ -82,23 +82,14 @@ export function createStaticServer({ publicDir, production, securityHeaders }) {
         ...securityHeaders(MIME_TYPES[extension] || "application/octet-stream", { html, hsts: production }),
         etag: asset.etag,
         "cache-control": cacheControl,
-        ...(encoded.compressed ? { "content-encoding": "br", vary: "Accept-Encoding" } : {})
+        vary: "Accept-Encoding",
+        ...(encoded.compressed ? { "content-encoding": "br" } : {})
       });
       return response.end(headOnly ? undefined : encoded.body);
-    } catch {
-      if (path.extname(requestedPath)) {
-        response.writeHead(404, securityHeaders("text/plain; charset=utf-8", { hsts: production }));
-        return response.end("Not found");
-      }
-      const fallbackPath = path.join(publicDir, "index.html");
-      const fallback = await loadAsset(fallbackPath);
-      const encoded = encode(request, fallback, ".html");
-      response.writeHead(200, {
-        ...securityHeaders(MIME_TYPES[".html"], { html: true, hsts: production }),
-        "cache-control": "no-cache",
-        ...(encoded.compressed ? { "content-encoding": "br", vary: "Accept-Encoding" } : {})
-      });
-      return response.end(headOnly ? undefined : encoded.body);
+    } catch (error) {
+      const status = error.code === "ENOENT" || error.code === "EISDIR" ? 404 : 500;
+      response.writeHead(status, securityHeaders("text/plain; charset=utf-8", { hsts: production }));
+      return response.end(headOnly ? undefined : status === 404 ? "Not found" : "Unable to load page");
     }
   };
 }

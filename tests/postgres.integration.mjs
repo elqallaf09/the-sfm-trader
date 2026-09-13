@@ -38,7 +38,23 @@ try {
     store.writeVersioned("user-a", "notifications", [], { expectedVersion: 0, idempotencyKey: "postgres-integration-0002", requestHash: "hash-b" }),
     (error) => error.statusCode === 409
   );
-  console.log("Postgres integration passed.");
+
+  const initialWrites = await Promise.allSettled([
+    store.writeVersioned("race-initial", "notifications", { value: "first" }, { expectedVersion: 0 }),
+    store.writeVersioned("race-initial", "notifications", { value: "second" }, { expectedVersion: 0 })
+  ]);
+  assert.equal(initialWrites.filter(result => result.status === "fulfilled").length, 1);
+  const rejected = initialWrites.find(result => result.status === "rejected");
+  assert.equal(rejected.reason.statusCode, 409);
+  assert.equal((await store.readVersioned("race-initial", "notifications")).version, 1);
+
+  const concurrentReplay = await Promise.all([
+    store.writeVersioned("race-replay", "notifications", { id: 1 }, { expectedVersion: 0, idempotencyKey: "concurrent-replay-0001" }),
+    store.writeVersioned("race-replay", "notifications", { id: 1 }, { expectedVersion: 0, idempotencyKey: "concurrent-replay-0001" })
+  ]);
+  assert.deepEqual(concurrentReplay.map(result => result.version), [1, 1]);
+  assert.equal(concurrentReplay.filter(result => result.replayed).length, 1);
+  console.log("Postgres integration passed, including concurrent first writes and replay.");
 } finally {
   await pool.end();
 }

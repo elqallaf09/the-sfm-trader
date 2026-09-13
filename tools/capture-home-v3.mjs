@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
+import axe from "axe-core";
 import path from "node:path";
 import { chromium } from "playwright";
 import { fixture } from "./fixtures/home-v3.mjs";
@@ -19,15 +20,15 @@ const consoleErrors = [];
 let activePage;
 let activeCase = "startup";
 
-async function openPage(viewport, initialMode = "fresh") {
+async function openPage(viewport, initialMode = "fresh", initialFeedMode = "fresh") {
   const context = await browser.newContext({ viewport, serviceWorkers: "block", reducedMotion: "reduce" });
   const page = await context.newPage();
   activePage = page;
-  const state = { mode: initialMode, requests: 0, notifications: [] };
+  const state = { mode: initialMode, feedsMode: initialFeedMode, requests: 0, notifications: [] };
   page.on("console", message => {
     if (message.type() !== "error") return;
     // Expected HTTP failures are asserted by the provider-unavailable scenarios.
-    if (state.mode === "unavailable" && /Failed to load resource:.*503/.test(message.text())) return;
+    if ((state.mode === "unavailable" || state.feedsMode === "unavailable") && /Failed to load resource:.*503/.test(message.text())) return;
     consoleErrors.push(message.text());
   });
   page.on("pageerror", error => consoleErrors.push(error.stack || error.message));
@@ -51,6 +52,18 @@ async function openPage(viewport, initialMode = "fresh") {
       }
       return respond(fixture);
     }
+    if (url.pathname === "/api/economic-calendar") {
+      if (state.feedsMode === "unavailable") return respond({ error: "Test calendar unavailable" }, 503);
+      return respond({ dataState: "fresh", fetchedAt: new Date().toISOString(), source: "Test calendar",
+        upcoming: [{ title: "Test economic event", currency: "USD", impact: "high",
+          isoTime: new Date(Date.now() + 3600000).toISOString(), forecast: "2%", previous: "1%", actual: "" }] });
+    }
+    if (url.pathname === "/api/market-news") {
+      if (state.feedsMode === "unavailable") return respond({ error: "Test news unavailable" }, 503);
+      return respond({ dataState: "fresh", fetchedAt: new Date().toISOString(),
+        articles: [{ title: "Test market headline", source: "Test publisher",
+          url: "https://example.test/news", publishedAt: new Date().toISOString() }] });
+    }
     if (url.pathname === "/api/asset") return respond({
       recommendation: fixture.recommendations.find(item => item.symbol === url.searchParams.get("symbol")) || fixture.recommendations[0],
       profile: {}, market: fixture.market
@@ -66,11 +79,22 @@ async function openPage(viewport, initialMode = "fresh") {
     }
     if (url.pathname === "/api/followed-trades") return respond({ followedEntries: [], followedTradeKeys: [], followedTradeAlerts: [], removedFollowedTradeKeys: [], version: 1 });
     if (url.pathname === "/api/ollama-status") return respond({ available: false });
-    if (url.pathname === "/api/metrics/web-vitals") return respond({ ok: true });
+    if (url.pathname === "/api/telemetry/web-vitals") return respond({ ok: true });
     return route.continue();
   });
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   return { page, context, state };
+}
+
+async function checkContrast(page, label) {
+  await page.evaluate(axe.source);
+  const result = await page.evaluate(async () => window.axe.run(document, {
+    runOnly: { type: "rule", values: ["color-contrast"] }
+  }));
+  assert.deepEqual(result.violations.map(({ id, nodes }) => ({
+    id, nodes: nodes.map(({ target, failureSummary }) => ({ target, failureSummary }))
+  })), [], "Rendered contrast failed: " + label);
+  checks.push(label + ": rendered text contrast");
 }
 
 async function waitState(page, state) {
@@ -127,6 +151,7 @@ try {
     // Always preserve evidence before assertions so a layout failure is reviewable.
     await page.screenshot({ path: path.join(outputDirectory, capture.file), fullPage: false });
     measurements.push({ file: capture.file, ...result });
+    await checkContrast(page, capture.file);
     assert.equal(result.document.scrollWidth, capture.viewport.width, "Horizontal overflow");
     assert.equal(result.brand, "SFM Trader");
     assert.equal(result.brandTransform, "none", "Brand capitalization changed by CSS");
@@ -160,6 +185,7 @@ try {
     await page.locator(nav).click();
     await waitView(page, "recommendations");
     await page.locator("#recommendations-section").waitFor({ state: "visible" });
+    await checkContrast(page, "recommendations");
     await page.goBack();
     await waitView(page, "home");
     await waitState(page, "fresh");
@@ -167,11 +193,15 @@ try {
       for (const [key, view, selector] of [
         ["markets", "markets", "#markets-section"], ["favorites", "watchlist", "#watchlist-section"],
         ["portfolio", "portfolio", "#portfolio-section"], ["trades", "history", "#history-section"],
-        ["calendar", "calendar", "#calendar-section"]
+        ["calendar", "calendar", "#calendar-section"], ["news", "news", "#economic-news-section"],
+        ["ai-analysis", "ai", "#command-center-section"], ["education", "education", "#education-section"]
       ]) {
         await page.locator('.desktop-trading-rail [data-nav-key="' + key + '"]').click();
         await waitView(page, view);
         await page.locator(selector).waitFor({ state: "visible" });
+        if (view === "news") await page.locator("#economic-news-grid .market-feed-title").first().waitFor({ state: "visible" });
+        if (view === "calendar") await page.locator("#economic-calendar-grid .calendar-feed-card").first().waitFor({ state: "visible" });
+        await checkContrast(page, view);
         await page.goBack();
         await waitView(page, "home");
       }
@@ -183,6 +213,8 @@ try {
     await page.locator("#terminal-search-options [role=option]").first().waitFor({ state: "visible" });
     await page.locator("#terminal-symbol-search").press("Enter");
     await page.waitForURL(/detail\.html\?symbol=MSFT/);
+    await page.waitForFunction(() => document.querySelector("#detail-heading")?.textContent.includes("MSFT"));
+    await checkContrast(page, "detail");
     await page.locator(".detail-back").click();
     await waitView(page, "home");
     await waitState(page, "fresh");
@@ -220,6 +252,23 @@ try {
   assert.equal(await page.locator(".v3-opportunity-card").count(), 3);
   checks.push("Network failure retains data and marks it stale");
   await context.close();
+
+  activeCase = "independent feed failures and recovery";
+  const failedFeeds = await openPage({ width: 1440, height: 900 }, "fresh", "unavailable");
+  await waitState(failedFeeds.page, "fresh");
+  await failedFeeds.page.waitForFunction(() => document.querySelector("#v3-calendar-list").dataset.uiState === "unavailable");
+  assert.equal(await failedFeeds.page.locator(".v3-opportunity-card").count(), 3);
+  await failedFeeds.page.locator('.desktop-trading-rail [data-nav-key="news"]').click();
+  await waitView(failedFeeds.page, "news");
+  const feedRetry = failedFeeds.page.locator("#economic-news-grid [data-feed-refresh]");
+  await feedRetry.waitFor({ state: "visible" });
+  failedFeeds.state.feedsMode = "fresh";
+  await feedRetry.click();
+  await failedFeeds.page.locator("#economic-news-grid .market-feed-title").first().waitFor({ state: "visible" });
+  await failedFeeds.page.waitForFunction(() => document.querySelector("#economic-calendar-grid").dataset.uiState === "fresh");
+  await checkContrast(failedFeeds.page, "news after recovery");
+  checks.push("Feed failure does not erase market analysis; retry restores actual feed requests");
+  await failedFeeds.context.close();
 
   activeCase = "controls while provider is loading";
   const loading = await openPage({ width: 390, height: 844 }, "loading");
