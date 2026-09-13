@@ -51,6 +51,10 @@ async function openPage(viewport, initialMode = "fresh") {
       }
       return respond(fixture);
     }
+    if (url.pathname === "/api/asset") return respond({
+      recommendation: fixture.recommendations.find(item => item.symbol === url.searchParams.get("symbol")) || fixture.recommendations[0],
+      profile: {}, market: fixture.market
+    });
     if (url.pathname === "/api/markets") return respond({ markets: [
       { id: "us", label: "US Market", count: 8, totalSymbols: 8 },
       { id: "crypto", label: "Crypto", count: 0, totalSymbols: 0 }
@@ -140,7 +144,7 @@ try {
       assert.ok(capture.viewport.width - result.shell.right >= 16 && capture.viewport.width - result.shell.right <= 32, "Shell right");
       assert.ok(result.rail.left >= result.shell.left && result.rail.right <= result.shell.right, "Rail containment");
       assert.ok(Math.abs(result.rail.top - result.topbar.top) <= 1, "Rail/topbar alignment");
-      assert.ok(result.lower.top <= capture.viewport.height + 120, "Lower panels pushed too far below viewport");
+      assert.ok(result.lower.top < capture.viewport.height, "Lower panels must begin within the viewport");
       assert.ok(result.footer.top - result.main.bottom <= 32, "Blank row before footer");
     }
     checks.push(capture.file + ": geometry, brand, controls, logo colors");
@@ -175,13 +179,15 @@ try {
     }
     await page.keyboard.press("Control+k");
     assert.equal(await page.locator("#terminal-symbol-search").evaluate(el => el === document.activeElement), true);
-    await page.locator("#terminal-symbol-search").fill("msft");
-    const popupPromise = page.waitForEvent("popup");
+    await page.locator("#terminal-symbol-search").fill("مايكروسوفت");
+    await page.locator("#terminal-search-options [role=option]").first().waitFor({ state: "visible" });
     await page.locator("#terminal-symbol-search").press("Enter");
-    const popup = await popupPromise;
-    await popup.waitForURL(/detail\.html\?symbol=MSFT/);
-    await popup.close();
-    checks.push(capture.file + ": search opens normalized symbol");
+    await page.waitForURL(/detail\.html\?symbol=MSFT/);
+    await page.locator(".detail-back").click();
+    await waitView(page, "home");
+    await waitState(page, "fresh");
+    assert.equal(await page.locator("#terminal-symbol-search").inputValue(), "مايكروسوفت");
+    checks.push(capture.file + ": Arabic company search, same-tab details and return state");
     await context.close();
   }
 

@@ -1,3 +1,4 @@
+import { navigateBackFromDetail, safeHomeUrl } from "./modules/detailNavigation.js";
 import { API_TOKEN_STORAGE_KEY } from "./modules/apiClient.js";
 import { setUiState } from "./modules/uiState.js";
 import "./modules/webVitals.js";
@@ -9,8 +10,8 @@ const NUMBER_LOCALE = "ar-KW-u-nu-latn";
 const NUMBER_OPTIONS = { numberingSystem: "latn" };
 const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
 const DETAIL_BRAND_TITLES = {
-  ar: "اس اف ام المحلل الذكي",
-  en: "SFM Smart Analyzer"
+  ar: "SFM Trader",
+  en: "SFM Trader"
 };
 const DETAIL_PAGE_TITLES = {
   ar: "تفاصيل السهم",
@@ -655,21 +656,13 @@ registerPwaServiceWorker();
 loadDetail();
 
 function initDetailBackButton() {
-  elements.back?.addEventListener("click", (event) => {
+  if (!elements.back) return;
+  elements.back.href = safeHomeUrl(params.get("returnTo")) || "/#view-home";
+  elements.back.textContent = detailText("العودة", "Back");
+  elements.back.addEventListener("click", (event) => {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
-    try {
-      sessionStorage.setItem("the-sfm-trader-skip-intro", "1");
-    } catch {}
-
-    try {
-      const referrer = document.referrer ? new URL(document.referrer) : null;
-      if (referrer?.origin === window.location.origin && history.length > 1) {
-        history.back();
-        return;
-      }
-    } catch {}
-
-    window.location.href = "/?skipIntro=1#view-markets";
+    navigateBackFromDetail();
   });
 }
 
@@ -1068,8 +1061,8 @@ function syncDetailBrandTitle(symbolValue = activeDetailTitleSymbol) {
 
   for (const element of document.querySelectorAll("[data-brand-title]")) {
     if (element.textContent !== brandTitle) element.textContent = brandTitle;
-    element.lang = textLang;
-    element.dir = textDir;
+    element.lang = "en";
+    element.dir = "ltr";
   }
 }
 

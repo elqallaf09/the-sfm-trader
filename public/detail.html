@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>تفاصيل السهم - اس اف ام المحلل الذكي</title>
+    <title>تفاصيل السهم - SFM Trader</title>
     <meta name="theme-color" content="#05090d" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="اس اف ام المحلل الذكي" />
+    <meta name="apple-mobile-web-app-title" content="SFM Trader" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
@@ -14,23 +14,25 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/styles.css?v=20260630-cinema" />
-    <link rel="stylesheet" href="/desktop-balance.css?v=20260630-cinema" />
-    <link rel="stylesheet" href="/cinema.css?v=20260702-bg" />
+    <link rel="stylesheet" href="/styles.css?v=20260914-market-search-nav-1" />
+    <link rel="stylesheet" href="/desktop-balance.css?v=20260801-hardening-2" />
+    <link rel="stylesheet" href="/cinema.css?v=20260804-home-v3-layout-fix-1" />
+    <link rel="stylesheet" href="/detail-brand.css?v=20260914-market-search-nav-1" />
   </head>
-  <body>
+  <body class="sfm-detail-page">
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
 
     <div class="app-shell detail-shell">
       <header class="topbar">
         <div class="brand-lockup">
           <p class="eyebrow">صفحة تحليل السهم</p>
-          <h1 data-brand-title>اس اف ام المحلل الذكي</h1>
+          <h1 data-brand-title lang="en" dir="ltr">SFM Trader</h1>
+          <p class="detail-brand-subtitle" lang="en" dir="ltr">AI Market Analysis</p>
           <span id="detail-symbol" class="detail-symbol-chip" hidden>--</span>
-          <p id="detail-name" class="brand-subtitle">اس اف ام المحلل الذكي</p>
+          <p id="detail-name" class="brand-subtitle">--</p>
         </div>
         <div class="top-actions">
-          <a class="text-button detail-back" href="/">رجوع للأسواق</a>
+          <a class="text-button detail-back" href="/#view-home">العودة</a>
           <div class="status-pill" aria-live="polite">
             <span class="pulse"></span>
             <span id="detail-status">تحميل التحليل</span>
@@ -199,27 +201,12 @@
       </main>
 
       <footer class="site-footer" aria-label="توقيع المنصة">
-        <span data-brand-title>اس اف ام المحلل الذكي</span>
+        <span data-brand-title lang="en" dir="ltr">SFM Trader</span>
         <nav class="legal-links" aria-label="روابط قانونية"><a href="/risk-disclosure.html">المخاطر</a><a href="/privacy.html">الخصوصية</a><a href="/terms.html">الشروط</a></nav>
         <strong>Powered by M.ALQ</strong>
       </footer>
     </div>
 
-    <script src="/detail.js?v=20260802-homepage-resilience" type="module"></script>
+    <script src="/detail.js?v=20260914-market-search-nav-1" type="module"></script>
   </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

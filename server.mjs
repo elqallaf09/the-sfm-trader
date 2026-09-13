@@ -10,6 +10,7 @@ import { analyzeSymbol } from "./src/analysis.mjs";
 import { getConfiguredProvider, getProviderHealth } from "./src/dataProviders.mjs";
 import { applyEconomicNewsOverlayToRecommendations, getEconomicCalendarForMarket } from "./src/economicCalendar.mjs";
 import { getMarketSummaries, markets } from "./src/markets.mjs";
+import { instrumentCatalog } from "./src/instrumentCatalog.mjs";
 import { createStateStore } from "./src/stateStore.mjs";
 import { createSecurity, securityHeaders } from "./src/security.mjs";
 import { configureHttpServer, normalizeRequestId, readJsonBody } from "./src/http.mjs";
@@ -73,7 +74,7 @@ const symbolExecutionMarketCache = createBoundedCache({
   maxEntries: boundedInteger(process.env.SFM_SYMBOL_MARKET_CACHE_MAX_ENTRIES, 2_000, 1, 10_000),
   maxAgeMs: 24 * 60 * 60 * 1000
 });
-const readOnlyApiPaths = new Set(["/api/health", "/api/ready", "/api/markets", "/api/recommendations", "/api/economic-calendar", "/api/watchlist", "/api/asset", "/api/ollama-status"]);
+const readOnlyApiPaths = new Set(["/api/health", "/api/ready", "/api/markets", "/api/instruments", "/api/recommendations", "/api/economic-calendar", "/api/watchlist", "/api/asset", "/api/ollama-status"]);
 const symbolAliases = {
   APPLE: "AAPL",
   APPL: "AAPL",
@@ -286,6 +287,10 @@ const server = http.createServer(async (request, response) => {
 
     if (readOnlyApiPaths.has(url.pathname) && request.method !== "GET") {
       return sendJson(response, { error: "Method not allowed" }, 405, request);
+    }
+
+    if (url.pathname === "/api/instruments") {
+      return sendJson(response, { instruments: instrumentCatalog });
     }
 
     if (url.pathname === "/api/markets") {

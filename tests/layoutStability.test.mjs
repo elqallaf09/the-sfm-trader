@@ -9,7 +9,8 @@ const readPngSize = (buffer) => ({
 
 const readHomeFiles = async () => Promise.all([
   readFile(new URL("../public/index.html", import.meta.url), "utf8"),
-  readFile(new URL("../public/app.js", import.meta.url), "utf8"),
+  Promise.all(["public/app.js", "public/modules/homeDashboard.js", "public/modules/assetBranding.js"]
+    .map(path => readFile(new URL("../" + path, import.meta.url), "utf8"))).then(parts => parts.join("\n")),
   readFile(new URL("../public/dashboard-v2.css", import.meta.url), "utf8"),
   readFile(new URL("../public/service-worker.js", import.meta.url), "utf8"),
   readFile(new URL("../public/layout-stability.css", import.meta.url), "utf8")
@@ -152,7 +153,7 @@ test("offline shell versions stay aligned with the Home V3 entry files", async (
   assert.ok(homeScript);
   assert.ok(worker.includes(`"${homeScript}"`));
   for (const stylesheet of homeStylesheets) assert.ok(worker.includes(`"${stylesheet}"`));
-  assert.match(worker, /the-sfm-trader-v20260913-home-v3-functional-1/);
+  assert.match(worker, /the-sfm-trader-v20260914-market-search-nav-1/);
 });
 
 test("Home V3 visual evidence is captured as exact viewport screenshots", async () => {

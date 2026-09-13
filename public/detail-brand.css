@@ -1,0 +1,16 @@
+/* Shared identity on the detail route; analysis panels keep their established layout. */
+body.sfm-detail-page .detail-shell .topbar .brand-lockup h1[data-brand-title] {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff !important;
+  background: none !important;
+  text-shadow: none !important;
+  text-transform: none !important;
+  font-size: 24px !important;
+  line-height: 1.2;
+}
+body.sfm-detail-page .detail-shell .brand-lockup h1::before,
+body.sfm-detail-page .detail-shell .brand-lockup h1::after { content: none !important; display: none !important; }
+body.sfm-detail-page .detail-brand-subtitle { margin: 4px 0 8px; color: #91a8c0; font-size: 12px; letter-spacing: .02em; }
+body.sfm-detail-page .detail-shell .topbar { border-color: #1d3652 !important; background: #0a1a2d !important; box-shadow: none !important; }
+body.sfm-detail-page .detail-back { color: #2fd6c0 !important; border-color: #1d3652 !important; min-height: 44px; display: inline-flex; align-items: center; }
+body.sfm-detail-page .site-footer [data-brand-title] { color: #fff !important; }
