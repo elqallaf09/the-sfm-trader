@@ -42,6 +42,10 @@ export function getAnalysisMetrics(item = {}, { english = false, localize = Stri
   const duration = typeof item.duration === "string" && item.duration.trim()
     ? localize(item.duration.trim()) : unavailable;
   return {
+    unavailable,
+    target: [item.target1, item.tradePlan?.target1, item.expectedPrice, item.target, item.priceTarget]
+      .map(value => typeof value === "number" || (typeof value === "string" && value.trim()) ? Number(value) : NaN)
+      .find(value => Number.isFinite(value) && value > 0) ?? null,
     confidence,
     confidenceText: confidence === null ? unavailable : String(Math.round(confidence)) + "%",
     confidenceRingText: confidence === null ? "--" : String(Math.round(confidence)) + "%",

@@ -52,7 +52,9 @@ body .app-shell .analysis-summary [data-metric-value] {
   overflow-wrap: anywhere;
   text-overflow: clip;
   font-variant-numeric: tabular-nums;
-  -webkit-text-fill-color: currentColor;
+  -webkit-text-fill-color: currentColor !important;
+
+  color: var(--ui-text) !important;
 }
 body :is(.app-shell, [data-recommendation-drawer]) [data-analysis-metric="confidence"] [data-metric-value] { color: var(--analysis-confidence) !important; }
 body :is(.app-shell, [data-recommendation-drawer]) [data-analysis-metric="duration"] [data-metric-value] { color: var(--analysis-duration) !important; font-size: 13px; font-weight: 700; line-height: 1.7; }
@@ -78,20 +80,26 @@ body[data-app-view="home"] .v3-opportunity-card.hold header > b { color: var(--s
   body .app-shell .detail-analysis-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   body .app-shell :is(.signal-analysis-summary, .detail-analysis-summary) > [data-analysis-metric="duration"] { grid-column: 1 / -1; grid-row: 2; }
   body .app-shell .analysis-summary > [data-analysis-metric] { padding: 9px 10px; min-height: 60px; }
-  body .app-shell .analysis-summary [data-metric-value] { font-size: 17px; }
+  body .app-shell .analysis-summary [data-metric-value] { font-size: 17px; 
+  color: var(--ui-text) !important;
+
+  -webkit-text-fill-color: currentColor !important;
+}
   body .app-shell .analysis-summary [data-metric-value="duration"] { font-size: 13px; }
   body[data-app-view="home"] .v3-opportunity-card .v3-confidence-metric { grid-template-columns: 1fr; justify-items: center; gap: 5px; }
   body[data-app-view="home"] .v3-opportunity-card .v3-card-confidence { width: 44px; height: 44px; }
 }
 
 /* The live recommendation table and mobile cards use the same visible metric fields. */
-body .recommendation-table { min-width: 1060px; }
+body .recommendation-table { min-width: 1160px; }
 body .recommendation-table th { color: var(--ui-muted) !important; background: var(--ui-raised) !important; }
 body .recommendation-table td { color: var(--ui-text) !important; }
 body .recommendation-table td[data-analysis-metric] { padding-block: 14px; }
 body .recommendation-table [data-metric-value],
 body [data-recommendation-drawer] [data-metric-value],
-body .recommendation-mobile-card [data-metric-value] { display: block; font-weight: 800; font-size: 15px; -webkit-text-fill-color: currentColor; }
+body .recommendation-mobile-card [data-metric-value] { display: block; font-weight: 800; font-size: 15px; -webkit-text-fill-color: currentColor !important; 
+  color: var(--ui-text) !important;
+}
 body .recommendation-table td[data-analysis-metric="duration"] { min-width: 145px; max-width: 230px; white-space: normal !important; }
 body .recommendation-table td[data-analysis-metric="duration"] strong,
 body [data-recommendation-drawer] [data-metric-value="duration"] { white-space: normal !important; overflow-wrap: anywhere; line-height: 1.7; font-size: 13px; }

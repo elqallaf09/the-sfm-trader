@@ -1246,13 +1246,13 @@ body::after {
   border-radius: 5px !important;
   font-size: 9px !important;
   font-weight: 700 !important;
-  background: var(--cin-green) !important;
-  color: #000 !important;
+  background: var(--ui-positive-soft) !important;
+  color: var(--ui-positive) !important;
   text-align: center !important;
   letter-spacing: 0.03em !important;
 }
 
-.rdp-pick-badge.sell { background: var(--cin-red) !important; color: #fff !important; }
+.rdp-pick-badge.sell { background: var(--ui-negative-soft) !important; color: var(--ui-negative) !important; }
 
 .rdp-pick-confidence,
 .rdp-pick-timeframe {

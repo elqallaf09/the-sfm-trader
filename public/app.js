@@ -1,4 +1,5 @@
-﻿import { calculateFinalScore, getAnalysisMetrics } from "./modules/analysisMetrics.js";
+import { createMarketFeeds, renderNewsFeed, renderCalendarFeed } from "./modules/marketFeeds.js";
+import { calculateFinalScore, getAnalysisMetrics } from "./modules/analysisMetrics.js";
 import { API_TOKEN_STORAGE_KEY, createIdempotencyKey, readStateVersion } from "./modules/apiClient.js";
 import { createVisibilityAwarePoller } from "./modules/polling.js";
 import { setUiState } from "./modules/uiState.js";
@@ -337,6 +338,11 @@ const UI_TEXT_TRANSLATIONS = {
   "آخر الحالات المحفوظة": "Latest saved positions",
   "المراكز التي اخترتها للمراقبة": "Positions you chose to monitor",
   "الصفقات المتابعة": "Followed trades",
+  "التقويم الاقتصادي": "Economic calendar",
+  "الأخبار الاقتصادية": "Economic news",
+  "أحداث الأسبوع والنتائج المنشورة من المصدر.": "Weekly events and published results from the source.",
+  "عناوين مؤرخة وروابط مباشرة إلى المصادر.": "Dated headlines with direct links to the sources.",
+  "موعد غير محدد": "Time to be confirmed",
   "أحداث موثقة من التقويم الاقتصادي": "Verified economic calendar events",
   "الأخبار الاقتصادية القادمة": "Upcoming economic events",
   "عرض التقويم": "View calendar",
@@ -1170,14 +1176,14 @@ const LEGACY_STORAGE_PREFIX = "the-sfm-";
 const TEMPORARY_LEGAL_NOTICE_STORAGE_KEY = "the-sfm-trader-dismissed-legal-notices";
 const APP_VIEW_GROUPS = {
   home: ["#terminal-home-v3", "#temporary-legal-notices"],
-  markets: ["#markets-section", ".summary-band", ".insight-band", "#calendar-section", "#economic-news-section", "#radar-section"],
+  markets: ["#markets-section", ".summary-band", ".insight-band", "#calendar-section", "#economic-calendar-section", "#economic-news-section", "#radar-section"],
   ai: ["#sfm-live-floor", "#command-center-section", "#radar-section", "#smart-alerts-section", "#golden-section", "#recommendations-section"],
   recommendations: ["#markets-section", ".summary-band", ".insight-band", "#command-center-section", "#recommendations-section", "#temporary-legal-notices", "#us-dashboard-section", "#us-outlook-section"],
   watchlist: ["#markets-section", "#watchlist-section", ".summary-band", ".insight-band"],
   portfolio: ["#markets-section", "#portfolio-section", ".summary-band", ".insight-band"],
   history: ["#history-section"],
   news: ["#economic-news-section", "#smart-alerts-section"],
-  calendar: ["#calendar-section", "#economic-news-section"],
+  calendar: ["#calendar-section", "#economic-calendar-section"],
   education: ["#education-section", "#radar-section"],
   alerts: ["#markets-section", "#history-section"],
   scalp: ["#markets-section", "#scalping-section"],
@@ -1334,6 +1340,7 @@ let recommendationFilterTimer = null;
 let terminalSearchController = null;
 let restoredNavigation = null;
 let homeDashboard = null;
+let marketFeeds = null;
 let recommendationListRenderer = null;
 let recommendationTableRenderer = null;
 let lastMarkets = [];
@@ -1470,7 +1477,14 @@ async function init() {
   initLiveFloor();
   initAppNavigation();
   setHomeDashboardState("loading");
-  refreshButton?.addEventListener("click", () => loadRecommendations({ force: true, skipGrace: true }));
+  Promise.resolve().then(() => getMarketFeeds().load());
+  refreshButton?.addEventListener("click", () => {
+    void getMarketFeeds().load({ force: true });
+    void loadRecommendations({ force: true, skipGrace: true });
+  });
+  document.addEventListener("click", event => {
+    if (event.target.closest("[data-feed-refresh]")) void getMarketFeeds().load({ force: true });
+  });
   watchlist = normalizeWatchlist(watchlist);
   voiceMonitors = normalizeWatchlist(voiceMonitors);
   saveStored("the-sfm-trader-watchlist", watchlist);
@@ -1509,6 +1523,11 @@ async function init() {
       name: "recommendations",
       intervalMs: RECOMMENDATIONS_REFRESH_MS,
       run: () => loadRecommendations({ background: true })
+    },
+    {
+      name: "market-feeds",
+      intervalMs: 5 * 60_000,
+      run: () => getMarketFeeds().load()
     },
     {
       name: "watchlist",
@@ -1769,6 +1788,7 @@ function showAppView(view, options = {}) {
   });
 
   if (lastData) renderRecommendations(lastData);
+  if (nextView === "calendar" || nextView === "news") renderMarketFeeds();
 
   if (nextView === "alerts") {
     setNotificationPanelOpen(true);
@@ -2854,6 +2874,7 @@ async function loadRecommendations(options = {}) {
   const force = Boolean(options.force);
   const background = Boolean(options.background);
   const skipGrace = Boolean(options.marketChanged || options.skipGrace);
+  if (options.marketChanged) void getMarketFeeds().load();
   const now = Date.now();
 
   if (isLoading && !force) return;
@@ -3020,7 +3041,7 @@ function renderRecommendations(data) {
   setInsight(largestMove, getTopItem(all, "move"), "لا توجد بيانات");
   safeRenderPanel("شريط الأسعار", () => updateTicker(all));
   renderActivePanel("نبض السوق", () => renderLivePulseStrip(data), livePulseGrid);
-  renderActivePanel("رزنامة الأخبار", () => renderEconomicNews(data.economicCalendar), economicNewsGrid);
+  renderActivePanel("الأخبار الاقتصادية", () => renderEconomicNews(), economicNewsGrid);
   renderActivePanel("لوحة النبض", () => renderTradingAtmosphere(data), floorHeatmap);
   renderActivePanel("غرفة القيادة", () => renderCommandCenter(data, recommendations), commandCenterGrid);
   renderActivePanel("أفضل الفرص", () => renderHomeDeck(data, recommendations), homeRecommendations);
@@ -3577,6 +3598,8 @@ function setHomeDashboardState(kind = "loading") {
   }
 
   setTerminalHomeV3State(kind);
+  const calendar = getMarketFeeds().snapshot().calendar;
+  if (calendar.dataState !== "loading") getHomeDashboard().renderCalendar(calendar);
 }
 
 function getHomeDashboard() {
@@ -3598,7 +3621,8 @@ function setTerminalHomeV3State(kind = "loading") {
 }
 
 function renderTerminalHomeV3(data = {}) {
-  getHomeDashboard().render(data);
+  const calendar = getMarketFeeds().snapshot().calendar;
+  getHomeDashboard().render({ ...data, economicCalendar: calendar.dataState === "loading" ? data.economicCalendar : calendar });
 }
 
 function renderHomeRecommendationCard(item) {
@@ -4138,50 +4162,35 @@ function renderLivePulseSparkline(values, tone, fallbackMove = 0) {
   `;
 }
 
-function renderEconomicNews(calendar) {
-  if (!economicNewsGrid || !economicNewsStatus) return;
+function getMarketFeeds() {
+  marketFeeds ||= createMarketFeeds({
+    request: fetchJson, getMarket: () => activeMarket,
+    onChange: () => renderMarketFeeds()
+  });
+  return marketFeeds;
+}
 
-  const status = calendar?.status || "clear";
-  const statusText = status === "hot"
-    ? "خبر قوي قريب"
-    : status === "watch"
-      ? "تحت المراقبة"
-      : "واضح";
-  economicNewsStatus.textContent = localizeUiText(statusText);
-  economicNewsStatus.className = `news-status-${status}`;
+function renderMarketFeeds() {
+  const snapshot = getMarketFeeds().snapshot();
+  const options = { english: isEnglishLanguage(), formatDateTime };
+  const news = renderNewsFeed(snapshot.news, options);
+  const calendar = renderCalendarFeed(snapshot.calendar, options);
+  const update = (prefix, feed) => {
+    const status = document.querySelector("#" + prefix + "-status");
+    const grid = document.querySelector("#" + prefix + "-grid");
+    const source = document.querySelector("#" + prefix + "-source");
+    if (status) { status.textContent = feed.status; status.dataset.uiState = feed.state; }
+    if (grid) { grid.innerHTML = feed.html; grid.dataset.uiState = feed.state; grid.setAttribute("aria-busy", String(feed.state === "loading")); }
+    if (source) source.textContent = feed.note;
+  };
+  update("economic-news", news);
+  update("economic-calendar", calendar);
+  if (snapshot.calendar.dataState !== "loading") getHomeDashboard().renderCalendar(snapshot.calendar);
+  updateRightPanelNews();
+}
 
-  const events = [
-    ...(calendar?.hotEvents || []),
-    ...(calendar?.upcoming || [])
-  ]
-    .filter(Boolean)
-    .filter((event, index, list) => list.findIndex((item) => item.title === event.title && item.currency === event.currency && item.isoTime === event.isoTime) === index)
-    .slice(0, 6);
-
-  if (!events.length) {
-    economicNewsGrid.innerHTML = `
-      <article class="economic-news-empty">
-        <strong>${escapeHtml(localizeUiText(calendar?.summary || "لا توجد أخبار اقتصادية مؤثرة قريبة."))}</strong>
-        <span>${escapeHtml(calendar?.source || "ForexFactory / Fair Economy")}</span>
-      </article>
-    `;
-    return;
-  }
-
-  economicNewsGrid.innerHTML = events.map((event) => {
-    const impact = event.impact || "medium";
-    const impactLabel = impact === "high" ? "عالي" : impact === "medium" ? "متوسط" : "منخفض";
-    return `
-      <article class="economic-news-card is-${escapeHtml(impact)}">
-        <div>
-          <span>${escapeHtml(event.currency || "--")}</span>
-          <strong>${escapeHtml(event.title || "--")}</strong>
-        </div>
-        <p>${escapeHtml(event.localTimeLabel || event.time || "--")}</p>
-        <b>${escapeHtml(impactLabel)}</b>
-      </article>
-    `;
-  }).join("");
+function renderEconomicNews() {
+  renderMarketFeeds();
 }
 
 function renderTradingAtmosphere(data) {
@@ -8756,16 +8765,10 @@ function updateRightPanel(all = [], buys = [], sells = []) {
 
 function updateRightPanelNews() {
   const newsEl = document.getElementById("rdp-news-list");
-  if (!newsEl || newsEl.dataset.populated === "1") return;
-
-  newsEl.innerHTML = `<div class="rdp-news-item rdp-news-unavailable">
-    <div class="rdp-news-dot" aria-hidden="true">i</div>
-    <div class="rdp-news-text">
-      <p>${escapeHtml(localizeUiText("لا توجد أخبار حية موثقة الآن"))}</p>
-      <span>${escapeHtml(localizeUiText("تظهر هنا فقط الأخبار المؤرخة والواردة من مزود موثوق."))}</span>
-    </div>
-  </div>`;
-  newsEl.dataset.populated = "1";
+  if (!newsEl) return;
+  const feed = renderNewsFeed(getMarketFeeds().snapshot().news, { english: isEnglishLanguage(), formatDateTime, compact: true });
+  newsEl.innerHTML = feed.html;
+  newsEl.dataset.uiState = feed.state;
 }
 
 /* ── Market Overview Bubble Updater ────────────────────────── */
@@ -9012,7 +9015,8 @@ function updateMarketOverviewBubbles(all = []) {
           duration: metrics.duration,
           confidenceText: metrics.confidenceText,
           scoreText: metrics.scoreText,
-          target: sfmFinalSafeText(item.target1 || item.target || item.priceTarget),
+          target: metrics.target,
+          targetText: metrics.target === null ? metrics.unavailable : sfmFinalFormatPrice(metrics.target, item.currency),
           risk,
           score: metrics.score,
           updatedAt: item.updatedAt || item.generatedAt || item.analyzedAt || "",
@@ -9023,7 +9027,7 @@ function updateMarketOverviewBubbles(all = []) {
           hasCriticalPrice,
           hasCorePrice,
           hasConfidence,
-          hasTarget: sfmFinalSafeNumber(item.target1) !== null || sfmFinalSafeNumber(item.target2) !== null,
+          hasTarget: metrics.target !== null,
           explanation: item.decision?.message || item.decision?.title || item.decisionTitle || item.comment || ""
         };
       })
@@ -9042,6 +9046,7 @@ function updateMarketOverviewBubbles(all = []) {
         <td><span class="recommendation-skeleton"></span></td>
         <td><span class="recommendation-skeleton"></span></td>
         <td><span class="recommendation-skeleton"></span></td>
+        <td><span class="recommendation-skeleton"></span></td>
       </tr>
     `).join("");
 
@@ -9052,6 +9057,7 @@ function updateMarketOverviewBubbles(all = []) {
             <tr>
               <th scope="col">${sfmFinalL("الأصل", "Asset")}</th>
               <th scope="col">${sfmFinalL("السعر", "Price")}</th>
+              <th scope="col">${sfmFinalL("الهدف", "Target")}</th>
               <th scope="col">${sfmFinalL("التغير", "Change")}</th>
               <th scope="col">${sfmFinalL("التوصية", "Recommendation")}</th>
               <th scope="col">${sfmFinalL("الثقة", "Confidence")}</th>
@@ -9118,6 +9124,7 @@ function updateMarketOverviewBubbles(all = []) {
           </div>
         </td>
         <td>${escapeHtml(rowPrice)}</td>
+        <td data-analysis-metric="target"><strong data-metric-value="target" dir="ltr">${escapeHtml(row.targetText)}</strong></td>
         <td class="recommendation-change ${safeChangeClass}">${escapeHtml(changeText)}</td>
         <td><span class="recommendation-badge ${recommendation.className}">${escapeHtml(recommendation.label)}</span></td>
         <td data-analysis-metric="confidence"><strong data-metric-value="confidence" dir="ltr">${escapeHtml(confidenceText)}</strong></td>
@@ -9160,6 +9167,10 @@ function updateMarketOverviewBubbles(all = []) {
           <div>
             <span>${sfmFinalL("التوصية", "Recommendation")}</span>
             <strong><span class="recommendation-badge ${recommendation.className}">${escapeHtml(recommendation.label)}</span></strong>
+          </div>
+          <div data-analysis-metric="target">
+            <span>${sfmFinalL("الهدف", "Target")}</span>
+            <strong data-metric-value="target" dir="ltr">${escapeHtml(row.targetText)}</strong>
           </div>
           <div data-analysis-metric="confidence">
             <span>${sfmFinalL("الثقة", "Confidence")}</span>
@@ -9226,6 +9237,7 @@ function updateMarketOverviewBubbles(all = []) {
             <tr>
               <th scope="col">${sfmFinalL("الأصل", "Asset")}</th>
               <th scope="col">${sfmFinalL("السعر", "Price")}</th>
+              <th scope="col">${sfmFinalL("الهدف", "Target")}</th>
               <th scope="col">${sfmFinalL("التغير", "Change")}</th>
               <th scope="col">${sfmFinalL("التوصية", "Recommendation")}</th>
               <th scope="col">${sfmFinalL("الثقة", "Confidence")}</th>
@@ -9280,9 +9292,7 @@ function updateMarketOverviewBubbles(all = []) {
     if (!sfmFinalDrawer || !sfmFinalDrawerContent || !row) return;
 
     const recommendation = row.action || { key: "pending", label: sfmFinalRecommendationPendingText, className: "is-pending" };
-    const targetText = row.target && row.target !== sfmFinalRecommendationDash
-      ? row.target
-      : sfmFinalL("غير متاح", "Unavailable");
+    const targetText = row.targetText;
     const explanation = sfmFinalSafeText(row.explanation)
       || (Array.isArray(row.reasons) && row.reasons.length
         ? row.reasons.slice(0, 5).join("، ")

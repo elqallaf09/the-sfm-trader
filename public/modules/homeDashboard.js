@@ -1,3 +1,4 @@
+import { escapeHtml, safeHttpUrl } from "./html.js";
 import { getAnalysisMetrics } from "./analysisMetrics.js";
 import { renderAssetLogo, getOfficialCompanyName } from "./assetBranding.js";
 
@@ -88,8 +89,9 @@ function renderTerminalHomeV3(data = {}) {
   const buys = items.filter((item) => item.action === "buy");
   const sells = items.filter((item) => item.action === "sell");
   const holds = items.filter((item) => item.action !== "buy" && item.action !== "sell");
-  const averageConfidence = items.length
-    ? Math.round(items.reduce((sum, item) => sum + Number(item.confidence || 0), 0) / items.length)
+  const confidences = items.map(item => getAnalysisMetrics(item).confidence).filter(value => value !== null);
+  const averageConfidence = confidences.length
+    ? Math.round(confidences.reduce((sum, value) => sum + value, 0) / confidences.length)
     : 0;
   const averageMove = items.length
     ? items.reduce((sum, item) => sum + Number(item.expectedMovePct || 0), 0) / items.length
@@ -105,7 +107,7 @@ function renderTerminalHomeV3(data = {}) {
     if (element) element.textContent = value;
   };
 
-  setText("#v3-confidence", items.length ? `${formatNumber(averageConfidence)}%` : "--");
+  setText("#v3-confidence", confidences.length ? `${formatNumber(averageConfidence)}%` : "--");
   setText("#v3-buy-count", formatNumber(buys.length));
   setText("#v3-sell-count", formatNumber(sells.length));
   setText("#v3-hold-count", formatNumber(holds.length));
@@ -118,7 +120,7 @@ function renderTerminalHomeV3(data = {}) {
   const confidenceRing = root.querySelector("#v3-confidence-ring");
   if (confidenceRing) {
     confidenceRing.style.setProperty("--v3-confidence", `${clamp(averageConfidence, 0, 100)}%`);
-    confidenceRing.setAttribute("aria-label", items.length ? `${localizeUiText("ثقة التحليل")} ${formatNumber(averageConfidence)}%` : localizeUiText("ثقة التحليل غير متاحة"));
+    confidenceRing.setAttribute("aria-label", confidences.length ? `${localizeUiText("ثقة التحليل")} ${formatNumber(averageConfidence)}%` : localizeUiText("ثقة التحليل غير متاحة"));
   }
 
   const english = isEnglishLanguage();
@@ -151,7 +153,7 @@ function renderTerminalHomeV3(data = {}) {
       : renderV3EmptyState("تظهر خريطة الحرارة بعد اكتمال تحليل السوق.");
     attachDetailOpeners(heatmapGrid);
   }
-  setText("#v3-heatmap-leader", heatItems[0] ? `${heatItems[0].symbol} · ${formatNumber(getDashboardScore(heatItems[0]))}%` : "--");
+  setText("#v3-heatmap-leader", heatItems[0] ? `${heatItems[0].symbol} · ${getAnalysisMetrics(heatItems[0], { english, localize: localizeUiText }).scoreText}` : "--");
 
   const pulseChart = root.querySelector("#v3-pulse-chart");
   if (pulseChart) pulseChart.innerHTML = renderV3PulseChart(items);
@@ -165,28 +167,31 @@ function renderTerminalHomeV3(data = {}) {
     attachDetailOpeners(followedList);
   }
 
-  const calendarList = root.querySelector("#v3-calendar-list");
-  if (calendarList) {
-    const calendar = data.economicCalendar || {};
-    const events = [...(calendar.hotEvents || []), ...(calendar.upcoming || [])]
-      .filter(Boolean)
-      .filter((event, index, list) => list.findIndex((candidate) => candidate.title === event.title && candidate.isoTime === event.isoTime) === index)
-      .slice(0, 3);
-    calendarList.innerHTML = events.length
-      ? events.map(renderV3CalendarEvent).join("")
-      : renderV3EmptyState(calendar.summary || "لا توجد أحداث اقتصادية موثقة قريبة.");
-  }
+  renderCalendar(data.economicCalendar);
+}
+
+function renderCalendar(calendar = {}) {
+  const calendarList = document.querySelector("#v3-calendar-list");
+  if (!calendarList) return;
+  const events = [...(calendar.hotEvents || []), ...(calendar.upcoming || []), ...(calendar.recent || [])]
+    .filter(Boolean)
+    .filter((event, index, list) => list.findIndex(candidate => candidate.title === event.title && candidate.currency === event.currency && candidate.isoTime === event.isoTime) === index)
+    .slice(0, 3);
+  calendarList.dataset.uiState = calendar.dataState || (events.length ? "fresh" : "empty");
+  calendarList.innerHTML = events.length
+    ? events.map(renderV3CalendarEvent).join("")
+    : renderV3EmptyState(calendar.summary || (calendar.dataState === "unavailable" ? "تعذر تحميل التقويم الاقتصادي من المصدر." : "لا توجد أحداث اقتصادية موثقة قريبة."), { kind: calendar.dataState || "empty" });
 }
 
 function renderV3Opportunity(item) {
   const tone = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : "hold";
-  const target = item.target1 || item.expectedPrice;
   const metrics = getAnalysisMetrics(item, { english: isEnglishLanguage(), localize: localizeUiText });
+  const target = metrics.target;
   const confidence = metrics.confidence ?? 0;
   const companyName = getOfficialCompanyName(item);
   return `<article class="v3-opportunity-card ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">
     <header>${renderAssetLogo(item, { className: "v3-asset-logo" })}<div><strong>${escapeHtml(item.symbol)}</strong><span>${escapeHtml(companyName)}</span></div><b>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</b></header>
-    <div class="v3-opportunity-metrics"><div><span>${escapeHtml(localizeUiText("السعر الحالي"))}</span><strong>${formatMoney(item.currentPrice, item.currency)}</strong></div><div><span>${escapeHtml(localizeUiText("الهدف"))}</span><strong>${target ? formatMoney(target, item.currency) : "--"}</strong></div><div class="v3-confidence-metric"><span>${escapeHtml(localizeUiText("ثقة التحليل"))}</span><span class="v3-card-confidence" style="--v3-card-confidence:${confidence}%" aria-label="${escapeHtml(`${metrics.confidenceLabel}: ${metrics.confidenceText}`)}" data-metric-value="confidence"><i>${escapeHtml(metrics.confidenceRingText)}</i></span></div></div>
+    <div class="v3-opportunity-metrics"><div><span>${escapeHtml(localizeUiText("السعر الحالي"))}</span><strong>${formatMoney(item.currentPrice, item.currency)}</strong></div><div><span>${escapeHtml(localizeUiText("الهدف"))}</span><strong>${target !== null ? formatMoney(target, item.currency) : escapeHtml(metrics.unavailable)}</strong></div><div class="v3-confidence-metric"><span>${escapeHtml(localizeUiText("ثقة التحليل"))}</span><span class="v3-card-confidence" style="--v3-card-confidence:${confidence}%" aria-label="${escapeHtml(`${metrics.confidenceLabel}: ${metrics.confidenceText}`)}" data-metric-value="confidence"><i>${escapeHtml(metrics.confidenceRingText)}</i></span></div></div>
     <div class="analysis-summary v3-analysis-summary" aria-label="${escapeHtml(isEnglishLanguage() ? "Analysis information" : "معلومات التحليل")}">
       <div data-analysis-metric="duration"><span class="analysis-metric-label">${metrics.durationLabel}</span><strong data-metric-value="duration" dir="auto">${escapeHtml(metrics.duration)}</strong></div>
       <div data-analysis-metric="score" title="${escapeHtml(metrics.scoreDescription)}"><span class="analysis-metric-label">${metrics.scoreLabel}</span><strong data-metric-value="score" dir="ltr">${escapeHtml(metrics.scoreText)}</strong></div>
@@ -196,8 +201,8 @@ function renderV3Opportunity(item) {
 
 function renderV3HeatItem(item) {
   const tone = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : "hold";
-  const confidence = clamp(Number(item.confidence || getDashboardScore(item)), 0, 100);
-  return `<article class="v3-heat-item ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">${renderAssetLogo(item, { className: "v3-heat-logo" })}<strong>${escapeHtml(item.symbol)}</strong><b>${formatPercent(item.expectedMovePct)}</b><span>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</span><em>${formatNumber(confidence)}%</em></article>`;
+  const metrics = getAnalysisMetrics(item, { english: isEnglishLanguage(), localize: localizeUiText });
+  return `<article class="v3-heat-item ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">${renderAssetLogo(item, { className: "v3-heat-logo" })}<strong>${escapeHtml(item.symbol)}</strong><b>${formatPercent(item.expectedMovePct)}</b><span>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</span><em>${escapeHtml(metrics.confidenceText)}</em></article>`;
 }
 
 function renderV3PulseChart(items) {
@@ -227,7 +232,9 @@ function renderV3CalendarEvent(event) {
   const impact = event.impact === "high" ? "high" : event.impact === "low" ? "low" : "medium";
   const impactLabel = impact === "high" ? "عالي" : impact === "low" ? "منخفض" : "متوسط";
   const date = event.date || (event.isoTime ? formatDateTime(event.isoTime).split(" ")[0] : "--");
-  return `<article class="v3-calendar-event ${impact}"><header><span>${escapeHtml(event.currency || "--")}</span><time>${escapeHtml(date)} · ${escapeHtml(event.localTimeLabel || event.time || "--")}</time></header><strong>${escapeHtml(event.title || "--")}</strong><b>${escapeHtml(localizeUiText(impactLabel))}</b></article>`;
+  const timing = event.exactTime === false ? localizeUiText("موعد غير محدد") : event.localTimeLabel || event.time || "--";
+  const url = safeHttpUrl(event.url);
+  return `<article class="v3-calendar-event ${impact}"><header><span>${escapeHtml(event.currency || "--")}</span><time>${escapeHtml(date)} · ${escapeHtml(timing)}</time></header><strong>${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(event.title || "--")}</a>` : escapeHtml(event.title || "--")}</strong><b>${escapeHtml(localizeUiText(impactLabel))}</b></article>`;
 }
 
 function renderV3EmptyState(message, options = {}) {
@@ -240,5 +247,5 @@ function renderV3EmptyState(message, options = {}) {
 }
 
 
-  return { render: renderTerminalHomeV3, setState: setTerminalHomeV3State, score: getDashboardScore };
+  return { render: renderTerminalHomeV3, renderCalendar, setState: setTerminalHomeV3State, score: getDashboardScore };
 }

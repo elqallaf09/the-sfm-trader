@@ -15,14 +15,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/color-tokens.css?v=20260914-palette-1" />
+    <link rel="stylesheet" href="/color-tokens.css?v=20260914-feeds-rendering-1" />
     <link rel="stylesheet" href="/desktop-balance.css?v=20260801-hardening-2" />
-    <link rel="stylesheet" href="/styles.css?v=20260914-palette-1" />
-    <link rel="stylesheet" href="/cinema.css?v=20260914-palette-1" />
+    <link rel="stylesheet" href="/styles.css?v=20260914-feeds-rendering-1" />
+    <link rel="stylesheet" href="/cinema.css?v=20260914-feeds-rendering-1" />
     <link rel="stylesheet" href="/layout-stability.css?v=20260804-home-v3-layout-fix-1" />
-    <link rel="stylesheet" href="/instrument-search.css?v=20260914-palette-1" />
-    <link rel="stylesheet" href="/analysis-metrics.css?v=20260914-palette-1" />
-    <link rel="stylesheet" href="/dashboard-v2.css?v=20260914-palette-1" />
+    <link rel="stylesheet" href="/instrument-search.css?v=20260914-feeds-rendering-1" />
+    <link rel="stylesheet" href="/market-feeds.css?v=20260914-feeds-rendering-1" />
+    <link rel="stylesheet" href="/analysis-metrics.css?v=20260914-feeds-rendering-1" />
+    <link rel="stylesheet" href="/dashboard-v2.css?v=20260914-feeds-rendering-1" />
   </head>
   <body class="notranslate" data-app-view="home" translate="no">
     <a class="skip-link" href="#main-content">تجاوز إلى المحتوى الرئيسي</a>
@@ -829,19 +830,22 @@
           <div id="market-hours-grid" class="market-hours-grid"></div>
         </section>
 
-        <section id="economic-news-section" class="economic-news-band" aria-label="رزنامة الأخبار الاقتصادية">
+        <section id="economic-calendar-section" class="market-feed-section" aria-label="التقويم الاقتصادي">
           <div class="section-head">
-            <div>
-              <p class="eyebrow">FOREXFACTORY NEWS RISK</p>
-              <h2>رزنامة الأخبار الاقتصادية</h2>
-              <p>يربط SFM أحداث ForexFactory مع التحليل الفني حتى يخفض الثقة أو ينتظر وقت الأخبار القوية.</p>
-            </div>
-            <div class="scan-meter">
-              <span>حالة الأخبار</span>
-              <strong id="economic-news-status">--</strong>
-            </div>
+            <div><p class="eyebrow">ECONOMIC CALENDAR</p><h2>التقويم الاقتصادي</h2><p>أحداث الأسبوع والنتائج المنشورة من المصدر.</p></div>
+            <strong id="economic-calendar-status" class="feed-status" role="status">جارٍ التحميل</strong>
           </div>
-          <div id="economic-news-grid" class="economic-news-grid"></div>
+          <p id="economic-calendar-source" class="market-feed-source"></p>
+          <div id="economic-calendar-grid" class="market-feed-grid" aria-busy="true"></div>
+        </section>
+
+        <section id="economic-news-section" class="economic-news-band market-feed-section" aria-label="الأخبار الاقتصادية">
+          <div class="section-head">
+            <div><p class="eyebrow">ECONOMIC NEWS</p><h2>الأخبار الاقتصادية</h2><p>عناوين مؤرخة وروابط مباشرة إلى المصادر.</p></div>
+            <strong id="economic-news-status" class="feed-status" role="status">جارٍ التحميل</strong>
+          </div>
+          <p id="economic-news-source" class="market-feed-source"></p>
+          <div id="economic-news-grid" class="economic-news-grid market-feed-grid" aria-busy="true"></div>
         </section>
 
         <section id="voice-section" class="voice-band" aria-label="محادثة SFM الصوتية">
@@ -1405,6 +1409,6 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260914-palette-1" type="module"></script>
+    <script src="/app.js?v=20260914-feeds-rendering-1" type="module"></script>
   </body>
 </html>
