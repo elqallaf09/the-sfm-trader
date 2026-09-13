@@ -48,4 +48,3 @@ export const fixture = {
   unavailable: [],
   market: { id: "us", label: "US Market", supportedSymbols: recommendations }
 };
-

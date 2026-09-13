@@ -57,9 +57,10 @@ jobs:
           cat /tmp/the-sfm-trader-server.log
           exit 1
       - name: Capture Home V3 viewport evidence
+        id: home-browser
         run: node tools/capture-home-v3.mjs
       - name: Upload Home V3 viewport evidence
-        if: always()
+        if: always() && steps.home-browser.outcome != 'skipped' && steps.home-browser.outcome != ''
         uses: actions/upload-artifact@v4
         with:
           name: home-v3-final-corrected-${{ github.sha }}
