@@ -18160,20 +18160,7 @@ body:not(.intro-running) .app-shell {
 
 /* EOF home-view specificity guard for the rendered trading dashboard. */
 @media (min-width: 1181px) {
-  body[data-app-view="home"]:not(.intro-running) .app-shell,
-  html[dir="rtl"] body[data-app-view="home"]:not(.intro-running) .app-shell,
-  html[dir="ltr"] body[data-app-view="home"]:not(.intro-running) .app-shell {
-    width: min(1840px, calc(100vw - 28px)) !important;
-    max-width: none !important;
-    min-width: 1180px !important;
-    min-height: calc(100vh - 28px) !important;
-    margin: 14px auto !important;
-    transform: none !important;
-    scale: 1 !important;
-    zoom: 1 !important;
-    filter: none !important;
-    overflow: visible !important;
-  }
+  /* Home shell geometry is owned by dashboard-v2.css. */
 
   body[data-app-view="home"]:not(.intro-running) .app-shell > main,
   html[dir="rtl"] body[data-app-view="home"]:not(.intro-running) .app-shell > main,
