@@ -1,4 +1,5 @@
-﻿import http from "node:http";
+import { createMarketNewsService } from "./src/marketNews.mjs";
+import http from "node:http";
 import { spawn } from "node:child_process";
 import crypto from "node:crypto";
 import { brotliCompress, brotliCompressSync, constants as zlibConstants } from "node:zlib";
@@ -74,7 +75,8 @@ const symbolExecutionMarketCache = createBoundedCache({
   maxEntries: boundedInteger(process.env.SFM_SYMBOL_MARKET_CACHE_MAX_ENTRIES, 2_000, 1, 10_000),
   maxAgeMs: 24 * 60 * 60 * 1000
 });
-const readOnlyApiPaths = new Set(["/api/health", "/api/ready", "/api/markets", "/api/instruments", "/api/recommendations", "/api/economic-calendar", "/api/watchlist", "/api/asset", "/api/ollama-status"]);
+const getMarketNews = createMarketNewsService();
+const readOnlyApiPaths = new Set(["/api/market-news", "/api/health", "/api/ready", "/api/markets", "/api/instruments", "/api/recommendations", "/api/economic-calendar", "/api/watchlist", "/api/asset", "/api/ollama-status"]);
 const symbolAliases = {
   APPLE: "AAPL",
   APPL: "AAPL",
@@ -305,6 +307,10 @@ const server = http.createServer(async (request, response) => {
       return await handleRecommendations(response, marketId);
     }
 
+    if (url.pathname === "/api/market-news") {
+      return sendJson(response, await getMarketNews());
+    }
+
     if (url.pathname === "/api/economic-calendar") {
       const marketId = url.searchParams.get("market") || "us";
       const market = markets[marketId];
@@ -453,9 +459,10 @@ async function handleRecommendations(response, marketId) {
     return sendJson(response, { ...finalizeRecommendationsPayloadForSession(cached.payload, marketId), cached: true, stale: true, refreshing: true });
   }
 
-  const economicCalendar = await getEconomicCalendarForMarket(marketId, market.symbols.map((asset) => asset.symbol));
+  const calendarReady = getEconomicCalendarForMarket(marketId, market.symbols.map((asset) => asset.symbol));
   const job = createAnalyzeAssetsJob(market.symbols, getAnalysisConcurrency(market.symbols.length), { fast: true });
   const completed = await waitForPromise(job.done, FIRST_RESPONSE_BUDGET_MS);
+  const economicCalendar = await calendarReady;
   const settled = completed ? await job.done : job.results.slice();
   const payload = buildRecommendationsPayload(marketId, market, settled, {
     partial: !completed,

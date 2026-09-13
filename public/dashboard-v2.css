@@ -341,7 +341,6 @@ body[data-app-view="home"] .utility-icon { display: block; width: 20px; height: 
   body[data-app-view="home"] .desktop-trading-rail .rail-link:is(
     [data-nav-key="ai-analysis"],
     [data-nav-key="alerts"],
-    [data-nav-key="news"],
     [data-nav-key="education"],
     .rail-settings,
     [data-nav-key="voice"]
@@ -565,6 +564,8 @@ body[data-app-view="home"] #terminal-home-v3.terminal-home-v3 {
 .v3-calendar-event.low { border-color: var(--ui-border); }
 .v3-calendar-event header { display: flex; justify-content: space-between; gap: 8px; color: var(--v3-muted); font-size: 9px; direction: ltr; }
 .v3-calendar-event time { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.v3-calendar-event strong a { color: inherit; text-decoration: none; }
+.v3-calendar-event strong a:hover { text-decoration: underline; }
 .v3-calendar-event strong { display: block; min-height: 38px; margin: 12px 0; color: var(--v3-text); font-size: 11px; line-height: 1.55; }
 .v3-calendar-event > b { display: inline-block; padding: 4px 8px; border: 1px solid var(--ui-warning-border); border-radius: 999px; color: var(--v3-amber); font-size: 9px; }
 .v3-calendar-event.high > b { border-color: var(--ui-negative-border); color: var(--ui-negative); }
