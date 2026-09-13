@@ -3,6 +3,11 @@ import { createVisibilityAwarePoller } from "./modules/polling.js";
 import { setUiState } from "./modules/uiState.js";
 import "./modules/webVitals.js";
 import { initMarketBackground } from "./modules/marketBackground.js";
+import { getAssetBaseSymbol, getAssetVisual, getPremiumAssetVisual, resolveAssetVisual, getOfficialCompanyName, renderAssetLogo, renderAssetIcon } from "./modules/assetBranding.js";
+import { saveDetailReturnContext, readDetailReturnContext, detailPageUrl } from "./modules/detailNavigation.js";
+import { createHomeDashboard, getDashboardRecommendations } from "./modules/homeDashboard.js";
+import { createInstrumentSearch } from "./modules/instrumentSearch.js";
+import { createRecommendationListRenderer } from "./modules/recommendationList.js";
 import { createBoundedMemoryCache } from "./modules/boundedMemoryCache.js";
 import { fetchJsonWithPolicy, fetchResponseWithPolicy } from "./modules/requestPolicy.js";
 
@@ -1323,6 +1328,12 @@ let recommendationRequestController = null;
 let recommendationRequestId = 0;
 let lastRecommendationRefreshAt = 0;
 let lastData = null;
+let lastDataEndpoint = "";
+let recommendationFilterTimer = null;
+let terminalSearchController = null;
+let restoredNavigation = null;
+let homeDashboard = null;
+let recommendationListRenderer = null;
 let lastMarkets = [];
 const recommendationResponseCache = createBoundedMemoryCache(30);
 let activeFilter = "all";
@@ -1371,6 +1382,7 @@ let floorHeatmapSignature = "";
 let floorBoardSignature = "";
 let livePulseSignature = "";
 
+restoreDetailNavigation();
 applyAppSettings({ updateIntro: false });
 initAdaptiveViewport();
 initMarketBackground();
@@ -1438,26 +1450,12 @@ function registerPwaServiceWorker() {
 }
 
 function initTerminalSearch() {
-  if (!terminalSearch || !terminalSymbolSearch) return;
-
-  terminalSearch.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const symbol = normalizeSymbol(terminalSymbolSearch.value);
-    if (!symbol) {
-      terminalSymbolSearch.focus();
-      return;
-    }
-
-    openDetailPage(symbol);
+  terminalSearchController = createInstrumentSearch({
+    form: terminalSearch, input: terminalSymbolSearch,
+    fetchCatalog: () => fetchJson("/api/instruments", { retries: 0, timeoutMs: 6000 }),
+    openInstrument: openDetailPage, isEnglish: isEnglishLanguage
   });
-
-  window.addEventListener("keydown", (event) => {
-    const isSearchShortcut = (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k";
-    if (!isSearchShortcut) return;
-    event.preventDefault();
-    terminalSymbolSearch.focus();
-    terminalSymbolSearch.select();
-  });
+  terminalSearchController?.refresh();
 }
 
 async function init() {
@@ -1488,14 +1486,17 @@ async function init() {
   renderVoiceMonitor();
   setActiveAnalysisModeButtons();
 
-  try {
-    await loadMarkets();
-  } catch {
-    lastMarkets = [];
-    renderMarketTabs(lastMarkets);
-    setConnectionStatus("offline", localizeUiText("تعذر تحديث الأسواق - وضع عدم الاتصال"));
-  }
-  await loadRecommendations();
+  const marketsReady = (async () => {
+    try {
+      await loadMarkets();
+    } catch {
+      lastMarkets = [];
+      renderMarketTabs(lastMarkets);
+      marketTabs.setAttribute("aria-label", localizeUiText("تعذر تحديث الأسواق - وضع عدم الاتصال"));
+      // Market metadata failure must not overwrite the quote connection state.
+    }
+  })();
+  const recommendationsReady = Promise.resolve().then(() => loadRecommendations());
   sharedStateReady.then(() => {
     renderNotificationCenter();
     renderHistory();
@@ -1520,8 +1521,14 @@ async function init() {
     }
   ]).start();
   scalpForm?.addEventListener("submit", handleScalpSubmit);
-  searchInput.addEventListener("input", () => renderRecommendations(lastData));
-  sortSelect.addEventListener("change", () => renderRecommendations(lastData));
+  searchInput.addEventListener("input", () => {
+    window.clearTimeout(recommendationFilterTimer);
+    recommendationFilterTimer = window.setTimeout(async () => {
+      await terminalSearchController?.load();
+      renderRecommendationResults(lastData);
+    }, 140);
+  });
+  sortSelect.addEventListener("change", () => renderRecommendationResults(lastData));
   for (const button of analysisModeButtons) {
     button.addEventListener("click", () => {
       activeAnalysisMode = button.dataset.analysisMode || "balanced";
@@ -1564,7 +1571,7 @@ async function init() {
         item.classList.toggle("active", selected);
         item.setAttribute("aria-selected", String(selected));
       });
-      renderRecommendations(lastData);
+      renderRecommendationResults(lastData);
     });
   }
 
@@ -1572,9 +1579,11 @@ async function init() {
     button.addEventListener("click", () => {
       activeShariaFilter = button.dataset.shariaFilter;
       setActiveShariaFilterButton();
-      renderRecommendations(lastData);
+      renderRecommendationResults(lastData);
     });
   }
+
+  await Promise.allSettled([marketsReady, recommendationsReady]);
 
   window.addEventListener("pagehide", flushSharedTradeStateOnExit);
   document.addEventListener("visibilitychange", () => {
@@ -1738,6 +1747,15 @@ function showAppView(view, options = {}) {
   document.querySelectorAll("main > section").forEach((section) => {
     const visible = visibleSelectors.some((selector) => section.matches(selector));
     section.classList.toggle("app-view-hidden", !visible);
+    // The router owns display, including sections with old ID-based CSS.
+    if (visible) {
+      section.style.removeProperty("display");
+      section.hidden = false;
+      if (section.id === "temporary-legal-notices") syncTemporaryLegalNoticeRegion(section);
+    } else {
+      section.hidden = true;
+      section.style.setProperty("display", "none", "important");
+    }
   });
 
   document.querySelectorAll(".rail-link, .ios-tab-link").forEach((link) => {
@@ -1747,6 +1765,8 @@ function showAppView(view, options = {}) {
     if (selected) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
   });
+
+  if (lastData) renderRecommendations(lastData);
 
   if (nextView === "alerts") {
     setNotificationPanelOpen(true);
@@ -2260,6 +2280,7 @@ function applyAppSettings(options = {}) {
 }
 
 function refreshLocalizedDynamicInterface() {
+  terminalSearchController?.refresh();
   if (lastMarkets.length) renderMarketTabs(lastMarkets);
   if (lastData) renderRecommendations(lastData);
   renderHistory();
@@ -2852,12 +2873,22 @@ async function loadRecommendations(options = {}) {
   const cachedData = recommendationResponseCache.get(endpoint);
 
   if (cachedData?.recommendations?.length) {
-    lastData = cachedData;
-    renderRecommendations(cachedData);
+    lastData = { ...cachedData, cached: true, stale: true };
+    lastDataEndpoint = endpoint;
+    renderRecommendations(lastData);
     setConnectionStatus("stale", localizeUiText("يعرض آخر تحليل محفوظ"));
     loadingIndicator.textContent = localizeUiText("تحديث بالخلفية");
-  } else if (!lastData?.recommendations?.length) {
+  } else if (lastDataEndpoint !== endpoint || !lastData?.recommendations?.length) {
+    // Never leave a previous market's prices under the newly selected market.
+    lastDataEndpoint = endpoint;
+    const selected = lastMarkets.find((market) => market.id === activeMarket);
+    lastData = {
+      recommendations: [], unavailable: [],
+      market: { id: activeMarket, label: selected?.label || activeMarket }
+    };
+    renderRecommendations(lastData);
     setHomeDashboardState("loading");
+    setConnectionStatus("updating", localizeUiText("جاري الاتصال"));
   }
 
   try {
@@ -2876,11 +2907,13 @@ async function loadRecommendations(options = {}) {
     data.market = data.market && typeof data.market === "object" ? data.market : {};
 
     lastData = data;
+    lastDataEndpoint = endpoint;
     recommendationResponseCache.set(endpoint, data);
     updateRecommendationHistory(data.recommendations || []);
     triggerSmartAlertPopup(data.smartAlerts || []);
     renderRecommendations(data);
     updateConnectionStatus(data);
+    restoreDetailScroll();
   } catch (error) {
     if (error?.name === "AbortError" || requestId !== recommendationRequestId) return;
 
@@ -2984,106 +3017,58 @@ function renderRecommendations(data) {
   setInsight(bestSell, getTopItem(sells, "confidence"), "لا توجد إشارة بيع");
   setInsight(largestMove, getTopItem(all, "move"), "لا توجد بيانات");
   safeRenderPanel("شريط الأسعار", () => updateTicker(all));
-  safeRenderPanel("نبض السوق", () => renderLivePulseStrip(data), livePulseGrid);
-  safeRenderPanel("رزنامة الأخبار", () => renderEconomicNews(data.economicCalendar), economicNewsGrid);
-  safeRenderPanel("لوحة النبض", () => renderTradingAtmosphere(data), floorHeatmap);
-  safeRenderPanel("غرفة القيادة", () => renderCommandCenter(data, recommendations), commandCenterGrid);
-  safeRenderPanel("أفضل الفرص", () => renderHomeDeck(data, recommendations), homeRecommendations);
-  safeRenderPanel("خريطة حرارة الفرص", () => renderHomeHeatmap(data), homeHeatmapGrid);
-  safeRenderPanel("رادار الفرص", () => renderOpportunityRadar(data), radarGrid);
-  safeRenderPanel("التنبيهات الذكية", () => renderSmartAlerts(data), smartAlertsList);
-  safeRenderPanel("لوحة السوق الأمريكي", () => renderUsDashboard(data), usDashboardGrid);
-  safeRenderPanel("توقعات السوق الأمريكي", () => renderUsOutlook(data), usOutlookGrid);
-  safeRenderPanel("الفرص الذهبية", () => renderGoldenOpportunities(data), goldenGrid);
-  safeRenderPanel("المضاربة", () => renderScalpQuickList(data), scalpQuickList);
-  updateRightPanel(all, buys, sells);
-  updateMarketOverviewBubbles(all);
+  renderActivePanel("نبض السوق", () => renderLivePulseStrip(data), livePulseGrid);
+  renderActivePanel("رزنامة الأخبار", () => renderEconomicNews(data.economicCalendar), economicNewsGrid);
+  renderActivePanel("لوحة النبض", () => renderTradingAtmosphere(data), floorHeatmap);
+  renderActivePanel("غرفة القيادة", () => renderCommandCenter(data, recommendations), commandCenterGrid);
+  renderActivePanel("أفضل الفرص", () => renderHomeDeck(data, recommendations), homeRecommendations);
+  renderActivePanel("خريطة حرارة الفرص", () => renderHomeHeatmap(data), homeHeatmapGrid);
+  renderActivePanel("رادار الفرص", () => renderOpportunityRadar(data), radarGrid);
+  renderActivePanel("التنبيهات الذكية", () => renderSmartAlerts(data), smartAlertsList);
+  renderActivePanel("لوحة السوق الأمريكي", () => renderUsDashboard(data), usDashboardGrid);
+  renderActivePanel("توقعات السوق الأمريكي", () => renderUsOutlook(data), usOutlookGrid);
+  renderActivePanel("الفرص الذهبية", () => renderGoldenOpportunities(data), goldenGrid);
+  renderActivePanel("المضاربة", () => renderScalpQuickList(data), scalpQuickList);
+  if (activeAppView !== "home") updateRightPanel(all, buys, sells);
+  if (activeAppView !== "home") updateMarketOverviewBubbles(all);
   if (data.market?.id === "watchlist") {
     watchlistData = data;
     watchlistLastLoadedAt = Date.now();
   }
-  safeRenderPanel("قائمة المراقبة", () => renderWatchlist(), watchlistCards);
-  safeRenderPanel("المحفظة", () => renderPortfolio(all), portfolioList);
-  safeRenderPanel("آخر إشارات الوكيل", () => renderHistory(), historyList);
+  renderActivePanel("قائمة المراقبة", () => renderWatchlist(), watchlistCards);
+  renderActivePanel("المحفظة", () => renderPortfolio(all), portfolioList);
+  renderActivePanel("آخر إشارات الوكيل", () => renderHistory(), historyList);
   safeRenderPanel("متابعة الصفقات", () => checkFollowedTrades(all));
   safeRenderPanel("إشعارات السوق", () => checkSmartMarketNotifications(all));
   safeRenderPanel("المراقبة الصوتية", () => checkVoiceMonitors(all));
-  safeRenderPanel("واجهة قراءة السوق", () => renderTerminalHomeV3(data));
+  if (activeAppView === "home") safeRenderPanel("واجهة قراءة السوق", () => renderTerminalHomeV3(data));
 
-  cards.innerHTML = "";
-
-  if (!recommendations.length) {
-    cards.innerHTML = renderMarketDataState(data);
-  }
-
-  for (const item of recommendations) {
-    const card = template.content.firstElementChild.cloneNode(true);
-    const actionBadge = card.querySelector(".action-badge");
-    const shariaBadge = card.querySelector(".sharia-badge");
-    const confidenceFill = card.querySelector(".confidence-fill");
-    const visual = getPremiumAssetVisual(item);
-    const logo = card.querySelector(".signal-asset-logo");
-
-    card.querySelector(".asset-name").textContent = getOfficialCompanyName(item);
-    card.querySelector(".asset-symbol").textContent = `${item.symbol}${item.exchangeName ? ` · ${item.exchangeName}` : ""}`;
-    if (logo) {
-      logo.className = `asset-logo signal-asset-logo ${visual.className}`;
-      logo.innerHTML = visual.html;
-    }
-    card.dataset.symbol = item.symbol;
-    card.setAttribute("role", "link");
-    card.tabIndex = 0;
-    card.title = "افتح صفحة تفاصيل السهم";
-    setupSignalCardToggle(card, item);
-    actionBadge.textContent = item.actionLabel;
-    actionBadge.classList.add(`action-${item.action}`);
-    if (item.shariaStatus === "compliant") {
-      shariaBadge.textContent = item.shariaLabel || "مطابق للشريعة";
-      shariaBadge.title = item.shariaSource || "تصنيف شرعي قابل للتحديث";
-      shariaBadge.classList.add("is-visible");
-    }
-    card.querySelector(".current-price").textContent = formatMoney(item.currentPrice, item.currency);
-    card.querySelector(".expected-price").textContent = formatMoney(item.expectedPrice, item.currency);
-    card.querySelector(".target-one").textContent = formatMoney(item.target1 || item.expectedPrice, item.currency);
-    card.querySelector(".target-two").textContent = formatMoney(item.target2, item.currency);
-    card.querySelector(".stop-loss").textContent = item.stopLoss ? formatMoney(item.stopLoss, item.currency) : "--";
-    card.querySelector(".risk-reward").textContent = item.riskReward ? `${formatNumber(item.riskReward, { maximumFractionDigits: 2 })}:1` : "--";
-    card.querySelector(".confidence").textContent = `${item.confidence}%`;
-    confidenceFill.style.width = `${item.confidence}%`;
-    card.querySelector(".duration").textContent = `المدة: ${item.duration}`;
-    card.querySelector(".expected-move").textContent = `الحركة: ${formatPercent(item.expectedMovePct)}`;
-    card.querySelector(".data-source").textContent = isEnglishLanguage()
-      ? `Source: ${item.dataProvenance?.provider || item.dataProvider || "--"}`
-      : `المصدر: ${item.dataProvenance?.provider || item.dataProvider || "--"}`;
-    card.querySelector(".data-freshness").textContent = formatDataFreshness(item.dataProvenance);
-    card.querySelector(".rsi").textContent = item.indicators?.rsi14 ?? "--";
-    card.querySelector(".momentum").textContent = formatPercent(item.indicators?.momentum20 ?? 0);
-    card.querySelector(".volatility").textContent = formatPercent(item.indicators?.volatility20 ?? 0);
-    card.querySelector(".risk-label").textContent = item.risk?.label || "--";
-    card.querySelector(".backtest-label").textContent = item.backtest?.winRate ? `${item.backtest.winRate}%` : item.backtest?.label || "--";
-    card.querySelector(".data-health-label").textContent = item.dataHealth?.score ? `${item.dataHealth.score}% ${item.dataHealth.label || ""}`.trim() : "--";
-    card.querySelector(".final-score").textContent = `${calculateFinalScore(item).score}%`;
-    card.querySelector(".timeframe-grid").innerHTML = renderTimeframePills(item.timeframes || []);
-
-    const reasons = card.querySelector(".reasons");
-    reasons.innerHTML = "";
-    for (const reason of Array.isArray(item.reasons) ? item.reasons : []) {
-      const li = document.createElement("li");
-      li.textContent = reason;
-      reasons.appendChild(li);
-    }
-
-    cards.appendChild(card);
-    if (expandedSignalCards.has(item.symbol)) {
-      drawSparkline(card.querySelector(".sparkline"), item.sparkline, item.action);
-    }
-  }
-
-  attachDetailOpeners(cards);
+  if (isPanelActive(cards)) renderRecommendationResults(data);
 
   unavailable.innerHTML = data.unavailable?.length || !all.length
     ? renderProviderUnavailableDetails(data)
     : "";
+}
+
+function isPanelActive(element) {
+  const section = element?.closest("main > section");
+  return Boolean(element) && !section?.classList.contains("app-view-hidden");
+}
+
+function renderActivePanel(label, render, element) {
+  if (isPanelActive(element)) return safeRenderPanel(label, render, element);
+}
+
+function renderRecommendationResults(data = lastData) {
+  if (!data || !isPanelActive(cards)) return;
+  recommendationListRenderer ||= createRecommendationListRenderer({
+    cards, template, expandedSignalCards, getPremiumAssetVisual, getOfficialCompanyName,
+    setupSignalCardToggle, formatMoney, formatNumber, formatPercent, isEnglishLanguage,
+    formatDataFreshness, calculateFinalScore, renderTimeframePills, drawSparkline,
+    attachDetailOpeners, renderMarketDataState
+  });
+  const recommendations = sortRecommendations(filterRecommendations(data.recommendations || []));
+  recommendationListRenderer(data, recommendations);
 }
 
 function formatDataFreshness(provenance = {}) {
@@ -3506,368 +3491,6 @@ function renderCommandMetricCard(title, value, note, tone) {
   `;
 }
 
-function getAssetBaseSymbol(symbol = "") {
-  return String(symbol || "")
-    .toUpperCase()
-    .replace(/=X$/, "")
-    .replace(/[-.].*$/, "")
-    .replace(/=.*/, "");
-}
-
-// One local source of truth for company marks used across Home, recommendation, and trade UI.
-// These are small inline SVG/text vector representations, never remote images or emoji.
-const ASSET_BRAND_REGISTRY = Object.freeze({
-  META: { className: "asset-logo-meta", kind: "meta", label: "Meta", companyName: "Meta Platforms" },
-  GOOGL: { className: "asset-logo-google", kind: "google", label: "G", companyName: "Alphabet Inc." },
-  GOOG: { className: "asset-logo-google", kind: "google", label: "G", companyName: "Alphabet Inc." },
-  MSFT: { className: "asset-logo-microsoft", kind: "microsoft", label: "Microsoft", companyName: "Microsoft Corp." },
-  AAPL: { className: "asset-logo-apple", kind: "apple", label: "Apple", companyName: "Apple Inc." },
-  NVDA: { className: "asset-logo-nvidia", kind: "nvidia", label: "NVIDIA", companyName: "NVIDIA Corp." },
-  AMZN: { className: "asset-logo-amazon", kind: "amazon", label: "Amazon", companyName: "Amazon.com Inc." },
-  TSLA: { className: "asset-logo-tesla", kind: "tesla", label: "Tesla", companyName: "Tesla Inc." },
-  NFLX: { className: "asset-logo-netflix", kind: "netflix", label: "Netflix", companyName: "Netflix Inc." },
-  INTC: { className: "asset-logo-intel", kind: "intel", label: "Intel", companyName: "Intel Corp." },
-  AMD: { className: "asset-logo-amd", kind: "amd", label: "AMD", companyName: "Advanced Micro Devices Inc." },
-  ORCL: { className: "asset-logo-oracle", kind: "oracle", label: "Oracle", companyName: "Oracle Corp." },
-  AVGO: { className: "asset-logo-broadcom", kind: "broadcom", label: "Broadcom", companyName: "Broadcom Inc." },
-  LLY: { className: "asset-logo-lilly", kind: "lilly", label: "Lilly", companyName: "Eli Lilly and Co." },
-  GOLD: { className: "asset-logo-gold", kind: "gold", label: "Au", companyName: "Gold" },
-  XAUUSD: { className: "asset-logo-gold", kind: "gold", label: "Au", companyName: "Gold" },
-  "GC=F": { className: "asset-logo-gold", kind: "gold", label: "Au", companyName: "Gold" }
-});
-
-const ASSET_VISUAL_RULES = [
-  { symbols: ["XAUUSD", "GC=F"], contains: ["XAU"], names: ["gold"], className: "asset-logo-gold", kind: "gold", label: "Au" },
-  { symbols: ["XAGUSD", "SI=F"], contains: ["XAG"], names: ["silver"], className: "asset-logo-silver", kind: "silver", label: "Ag" },
-  { symbols: ["USOIL", "UKOIL", "CL=F", "BZ=F"], names: ["oil", "brent", "wti"], className: "asset-logo-oil", kind: "oil", label: "Oil" },
-  { symbols: ["NATGAS", "NG=F"], names: ["natural gas", "natgas"], className: "asset-logo-energy", kind: "gas", label: "Gas" },
-  { symbols: ["COPPER", "HG=F"], names: ["copper"], className: "asset-logo-copper", kind: "copper", label: "Cu" },
-  { symbols: ["BTC", "BTCUSD", "BTC-USD"], contains: ["BTC"], names: ["bitcoin"], className: "asset-logo-crypto", kind: "bitcoin", label: "BTC" },
-  { symbols: ["ETH", "ETHUSD", "ETH-USD"], contains: ["ETH"], names: ["ethereum"], className: "asset-logo-eth", kind: "ethereum", label: "ETH" },
-  { symbols: ["BNB", "BNBUSD", "BNB-USD"], contains: ["BNB"], names: ["bnb"], className: "asset-logo-bnb", kind: "bnb", label: "BNB" },
-  { symbols: ["SOL", "SOLUSD", "SOL-USD"], contains: ["SOL"], names: ["solana"], className: "asset-logo-sol", kind: "solana", label: "SOL" },
-  { symbols: ["XRP", "XRPUSD", "XRP-USD"], contains: ["XRP"], names: ["xrp"], className: "asset-logo-xrp", kind: "xrp", label: "XRP" },
-  { symbols: ["ADA", "ADAUSD", "ADA-USD"], contains: ["ADA"], names: ["cardano"], className: "asset-logo-ada", kind: "cardano", label: "ADA" },
-  { symbols: ["AVAX", "AVAXUSD", "AVAX-USD"], contains: ["AVAX"], names: ["avalanche"], className: "asset-logo-avax", kind: "avalanche", label: "AVAX" },
-  { symbols: ["AAPL", "APPLE"], names: ["apple"], className: "asset-logo-apple", kind: "apple", label: "AAPL" },
-  { symbols: ["GOOGL", "GOOG"], names: ["alphabet", "google"], className: "asset-logo-google", kind: "google", label: "G" },
-  { symbols: ["MSFT"], names: ["microsoft"], className: "asset-logo-microsoft", kind: "microsoft", label: "MS" },
-  { symbols: ["AMZN"], names: ["amazon"], className: "asset-logo-amazon", kind: "amazon", label: "AM" },
-  { symbols: ["META"], names: ["meta"], className: "asset-logo-meta", kind: "meta", label: "ME" },
-  { symbols: ["TSLA"], names: ["tesla"], className: "asset-logo-tesla", kind: "tesla", label: "TS" },
-  { symbols: ["NVDA"], names: ["nvidia"], className: "asset-logo-nvidia", kind: "nvidia", label: "NV" },
-  { symbols: ["AMD"], names: ["amd"], className: "asset-logo-amd", kind: "amd", label: "AMD" },
-  { symbols: ["INTC"], names: ["intel"], className: "asset-logo-intel", kind: "intel", label: "IN" },
-  { symbols: ["NFLX"], names: ["netflix"], className: "asset-logo-netflix", kind: "netflix", label: "N" },
-  { symbols: ["CRM"], names: ["salesforce"], className: "asset-logo-salesforce", kind: "text", label: "CRM" },
-  { symbols: ["ORCL"], names: ["oracle"], className: "asset-logo-oracle", kind: "text", label: "OR" },
-  { symbols: ["JPM"], names: ["jpmorgan", "jpmorgan chase"], className: "asset-logo-bank asset-logo-jpm", kind: "bank", label: "JPM" },
-  { symbols: ["BAC"], names: ["bank of america"], className: "asset-logo-bank asset-logo-bac", kind: "bank", label: "BAC" },
-  { symbols: ["WFC", "GS", "MS", "HSBC"], names: ["wells fargo", "goldman", "morgan stanley", "hsbc"], className: "asset-logo-bank", kind: "bank", label: "BK" },
-  { symbols: ["LLY"], names: ["eli lilly"], className: "asset-logo-health asset-logo-lly", kind: "pharma", label: "LL" },
-  { symbols: ["PFE"], names: ["pfizer"], className: "asset-logo-health asset-logo-pfe", kind: "pharma", label: "PF" },
-  { symbols: ["JNJ", "MRK", "ABBV", "NVO", "UNH", "AMGN"], names: ["johnson", "merck", "abbvie", "novo", "unitedhealth", "amgen"], className: "asset-logo-health", kind: "pharma", label: "Rx" },
-  { symbols: ["KO", "PEP", "MCD", "COST", "WMT", "PG", "MDLZ", "KHC", "SBUX"], names: ["coca-cola", "pepsico", "mcdonald", "costco", "walmart", "starbucks"], className: "asset-logo-food", kind: "food", label: "FD" },
-  { symbols: ["XOM", "CVX", "COP", "SLB", "BP", "SHEL", "TTE"], names: ["exxon", "chevron", "conocophillips", "schlumberger", "shell"], className: "asset-logo-energy", kind: "oil", label: "EN" },
-  { symbols: ["PLTR"], names: ["palantir"], className: "asset-logo-ai", kind: "text", label: "AI" },
-  { symbols: ["AVGO", "TSM", "QCOM", "ASML", "MU"], names: ["broadcom", "taiwan semiconductor", "qualcomm", "asml", "micron"], className: "asset-logo-semiconductor", kind: "chip", label: "CH" },
-  { symbols: ["EURUSD", "EURGBP", "EURJPY", "EURCHF", "EURCAD", "EURAUD", "EURNZD"], contains: ["EUR"], className: "asset-logo-eu", kind: "eu", label: "EU" },
-  { symbols: ["GBPUSD", "USDJPY", "USDCHF", "USDCAD", "AUDUSD", "NZDUSD"], className: "asset-logo-fx", kind: "fx", label: "FX" }
-];
-
-function getAssetVisual(item = {}) {
-  const visual = resolveAssetVisual(item);
-  return { className: visual.className, text: visual.label };
-}
-
-function getPremiumAssetVisual(item = {}) {
-  const visual = resolveAssetVisual(item);
-  return {
-    ...visual,
-    companyName: getOfficialCompanyName(item, visual),
-    html: renderAssetLogo(item, { markOnly: true })
-  };
-}
-
-function resolveAssetVisual(item = {}) {
-  const symbol = String(item.symbol || "").toUpperCase();
-  const name = String(item.name || "").toLowerCase();
-  const base = getAssetBaseSymbol(symbol);
-  const registered = ASSET_BRAND_REGISTRY[symbol] || ASSET_BRAND_REGISTRY[base];
-  if (registered) return registered;
-  const rule = ASSET_VISUAL_RULES.find((entry) => assetRuleMatches(entry, symbol, base, name));
-  if (rule) return rule;
-
-  const gulf = resolveGulfAssetVisual(symbol);
-  if (gulf) return gulf;
-
-  if (["US30", "US100", "NAS100", "SPX", "SP500", "S&P500"].some((value) => symbol.includes(value))) {
-    return { className: "asset-logo-index", kind: "index", label: "IDX" };
-  }
-
-  return { className: "asset-logo-default", kind: "text", label: (base || symbol).slice(0, 3) || "S" };
-}
-
-function getOfficialCompanyName(item = {}, visual = resolveAssetVisual(item)) {
-  return visual.companyName || String(item.name || item.exchangeName || item.symbol || "");
-}
-
-function renderAssetLogo(item = {}, options = {}) {
-  const visual = resolveAssetVisual(item);
-  const mark = renderAssetIcon(visual.kind, visual.label);
-  if (options.markOnly) return mark;
-
-  const classes = ["asset-logo", visual.className, options.className].filter(Boolean).join(" ");
-  const decorative = options.decorative !== false;
-  const name = getOfficialCompanyName(item, visual);
-  const attributes = decorative
-    ? 'aria-hidden="true"'
-    : `role="img" aria-label="${escapeHtml(`${name} logo`)}"`;
-  return `<span class="${classes}" ${attributes}>${mark}</span>`;
-}
-
-function assetRuleMatches(rule, symbol, base, name) {
-  const compact = symbol.replace(/[^A-Z0-9]/g, "");
-  const exact = rule.symbols || [];
-  if (exact.some((value) => {
-    const key = String(value).toUpperCase();
-    return key === symbol || key === base || key === compact;
-  })) return true;
-
-  const contains = rule.contains || [];
-  if (contains.some((value) => {
-    const key = String(value).toUpperCase();
-    return symbol.includes(key) || compact.includes(key);
-  })) return true;
-
-  const names = rule.names || [];
-  return names.some((value) => name.includes(String(value).toLowerCase()));
-}
-
-function resolveGulfAssetVisual(symbol = "") {
-  const upper = String(symbol || "").toUpperCase();
-  const rules = [
-    { test: upper.endsWith(".KW"), className: "asset-logo-gulf asset-logo-kw", label: "KW" },
-    { test: upper.startsWith("SR.") || upper.endsWith(".SR"), className: "asset-logo-gulf asset-logo-sa", label: "SA" },
-    { test: upper.endsWith(".AD") || upper.endsWith(".DU") || upper.endsWith(".AE"), className: "asset-logo-gulf asset-logo-ae", label: "AE" },
-    { test: upper.endsWith(".OM"), className: "asset-logo-gulf asset-logo-om", label: "OM" },
-    { test: upper.endsWith(".BH"), className: "asset-logo-gulf asset-logo-bh", label: "BH" },
-    { test: upper.endsWith(".QA"), className: "asset-logo-gulf asset-logo-qa", label: "QA" }
-  ];
-  const match = rules.find((rule) => rule.test);
-  return match ? { className: match.className, kind: "text", label: match.label } : null;
-}
-
-function renderAssetIcon(kind, label) {
-  if (kind === "apple") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-apple" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M17.3 12.4c0-2.2 1.8-3.3 1.9-3.4-1-1.5-2.6-1.7-3.1-1.8-1.3-.1-2.6.8-3.3.8-.7 0-1.8-.8-2.9-.8-1.5 0-2.9.9-3.7 2.2-1.6 2.8-.4 7 1.1 9.3.8 1.1 1.7 2.4 2.9 2.3 1.1 0 1.6-.7 2.9-.7 1.4 0 1.8.7 3 .7 1.2 0 2-1.1 2.8-2.3.9-1.3 1.2-2.5 1.2-2.6 0 0-2.4-.9-2.4-3.7Z"></path>
-        <path d="M15.2 5.9c.6-.8 1.1-1.9.9-2.9-1 .1-2 .7-2.7 1.5-.6.7-1.1 1.8-.9 2.8 1 .1 2-.6 2.7-1.4Z"></path>
-      </svg>
-    `;
-  }
-  if (kind === "gold") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-gold" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M5.2 15.4h6.6l1.2 4.2H4Z"></path>
-        <path d="M12.2 15.4h6.6l1.2 4.2h-9Z"></path>
-        <path d="M8.7 8.1h6.6l1.2 4.2h-9Z"></path>
-      </svg>
-    `;
-  }
-  if (kind === "bitcoin") return `<span class="asset-logo-text asset-logo-text-bitcoin">&#8383;</span>`;
-  if (kind === "ethereum") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-ethereum" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M12 3 6.8 12.1 12 15.2l5.2-3.1Z"></path>
-        <path d="m6.8 13.2 5.2 7.8 5.2-7.8-5.2 3.1Z"></path>
-      </svg>
-    `;
-  }
-  if (kind === "bnb") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-bnb" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="m12 3.4 3 3-3 3-3-3Z"></path><path d="m6.4 9 3 3-3 3-3-3Z"></path>
-        <path d="m17.6 9 3 3-3 3-3-3Z"></path><path d="m12 14.6 3 3-3 3-3-3Z"></path>
-        <path d="m12 9.2 2.8 2.8-2.8 2.8-2.8-2.8Z"></path>
-      </svg>
-    `;
-  }
-  if (kind === "solana") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-solana" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M6 6.5h12l-2.2 2.4H3.8Z"></path><path d="M5.8 10.8h14.4L18 13.2H3.6Z"></path>
-        <path d="M6 15.1h12l-2.2 2.4H3.8Z"></path>
-      </svg>
-    `;
-  }
-  if (kind === "xrp") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-xrp" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M6 6.2c2.6 2.7 4.1 4 6 4s3.4-1.3 6-4"></path>
-        <path d="M6 17.8c2.6-2.7 4.1-4 6-4s3.4 1.3 6 4"></path>
-      </svg>
-    `;
-  }
-  if (kind === "cardano") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-cardano" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <circle cx="12" cy="12" r="2.2"></circle><circle cx="12" cy="4.8" r="1.1"></circle><circle cx="12" cy="19.2" r="1.1"></circle>
-        <circle cx="4.8" cy="12" r="1.1"></circle><circle cx="19.2" cy="12" r="1.1"></circle>
-        <circle cx="6.9" cy="6.9" r=".9"></circle><circle cx="17.1" cy="6.9" r=".9"></circle>
-        <circle cx="6.9" cy="17.1" r=".9"></circle><circle cx="17.1" cy="17.1" r=".9"></circle>
-      </svg>
-    `;
-  }
-  if (kind === "avalanche") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-avalanche" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M12 4 21 20h-6.1L12 14.8 9.1 20H3Z"></path><path d="M14.5 13.3 17 9l2.5 4.3Z"></path>
-      </svg>
-    `;
-  }
-  if (kind === "nvidia") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-nvidia" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M3.8 12.2c3.6-4.4 9.7-5.4 16.4-2.1-3.9-.5-7 .1-9.2 1.9 2-.6 4.1-.3 5.8.8-3 3.4-7.8 4-11.7 1.3 1.5-1 3.1-1.6 4.8-1.8-2.1-.4-4.1-.1-6.1-.1Z"></path>
-        <circle cx="12.7" cy="12.8" r="1.55"></circle>
-      </svg>
-    `;
-  }
-  if (kind === "amd") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-amd" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M12.5 4H20v7.5h-3.1V7.1h-4.4Z"></path>
-        <path d="M20 20h-7.5v-3.1h4.4v-4.4H20Z"></path>
-        <path d="m4 16.8 6.8-6.8 3.2 3.2L7.2 20H4Z"></path>
-      </svg>
-    `;
-  }
-  if (kind === "intel") {
-    return `<span class="asset-logo-wordmark asset-logo-wordmark-intel">intel</span>`;
-  }
-  if (kind === "netflix") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-netflix" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M7 4h4.1l5.9 16h-4.1Z"></path>
-        <path d="M7 4h4v16H7Z"></path>
-        <path d="M13 4h4v16h-4Z"></path>
-      </svg>
-    `;
-  }
-  if (kind === "oracle") return `<span class="asset-logo-wordmark asset-logo-wordmark-oracle">ORACLE</span>`;
-  if (kind === "lilly") return `<span class="asset-logo-wordmark asset-logo-wordmark-lilly">Lilly</span>`;
-  if (kind === "broadcom") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-broadcom" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M3.5 12h2.2c1.3-5.2 2.8-5.2 4.3 0s3 5.2 4.5 0 3-5.2 4.4 0h1.6"></path>
-        <path d="M4.4 17.4h15.2"></path>
-      </svg>
-    `;
-  }
-  if (kind === "google") return `<span class="asset-logo-text asset-logo-text-google">G</span>`;
-  if (kind === "amazon") {
-    return `
-      <span class="asset-logo-text">AM</span>
-      <svg class="asset-logo-smile" viewBox="0 0 24 8" aria-hidden="true" focusable="false">
-        <path d="M4 2.3c4.2 3.2 11.2 3.3 16 .1"></path>
-        <path d="M17.5 1.8 20.2 2l-.8 2.3"></path>
-      </svg>
-    `;
-  }
-  if (kind === "fx") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-fx" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <circle cx="12" cy="12" r="9"></circle>
-        <path d="M7 9h10M7 15h10M12 5.5c2.2 2.1 2.2 10.9 0 13M12 5.5c-2.2 2.1-2.2 10.9 0 13"></path>
-      </svg>
-    `;
-  }
-  if (kind === "eu") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-eu" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <circle cx="12" cy="12" r="9"></circle>
-        <path d="M12 5.7v2.1M12 16.2v2.1M5.7 12h2.1M16.2 12h2.1M7.6 7.6l1.5 1.5M14.9 14.9l1.5 1.5M16.4 7.6l-1.5 1.5M9.1 14.9l-1.5 1.5"></path>
-      </svg>
-    `;
-  }
-  if (kind === "oil" || kind === "gas") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-oil" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M12 3.8c3.6 4.2 5.4 7.2 5.4 10a5.4 5.4 0 1 1-10.8 0c0-2.8 1.8-5.8 5.4-10Z"></path>
-        <path d="M10 17.2c1.7 1.1 4 .5 4.8-1.5"></path>
-      </svg>
-    `;
-  }
-  if (kind === "index") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-index" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M4 17h16"></path><path d="M5 15 9 9l4 3 5-7"></path><path d="M16 5h2.8v2.8"></path>
-      </svg>
-    `;
-  }
-  if (kind === "microsoft") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-microsoft" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <rect x="2" y="2" width="9" height="9" fill="#f25022"></rect>
-        <rect x="13" y="2" width="9" height="9" fill="#7fba00"></rect>
-        <rect x="2" y="13" width="9" height="9" fill="#00a4ef"></rect>
-        <rect x="13" y="13" width="9" height="9" fill="#ffb900"></rect>
-      </svg>
-    `;
-  }
-  if (kind === "meta") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-meta" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M4.2 15.5c1.5-5.6 3.6-8.3 6.1-8.3 2.9 0 3.9 8.3 7 8.3 1.8 0 2.8-1.5 2.8-3.2 0-2.6-1.7-5.1-4.2-5.1-3.1 0-5.3 8.3-8.4 8.3-1.9 0-3.2-1.4-3.3-3.2-.1-2.8 1.7-5.1 4.2-5.1"></path>
-      </svg>
-    `;
-  }
-  if (kind === "tesla") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-tesla" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M4.2 5.4c5.1-1.8 10.5-1.8 15.6 0"></path><path d="M8 7.4h8"></path>
-        <path d="M12 7.4V20"></path><path d="M9.7 10.2 12 7.4l2.3 2.8"></path>
-      </svg>
-    `;
-  }
-  if (kind === "bank") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-bank" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M4 9.2 12 4l8 5.2Z"></path><path d="M6 10.8V18M10 10.8V18M14 10.8V18M18 10.8V18M4 20h16"></path>
-      </svg>
-      <span class="asset-logo-mini">${escapeHtml(label.slice(0, 3))}</span>
-    `;
-  }
-  if (kind === "pharma") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-pharma" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M12 4v16M4 12h16"></path><circle cx="12" cy="12" r="8"></circle>
-      </svg>
-      <span class="asset-logo-mini">${escapeHtml(label.slice(0, 3))}</span>
-    `;
-  }
-  if (kind === "food") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-food" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <path d="M7 4v7M10 4v7M8.5 11v9"></path><path d="M16 4c2 2.6 2 6.2 0 8v8"></path>
-      </svg>
-    `;
-  }
-  if (kind === "chip") {
-    return `
-      <svg class="asset-logo-svg asset-logo-svg-chip" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-        <rect x="7" y="7" width="10" height="10" rx="2"></rect>
-        <path d="M4 9h3M4 15h3M17 9h3M17 15h3M9 4v3M15 4v3M9 17v3M15 17v3"></path>
-      </svg>
-    `;
-  }
-  if (kind === "silver") return `<span class="asset-logo-text">Ag</span>`;
-  if (kind === "copper") return `<span class="asset-logo-text">Cu</span>`;
-  return `<span class="asset-logo-text">${escapeHtml(label)}</span>`;
-}
-
 function renderHomeDeck(data, rankedRecommendations = []) {
   if (!homeRecommendations && !homeFollowedTrades) return;
 
@@ -3950,234 +3573,26 @@ function setHomeDashboardState(kind = "loading") {
   setTerminalHomeV3State(kind);
 }
 
-function setTerminalHomeV3State(kind = "loading") {
-  const root = document.querySelector("#terminal-home-v3");
-  if (!root) return;
-
-  const unavailable = kind === "offline" || kind === "unavailable";
-  const state = unavailable ? "unavailable" : "loading";
-  const message = unavailable
-    ? "تعذر الاتصال بمزود بيانات السوق. لا توجد قيم بديلة معروضة."
-    : "جارٍ تحميل بيانات السوق من مزود موثوق.";
-
-  root.dataset.uiState = state;
-  root.setAttribute("aria-busy", String(!unavailable));
-
-  const setText = (selector, value) => {
-    const element = root.querySelector(selector);
-    if (element) element.textContent = localizeUiText(value);
-  };
-
-  setText("#v3-confidence", "--");
-  setText("#v3-market-bias", unavailable ? "غير متاح" : "جارٍ التحميل");
-  setText("#v3-market-summary", message);
-  setText("#v3-buy-count", "--");
-  setText("#v3-sell-count", "--");
-  setText("#v3-hold-count", "--");
-  setText("#v3-pulse-change", "--");
-  setText("#v3-pulse-label", unavailable ? "غير متاح" : "جارٍ التحميل");
-  setText("#v3-pulse-assets", unavailable ? "لا توجد بيانات مكتملة" : "جارٍ تحميل الأصول");
-  setText("#v3-pulse-updated", "آخر تحديث --");
-  setText("#v3-heatmap-leader", "--");
-
-  const confidenceRing = root.querySelector("#v3-confidence-ring");
-  if (confidenceRing) {
-    confidenceRing.style.setProperty("--v3-confidence", "0%");
-    confidenceRing.setAttribute("aria-label", localizeUiText(unavailable ? "ثقة التحليل غير متاحة" : "جارٍ تحميل ثقة التحليل"));
-  }
-
-  const stateMarkup = (panelMessage) => renderV3EmptyState(panelMessage, { kind: state });
-  const panels = [
-    ["#v3-pulse-chart", unavailable ? "بيانات حركة الأصول غير متاحة حالياً." : "جارٍ تحميل توزيع حركة الأصول."],
-    ["#v3-opportunity-grid", unavailable ? "لا توجد فرص موثوقة لعرضها حالياً." : "جارٍ تحميل الفرص الموثقة."],
-    ["#v3-heatmap-grid", unavailable ? "خريطة حركة الأصول غير متاحة حالياً." : "جارٍ تحميل خريطة حركة الأصول."],
-    ["#v3-followed-list", unavailable ? "تعذر تحميل الصفقات المتابعة." : "جارٍ تحميل الصفقات المتابعة."],
-    ["#v3-calendar-list", unavailable ? "الأحداث الاقتصادية غير متاحة حالياً." : "جارٍ تحميل الأحداث الاقتصادية."]
-  ];
-  for (const [selector, panelMessage] of panels) {
-    const panel = root.querySelector(selector);
-    if (panel) {
-      panel.innerHTML = stateMarkup(panelMessage);
-      if (unavailable && selector === "#v3-opportunity-grid") {
-        const retry = document.createElement("button");
-        retry.type = "button";
-        retry.className = "v3-empty-action";
-        retry.dataset.homeRetry = "true";
-        retry.textContent = localizeUiText("إعادة المحاولة");
-        retry.addEventListener("click", () => loadRecommendations({ force: true, skipGrace: true }));
-        panel.querySelector(".v3-panel-state")?.append(retry);
-      }
-    }
-  }
-}
-
-function getDashboardRecommendations(data = {}) {
-  const source = Array.isArray(data?.recommendations) ? data.recommendations : [];
-  return source.filter((item) => item && typeof item === "object" && String(item.symbol || "").trim());
+function getHomeDashboard() {
+  homeDashboard ||= createHomeDashboard({
+    calculateFinalScore, clamp, localizeUiText, formatNumber, formatPercent,
+    formatDateTime, formatMoney, getMarketPulse, attachDetailOpeners, isEnglishLanguage,
+    getFollowedEntries: () => recommendationHistory.filter(entry => followedTradeKeys.has(entry.key)),
+    reload: () => loadRecommendations({ force: true, skipGrace: true })
+  });
+  return homeDashboard;
 }
 
 function getDashboardScore(item) {
-  try {
-    const score = Number(calculateFinalScore(item)?.score);
-    return Number.isFinite(score) ? clamp(score, 0, 100) : clamp(Number(item?.confidence || 0), 0, 100);
-  } catch (error) {
-    console.warn("[SFM dashboard] score fallback", item?.symbol, error);
-    return clamp(Number(item?.confidence || 0), 0, 100);
-  }
+  return getHomeDashboard().score(item);
+}
+
+function setTerminalHomeV3State(kind = "loading") {
+  getHomeDashboard().setState(kind);
 }
 
 function renderTerminalHomeV3(data = {}) {
-  const root = document.querySelector("#terminal-home-v3");
-  if (!root) return;
-
-  const items = getDashboardRecommendations(data);
-  const buys = items.filter((item) => item.action === "buy");
-  const sells = items.filter((item) => item.action === "sell");
-  const holds = items.filter((item) => item.action !== "buy" && item.action !== "sell");
-  const averageConfidence = items.length
-    ? Math.round(items.reduce((sum, item) => sum + Number(item.confidence || 0), 0) / items.length)
-    : 0;
-  const averageMove = items.length
-    ? items.reduce((sum, item) => sum + Number(item.expectedMovePct || 0), 0) / items.length
-    : 0;
-  const bias = buys.length > sells.length ? "صاعد" : sells.length > buys.length ? "هابط" : "محايد";
-  const ranked = [...items].sort((a, b) => getDashboardScore(b) - getDashboardScore(a));
-  const state = items.length ? (data.cached || data.stale ? "stale" : "fresh") : "empty";
-  root.dataset.uiState = state;
-  root.setAttribute("aria-busy", "false");
-
-  const setText = (selector, value) => {
-    const element = root.querySelector(selector);
-    if (element) element.textContent = value;
-  };
-
-  setText("#v3-confidence", items.length ? `${formatNumber(averageConfidence)}%` : "--");
-  setText("#v3-buy-count", formatNumber(buys.length));
-  setText("#v3-sell-count", formatNumber(sells.length));
-  setText("#v3-hold-count", formatNumber(holds.length));
-  setText("#v3-market-bias", localizeUiText(bias));
-  setText("#v3-pulse-change", items.length ? formatPercent(averageMove) : "--");
-  setText("#v3-pulse-label", items.length ? localizeUiText(getMarketPulse(items)) : localizeUiText("بانتظار البيانات"));
-  setText("#v3-pulse-assets", items.length ? `${localizeUiText("الأصول المحللة")}: ${formatNumber(items.length)}` : localizeUiText("لا توجد بيانات مكتملة"));
-  setText("#v3-pulse-updated", data.generatedAt ? `${localizeUiText("آخر تحديث")} ${formatDateTime(data.generatedAt)}` : localizeUiText("آخر تحديث --"));
-
-  const confidenceRing = root.querySelector("#v3-confidence-ring");
-  if (confidenceRing) {
-    confidenceRing.style.setProperty("--v3-confidence", `${clamp(averageConfidence, 0, 100)}%`);
-    confidenceRing.setAttribute("aria-label", items.length ? `${localizeUiText("ثقة التحليل")} ${formatNumber(averageConfidence)}%` : localizeUiText("ثقة التحليل غير متاحة"));
-  }
-
-  const english = isEnglishLanguage();
-  const marketSummary = items.length
-    ? bias === "محايد"
-      ? english
-        ? `The market is balanced; ${formatNumber(holds.length)} of ${formatNumber(items.length)} assets are waiting for stronger confirmation before a decision.`
-        : `السوق متوازن حالياً؛ ${formatNumber(holds.length)} من ${formatNumber(items.length)} أصلاً بانتظار تأكيد أقوى قبل اتخاذ القرار.`
-      : english
-        ? `The market is trending ${bias === "صاعد" ? "upward" : "downward"} with ${formatNumber(Math.max(buys.length, sells.length))} confirmed signals across ${formatNumber(items.length)} analyzed assets.`
-        : `يميل السوق إلى اتجاه ${bias} مع ${formatNumber(Math.max(buys.length, sells.length))} إشارات مؤكدة من أصل ${formatNumber(items.length)} أصلاً محللاً.`
-    : english
-      ? "Waiting for verified market-provider data. The terminal will not display substitute prices or signals."
-      : "بانتظار وصول بيانات موثوقة من مزود السوق. لن تعرض المنصة أسعاراً أو إشارات بديلة.";
-  setText("#v3-market-summary", marketSummary);
-
-  const opportunityGrid = root.querySelector("#v3-opportunity-grid");
-  if (opportunityGrid) {
-    opportunityGrid.innerHTML = ranked.length
-      ? ranked.slice(0, 3).map(renderV3Opportunity).join("")
-      : renderV3EmptyState("لا توجد فرص موثوقة متاحة حالياً.");
-    attachDetailOpeners(opportunityGrid);
-  }
-
-  const heatmapGrid = root.querySelector("#v3-heatmap-grid");
-  const heatItems = ranked.slice(0, 8);
-  if (heatmapGrid) {
-    heatmapGrid.innerHTML = heatItems.length
-      ? heatItems.map(renderV3HeatItem).join("")
-      : renderV3EmptyState("تظهر خريطة الحرارة بعد اكتمال تحليل السوق.");
-    attachDetailOpeners(heatmapGrid);
-  }
-  setText("#v3-heatmap-leader", heatItems[0] ? `${heatItems[0].symbol} · ${formatNumber(getDashboardScore(heatItems[0]))}%` : "--");
-
-  const pulseChart = root.querySelector("#v3-pulse-chart");
-  if (pulseChart) pulseChart.innerHTML = renderV3PulseChart(items);
-
-  const followedList = root.querySelector("#v3-followed-list");
-  if (followedList) {
-    const followed = recommendationHistory.filter((entry) => followedTradeKeys.has(entry.key)).slice(0, 3);
-    followedList.innerHTML = followed.length
-      ? followed.map(renderV3FollowedTrade).join("")
-      : renderV3EmptyState("لا توجد صفقات محفوظة تحت المتابعة.", { view: "recommendations", actionLabel: "استعرض التوصيات" });
-    attachDetailOpeners(followedList);
-  }
-
-  const calendarList = root.querySelector("#v3-calendar-list");
-  if (calendarList) {
-    const calendar = data.economicCalendar || {};
-    const events = [...(calendar.hotEvents || []), ...(calendar.upcoming || [])]
-      .filter(Boolean)
-      .filter((event, index, list) => list.findIndex((candidate) => candidate.title === event.title && candidate.isoTime === event.isoTime) === index)
-      .slice(0, 3);
-    calendarList.innerHTML = events.length
-      ? events.map(renderV3CalendarEvent).join("")
-      : renderV3EmptyState(calendar.summary || "لا توجد أحداث اقتصادية موثقة قريبة.");
-  }
-}
-
-function renderV3Opportunity(item) {
-  const tone = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : "hold";
-  const target = item.target1 || item.expectedPrice;
-  const confidence = clamp(Number(item.confidence || 0), 0, 100);
-  const companyName = getOfficialCompanyName(item);
-  return `<article class="v3-opportunity-card ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">
-    <header>${renderAssetLogo(item, { className: "v3-asset-logo" })}<div><strong>${escapeHtml(item.symbol)}</strong><span>${escapeHtml(companyName)}</span></div><b>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</b></header>
-    <div class="v3-opportunity-metrics"><div><span>${escapeHtml(localizeUiText("السعر الحالي"))}</span><strong>${formatMoney(item.currentPrice, item.currency)}</strong></div><div><span>${escapeHtml(localizeUiText("الهدف"))}</span><strong>${target ? formatMoney(target, item.currency) : "--"}</strong></div><div class="v3-confidence-metric"><span>${escapeHtml(localizeUiText("ثقة التحليل"))}</span><span class="v3-card-confidence" style="--v3-card-confidence:${confidence}%" aria-label="${escapeHtml(`${localizeUiText("ثقة التحليل")} ${formatNumber(confidence)}%`)}"><i>${formatNumber(confidence)}%</i></span></div></div>
-  </article>`;
-}
-
-function renderV3HeatItem(item) {
-  const tone = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : "hold";
-  const confidence = clamp(Number(item.confidence || getDashboardScore(item)), 0, 100);
-  return `<article class="v3-heat-item ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">${renderAssetLogo(item, { className: "v3-heat-logo" })}<strong>${escapeHtml(item.symbol)}</strong><b>${formatPercent(item.expectedMovePct)}</b><span>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</span><em>${formatNumber(confidence)}%</em></article>`;
-}
-
-function renderV3PulseChart(items) {
-  if (!items.length) return renderV3EmptyState("بانتظار بيانات حركة الأصول.");
-  const values = items.slice(0, 20)
-    .map((item) => Number(item.expectedMovePct || 0))
-    .filter(Number.isFinite)
-    .sort((a, b) => a - b);
-  const max = Math.max(1, ...values.map((value) => Math.abs(value)));
-  const points = values.map((value, index) => {
-    const x = values.length === 1 ? 50 : (index / (values.length - 1)) * 100;
-    const y = 50 - (value / max) * 34;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  }).join(" ");
-  const areaPoints = `0,50 ${points} 100,50`;
-  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="${escapeHtml(localizeUiText("توزيع حركة الأصول المحللة"))}"><defs><linearGradient id="v3-pulse-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#2fd6c0" stop-opacity=".32"></stop><stop offset="100%" stop-color="#2fd6c0" stop-opacity="0"></stop></linearGradient></defs><g class="v3-pulse-grid"><line x1="0" y1="16" x2="100" y2="16"></line><line x1="0" y1="33" x2="100" y2="33"></line><line x1="0" y1="50" x2="100" y2="50"></line><line x1="0" y1="67" x2="100" y2="67"></line><line x1="0" y1="84" x2="100" y2="84"></line></g><polygon points="${areaPoints}"></polygon><polyline points="${points}"></polyline></svg>`;
-}
-
-function renderV3FollowedTrade(entry) {
-  const entryPrice = Number(entry.entryPrice ?? entry.currentPrice);
-  const target = Number(entry.target1 ?? entry.expectedPrice);
-  const status = entry.outcome === "target" ? "وصل الهدف" : entry.outcome === "stop" ? "صفقة خاسرة" : "قيد المتابعة";
-  return `<article class="v3-follow-row" data-symbol="${escapeHtml(entry.symbol)}" tabindex="0" role="link">${renderAssetLogo(entry, { className: "v3-follow-logo" })}<strong>${escapeHtml(entry.symbol)}</strong><span class="v3-follow-action">${escapeHtml(localizeUiText(entry.actionLabel || entry.action || "انتظار"))}</span><span class="v3-follow-price"><small>${escapeHtml(localizeUiText("الدخول"))}</small><b>${Number.isFinite(entryPrice) ? formatMoney(entryPrice, entry.currency || "USD") : "--"}</b></span><span class="v3-follow-price"><small>${escapeHtml(localizeUiText("الهدف"))}</small><b>${Number.isFinite(target) ? formatMoney(target, entry.currency || "USD") : "--"}</b></span><em class="is-${escapeHtml(entry.outcome || "pending")}">${escapeHtml(localizeUiText(status))}</em></article>`;
-}
-
-function renderV3CalendarEvent(event) {
-  const impact = event.impact === "high" ? "high" : event.impact === "low" ? "low" : "medium";
-  const impactLabel = impact === "high" ? "عالي" : impact === "low" ? "منخفض" : "متوسط";
-  const date = event.date || (event.isoTime ? formatDateTime(event.isoTime).split(" ")[0] : "--");
-  return `<article class="v3-calendar-event ${impact}"><header><span>${escapeHtml(event.currency || "--")}</span><time>${escapeHtml(date)} · ${escapeHtml(event.localTimeLabel || event.time || "--")}</time></header><strong>${escapeHtml(event.title || "--")}</strong><b>${escapeHtml(localizeUiText(impactLabel))}</b></article>`;
-}
-
-function renderV3EmptyState(message, options = {}) {
-  const action = options.view
-    ? `<a href="#view-${escapeHtml(options.view)}" class="v3-view-all v3-empty-action" data-v3-view="${escapeHtml(options.view)}">${escapeHtml(localizeUiText(options.actionLabel || "استعرض التوصيات"))}</a>`
-    : "";
-  const kind = options.kind || "empty";
-  const role = kind === "unavailable" ? "alert" : "status";
-  return `<div class="v3-empty-state v3-panel-state" data-ui-state="${escapeHtml(kind)}" role="${role}"><p>${escapeHtml(localizeUiText(message))}</p>${action}</div>`;
+  getHomeDashboard().render(data);
 }
 
 function renderHomeRecommendationCard(item) {
@@ -4333,7 +3748,9 @@ function filterRecommendations(items) {
       activeShariaFilter === "all" ||
       item.shariaStatus === activeShariaFilter ||
       (activeShariaFilter === "doubtful" && !["compliant", "not_compliant"].includes(item.shariaStatus));
-    const matchesQuery = !query || `${item.name} ${item.symbol}`.toLowerCase().includes(query);
+    const matchesQuery = !query || (terminalSearchController
+      ? terminalSearchController.matches(item, query)
+      : `${item.name} ${item.symbol}`.toLowerCase().includes(query));
     const matchesMode = isRecommendationInMode(item);
     return matchesFilter && matchesSharia && matchesQuery && matchesMode;
   });
@@ -6380,7 +5797,40 @@ function setSignalCardCollapsed(card, isCollapsed) {
 function openDetailPage(symbol) {
   const normalized = normalizeSymbol(symbol);
   if (!normalized) return;
-  window.open(`/detail.html?symbol=${encodeURIComponent(normalized)}`, "_blank", "noopener");
+  const returnTo = saveDetailReturnContext({
+    market: activeMarket, filter: activeFilter, shariaFilter: activeShariaFilter,
+    analysisMode: activeAnalysisMode, watchlistOnly,
+    query: searchInput.value, sort: sortSelect.value,
+    terminalQuery: terminalSymbolSearch?.value || ""
+  });
+  window.location.assign(detailPageUrl(normalized, returnTo));
+}
+
+function restoreDetailNavigation() {
+  const saved = readDetailReturnContext();
+  if (!saved) return;
+  restoredNavigation = saved;
+  if (typeof saved.market === "string" && /^[a-z0-9-]{1,40}$/.test(saved.market)) activeMarket = saved.market;
+  if (["all", "buy", "sell", "hold"].includes(saved.filter)) activeFilter = saved.filter;
+  if (["all", "compliant", "not_compliant", "doubtful"].includes(saved.shariaFilter)) activeShariaFilter = saved.shariaFilter;
+  if (["balanced", "scalp", "swing", "sharia", "safe"].includes(saved.analysisMode)) activeAnalysisMode = saved.analysisMode;
+  watchlistOnly = Boolean(saved.watchlistOnly);
+  if (searchInput) searchInput.value = String(saved.query || "").slice(0, 200);
+  if (sortSelect && [...sortSelect.options].some(option => option.value === saved.sort)) sortSelect.value = saved.sort;
+  if (terminalSymbolSearch) terminalSymbolSearch.value = String(saved.terminalQuery || "").slice(0, 200);
+  document.querySelectorAll(".filter-button").forEach(button => {
+    const selected = button.dataset.filter === activeFilter;
+    button.classList.toggle("active", selected);
+    button.setAttribute("aria-selected", String(selected));
+  });
+  setActiveShariaFilterButton();
+}
+
+function restoreDetailScroll() {
+  if (!restoredNavigation) return;
+  const top = Math.max(0, Number(restoredNavigation.scrollY) || 0);
+  restoredNavigation = null;
+  requestAnimationFrame(() => window.scrollTo({ top, behavior: "instant" }));
 }
 
 function renderTimeframePills(timeframes) {
