@@ -1,7 +1,9 @@
+import { getAnalysisMetrics } from "./analysisMetrics.js";
+
 // Only the recommendation list is rebuilt when its query or sort order changes.
 export function createRecommendationListRenderer({ cards, template, expandedSignalCards, getPremiumAssetVisual, getOfficialCompanyName,
   setupSignalCardToggle, formatMoney, formatNumber, formatPercent, isEnglishLanguage,
-  formatDataFreshness, calculateFinalScore, renderTimeframePills, drawSparkline,
+  formatDataFreshness, localizeUiText, renderTimeframePills, drawSparkline,
   attachDetailOpeners, renderMarketDataState }) {
   return function renderRecommendationList(data, recommendations) {
   cards.innerHTML = "";
@@ -14,7 +16,7 @@ export function createRecommendationListRenderer({ cards, template, expandedSign
     const card = template.content.firstElementChild.cloneNode(true);
     const actionBadge = card.querySelector(".action-badge");
     const shariaBadge = card.querySelector(".sharia-badge");
-    const confidenceFill = card.querySelector(".confidence-fill");
+    const metrics = getAnalysisMetrics(item, { english: isEnglishLanguage(), localize: localizeUiText });
     const visual = getPremiumAssetVisual(item);
     const logo = card.querySelector(".signal-asset-logo");
 
@@ -42,9 +44,12 @@ export function createRecommendationListRenderer({ cards, template, expandedSign
     card.querySelector(".target-two").textContent = formatMoney(item.target2, item.currency);
     card.querySelector(".stop-loss").textContent = item.stopLoss ? formatMoney(item.stopLoss, item.currency) : "--";
     card.querySelector(".risk-reward").textContent = item.riskReward ? `${formatNumber(item.riskReward, { maximumFractionDigits: 2 })}:1` : "--";
-    card.querySelector(".confidence").textContent = `${item.confidence}%`;
-    confidenceFill.style.width = `${item.confidence}%`;
-    card.querySelector(".duration").textContent = `المدة: ${item.duration}`;
+    for (const key of ["confidence", "duration", "score"]) {
+      const cell = card.querySelector('[data-analysis-metric="' + key + '"]');
+      cell.querySelector(".analysis-metric-label").textContent = metrics[key + "Label"];
+      cell.querySelector("[data-metric-value]").textContent = key === "duration" ? metrics.duration : metrics[key + "Text"];
+    }
+    card.querySelector('[data-analysis-metric="score"]').title = metrics.scoreDescription;
     card.querySelector(".expected-move").textContent = `الحركة: ${formatPercent(item.expectedMovePct)}`;
     card.querySelector(".data-source").textContent = isEnglishLanguage()
       ? `Source: ${item.dataProvenance?.provider || item.dataProvider || "--"}`
@@ -56,7 +61,6 @@ export function createRecommendationListRenderer({ cards, template, expandedSign
     card.querySelector(".risk-label").textContent = item.risk?.label || "--";
     card.querySelector(".backtest-label").textContent = item.backtest?.winRate ? `${item.backtest.winRate}%` : item.backtest?.label || "--";
     card.querySelector(".data-health-label").textContent = item.dataHealth?.score ? `${item.dataHealth.score}% ${item.dataHealth.label || ""}`.trim() : "--";
-    card.querySelector(".final-score").textContent = `${calculateFinalScore(item).score}%`;
     card.querySelector(".timeframe-grid").innerHTML = renderTimeframePills(item.timeframes || []);
 
     const reasons = card.querySelector(".reasons");

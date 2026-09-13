@@ -1,3 +1,4 @@
+import { getAnalysisMetrics } from "./analysisMetrics.js";
 import { renderAssetLogo, getOfficialCompanyName } from "./assetBranding.js";
 
 export function getDashboardRecommendations(data = {}) {
@@ -180,11 +181,16 @@ function renderTerminalHomeV3(data = {}) {
 function renderV3Opportunity(item) {
   const tone = item.action === "buy" ? "buy" : item.action === "sell" ? "sell" : "hold";
   const target = item.target1 || item.expectedPrice;
-  const confidence = clamp(Number(item.confidence || 0), 0, 100);
+  const metrics = getAnalysisMetrics(item, { english: isEnglishLanguage(), localize: localizeUiText });
+  const confidence = metrics.confidence ?? 0;
   const companyName = getOfficialCompanyName(item);
   return `<article class="v3-opportunity-card ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">
     <header>${renderAssetLogo(item, { className: "v3-asset-logo" })}<div><strong>${escapeHtml(item.symbol)}</strong><span>${escapeHtml(companyName)}</span></div><b>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</b></header>
-    <div class="v3-opportunity-metrics"><div><span>${escapeHtml(localizeUiText("السعر الحالي"))}</span><strong>${formatMoney(item.currentPrice, item.currency)}</strong></div><div><span>${escapeHtml(localizeUiText("الهدف"))}</span><strong>${target ? formatMoney(target, item.currency) : "--"}</strong></div><div class="v3-confidence-metric"><span>${escapeHtml(localizeUiText("ثقة التحليل"))}</span><span class="v3-card-confidence" style="--v3-card-confidence:${confidence}%" aria-label="${escapeHtml(`${localizeUiText("ثقة التحليل")} ${formatNumber(confidence)}%`)}"><i>${formatNumber(confidence)}%</i></span></div></div>
+    <div class="v3-opportunity-metrics"><div><span>${escapeHtml(localizeUiText("السعر الحالي"))}</span><strong>${formatMoney(item.currentPrice, item.currency)}</strong></div><div><span>${escapeHtml(localizeUiText("الهدف"))}</span><strong>${target ? formatMoney(target, item.currency) : "--"}</strong></div><div class="v3-confidence-metric"><span>${escapeHtml(localizeUiText("ثقة التحليل"))}</span><span class="v3-card-confidence" style="--v3-card-confidence:${confidence}%" aria-label="${escapeHtml(`${metrics.confidenceLabel}: ${metrics.confidenceText}`)}" data-metric-value="confidence"><i>${escapeHtml(metrics.confidenceRingText)}</i></span></div></div>
+    <div class="analysis-summary v3-analysis-summary" aria-label="${escapeHtml(isEnglishLanguage() ? "Analysis information" : "معلومات التحليل")}">
+      <div data-analysis-metric="duration"><span class="analysis-metric-label">${metrics.durationLabel}</span><strong data-metric-value="duration" dir="auto">${escapeHtml(metrics.duration)}</strong></div>
+      <div data-analysis-metric="score" title="${escapeHtml(metrics.scoreDescription)}"><span class="analysis-metric-label">${metrics.scoreLabel}</span><strong data-metric-value="score" dir="ltr">${escapeHtml(metrics.scoreText)}</strong></div>
+    </div>
   </article>`;
 }
 
