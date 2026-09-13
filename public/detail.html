@@ -14,10 +14,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/styles.css?v=20260914-market-search-nav-1" />
+    <link rel="stylesheet" href="/styles.css?v=20260914-analysis-clarity-1" />
     <link rel="stylesheet" href="/desktop-balance.css?v=20260801-hardening-2" />
     <link rel="stylesheet" href="/cinema.css?v=20260804-home-v3-layout-fix-1" />
-    <link rel="stylesheet" href="/detail-brand.css?v=20260914-market-search-nav-1" />
+    <link rel="stylesheet" href="/detail-brand.css?v=20260914-analysis-clarity-1" />
+    <link rel="stylesheet" href="/analysis-metrics.css?v=20260914-analysis-clarity-1" />
   </head>
   <body class="sfm-detail-page">
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
@@ -58,9 +59,14 @@
           </div>
           <div class="detail-action-card">
             <span id="detail-action" class="action-badge">--</span>
-            <strong id="detail-confidence">--</strong>
             <p id="detail-agreement">--</p>
           </div>
+        </section>
+
+        <section class="analysis-summary detail-analysis-summary" aria-label="معلومات التحليل">
+          <div data-analysis-metric="confidence"><span class="analysis-metric-label">الثقة</span><strong id="detail-confidence" data-metric-value="confidence" dir="ltr">--</strong></div>
+          <div data-analysis-metric="duration"><span class="analysis-metric-label">المدة المتوقعة</span><strong id="detail-duration" data-metric-value="duration" dir="auto">--</strong></div>
+          <div data-analysis-metric="score"><span class="analysis-metric-label">تقييم AI</span><strong id="detail-score" data-metric-value="score" dir="ltr">--</strong></div>
         </section>
 
         <section class="detail-metrics">
@@ -99,14 +105,6 @@
           <div>
             <span>الحركة المتوقعة</span>
             <strong id="detail-expected-move">--</strong>
-          </div>
-          <div>
-            <span>المدة</span>
-            <strong id="detail-duration">--</strong>
-          </div>
-          <div>
-            <span>السكور</span>
-            <strong id="detail-score">--</strong>
           </div>
           <div>
             <span>المخاطرة</span>
@@ -207,6 +205,6 @@
       </footer>
     </div>
 
-    <script src="/detail.js?v=20260914-market-search-nav-1" type="module"></script>
+    <script src="/detail.js?v=20260914-analysis-clarity-1" type="module"></script>
   </body>
 </html>

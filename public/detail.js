@@ -1,3 +1,4 @@
+import { getAnalysisMetrics } from "./modules/analysisMetrics.js";
 import { navigateBackFromDetail, safeHomeUrl } from "./modules/detailNavigation.js";
 import { API_TOKEN_STORAGE_KEY } from "./modules/apiClient.js";
 import { setUiState } from "./modules/uiState.js";
@@ -724,7 +725,7 @@ function renderDetail(data) {
   const item = data.recommendation;
   const profile = data.profile || {};
   const market = data.market || {};
-  const finalScore = calculateFinalScore(item);
+  const metrics = getAnalysisMetrics(item, { english: isDetailEnglishLanguage(), localize: localizeDetailText });
   const decision = item.decision || buildDecision(item);
 
   activeDetailTitleSymbol = item.symbol;
@@ -737,7 +738,11 @@ function renderDetail(data) {
 
   elements.action.textContent = localizeActionLabel(item.action, item.actionLabel);
   elements.action.className = `action-badge action-${item.action}`;
-  elements.confidence.textContent = localizeConfidenceText(item.confidence);
+  elements.confidence.textContent = metrics.confidenceText;
+  for (const key of ["confidence", "duration", "score"]) {
+    const cell = document.querySelector('.detail-analysis-summary [data-analysis-metric="' + key + '"]');
+    if (cell) cell.querySelector(".analysis-metric-label").textContent = metrics[key + "Label"];
+  }
   elements.agreement.textContent = localizeAgreementText(item.timeframeConsensus);
 
   elements.currentPrice.textContent = formatMoney(item.currentPrice, item.currency);
@@ -749,8 +754,9 @@ function renderDetail(data) {
   elements.resistance.textContent = formatMoney(item.resistance, item.currency);
   elements.riskReward.textContent = item.riskReward ? `${formatNumber(item.riskReward, { maximumFractionDigits: 2 })}:1` : "--";
   elements.expectedMove.textContent = formatPercent(item.expectedMovePct);
-  elements.duration.textContent = localizeDetailText(item.duration);
-  elements.score.textContent = `${finalScore.score}% · ${localizeScoreLabel(finalScore.label)}`;
+  elements.duration.textContent = metrics.duration;
+  elements.score.textContent = metrics.scoreText;
+  elements.score.title = metrics.scoreDescription;
   elements.risk.textContent = localizeRiskLabel(item.risk);
   elements.quality.textContent = item.analysisQuality ? `${item.analysisQuality.score}% · ${localizeDetailText(item.analysisQuality.label)}` : "--";
   elements.dataHealth.textContent = item.dataHealth ? `${item.dataHealth.score}% · ${localizeDetailText(item.dataHealth.label || "صحة البيانات")}` : "--";
@@ -944,31 +950,7 @@ function showError(message) {
   applyDetailLanguage();
 }
 
-function calculateFinalScore(item) {
-  const confidencePoints = clamp(Number(item.confidence || 0), 0, 100) * 0.35;
-  const agreementPoints = clamp(Number(item.timeframeConsensus?.agreementPct || 0), 0, 100) * 0.15;
-  const shariaPoints = {
-    compliant: 20,
-    doubtful: 8,
-    unknown: 4,
-    not_compliant: 0
-  }[item.shariaStatus] ?? 4;
-  const riskPoints = {
-    low: 15,
-    medium: 9,
-    high: 3
-  }[item.risk?.level] ?? 8;
-  const winRate = Number(item.backtest?.winRate);
-  const backtestPoints = Number.isFinite(winRate) ? clamp(winRate * 0.1, 0, 10) : 4;
-  const movePoints = clamp(Math.abs(Number(item.expectedMovePct || 0)) * 1.2, 0, 5);
-  const qualityPoints = clamp(Number(item.analysisQuality?.score || 0), 0, 100) * 0.08;
-  const riskRewardPoints = clamp(Number(item.riskReward || 0), 0, 3) * 2;
-  const conflictPenalty = item.timeframeConsensus?.conflict ? 6 : 0;
-  const score = Math.round(clamp(confidencePoints + agreementPoints + shariaPoints + riskPoints + backtestPoints + movePoints + qualityPoints + riskRewardPoints - conflictPenalty, 0, 100));
-  const label = score >= 80 ? "قوي جداً" : score >= 70 ? "قوي" : score >= 55 ? "متوسط" : "ضعيف";
 
-  return { score, label };
-}
 
 function drawSparkline(canvas, values = [], action) {
   const context = canvas?.getContext?.("2d");

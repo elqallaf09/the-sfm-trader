@@ -31,6 +31,7 @@ const syntaxFiles = [
   "public/modules/instrumentSearch.js",
   "public/modules/recommendationList.js",
   "public/modules/detailNavigation.js",
+  "public/modules/analysisMetrics.js",
   "tools/set-ios-server-url.mjs",
   "tools/smoke.mjs",
   "tools/migrate.mjs",

@@ -1,4 +1,5 @@
-﻿import { API_TOKEN_STORAGE_KEY, createIdempotencyKey, readStateVersion } from "./modules/apiClient.js";
+﻿import { calculateFinalScore } from "./modules/analysisMetrics.js";
+import { API_TOKEN_STORAGE_KEY, createIdempotencyKey, readStateVersion } from "./modules/apiClient.js";
 import { createVisibilityAwarePoller } from "./modules/polling.js";
 import { setUiState } from "./modules/uiState.js";
 import "./modules/webVitals.js";
@@ -3064,7 +3065,7 @@ function renderRecommendationResults(data = lastData) {
   recommendationListRenderer ||= createRecommendationListRenderer({
     cards, template, expandedSignalCards, getPremiumAssetVisual, getOfficialCompanyName,
     setupSignalCardToggle, formatMoney, formatNumber, formatPercent, isEnglishLanguage,
-    formatDataFreshness, calculateFinalScore, renderTimeframePills, drawSparkline,
+    formatDataFreshness, localizeUiText, renderTimeframePills, drawSparkline,
     attachDetailOpeners, renderMarketDataState
   });
   const recommendations = sortRecommendations(filterRecommendations(data.recommendations || []));
@@ -6923,33 +6924,7 @@ function getLocalGreeting() {
   return `ماذا تريد اليوم ${honorificName}؟ SFM جاهز للتحليل.`;
 }
 
-function calculateFinalScore(item) {
-  const confidencePoints = clamp(Number(item.confidence || 0), 0, 100) * 0.31;
-  const agreementPoints = clamp(Number(item.timeframeConsensus?.agreementPct || 0), 0, 100) * 0.14;
-  const dataHealthPoints = clamp(Number(item.dataHealth?.score || 0), 0, 100) * 0.1;
-  const shariaPoints = {
-    compliant: 20,
-    doubtful: 8,
-    unknown: 4,
-    not_compliant: 0
-  }[item.shariaStatus] ?? 4;
-  const riskPoints = {
-    low: 15,
-    medium: 9,
-    high: 3
-  }[item.risk?.level] ?? 8;
-  const winRate = Number(item.backtest?.winRate);
-  const backtestPoints = Number.isFinite(winRate) ? clamp(winRate * 0.1, 0, 10) : 4;
-  const movePoints = clamp(Math.abs(Number(item.expectedMovePct || 0)) * 1.2, 0, 5);
-  const qualityPoints = clamp(Number(item.analysisQuality?.score || 0), 0, 100) * 0.07;
-  const riskRewardPoints = clamp(Number(item.riskReward || 0), 0, 3) * 2;
-  const conflictPenalty = item.timeframeConsensus?.conflict ? 8 : 0;
-  const lowDataPenalty = Number(item.dataHealth?.score || 100) < 55 ? 7 : 0;
-  const score = Math.round(clamp(confidencePoints + agreementPoints + dataHealthPoints + shariaPoints + riskPoints + backtestPoints + movePoints + qualityPoints + riskRewardPoints - conflictPenalty - lowDataPenalty, 0, 100));
-  const label = score >= 80 ? "قوي جداً" : score >= 70 ? "قوي" : score >= 55 ? "متوسط" : "ضعيف";
 
-  return { score, label };
-}
 
 function getRecommendationLookup(items) {
   return new Map((items || []).map((item) => [item.symbol.toUpperCase(), item]));

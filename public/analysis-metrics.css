@@ -1,0 +1,85 @@
+/* Essential analysis values remain visible outside collapsible recommendation details. */
+:root {
+  --analysis-confidence: #7ce8d7;
+  --analysis-duration: #a9cfff;
+  --analysis-score: #d6bdff;
+  --analysis-label: #c8d7e8;
+  --analysis-surface: #0b1b2e;
+  --analysis-border: #35516e;
+  --signal-buy: #7af0bb;
+  --signal-sell: #ffacb5;
+  --signal-hold: #ffda8a;
+}
+body .app-shell .analysis-summary {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  margin: 12px 0 0;
+  padding: 0;
+  opacity: 1;
+  visibility: visible;
+}
+body .app-shell .analysis-summary > [data-analysis-metric] {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 66px;
+  padding: 10px 12px;
+  border: 1px solid var(--analysis-border);
+  border-radius: 10px;
+  background: var(--analysis-surface);
+}
+body .app-shell .analysis-summary .analysis-metric-label {
+  display: block;
+  color: var(--analysis-label) !important;
+  -webkit-text-fill-color: var(--analysis-label);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+body .app-shell .analysis-summary [data-metric-value] {
+  display: block !important;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.45;
+  white-space: normal !important;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  text-overflow: clip;
+  font-variant-numeric: tabular-nums;
+  -webkit-text-fill-color: currentColor;
+}
+body .app-shell [data-analysis-metric="confidence"] [data-metric-value] { color: var(--analysis-confidence) !important; }
+body .app-shell [data-analysis-metric="duration"] [data-metric-value] { color: var(--analysis-duration) !important; font-size: 13px; font-weight: 700; line-height: 1.7; }
+body .app-shell [data-analysis-metric="score"] [data-metric-value] { color: var(--analysis-score) !important; }
+body .app-shell .v3-analysis-summary { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); margin-top: 12px; }
+body .app-shell .detail-analysis-summary { margin: 0; padding: 0; border: 0; background: transparent; }
+body .app-shell .signal-card.is-collapsed .signal-analysis-summary { display: grid !important; }
+body[data-app-view="home"] .v3-opportunity-card .v3-confidence-metric > span:first-child { color: var(--analysis-label); font-size: 12px; }
+body[data-app-view="home"] .v3-opportunity-card .v3-card-confidence { width: 50px; height: 50px; }
+body[data-app-view="home"] .v3-opportunity-card .v3-card-confidence i { color: var(--analysis-confidence); font-size: 12px; font-weight: 800; }
+/* Actions carry text as well as distinct colors. */
+body .app-shell .signal-card .action-badge.action-buy,
+body .app-shell .detail-action-card .action-badge.action-buy,
+body[data-app-view="home"] .v3-opportunity-card.buy header > b { color: var(--signal-buy) !important; background: #123529 !important; border: 1px solid #328866; }
+body .app-shell .signal-card .action-badge.action-sell,
+body .app-shell .detail-action-card .action-badge.action-sell,
+body[data-app-view="home"] .v3-opportunity-card.sell header > b { color: var(--signal-sell) !important; background: #391d29 !important; border: 1px solid #995365; }
+body .app-shell .signal-card .action-badge.action-hold,
+body .app-shell .detail-action-card .action-badge.action-hold,
+body[data-app-view="home"] .v3-opportunity-card.hold header > b { color: var(--signal-hold) !important; background: #352c19 !important; border: 1px solid #907647; }
+@media (max-width: 600px) {
+  body .app-shell .signal-analysis-summary,
+  body .app-shell .detail-analysis-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body .app-shell :is(.signal-analysis-summary, .detail-analysis-summary) > [data-analysis-metric="duration"] { grid-column: 1 / -1; grid-row: 2; }
+  body .app-shell .analysis-summary > [data-analysis-metric] { padding: 9px 10px; min-height: 60px; }
+  body .app-shell .analysis-summary [data-metric-value] { font-size: 17px; }
+  body .app-shell .analysis-summary [data-metric-value="duration"] { font-size: 13px; }
+  body[data-app-view="home"] .v3-opportunity-card .v3-confidence-metric { grid-template-columns: 1fr; justify-items: center; gap: 5px; }
+  body[data-app-view="home"] .v3-opportunity-card .v3-card-confidence { width: 44px; height: 44px; }
+}
