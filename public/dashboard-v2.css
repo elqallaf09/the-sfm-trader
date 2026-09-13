@@ -102,6 +102,7 @@ body[data-app-view="home"] .brand-lockup h1 {
   line-height: 1.05 !important;
   letter-spacing: -0.02em !important;
   text-shadow: none !important;
+  text-transform: none !important;
 }
 
 body[data-app-view="home"] .topbar .brand-lockup .eyebrow,

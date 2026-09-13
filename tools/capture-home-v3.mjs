@@ -33,7 +33,9 @@ const recommendations = [
   duration: "3-6 months",
   target2: null,
   stopLoss: null,
-  riskReward: null
+  riskReward: null,
+  dataHealth: { score: 100, label: "verified" },
+  timeframeConsensus: { conflict: false }
 }));
 
 const fixture = {
