@@ -54,9 +54,9 @@ body .app-shell .analysis-summary [data-metric-value] {
   font-variant-numeric: tabular-nums;
   -webkit-text-fill-color: currentColor;
 }
-body .app-shell [data-analysis-metric="confidence"] [data-metric-value] { color: var(--analysis-confidence) !important; }
-body .app-shell [data-analysis-metric="duration"] [data-metric-value] { color: var(--analysis-duration) !important; font-size: 13px; font-weight: 700; line-height: 1.7; }
-body .app-shell [data-analysis-metric="score"] [data-metric-value] { color: var(--analysis-score) !important; }
+body :is(.app-shell, [data-recommendation-drawer]) [data-analysis-metric="confidence"] [data-metric-value] { color: var(--analysis-confidence) !important; }
+body :is(.app-shell, [data-recommendation-drawer]) [data-analysis-metric="duration"] [data-metric-value] { color: var(--analysis-duration) !important; font-size: 13px; font-weight: 700; line-height: 1.7; }
+body :is(.app-shell, [data-recommendation-drawer]) [data-analysis-metric="score"] [data-metric-value] { color: var(--analysis-score) !important; }
 body .app-shell .v3-analysis-summary { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); margin-top: 12px; }
 body .app-shell .detail-analysis-summary { margin: 0; padding: 0; border: 0; background: transparent; }
 body .app-shell .signal-card.is-collapsed .signal-analysis-summary { display: grid !important; }
@@ -83,3 +83,22 @@ body[data-app-view="home"] .v3-opportunity-card.hold header > b { color: var(--s
   body[data-app-view="home"] .v3-opportunity-card .v3-confidence-metric { grid-template-columns: 1fr; justify-items: center; gap: 5px; }
   body[data-app-view="home"] .v3-opportunity-card .v3-card-confidence { width: 44px; height: 44px; }
 }
+
+/* The live recommendation table and mobile cards use the same visible metric fields. */
+body .recommendation-table { min-width: 1060px; }
+body .recommendation-table th { color: #d9e5f1 !important; background: #142b43 !important; }
+body .recommendation-table td { color: #e8eef6 !important; }
+body .recommendation-table td[data-analysis-metric] { padding-block: 14px; }
+body .recommendation-table [data-metric-value],
+body [data-recommendation-drawer] [data-metric-value],
+body .recommendation-mobile-card [data-metric-value] { display: block; font-weight: 800; font-size: 15px; -webkit-text-fill-color: currentColor; }
+body .recommendation-table td[data-analysis-metric="duration"] { min-width: 145px; max-width: 230px; white-space: normal !important; }
+body .recommendation-table td[data-analysis-metric="duration"] strong,
+body [data-recommendation-drawer] [data-metric-value="duration"] { white-space: normal !important; overflow-wrap: anywhere; line-height: 1.7; font-size: 13px; }
+body .recommendation-mobile-grid > [data-analysis-metric="duration"] { grid-column: 1 / -1; }
+body .recommendation-mobile-grid > [data-analysis-metric] { padding: 10px; border: 1px solid #35516e; border-radius: 8px; background: #0b1b2e; }
+body .recommendation-mobile-grid > div > span,
+body .recommendation-detail-row > span { color: #c8d7e8 !important; }
+body .recommendation-badge.is-buy { color: #7af0bb !important; background: #123529 !important; border-color: #328866 !important; }
+body .recommendation-badge.is-sell { color: #ffacb5 !important; background: #391d29 !important; border-color: #995365 !important; }
+body .recommendation-badge:is(.is-hold, .is-pending, .is-watch) { color: #ffda8a !important; background: #352c19 !important; border-color: #907647 !important; }

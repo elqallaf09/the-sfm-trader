@@ -1,4 +1,4 @@
-﻿import { calculateFinalScore } from "./modules/analysisMetrics.js";
+﻿import { calculateFinalScore, getAnalysisMetrics } from "./modules/analysisMetrics.js";
 import { API_TOKEN_STORAGE_KEY, createIdempotencyKey, readStateVersion } from "./modules/apiClient.js";
 import { createVisibilityAwarePoller } from "./modules/polling.js";
 import { setUiState } from "./modules/uiState.js";
@@ -1335,6 +1335,7 @@ let terminalSearchController = null;
 let restoredNavigation = null;
 let homeDashboard = null;
 let recommendationListRenderer = null;
+let recommendationTableRenderer = null;
 let lastMarkets = [];
 const recommendationResponseCache = createBoundedMemoryCache(30);
 let activeFilter = "all";
@@ -3062,13 +3063,17 @@ function renderActivePanel(label, render, element) {
 
 function renderRecommendationResults(data = lastData) {
   if (!data || !isPanelActive(cards)) return;
+  const recommendations = sortRecommendations(filterRecommendations(data.recommendations || []));
+  if (recommendationTableRenderer) {
+    recommendationTableRenderer({ ...data, recommendations });
+    return;
+  }
   recommendationListRenderer ||= createRecommendationListRenderer({
     cards, template, expandedSignalCards, getPremiumAssetVisual, getOfficialCompanyName,
     setupSignalCardToggle, formatMoney, formatNumber, formatPercent, isEnglishLanguage,
     formatDataFreshness, localizeUiText, renderTimeframePills, drawSparkline,
     attachDetailOpeners, renderMarketDataState
   });
-  const recommendations = sortRecommendations(filterRecommendations(data.recommendations || []));
   recommendationListRenderer(data, recommendations);
 }
 
@@ -8832,6 +8837,7 @@ function updateMarketOverviewBubbles(all = []) {
   }
 
   function sfmFinalSafeNumber(value) {
+    if (!["number", "string"].includes(typeof value) || String(value).trim() === "") return null;
     const number = Number(value);
     return Number.isFinite(number) ? number : null;
   }
@@ -8979,7 +8985,8 @@ function updateMarketOverviewBubbles(all = []) {
         const currentPrice = sfmFinalSafeNumber(item.currentPrice);
         const expectedPrice = sfmFinalSafeNumber(item.expectedPrice);
         const expectedMove = sfmFinalSafeNumber(item.expectedMovePct);
-        const confidence = sfmFinalSafeNumber(item.confidence);
+        const metrics = getAnalysisMetrics(item, { english: sfmFinalIsEnglish(), localize: localizeUiText });
+        const confidence = metrics.confidence;
         const percent =
           expectedMove !== null
             ? sfmFinalClampPercent(expectedMove)
@@ -9002,15 +9009,17 @@ function updateMarketOverviewBubbles(all = []) {
           expectedMovePct: percent,
           confidence,
           action,
-          duration: sfmFinalSafeText(item.duration),
+          duration: metrics.duration,
+          confidenceText: metrics.confidenceText,
+          scoreText: metrics.scoreText,
           target: sfmFinalSafeText(item.target1 || item.target || item.priceTarget),
           risk,
-          score: sfmFinalSafeNumber(item.score),
+          score: metrics.score,
           updatedAt: item.updatedAt || item.generatedAt || item.analyzedAt || "",
           dataProvider: item.dataProvider || item.source || item.provider || item.priceSource,
           reasons: Array.isArray(item.reasons) ? item.reasons : [],
           decision: item.decision || null,
-          aiScore: sfmFinalSafeNumber(item.score),
+          aiScore: metrics.score,
           hasCriticalPrice,
           hasCorePrice,
           hasConfidence,
@@ -9031,6 +9040,8 @@ function updateMarketOverviewBubbles(all = []) {
         <td><span class="recommendation-skeleton"></span></td>
         <td><span class="recommendation-skeleton"></span></td>
         <td><span class="recommendation-skeleton"></span></td>
+        <td><span class="recommendation-skeleton"></span></td>
+        <td><span class="recommendation-skeleton"></span></td>
       </tr>
     `).join("");
 
@@ -9044,6 +9055,8 @@ function updateMarketOverviewBubbles(all = []) {
               <th scope="col">${sfmFinalL("التغير", "Change")}</th>
               <th scope="col">${sfmFinalL("التوصية", "Recommendation")}</th>
               <th scope="col">${sfmFinalL("الثقة", "Confidence")}</th>
+              <th scope="col">${sfmFinalL("المدة المتوقعة", "Expected duration")}</th>
+              <th scope="col">${sfmFinalL("تقييم AI", "AI score")}</th>
               <th scope="col">${sfmFinalL("المخاطرة", "Risk")}</th>
               <th scope="col">${sfmFinalL("إجراء", "Action")}</th>
             </tr>
@@ -9089,7 +9102,7 @@ function updateMarketOverviewBubbles(all = []) {
       ? sfmFinalFormatPercent(row.expectedMovePct)
       : sfmFinalRecommendationDash;
     const safeChangeClass = sfmFinalPercentStyle(sfmFinalSafeNumber(row.expectedMovePct));
-    const confidenceText = row.hasConfidence ? sfmFinalFormatConfidence(row.confidence) : sfmFinalRecommendationDash;
+    const confidenceText = row.confidenceText;
     const recommendation = row.action || { key: "pending", label: sfmFinalRecommendationPendingText, className: "is-pending" };
     const riskText = row.risk?.label || sfmFinalRecommendationDash;
 
@@ -9107,7 +9120,9 @@ function updateMarketOverviewBubbles(all = []) {
         <td>${escapeHtml(rowPrice)}</td>
         <td class="recommendation-change ${safeChangeClass}">${escapeHtml(changeText)}</td>
         <td><span class="recommendation-badge ${recommendation.className}">${escapeHtml(recommendation.label)}</span></td>
-        <td>${escapeHtml(confidenceText)}</td>
+        <td data-analysis-metric="confidence"><strong data-metric-value="confidence" dir="ltr">${escapeHtml(confidenceText)}</strong></td>
+        <td data-analysis-metric="duration"><strong data-metric-value="duration" dir="auto">${escapeHtml(row.duration)}</strong></td>
+        <td data-analysis-metric="score"><strong data-metric-value="score" dir="ltr">${escapeHtml(row.scoreText)}</strong></td>
         <td><span class="recommendation-risk ${row.risk?.className}">${escapeHtml(riskText)}</span></td>
         <td><button type="button" class="recommendation-detail-button" data-recommendation-index="${row.index}">${sfmFinalL("تحليل", "Analyze")}</button></td>
       </tr>
@@ -9119,7 +9134,7 @@ function updateMarketOverviewBubbles(all = []) {
       ? sfmFinalFormatPrice(row.currentPrice, row.currency)
       : sfmFinalRecommendationMissingText;
     const recommendation = row.action || { key: "pending", label: sfmFinalRecommendationPendingText, className: "is-pending" };
-    const confidenceText = row.hasConfidence ? sfmFinalFormatConfidence(row.confidence) : sfmFinalRecommendationDash;
+    const confidenceText = row.confidenceText;
     const changeText = row.hasCorePrice && row.hasConfidence
       ? sfmFinalFormatPercent(row.expectedMovePct)
       : sfmFinalRecommendationDash;
@@ -9146,9 +9161,17 @@ function updateMarketOverviewBubbles(all = []) {
             <span>${sfmFinalL("التوصية", "Recommendation")}</span>
             <strong><span class="recommendation-badge ${recommendation.className}">${escapeHtml(recommendation.label)}</span></strong>
           </div>
-          <div>
+          <div data-analysis-metric="confidence">
             <span>${sfmFinalL("الثقة", "Confidence")}</span>
-            <strong>${escapeHtml(confidenceText)}</strong>
+            <strong data-metric-value="confidence" dir="ltr">${escapeHtml(confidenceText)}</strong>
+          </div>
+          <div data-analysis-metric="score">
+            <span>${sfmFinalL("تقييم AI", "AI score")}</span>
+            <strong data-metric-value="score" dir="ltr">${escapeHtml(row.scoreText)}</strong>
+          </div>
+          <div data-analysis-metric="duration">
+            <span>${sfmFinalL("المدة المتوقعة", "Expected duration")}</span>
+            <strong data-metric-value="duration" dir="auto">${escapeHtml(row.duration)}</strong>
           </div>
           <div>
             <button type="button" class="recommendation-detail-button recommendation-detail-button--mobile" data-recommendation-index="${row.index}">${sfmFinalL("تحليل", "Analyze")}</button>
@@ -9191,10 +9214,7 @@ function updateMarketOverviewBubbles(all = []) {
 
     const tableRows = sfmFinalRecommendationRowsData.map(sfmFinalRecommendationRowToHtml).join("");
     const mobileCards = sfmFinalRecommendationRowsData.map(sfmFinalRecommendationMobileCardHtml).join("");
-    const now = new Date().toLocaleTimeString(sfmFinalIsEnglish() ? "en-US" : "ar-KW", {
-      hour: "2-digit",
-      minute: "2-digit"
-    });
+    const now = sfmFinalFormatTimestamp(sfmFinalLatestMarketData?.generatedAt);
 
     cards.innerHTML = `
       <div class="recommendation-state-head">
@@ -9209,6 +9229,8 @@ function updateMarketOverviewBubbles(all = []) {
               <th scope="col">${sfmFinalL("التغير", "Change")}</th>
               <th scope="col">${sfmFinalL("التوصية", "Recommendation")}</th>
               <th scope="col">${sfmFinalL("الثقة", "Confidence")}</th>
+              <th scope="col">${sfmFinalL("المدة المتوقعة", "Expected duration")}</th>
+              <th scope="col">${sfmFinalL("تقييم AI", "AI score")}</th>
               <th scope="col">${sfmFinalL("المخاطرة", "Risk")}</th>
               <th scope="col">${sfmFinalL("إجراء", "Action")}</th>
             </tr>
@@ -9290,9 +9312,9 @@ function updateMarketOverviewBubbles(all = []) {
           <span>${sfmFinalL("الهدف", "Target")}</span>
           <strong>${escapeHtml(targetText)}</strong>
         </div>
-        <div class="recommendation-detail-row">
-          <span>${sfmFinalL("المدة", "Duration")}</span>
-          <strong>${escapeHtml(row.duration)}</strong>
+        <div class="recommendation-detail-row" data-analysis-metric="duration">
+          <span>${sfmFinalL("المدة المتوقعة", "Expected duration")}</span>
+          <strong data-metric-value="duration" dir="auto">${escapeHtml(row.duration)}</strong>
         </div>
       </div>
       <div class="recommendation-detail-grid-two">
@@ -9300,15 +9322,15 @@ function updateMarketOverviewBubbles(all = []) {
           <span>${sfmFinalL("المخاطرة", "Risk")}</span>
           <strong>${escapeHtml(row.risk?.label || sfmFinalRecommendationDash)}</strong>
         </div>
-        <div class="recommendation-detail-row">
-          <span>AI Score</span>
-          <strong>${row.score === null ? sfmFinalRecommendationDash : `${row.score}`}</strong>
+        <div class="recommendation-detail-row" data-analysis-metric="score">
+          <span>${sfmFinalL("تقييم AI", "AI score")}</span>
+          <strong data-metric-value="score" dir="ltr">${escapeHtml(row.scoreText)}</strong>
         </div>
       </div>
       <div class="recommendation-detail-grid-two">
-        <div class="recommendation-detail-row">
+        <div class="recommendation-detail-row" data-analysis-metric="confidence">
           <span>${sfmFinalL("الثقة", "Confidence")}</span>
-          <strong>${row.hasConfidence ? sfmFinalFormatConfidence(row.confidence) : sfmFinalRecommendationDash}</strong>
+          <strong data-metric-value="confidence" dir="ltr">${escapeHtml(row.confidenceText)}</strong>
         </div>
         <div class="recommendation-detail-row">
           <span>${sfmFinalL("آخر تحديث", "Last updated")}</span>
@@ -9413,9 +9435,6 @@ function updateMarketOverviewBubbles(all = []) {
 
     sfmFinalRenderRecommendationsState(isLoading, hasError, recommendations);
   }
-  const sfmFinalDashboardRenderer = renderRecommendations;
-  renderRecommendations = function renderRecommendations(data) {
-    sfmFinalDashboardRenderer(data);
-    sfmFinalRenderRecommendations(data);
-  };
+  // Use the filtered, active-view rendering path instead of replacing its output.
+  recommendationTableRenderer = sfmFinalRenderRecommendations;
 })();
