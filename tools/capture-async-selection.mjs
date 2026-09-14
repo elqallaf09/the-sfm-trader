@@ -147,6 +147,10 @@ try {
    assert.equal(await panel.locator('.command-performance .command-performance-value').innerText(),'--');
    assert.equal(await panel.locator('.command-mini-chart,.command-gauge').count(),0);
    assert.doesNotMatch(await panel.innerText(),/38%|1\.42%|Portfolio exposure|Today/);
+   for (const side of ['bull','bear','neut']) assert.equal(await page.locator('#rdp-'+side+'-pct').textContent(),'--');
+   assert.equal(await page.locator('#ai-agent-status').textContent(),'بانتظار البيانات');
+   assert.equal(await page.locator('#mo-confidence-pct').textContent(),'--');
+   assert.equal(await page.locator('#mo-sentiment-pct').textContent(),'--');
   },{empty:true,watchlist:[]});
  }
 }finally{await browser.close();await writeFile(out+'/report.json',JSON.stringify({scope:'Isolated deferred-response fixtures, no live price or deployment certification',checks,failures,errors},null,2));}

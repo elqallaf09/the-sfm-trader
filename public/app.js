@@ -3191,14 +3191,19 @@ function updateAiTradingAgentSummary(data, all = [], buys = [], sells = [], avg 
     sells.length > buys.length && marketMove < 0 ? "Bearish" :
     "Mixed";
 
-  if (aiAgentStatus) aiAgentStatus.textContent = isEnglishLanguage() ? "Active" : "نشط";
+  const confidenceValues = all.map(item => toNullableNumber(item.confidence)).filter(value => value !== null && value >= 0 && value <= 100);
+  const meanConfidence = confidenceValues.length ? Math.round(confidenceValues.reduce((sum,value) => sum + value,0) / confidenceValues.length) : null;
+  if (aiAgentStatus) aiAgentStatus.textContent = data?.stale
+    ? (isEnglishLanguage() ? "Observation only" : "للمراقبة فقط")
+    : all.length ? (isEnglishLanguage() ? "Active" : "نشط")
+    : (isEnglishLanguage() ? "Waiting for data" : "بانتظار البيانات");
   if (aiMarketCount) aiMarketCount.textContent = formatNumber(marketsCount);
   if (aiAssetCount) aiAssetCount.textContent = total ? `${formatNumber(analyzed)}/${formatNumber(total)}` : formatNumber(analyzed);
   if (aiBuyCount) aiBuyCount.textContent = formatNumber(buys.length);
   if (aiSellCount) aiSellCount.textContent = formatNumber(sells.length);
-  if (aiAverageConfidence) aiAverageConfidence.textContent = all.length ? `${formatNumber(avg)}%` : "--";
+  if (aiAverageConfidence) aiAverageConfidence.textContent = meanConfidence === null ? "--" : `${formatNumber(meanConfidence)}%`;
   if (aiMarketBias) {
-    aiMarketBias.textContent = isEnglishLanguage()
+    aiMarketBias.textContent = !all.length ? "--" : isEnglishLanguage()
       ? bias
       : bias === "Bullish" ? "صاعد" : bias === "Bearish" ? "هابط" : "مختلط";
     aiMarketBias.className = bias.toLowerCase();
@@ -7489,7 +7494,7 @@ const SFM_ACCEPTANCE_TEXT_PAIRS = [
   ["Settings", "الإعدادات"],
   ["Voice", "الصوت"],
   ["Scanning markets", "فحص الأسواق"],
-  ["Connected markets", "الأسواق المتصلة"],
+  ["Market categories", "فئات الأسواق"],
   ["Active signals", "التوصيات النشطة"],
   ["Risk status", "حالة المخاطر"],
   ["LIVE MARKET PULSE", "نبض السوق المباشر"],
@@ -8835,27 +8840,27 @@ function updateRightPanel(all = [], buys = [], sells = []) {
           </div>
         </div>
         <span class="rdp-pick-badge${item.action === "sell" ? " sell" : ""}">${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</span>
-        <span class="rdp-pick-confidence">${formatNumber(Number(item.confidence || 0))}%</span>
+        <span class="rdp-pick-confidence">${toNullableNumber(item.confidence) === null ? "--" : `${formatNumber(item.confidence)}%`}</span>
         <span class="rdp-pick-timeframe">${escapeHtml(item.duration || "--")}</span>
       </div>`).join("") : `<div class="rdp-empty-state">${escapeHtml(localizeUiText("بانتظار بيانات موثوقة من مزود السوق."))}</div>`;
   }
 
-  const total = all.length || 1;
-  const bullV = Math.round((buys.length / total) * 100);
-  const bearV = Math.round((sells.length / total) * 100);
-  const neutV = Math.max(0, 100 - bullV - bearV);
+  const total = all.length;
+  const bullV = total ? Math.round((buys.length / total) * 100) : 0;
+  const bearV = total ? Math.round((sells.length / total) * 100) : 0;
+  const neutV = total ? Math.max(0, 100 - bullV - bearV) : 0;
 
   if (bullBar) bullBar.style.width = `${bullV}%`;
   if (bearBar) bearBar.style.width = `${bearV}%`;
   if (neutBar) neutBar.style.width = `${neutV}%`;
-  if (bullPctEl) bullPctEl.textContent = `${bullV}%`;
-  if (bearPctEl) bearPctEl.textContent = `${bearV}%`;
-  if (neutPctEl) neutPctEl.textContent = `${neutV}%`;
+  if (bullPctEl) bullPctEl.textContent = total ? `${bullV}%` : "--";
+  if (bearPctEl) bearPctEl.textContent = total ? `${bearV}%` : "--";
+  if (neutPctEl) neutPctEl.textContent = total ? `${neutV}%` : "--";
 
   if (biasLabel) {
     const bias = bullV > 55 ? "bullish" : bearV > 55 ? "bearish" : "neutral";
     const label = bias === "bullish" ? "صاعد" : bias === "bearish" ? "هابط" : "محايد";
-    biasLabel.textContent = localizeUiText(label);
+    biasLabel.textContent = localizeUiText(total ? label : "بانتظار البيانات");
     biasLabel.className = `rdp-bias-label ${bias === "bearish" ? "rdp-bearish-label" : bias === "neutral" ? "rdp-neutral-label" : ""}`;
   }
 
@@ -8886,6 +8891,14 @@ function updateMarketOverviewBubbles(all = []) {
   const confidenceLabelEl = document.getElementById("mo-confidence-label");
   const confEl = document.getElementById("mo-confidence-pct");
 
+  // A newly selected market must not retain an absent instrument from its predecessor.
+  for (const id of new Set(Object.values(MAP))) {
+    const element = document.getElementById(id);
+    if (element) { element.textContent = "--"; element.className = "mo-bubble-change"; }
+  }
+  if (sentimentEl) sentimentEl.textContent = localizeUiText("بانتظار البيانات");
+  for (const element of [sentimentPctEl, confidenceLabelEl, confEl]) if (element) element.textContent = "--";
+
   all.forEach((item) => {
     const elId = MAP[item.symbol?.toUpperCase()];
     if (!elId) return;
@@ -8899,13 +8912,15 @@ function updateMarketOverviewBubbles(all = []) {
   if (sentimentEl && all.length) {
     const buys = all.filter((r) => r.action === "buy").length;
     const bullPct = Math.round((buys / all.length) * 100);
-    const bias = bullPct > 55 ? "bullish" : buys < all.length * 0.35 ? "bearish" : "neutral";
+    const sells = all.filter(r => r.action === "sell").length;
+    const bias = bullPct > 55 ? "bullish" : (sells / all.length) * 100 > 55 ? "bearish" : "neutral";
     sentimentEl.textContent = localizeUiText(bias === "bullish" ? "صاعد" : bias === "bearish" ? "هابط" : "محايد");
     if (sentimentPctEl) sentimentPctEl.textContent = `${bullPct}%`;
     if (confEl) {
-      const avgConf = Math.round(all.reduce((s, r) => s + (r.confidence || 0), 0) / all.length);
-      confEl.textContent = `${avgConf}%`;
-      if (confidenceLabelEl) confidenceLabelEl.textContent = avgConf >= 75 ? "HIGH" : avgConf >= 55 ? "MEDIUM" : "LOW";
+      const confidences = all.map(item => toNullableNumber(item.confidence)).filter(value => value !== null && value >= 0 && value <= 100);
+      const avgConf = confidences.length ? Math.round(confidences.reduce((sum,value) => sum + value,0) / confidences.length) : null;
+      confEl.textContent = avgConf === null ? "--" : `${avgConf}%`;
+      if (confidenceLabelEl) confidenceLabelEl.textContent = avgConf === null ? "--" : avgConf >= 75 ? "HIGH" : avgConf >= 55 ? "MEDIUM" : "LOW";
     }
   }
 }
