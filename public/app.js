@@ -2093,6 +2093,19 @@ function initModalPanelControls() {
   notificationCloseButton?.addEventListener("click", () => setNotificationPanelOpen(false));
   notificationPanel?.addEventListener("keydown", (event) => handleModalKeydown(event, notificationPanel, () => setNotificationPanelOpen(false)));
   notificationClearButton?.addEventListener("click", clearNotificationLog);
+  document.addEventListener("keydown", (event) => {
+    // Fragment navigation may move focus to the document after a panel opens.
+    // Preserve Escape dismissal without consuming a nested dialog's own key.
+    if (event.defaultPrevented || event.key !== "Escape" || document.querySelector("dialog[open]")) return;
+    const panel = settingsPanel?.hidden === false ? settingsPanel
+      : notificationPanel?.hidden === false ? notificationPanel : null;
+    if (!panel || panel.contains(event.target)) return;
+    const targetDialog = event.target?.closest?.('[role="dialog"], dialog');
+    if (targetDialog && targetDialog !== panel) return;
+    event.preventDefault();
+    if (panel === settingsPanel) setSettingsPanelOpen(false);
+    else setNotificationPanelOpen(false);
+  });
 }
 
 function selectSettingsLanguage(language) {

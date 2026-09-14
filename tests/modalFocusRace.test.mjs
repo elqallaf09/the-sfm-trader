@@ -22,7 +22,7 @@ function harness(t) {
   const queued = [];
   const context = vm.createContext({ document, HTMLElement, history, location,
     window: { setTimeout: callback => queued.push(callback) },
-    syncSettingsForm() {}, getComputedStyle: dom.window.getComputedStyle,
+    syncSettingsForm() {}, clearNotificationLog() {}, getComputedStyle: dom.window.getComputedStyle,
     settingsButton: document.querySelector('#settings-button'), settingsPanel: document.querySelector('#settings-panel'),
     settingsDisplayName: document.querySelector('#settings-display-name'), settingsCloseButton: document.querySelector('#settings-close-button'),
     notificationButton: document.querySelector('#notification-button'), notificationPanel: document.querySelector('#notification-panel'),
@@ -30,10 +30,11 @@ function harness(t) {
     railSettingsButton: null, mobileSettingsButton: null, mobileNotificationButton: null,
     notificationPanelOpen: false, settingsReturnFocus: null, notificationReturnFocus: null, activeAppView: 'markets'
   });
-  vm.runInContext(['setSettingsPanelOpen', 'setNotificationPanelOpen', 'handleModalKeydown'].map(declaration).join('\n'), context);
+  vm.runInContext(['setSettingsPanelOpen', 'setNotificationPanelOpen', 'handleModalKeydown', 'initModalPanelControls', 'toggleNotificationPanel'].map(declaration).join('\n'), context);
   for (const [panel, close] of [['notification-panel', () => context.setNotificationPanelOpen(false)], ['settings-panel', () => context.setSettingsPanelOpen(false)]]) {
     document.getElementById(panel).addEventListener('keydown', event => context.handleModalKeydown(event, document.getElementById(panel), close));
   }
+  context.initModalPanelControls();
   const origin = document.querySelector('#origin'); origin.focus();
   return { context, document, origin, queued,
     escape: () => document.activeElement.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })) };
@@ -60,4 +61,30 @@ test('switching panels has no delayed focus theft from the now-hidden panel', t 
   h.escape(); assert.equal(h.document.getElementById('notification-panel').hidden, true);
   assert.equal(h.document.getElementById('settings-panel').hidden, true);
   assert.equal(h.document.activeElement, h.origin);
+});
+
+for (const [kind, openName] of [['notification', 'setNotificationPanelOpen'], ['settings', 'setSettingsPanelOpen']]) {
+  test(`${kind}: Escape still closes when fragment navigation moves focus outside the modal`, t => {
+    const h = harness(t);
+    if (kind === 'notification') h.context.history.replaceState({}, '', '#notification-panel');
+    h.context[openName](true);
+    // Native fragment navigation and focus restoration can move the active
+    // element after opening; the shell must retain its dismiss-key behavior.
+    h.origin.focus(); h.escape();
+    assert.equal(h.document.getElementById(kind + '-panel').hidden, true);
+    assert.equal(h.document.activeElement, h.origin);
+    if (kind === 'notification') assert.equal(h.context.location.hash, '#view-markets');
+  });
+}
+test('modal Escape fallback respects consumed keys and a native dialog above the shell', t => {
+  const h = harness(t); h.context.setNotificationPanelOpen(true); h.origin.focus();
+  const consumed = new h.document.defaultView.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+  consumed.preventDefault(); h.origin.dispatchEvent(consumed);
+  assert.equal(h.document.getElementById('notification-panel').hidden, false);
+  const dialog = h.document.createElement('dialog'); dialog.setAttribute('open', ''); h.document.body.append(dialog);
+  h.escape(); assert.equal(h.document.getElementById('notification-panel').hidden, false);
+  dialog.remove(); h.escape(); assert.equal(h.document.getElementById('notification-panel').hidden, true);
+  // An ordinary page key press must not be canceled when no shell modal is open.
+  const ordinary = new h.document.defaultView.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+  h.origin.dispatchEvent(ordinary); assert.equal(ordinary.defaultPrevented, false);
 });
