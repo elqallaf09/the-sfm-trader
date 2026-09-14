@@ -28,7 +28,7 @@ try{
    if(['/api/recommendations','/api/watchlist'].includes(u.pathname)){
     const first=finalizeRecommendation(makeItem(),{session:{isOpen:true}});
     const good=finalizeRecommendation({...makeItem('AAPL'),shariaStatus:'compliant',shariaVerified:true},{session:{isOpen:true}});
-    return reply({...structuredClone(fixture),generatedAt:new Date().toISOString(),recommendations:mode==='normal'?[first,good]:[first],smartAlerts:[],opportunityRadar:{},economicCalendar:{dataState:'empty',upcoming:[],hotEvents:[],recent:[]}});
+    return reply({...structuredClone(fixture),market:{...fixture.market,id:u.pathname==="/api/watchlist"?"watchlist":fixture.market.id},generatedAt:new Date().toISOString(),recommendations:mode==='normal'?[first,good]:[first],smartAlerts:[],opportunityRadar:{},economicCalendar:{dataState:'empty',upcoming:[],hotEvents:[],recent:[]}});
    }
    if(u.pathname==='/api/asset'){
     const item=makeItem(u.searchParams.get('symbol'));let session={isOpen:true};

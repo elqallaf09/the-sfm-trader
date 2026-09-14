@@ -147,3 +147,5 @@ console.log('Deep audit passed',checks.length,'scenario groups.');
 await import("./capture-issue40.mjs");
 
 await import("./capture-lifecycle.mjs");
+
+await import("./capture-async-selection.mjs");

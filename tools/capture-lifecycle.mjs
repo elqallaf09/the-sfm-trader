@@ -25,7 +25,7 @@ async function scenario(width,name,run,{detail=false,english=false,failAsset=fal
    if(url.pathname==='/api/recommendations')state.requests++;
    if(state.hang){await new Promise(resolve=>waiting.push(resolve));return route.abort().catch(()=>{});}
    if(url.pathname==='/api/asset')return state.failAsset?respond({error:'TEST ONLY temporary outage'},503):respond({recommendation:item(),profile:{},market:fixture.market});
-   return respond({...structuredClone(fixture),generatedAt:new Date(t0).toISOString(),recommendations:[item()]});
+   return respond({...structuredClone(fixture),market:{...fixture.market,id:url.pathname==="/api/watchlist"?"watchlist":fixture.market.id},generatedAt:new Date(t0).toISOString(),recommendations:[item()]});
   }
   if(url.pathname==='/api/markets')return respond({markets:[{id:'us',label:'US Market',count:1}]});
   if(url.pathname==='/api/market-news')return respond({dataState:'empty',articles:[]});

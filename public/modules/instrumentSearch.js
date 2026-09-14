@@ -43,8 +43,11 @@ export function createInstrumentSearch({ form, input, fetchCatalog, openInstrume
   input.setAttribute("aria-controls", list.id);
   input.setAttribute("aria-expanded", "false");
   let catalog = null, pending = null, results = [], selected = -1, failed = false;
+  let generation = 0;
   const text = (ar, en) => isEnglish() ? en : ar;
   const close = () => {
+    generation += 1; // Cancel both pending display work and pending Enter intent.
+    results = [];
     popup.hidden = true;
     input.setAttribute("aria-expanded", "false");
     input.removeAttribute("aria-activedescendant");
@@ -56,7 +59,7 @@ export function createInstrumentSearch({ form, input, fetchCatalog, openInstrume
   };
   const ensureCatalog = async () => {
     if (catalog) return catalog;
-    if (!pending) pending = fetchCatalog().then(data => {
+    if (!pending) pending = Promise.resolve().then(fetchCatalog).then(data => {
       if (!Array.isArray(data?.instruments)) throw new Error("Invalid instrument catalog");
       catalog = data.instruments.filter(item => item && typeof item.symbol === "string");
       failed = false;
@@ -66,7 +69,7 @@ export function createInstrumentSearch({ form, input, fetchCatalog, openInstrume
   };
   function choose(index) {
     const item = results[index];
-    if (!item) return;
+    if (!item || popup.hidden) return;
     close();
     openInstrument(item.symbol);
   }
@@ -109,7 +112,7 @@ export function createInstrumentSearch({ form, input, fetchCatalog, openInstrume
       copy.append(name, meta);
       option.append(mark, copy);
       option.addEventListener("pointerdown", event => event.preventDefault());
-      option.addEventListener("click", () => choose(index));
+      option.addEventListener("click", () => { const currentIndex = results.indexOf(item); if (currentIndex >= 0) choose(currentIndex); });
       list.append(option);
     });
     if (!failed && !results.length && /^[A-Za-z^][A-Za-z0-9.^=\-]{0,17}$/.test(query)) {
@@ -123,21 +126,27 @@ export function createInstrumentSearch({ form, input, fetchCatalog, openInstrume
     show();
   }
   async function update() {
-    popup.querySelector(".instrument-search-direct")?.remove();
+    const id = ++generation;
     const query = input.value;
-    if (!query.trim()) { close(); return; }
+    popup.querySelector(".instrument-search-direct")?.remove();
+    selected = -1;
+    results = [];
+    input.removeAttribute("aria-activedescendant");
+    if (!query.trim()) { close(); return null; }
     if (!catalog) {
       status.textContent = text("جارٍ تحميل قائمة البحث…", "Loading search catalog…");
       list.replaceChildren();
       show();
       await ensureCatalog();
     }
-    if (input.value === query && document.activeElement === input) render();
+    if (id !== generation || input.value !== query || !form.contains(document.activeElement)) return null;
+    render();
+    return { id, query };
   }
   input.addEventListener("input", update);
   input.addEventListener("focus", () => { ensureCatalog(); if (input.value.trim()) update(); });
   input.addEventListener("keydown", event => {
-    if (event.key === "Escape") { event.preventDefault(); close(); }
+    if (event.key === "Escape" && !popup.hidden) { event.preventDefault(); close(); }
     if (["ArrowDown", "ArrowUp"].includes(event.key) && results.length && !popup.hidden) {
       event.preventDefault();
       select((selected + (event.key === "ArrowDown" ? 1 : -1) + results.length) % results.length);
@@ -147,13 +156,15 @@ export function createInstrumentSearch({ form, input, fetchCatalog, openInstrume
     event.preventDefault();
     if (!input.value.trim()) { input.focus(); return; }
     if (selected >= 0 && !popup.hidden) { choose(selected); return; }
-    await update();
-    const query = normalizeSearchText(input.value);
+    const intent = await update();
+    if (!intent || intent.id !== generation || intent.query !== input.value || popup.hidden) return;
+    const query = normalizeSearchText(intent.query);
     const exact = results.findIndex(item => [item.symbol, item.name, item.nameAr, ...(item.aliases || [])]
       .some(value => normalizeSearchText(value) === query));
     if (exact >= 0) choose(exact);
     else if (results.length === 1) choose(0);
   });
+  window.addEventListener("pagehide", close);
   document.addEventListener("pointerdown", event => { if (!form.contains(event.target)) close(); });
   form.addEventListener("focusout", event => { if (!form.contains(event.relatedTarget)) close(); });
   window.addEventListener("keydown", event => {
