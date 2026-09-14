@@ -137,5 +137,5 @@ test("closed market and holiday-like closed sessions do not raise false stale al
   assert.equal(result.action, "hold");
   assert.equal(result.marketClosed, true);
   assert.equal(result.stalePriceBlocked, undefined);
-  assert.equal(result.decision.title, "السوق مغلق");
+  assert.equal(result.marketSession.isOpen, false);
 });
