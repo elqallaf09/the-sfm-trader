@@ -19,7 +19,7 @@ function quote(symbol,price=100) {
 }
 async function scenario(width,name,fn,{empty=false,watchlist=['AAPL']}={}) {
  const context=await browser.newContext({viewport:{width,height:900},serviceWorkers:'block',reducedMotion:'reduce'});
- await context.addInitScript(list=>{localStorage.setItem('the-sfm-trader-watchlist',JSON.stringify(list));localStorage.setItem('the-sfm-trader-settings',JSON.stringify({language:'ar'}));},watchlist);
+ await context.addInitScript(list=>{if(localStorage.getItem('the-sfm-trader-watchlist')===null)localStorage.setItem('the-sfm-trader-watchlist',JSON.stringify(list));if(localStorage.getItem('the-sfm-trader-settings')===null)localStorage.setItem('the-sfm-trader-settings',JSON.stringify({language:'ar'}));},watchlist);
  const page=await context.newPage();page.setDefaultTimeout(10000);page.on('pageerror',error=>errors.push({width,name,message:error.message}));
  const gates=[],requests=[];const state={empty,assetMismatch:false,price:100};
  function hold(predicate,override) {const seen=deferred(),released=deferred(),done=deferred();const gate={predicate,override,used:false,seen,released,done};gates.push(gate);return gate;}
