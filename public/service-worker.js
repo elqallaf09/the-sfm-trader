@@ -1,4 +1,4 @@
-const CACHE_NAME = "the-sfm-trader-v20260914-lifecycle-1";
+const CACHE_NAME = "the-sfm-trader-v20260914-modal-focus-1";
 const STATIC_ASSETS = [
   "/modules/tradeObservation.js?v=20260914-lifecycle-1",
   "/modules/priceFormat.js?v=20260914-lifecycle-1",
@@ -13,7 +13,7 @@ const STATIC_ASSETS = [
   "/cinema.css?v=20260914-audit-repair-1",
   "/layout-stability.css?v=20260804-home-v3-layout-fix-1",
   "/dashboard-v2.css?v=20260914-view-routing-1",
-  "/app.js?v=20260914-lifecycle-1",
+  "/app.js?v=20260914-modal-focus-1",
   "/detail.js?v=20260914-lifecycle-1",
   "/modules/apiClient.js?v=20260914-audit-repair-1",
   "/modules/polling.js?v=20260914-lifecycle-1",

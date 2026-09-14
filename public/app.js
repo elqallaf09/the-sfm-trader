@@ -2125,6 +2125,12 @@ function setSettingsPanelOpen(open, options = {}) {
   if (!settingsButton || !settingsPanel) return;
 
   const isOpen = Boolean(open);
+  const wasOpen = !settingsPanel.hidden;
+  if (isOpen && !wasOpen) {
+    settingsReturnFocus = notificationPanel?.hidden === false && notificationReturnFocus
+      ? notificationReturnFocus
+      : document.activeElement instanceof HTMLElement ? document.activeElement : settingsButton;
+  }
   settingsPanel.hidden = !isOpen;
   settingsButton.setAttribute("aria-expanded", String(isOpen));
   settingsButton.classList.toggle("is-open", isOpen);
@@ -2133,12 +2139,14 @@ function setSettingsPanelOpen(open, options = {}) {
   mobileSettingsButton?.setAttribute("aria-expanded", String(isOpen));
   mobileSettingsButton?.classList.toggle("is-open", isOpen);
   if (isOpen) {
-    settingsReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : settingsButton;
     setNotificationPanelOpen(false, { restoreFocus: false });
-    syncSettingsForm();
-    window.setTimeout(() => settingsDisplayName?.focus(), 30);
-  } else if (options.restoreFocus !== false) {
-    settingsReturnFocus?.focus?.();
+    if (!wasOpen) {
+      syncSettingsForm();
+      // The visible modal must own focus before another keyboard event arrives.
+      settingsDisplayName?.focus({ preventScroll: true });
+    }
+  } else {
+    if (wasOpen && options.restoreFocus !== false) settingsReturnFocus?.focus?.();
     settingsReturnFocus = null;
   }
 }
@@ -5507,6 +5515,12 @@ function toggleNotificationPanel() {
 function setNotificationPanelOpen(open, options = {}) {
   if (!notificationButton || !notificationPanel) return;
 
+  const wasOpen = !notificationPanel.hidden;
+  if (open && !wasOpen) {
+    notificationReturnFocus = settingsPanel?.hidden === false && settingsReturnFocus
+      ? settingsReturnFocus
+      : document.activeElement instanceof HTMLElement ? document.activeElement : notificationButton;
+  }
   if (!open && ["#notification-panel","#view-alerts"].includes(location.hash)) {
     const target = history.state?.sfmNotificationReturn || `#view-${activeAppView}`;
     history.replaceState({...history.state,sfmNotificationReturn:null}, "", /^#(?:view-|[a-z-]+section)/.test(target) ? target : "#view-home");
@@ -5518,11 +5532,11 @@ function setNotificationPanelOpen(open, options = {}) {
   mobileNotificationButton?.setAttribute("aria-expanded", String(notificationPanelOpen));
   mobileNotificationButton?.classList.toggle("is-open", notificationPanelOpen);
   if (notificationPanelOpen) {
-    notificationReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : notificationButton;
     setSettingsPanelOpen(false, { restoreFocus: false });
-    window.setTimeout(() => notificationCloseButton?.focus(), 0);
-  } else if (options.restoreFocus !== false) {
-    notificationReturnFocus?.focus?.();
+    // Avoid the Escape-before-setTimeout race and callbacks into closed panels.
+    if (!wasOpen) notificationCloseButton?.focus({ preventScroll: true });
+  } else {
+    if (wasOpen && options.restoreFocus !== false) notificationReturnFocus?.focus?.();
     notificationReturnFocus = null;
   }
 }

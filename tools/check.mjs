@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 const syntaxFiles = [
+  "tests/modalFocusRace.test.mjs",
   "public/modules/tradeObservation.js",
   "tests/lifecycleSafety.test.mjs",
   "tools/capture-lifecycle.mjs",

@@ -62,6 +62,28 @@ try{
    assert.equal(new URL(page.url()).hash,'#view-markets');
   },page);
   await page.goto(base+'/?skipIntro=1');await waitHome(page);
+  await check(prefix+'rapid modal opening owns focus before immediate Escape',async()=>{
+   for(let cycle=0;cycle<10;cycle++) {
+    for(const [trigger,panel,initialFocus] of [
+     ['#notification-button','#notification-panel','notification-close-button'],
+     ['#settings-button','#settings-panel','settings-display-name']
+    ]) {
+     await page.locator(trigger).click();
+     assert.equal(await page.evaluate(()=>document.activeElement?.id),initialFocus);
+     await page.keyboard.press('Escape');
+     await page.locator(panel).waitFor({state:'hidden'});
+     assert.equal(await page.evaluate(()=>document.activeElement?.id),trigger.slice(1));
+    }
+   }
+   // Opening and the first keydown in one task must not depend on a zero-delay timer.
+   const immediate=await page.evaluate(()=>{
+    const trigger=document.getElementById('notification-button'); trigger.click();
+    const focused=document.activeElement?.id;
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));
+    return {focused,closed:document.getElementById('notification-panel').hidden};
+   });
+   assert.deepEqual(immediate,{focused:'notification-close-button',closed:true});
+  },page);
   await check(prefix+'preferences persist after save and reload',async()=>{
    await page.locator('#settings-button').click();
    await page.locator('#settings-notify-sound').uncheck();await page.locator('#settings-notify-target').uncheck();
