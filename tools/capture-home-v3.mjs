@@ -210,6 +210,7 @@ try {
         ["calendar", "calendar", "#calendar-section"], ["news", "news", "#economic-news-section"],
         ["ai-analysis", "ai", "#command-center-section"], ["education", "education", "#education-section"]
       ]) {
+        activeCase = capture.file + ": navigation " + view;
         await page.locator('.desktop-trading-rail [data-nav-key="' + key + '"]').click();
         await waitView(page, view);
         await page.locator(selector).waitFor({ state: "visible" });
