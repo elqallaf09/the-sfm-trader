@@ -1,0 +1,21 @@
+name: Materialize tested async selection repairs
+on:
+  push:
+    branches: [fix/async-state-integrity]
+    paths: [.github/workflows/async-repair.yml]
+permissions:
+  contents: write
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/async-state-integrity
+          fetch-depth: 0
+      - name: Apply checksum-verified scoped changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python3 .async-apply.py
