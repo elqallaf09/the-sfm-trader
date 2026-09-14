@@ -1,17 +1,18 @@
-import { formatQuotePrice } from "./modules/priceFormat.js?v=20260914-issue40-1";
+import { recordTradeHistory, canObserveTrade, observeTrade } from "./modules/tradeObservation.js?v=20260914-lifecycle-1";
+import { formatQuotePrice } from "./modules/priceFormat.js?v=20260914-lifecycle-1";
 import { toNullableNumber, toPositiveNumber } from "./modules/numberValue.js?v=20260914-issue40-1";
-import { normalizeQuoteCurrency, resolveQuoteCurrency, inferQuoteCurrency, guardDisplayPayload, canExecuteRecommendation, hasCurrentPriceObservation, filterDiscoveryPayload, isVerifiedShariaItem } from "./modules/marketIntegrity.js?v=20260914-issue40-1";
+import { normalizeQuoteCurrency, resolveQuoteCurrency, inferQuoteCurrency, guardDisplayPayload, guardRecommendationForDisplay, canExecuteRecommendation, hasCurrentPriceObservation, filterDiscoveryPayload, isVerifiedShariaItem } from "./modules/marketIntegrity.js?v=20260914-lifecycle-1";
 import { installShellInteractions } from "./modules/shellInteractions.js?v=20260914-issue40-1";
 import { createMarketFeeds, renderNewsFeed, renderCalendarFeed } from "./modules/marketFeeds.js?v=20260914-audit-repair-1";
 import { calculateFinalScore, getAnalysisMetrics, getRecommendationAction } from "./modules/analysisMetrics.js?v=20260914-issue40-1";
 import { API_TOKEN_STORAGE_KEY, getApiToken, setApiToken, createIdempotencyKey, readStateVersion } from "./modules/apiClient.js?v=20260914-audit-repair-1";
-import { createVisibilityAwarePoller } from "./modules/polling.js?v=20260914-audit-repair-1";
+import { createVisibilityAwarePoller } from "./modules/polling.js?v=20260914-lifecycle-1";
 import { setUiState } from "./modules/uiState.js?v=20260914-audit-repair-1";
 import "./modules/webVitals.js?v=20260914-audit-repair-1";
 import { initMarketBackground } from "./modules/marketBackground.js?v=20260914-audit-repair-1";
 import { getAssetBaseSymbol, getAssetVisual, getPremiumAssetVisual, resolveAssetVisual, getOfficialCompanyName, renderAssetLogo, renderAssetIcon } from "./modules/assetBranding.js?v=20260914-audit-repair-1";
 import { saveDetailReturnContext, readDetailReturnContext, detailPageUrl } from "./modules/detailNavigation.js?v=20260914-audit-repair-1";
-import { createHomeDashboard, getDashboardRecommendations } from "./modules/homeDashboard.js?v=20260914-issue40-1";
+import { createHomeDashboard, getDashboardRecommendations } from "./modules/homeDashboard.js?v=20260914-lifecycle-1";
 import { createInstrumentSearch } from "./modules/instrumentSearch.js?v=20260914-audit-repair-1";
 import { createRecommendationListRenderer } from "./modules/recommendationList.js?v=20260914-audit-repair-1";
 import { createBoundedMemoryCache } from "./modules/boundedMemoryCache.js?v=20260914-audit-repair-1";
@@ -306,6 +307,16 @@ const APP_BRAND_SCAN_TITLES = {
 };
 const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
 const UI_TEXT_TRANSLATIONS = {
+  "اتصال متقطع؛ هذه بيانات محفوظة للمراقبة فقط.": "Connection interrupted; cached data is for observation only.",
+  "انتهت صلاحية السعر المعروض؛ انتظر تحديثاً موثوقاً قبل اتخاذ قرار دخول.": "The displayed quote has expired. Wait for a verified update before considering an entry.",
+  "لا يوجد سعر بتوقيت موثوق؛ البيانات للمراقبة فقط.": "No quote with a verified timestamp is available. Observation only.",
+  "جلسة التداول مغلقة أو غير مؤكدة؛ لا توجد إشارة دخول حالياً.": "The trading session is closed or unverified. No entry signal is available.",
+  "التنفيذ محجوب؛ انتظر قراراً حديثاً من السيرفر.": "Entry is blocked. Wait for a fresh server decision.",
+  "مراقبة فقط حتى وصول تحديث موثوق": "Observation only until a verified update arrives",
+  "غير متصل — بيانات للمراقبة فقط": "Offline \u2014 observation only",
+  "تحتاج الأسعار إلى تحديث — المراقبة فقط للبيانات القديمة": "Quotes need updating \u2014 old data is for observation only",
+  "بيانات للمراقبة فقط": "Data for observation only",
+
   "اس اف ام المحلل الذكي": "SFM Smart Analyzer",
   "اس اف ام المحلل الذكي scan": "SFM Smart Analyzer scan",
   "اس اف ام": "SFM",
@@ -1369,6 +1380,9 @@ let settingsReturnFocus = null;
 let notificationReturnFocus = null;
 let globalSessionTimer = null;
 let scalpLoading = false;
+let lastScalpItem = null;
+let lastScalpDecision = null;
+let marketNetworkOffline = navigator.onLine === false;
 let expandedSignalCards = new Set(loadStored("the-sfm-trader-expanded-cards", []));
 let alertedKeys = new Set(loadStored("the-sfm-trader-alerted", []));
 let recommendationSignalState = loadStored("the-sfm-trader-signal-state", {});
@@ -1524,6 +1538,7 @@ async function init() {
     if (lastData) renderTerminalHomeV3(lastData);
   });
   createVisibilityAwarePoller([
+    { name: "display-integrity", intervalMs: 5_000, refreshOnForeground: false, run: revalidateDisplayedData },
     {
       name: "recommendations",
       intervalMs: RECOMMENDATIONS_REFRESH_MS,
@@ -1545,7 +1560,7 @@ async function init() {
       intervalMs: SHARED_TRADE_POLL_MS,
       run: () => loadSharedTradeState({ poll: true })
     }
-  ]).start();
+  ], { onLifecycle: handleIntegrityLifecycle }).start();
   scalpForm?.addEventListener("submit", handleScalpSubmit);
   searchInput.addEventListener("input", () => {
     window.clearTimeout(recommendationFilterTimer);
@@ -2955,7 +2970,7 @@ async function loadRecommendations(options = {}) {
     data.recommendations = getDashboardRecommendations(data);
     data.market = data.market && typeof data.market === "object" ? data.market : {};
 
-    Object.assign(data, guardDisplayPayload(data));
+    Object.assign(data, guardDisplayPayload(marketNetworkOffline ? { ...data, stale: true } : data));
     lastData = data;
     lastDataEndpoint = endpoint;
     recommendationResponseCache.set(endpoint, data);
@@ -2992,7 +3007,66 @@ async function loadRecommendations(options = {}) {
   }
 }
 
+// This check is independent of request completion: a stalled request must not
+// keep old entry instructions alive while the page remains open or resumes.
+function handleIntegrityLifecycle(reason) {
+  if (reason === "pagehide") {
+    recommendationRequestId += 1;
+    recommendationRequestController?.abort();
+    recommendationRequestController = null;
+    isLoading = false;
+    return;
+  }
+  if (reason === "offline") marketNetworkOffline = true;
+  if (reason === "online") marketNetworkOffline = false;
+  revalidateDisplayedData();
+}
+
+function displayIntegrityKey(data) {
+  return JSON.stringify([data?.stale === true, (data?.recommendations || []).map(item =>
+    [item.symbol, item.action, item.executionBlocked, item.priceFreshness?.state, item.decision?.message])]);
+}
+
+function revalidateDisplayedData() {
+  const revalidate = data => guardDisplayPayload(marketNetworkOffline ? { ...data, stale: true } : data);
+  let changed = false;
+  if (lastData) {
+    const next = revalidate(lastData);
+    if (displayIntegrityKey(next) !== displayIntegrityKey(lastData)) {
+      lastData = next;
+      renderRecommendations(lastData);
+      changed = true;
+    }
+    updateConnectionStatus(lastData);
+  }
+  if (watchlistData) {
+    const next = revalidate(watchlistData);
+    if (displayIntegrityKey(next) !== displayIntegrityKey(watchlistData)) {
+      watchlistData = next;
+      renderWatchlist();
+      changed = true;
+    }
+  }
+  if (lastScalpItem && !scalpLoading) {
+    const next = guardRecommendationForDisplay(lastScalpItem, { stale: marketNetworkOffline });
+    const decision = buildScalpDecision(next);
+    if (decision.action !== lastScalpDecision?.action || next.decision?.message !== lastScalpItem.decision?.message) {
+      renderScalpResult(next, decision);
+      if (scalpStatus) scalpStatus.textContent = localizeUiText(decision.statusLabel);
+      changed = true;
+    }
+  }
+  if (changed) {
+    renderPortfolio([...(lastData?.recommendations || []), ...(watchlistData?.recommendations || [])]);
+    document.dispatchEvent(new CustomEvent("sfm:integrity-updated"));
+  }
+}
+
 function getConnectionStatusText(data) {
+  if (marketNetworkOffline) return localizeUiText("غير متصل — بيانات للمراقبة فقط");
+  if ((data?.recommendations || []).some(item => ["stale", "unknown"].includes(item.priceFreshness?.state))) {
+    return localizeUiText("تحتاج الأسعار إلى تحديث — المراقبة فقط للبيانات القديمة");
+  }
   if (data?.refreshing) return localizeUiText("متصل - يحدث في الخلفية");
   if (data?.partial || Number(data?.pendingCount || 0) > 0) return localizeUiText("متصل - تحليل أولي");
   if (data?.stale) return localizeUiText("متصل - آخر بيانات محفوظة");
@@ -3006,7 +3080,7 @@ function setConnectionStatus(kind, text) {
 }
 
 function updateConnectionStatus(data) {
-  const kind = data?.stale ? "stale" : data?.partial || data?.refreshing || Number(data?.pendingCount || 0) > 0 ? "updating" : "fresh";
+  const kind = marketNetworkOffline ? "offline" : data?.stale || (data?.recommendations || []).some(item => ["stale", "unknown"].includes(item.priceFreshness?.state)) ? "stale" : data?.partial || data?.refreshing || Number(data?.pendingCount || 0) > 0 ? "updating" : "fresh";
   setConnectionStatus(kind, getConnectionStatusText(data));
 }
 
@@ -3287,6 +3361,8 @@ async function analyzeScalpSymbol(rawSymbol) {
   }
 
   scalpLoading = true;
+  lastScalpItem = null;
+  lastScalpDecision = null;
   if (scalpStatus) scalpStatus.textContent = "يحلل";
   if (scalpSubmit) scalpSubmit.disabled = true;
   scalpResult.innerHTML = `<div class="scalp-empty">جاري تحليل ${escapeHtml(symbol)} لفريم 1m و15m...</div>`;
@@ -3298,7 +3374,7 @@ async function analyzeScalpSymbol(rawSymbol) {
       fallbackMessage: "تعذر الاتصال بالسيرفر. حدث الصفحة وحاول مرة ثانية، أو استخدم رمز Yahoo كامل مثل NZDUSD=X."
     });
 
-    const item = data.recommendation;
+    const item = guardRecommendationForDisplay(data.recommendation, { stale: marketNetworkOffline || data.stale === true });
     const scalp = buildScalpDecision(item);
     renderScalpResult(item, scalp);
     if (scalpStatus) scalpStatus.textContent = scalp.statusLabel;
@@ -3418,6 +3494,8 @@ function buildScalpDecision(item) {
 }
 
 function renderScalpResult(item, scalp) {
+  lastScalpItem = item;
+  lastScalpDecision = scalp;
   const actionClass = `scalp-action-${scalp.action}`;
   const currency = normalizeDisplayCurrency(item.currency, item.symbol);
   const current = formatMoney(item.currentPrice, currency, { symbol: item.symbol });
@@ -4589,7 +4667,7 @@ async function loadWatchlistData(force = false) {
       fallbackMessage: "تعذر تحميل قائمة المراقبة. تأكد أن السيرفر يعمل ثم حاول مرة ثانية."
     });
 
-    watchlistData = guardDisplayPayload(data);
+    watchlistData = guardDisplayPayload(marketNetworkOffline ? { ...data, stale: true } : data);
     watchlistLastLoadedAt = Date.now();
   } catch (error) {
     const message = getFriendlyFetchError(error, "تعذر تحميل قائمة المراقبة. تأكد أن السيرفر يعمل ثم حاول مرة ثانية.");
@@ -4796,58 +4874,7 @@ function removePortfolioPosition(id) {
 function updateRecommendationHistory(items) {
   if (!items.length) return;
 
-  const now = new Date().toISOString();
-  const byKey = new Map(recommendationHistory.map((entry) => [entry.key, entry]));
-
-  for (const item of items) {
-    if (!canExecuteRecommendation(item)) continue;
-    const key = `${item.symbol}:${item.action}`;
-    const existing = byKey.get(key);
-    // Existing entry and thresholds stay immutable, including missing values.
-    const entryPrice = toPositiveNumber(existing ? existing.entryPrice ?? existing.currentPrice : item.currentPrice);
-    const expectedPrice = toPositiveNumber(existing ? existing.expectedPrice : item.expectedPrice);
-    const target1 = toPositiveNumber(existing ? existing.target1 ?? existing.expectedPrice : item.target1 ?? item.expectedPrice);
-    const target2 = toPositiveNumber(existing ? existing.target2 : item.target2);
-    const stopLoss = toPositiveNumber(existing ? existing.stopLoss : item.stopLoss);
-    if (existing?.currency && existing.currency !== item.currency) continue;
-    const lastPrice = toPositiveNumber(item.currentPrice);
-    if (lastPrice === null || entryPrice === null) continue;
-    const targetHit = target1 !== null && (existing?.targetHit === true || isTargetHit(item.action, lastPrice, target1));
-    const stopHit = stopLoss !== null && (existing?.stopHit === true || isStopHit(item.action, lastPrice, stopLoss));
-    const observedReturnPct = getObservedReturnPct(item.action, entryPrice, lastPrice);
-    const bestPrice = pickBestObservedPrice(item.action, existing?.bestPrice, lastPrice);
-    const worstPrice = pickWorstObservedPrice(item.action, existing?.worstPrice, lastPrice);
-    const outcome = existing?.outcome === "stop" && stopHit ? "stop" : targetHit ? "target" : stopHit ? "stop" : "pending";
-
-    byKey.set(key, {
-      key,
-      symbol: item.symbol,
-      name: item.name,
-      action: item.action,
-      actionLabel: item.actionLabel,
-      currentPrice: entryPrice,
-      lastPrice,
-      expectedPrice,
-      target1,
-      target2,
-      stopLoss: Number.isFinite(stopLoss) ? stopLoss : null,
-      currency: item.currency,
-      confidence: item.confidence,
-      expectedMovePct: item.expectedMovePct,
-      riskReward: item.riskReward,
-      analysisQuality: item.analysisQuality,
-      firstSeen: existing?.firstSeen || now,
-      lastSeen: now,
-      targetHit,
-      stopHit,
-      outcome,
-      hitAt: targetHit ? existing?.hitAt || now : null,
-      stopAt: stopHit ? existing?.stopAt || now : null,
-      observedReturnPct,
-      bestPrice,
-      worstPrice
-    });
-  }
+  const byKey = recordTradeHistory(recommendationHistory, items);
 
   const sortedHistory = [...byKey.values()]
     .sort((a, b) => new Date(b.lastSeen) - new Date(a.lastSeen));
@@ -5257,20 +5284,18 @@ function checkFollowedTrades(items) {
     const current = bySymbol.get(entry.symbol.toUpperCase());
     if (!current) continue;
 
-    if (!hasCurrentPriceObservation(current)) continue;
-    const currentPrice = toPositiveNumber(current.currentPrice);
-    const targetPrice = toPositiveNumber(entry.target1 ?? entry.expectedPrice);
-    const stopPrice = toPositiveNumber(entry.stopLoss);
-    const targetHitNow = isTargetHit(entry.action, currentPrice, targetPrice);
-    const stopHitNow = isStopHit(entry.action, currentPrice, stopPrice);
-    const actionChanged = current.action && current.action !== entry.action;
-
-    if (targetHitNow) {
-      notifyFollowedTrade(entry, current, "target");
-    } else if (stopHitNow) {
-      notifyFollowedTrade(entry, current, "stop");
-    } else if (actionChanged) {
-      notifyFollowedTrade(entry, current, "action");
+    if (!canObserveTrade(entry, current)) continue;
+    const observed = observeTrade(entry, current);
+    if (observed !== entry) {
+      recommendationHistory = recommendationHistory.map(item => item.key === key ? observed : item);
+      changed = true;
+    }
+    // A terminal observation cannot later generate the opposite outcome.
+    const eventQuote = { ...current, currentPrice: observed.lastPrice ?? current.currentPrice };
+    if (observed.outcome === "target") notifyFollowedTrade(observed, eventQuote, "target");
+    else if (observed.outcome === "stop") notifyFollowedTrade(observed, eventQuote, "stop");
+    else if (current.action && current.action !== entry.action && canExecuteRecommendation(current)) {
+      notifyFollowedTrade(observed, current, "action");
     }
   }
 
@@ -8016,7 +8041,7 @@ function sfmFinalNormalizeSupportedSymbol(item) {
 
 function sfmFinalNormalizePayloadCurrencies(data) {
   if (!data || typeof data !== "object") return data;
-  Object.assign(data, guardDisplayPayload(data));
+  Object.assign(data, guardDisplayPayload(marketNetworkOffline ? { ...data, stale: true } : data));
   if (Array.isArray(data.recommendations)) {
     data.recommendations = data.recommendations.map(sfmFinalNormalizeAssetCurrency);
   }
@@ -8775,6 +8800,7 @@ function updateMarketOverviewBubbles(all = []) {
   const sfmFinalDrawerButtons = () => document.querySelectorAll("[data-recommendation-close]");
   let sfmFinalRecommendationRowsData = [];
   let sfmFinalDrawerInitialized = false;
+  let sfmFinalDrawerSymbol = null;
   let sfmFinalRecommendationsInited = false;
 
   function sfmFinalL(arText, enText) {
@@ -9211,8 +9237,9 @@ function updateMarketOverviewBubbles(all = []) {
     }).format(parsed);
   }
 
-  function sfmFinalRenderRecommendationDetail(row) {
+  function sfmFinalRenderRecommendationDetail(row, open = true) {
     if (!sfmFinalDrawer || !sfmFinalDrawerContent || !row) return;
+    sfmFinalDrawerSymbol = row.symbol;
 
     const recommendation = row.action || { key: "pending", label: sfmFinalRecommendationPendingText, className: "is-pending" };
     const targetText = row.targetText;
@@ -9276,8 +9303,15 @@ function updateMarketOverviewBubbles(all = []) {
       </div>
     `;
 
-    sfmFinalOpenRecommendationDrawer();
+    if (open) sfmFinalOpenRecommendationDrawer();
   }
+
+  document.addEventListener("sfm:integrity-updated", () => {
+    if (!sfmFinalDrawer?.classList.contains("is-open")) return;
+    const item = lastData?.recommendations?.find(item => item.symbol === sfmFinalDrawerSymbol);
+    if (!item) { sfmFinalCloseRecommendationDrawer(); return; }
+    sfmFinalRenderRecommendationDetail(sfmFinalNormalizeRecommendationRows([item])[0], false);
+  });
 
   function sfmFinalOpenRecommendationDrawer() {
     if (!sfmFinalDrawer) return;

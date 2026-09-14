@@ -1,6 +1,7 @@
-import { formatQuotePrice } from "./modules/priceFormat.js?v=20260914-issue40-1";
+import { createVisibilityAwarePoller } from "./modules/polling.js?v=20260914-lifecycle-1";
+import { formatQuotePrice } from "./modules/priceFormat.js?v=20260914-lifecycle-1";
 import { toNullableNumber } from "./modules/numberValue.js?v=20260914-issue40-1";
-import { normalizeQuoteCurrency } from "./modules/marketIntegrity.js?v=20260914-issue40-1";
+import { normalizeQuoteCurrency, guardRecommendationForDisplay } from "./modules/marketIntegrity.js?v=20260914-lifecycle-1";
 import { getAnalysisMetrics } from "./modules/analysisMetrics.js?v=20260914-issue40-1";
 import { navigateBackFromDetail, safeHomeUrl } from "./modules/detailNavigation.js?v=20260914-audit-repair-1";
 import { API_TOKEN_STORAGE_KEY } from "./modules/apiClient.js?v=20260914-audit-repair-1";
@@ -23,6 +24,8 @@ const DETAIL_PAGE_TITLES = {
 };
 let activeDetailTitleSymbol = symbol;
 let detailRequestController = null;
+let currentDetailData = null;
+let detailNetworkOffline = navigator.onLine === false;
 
 function normalizeDetailSymbol(value) {
   return String(value || "")
@@ -132,6 +135,16 @@ function installLatinDigitNormalizer() {
 }
 
 const DETAIL_TEXT_TRANSLATIONS = {
+  "اتصال متقطع؛ هذه بيانات محفوظة للمراقبة فقط.": "Connection interrupted; cached data is for observation only.",
+  "انتهت صلاحية السعر المعروض؛ انتظر تحديثاً موثوقاً قبل اتخاذ قرار دخول.": "The displayed quote has expired. Wait for a verified update before considering an entry.",
+  "لا يوجد سعر بتوقيت موثوق؛ البيانات للمراقبة فقط.": "No quote with a verified timestamp is available. Observation only.",
+  "جلسة التداول مغلقة أو غير مؤكدة؛ لا توجد إشارة دخول حالياً.": "The trading session is closed or unverified. No entry signal is available.",
+  "التنفيذ محجوب؛ انتظر قراراً حديثاً من السيرفر.": "Entry is blocked. Wait for a fresh server decision.",
+  "مراقبة فقط حتى وصول تحديث موثوق": "Observation only until a verified update arrives",
+  "غير متصل — بيانات للمراقبة فقط": "Offline \u2014 observation only",
+  "تحتاج الأسعار إلى تحديث — المراقبة فقط للبيانات القديمة": "Quotes need updating \u2014 old data is for observation only",
+  "بيانات للمراقبة فقط": "Data for observation only",
+
   "تفاصيل السهم - اس اف ام المحلل الذكي": "Stock details - SFM Smart Analyzer",
   "صفحة تحليل السهم": "Stock analysis page",
   "رجوع للأسواق": "Back to markets",
@@ -658,6 +671,19 @@ initMarketBackground();
 initDetailBackButton();
 registerPwaServiceWorker();
 loadDetail();
+createVisibilityAwarePoller([
+  { name: "detail-integrity", intervalMs: 5_000, refreshOnForeground: false, run: revalidateDetail },
+  { name: "detail-refresh", intervalMs: 60_000, run: () => loadDetail({ background: true }) }
+], { onLifecycle: reason => {
+  if (reason === "pagehide") {
+    detailRequestController?.abort();
+    detailRequestController = null;
+    return;
+  }
+  if (reason === "offline") detailNetworkOffline = true;
+  if (reason === "online") detailNetworkOffline = false;
+  revalidateDetail();
+} }).start();
 
 function initDetailBackButton() {
   if (!elements.back) return;
@@ -678,7 +704,8 @@ function registerPwaServiceWorker() {
   });
 }
 
-async function loadDetail() {
+async function loadDetail({ background = false } = {}) {
+  if (background && detailRequestController) return;
   if (!symbol) {
     showError(detailText("لم يتم تحديد رمز السهم.", "No stock symbol was selected."));
     return;
@@ -689,7 +716,7 @@ async function loadDetail() {
   detailRequestController = controller;
   const timeout = window.setTimeout(() => controller.abort(), 15_000);
   try {
-    elements.status.textContent = detailText("جاري تحليل السهم", "Analyzing the stock");
+    if (!currentDetailData) elements.status.textContent = detailText("جاري تحليل السهم", "Analyzing the stock");
     applyDetailLanguage();
     const response = await fetch(`/api/asset?symbol=${encodeURIComponent(symbol)}`, {
       cache: "no-store",
@@ -706,25 +733,51 @@ async function loadDetail() {
     }
 
     if (detailRequestController !== controller) return;
+    if (!data.recommendation || data.recommendation.symbol !== symbol) {
+      throw new Error(detailText("رد التحليل لا يطابق الرمز المطلوب.", "Analysis response does not match the requested instrument."));
+    }
     renderDetail(data);
-    elements.status.textContent = data.cached ? detailText("بيانات مخزنة لحظياً", "Live cached data") : detailText("تحليل جديد", "Fresh analysis");
     applyDetailLanguage();
   } catch (error) {
     if (detailRequestController !== controller) return;
     const message = error?.name === "AbortError"
       ? detailText("انتهت مهلة تحميل التحليل. حاول مرة أخرى.", "Analysis loading timed out. Please try again.")
       : error.message;
-    showError(message);
+    if (currentDetailData) {
+      currentDetailData = { ...currentDetailData, stale: true };
+      revalidateDetail();
+    } else showError(message);
   } finally {
     window.clearTimeout(timeout);
     if (detailRequestController === controller) detailRequestController = null;
   }
 }
 
-window.addEventListener("pagehide", () => detailRequestController?.abort(), { once: true });
+window.addEventListener("pagehide", () => detailRequestController?.abort());
+
+function updateDetailStatus(item) {
+  elements.status.dataset.connectionState = detailNetworkOffline ? "offline" : item.executionBlocked ? "stale" : "fresh";
+  elements.status.textContent = detailNetworkOffline ? detailText("غير متصل — بيانات للمراقبة فقط", "Offline — observation only")
+    : item.executionBlocked ? detailText("المراقبة فقط — التنفيذ غير متاح", "Observation only — entry unavailable")
+    : detailText("تحليل بسعر حديث", "Analysis with a current quote");
+}
+
+function revalidateDetail() {
+  if (!currentDetailData) return;
+  const old = currentDetailData.recommendation;
+  const next = guardRecommendationForDisplay(old, { stale: detailNetworkOffline || currentDetailData.stale === true });
+  if (old.action !== next.action || old.executionBlocked !== next.executionBlocked
+      || old.priceFreshness?.state !== next.priceFreshness?.state || old.decision?.message !== next.decision?.message) {
+    renderDetail({ ...currentDetailData, recommendation: next });
+  } else updateDetailStatus(next);
+}
 
 function renderDetail(data) {
-  const item = data.recommendation;
+  const item = guardRecommendationForDisplay(data.recommendation, { stale: detailNetworkOffline || data.stale === true });
+  currentDetailData = { ...data, recommendation: item };
+  document.querySelector("#detail-error")?.remove();
+  document.querySelector("#detail-content").hidden = false;
+  updateDetailStatus(item);
   const profile = data.profile || {};
   const market = data.market || {};
   const metrics = getAnalysisMetrics(item, { english: isDetailEnglishLanguage(), localize: localizeDetailText });
@@ -941,14 +994,22 @@ function renderInfoRow(label, value) {
 
 function showError(message) {
   elements.status.textContent = detailText("تعذر التحميل", "Loading failed");
-  setUiState(document.querySelector("#detail-content"), {
+  const content = document.querySelector("#detail-content");
+  content.hidden = true;
+  let errorPanel = document.querySelector("#detail-error");
+  if (!errorPanel) {
+    errorPanel = document.createElement("section");
+    errorPanel.id = "detail-error";
+    content.before(errorPanel);
+  }
+  setUiState(errorPanel, {
     kind: "error",
     title: detailText("تعذر تحميل تفاصيل الأصل", "Could not load asset details"),
     message: localizeDetailText(message),
     actionLabel: detailText("إعادة المحاولة", "Retry"),
     actionId: "retry-detail"
   });
-  document.querySelector('[data-ui-state-action="retry-detail"]')?.addEventListener("click", loadDetail);
+  document.querySelector('[data-ui-state-action="retry-detail"]')?.addEventListener("click", () => loadDetail());
   applyDetailLanguage();
 }
 

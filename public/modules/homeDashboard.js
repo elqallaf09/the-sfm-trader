@@ -98,7 +98,8 @@ function renderTerminalHomeV3(data = {}) {
   const averageMove = moves.length ? moves.reduce((sum,value) => sum+value,0)/moves.length : null;
   const bias = buys.length > sells.length ? "صاعد" : sells.length > buys.length ? "هابط" : "محايد";
   const ranked = [...items].sort((a, b) => getDashboardScore(b) - getDashboardScore(a));
-  const state = items.length ? (data.stale ? "stale" : "fresh") : data.partial ? "loading" : "empty";
+  const quotesNeedUpdate = items.some(item => ["stale", "unknown"].includes(item.priceFreshness?.state));
+  const state = items.length ? (data.stale ? "stale" : quotesNeedUpdate ? "stale" : "fresh") : data.partial ? "loading" : "empty";
   root.dataset.uiState = state;
   root.setAttribute("aria-busy", "false");
 
