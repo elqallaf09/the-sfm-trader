@@ -17,6 +17,13 @@ const browser = await chromium.launch({ headless: true });
 const measurements = [];
 const checks = [];
 const consoleErrors = [];
+const verificationFailures = [];
+function recordVerification(label, check) {
+  try { check(); } catch (error) {
+    verificationFailures.push({ label, message: error.message });
+    console.error("Verification assertion:", label, error.message);
+  }
+}
 let activePage;
 let activeCase = "startup";
 
@@ -91,9 +98,9 @@ async function checkContrast(page, label) {
   const result = await page.evaluate(async () => window.axe.run(document, {
     runOnly: { type: "rule", values: ["color-contrast"] }
   }));
-  assert.deepEqual(result.violations.map(({ id, nodes }) => ({
+  recordVerification("contrast: " + label, () => assert.deepEqual(result.violations.map(({ id, nodes }) => ({
     id, nodes: nodes.map(({ target, failureSummary }) => ({ target, failureSummary }))
-  })), [], "Rendered contrast failed: " + label);
+  })), [], "Rendered contrast failed: " + label));
   checks.push(label + ": rendered text contrast");
 }
 
@@ -139,6 +146,10 @@ try {
         body: box("body"), shell: box(".app-shell.sfm-dashboard"), main: box("main"),
         rail: box(".desktop-trading-rail"), topbar: box(".topbar"), footer: box(".site-footer"),
         home: box("#terminal-home-v3"), lower: box(".v3-bottom-grid"),
+        panels: [...document.querySelectorAll("#terminal-home-v3 > *, .v3-overview-grid > *, .v3-opportunity-grid > *")].map(el => {
+          const bounds = el.getBoundingClientRect(), style = getComputedStyle(el);
+          return { classes: el.className, top: bounds.top, height: bounds.height, minHeight: style.minHeight, rows: style.gridTemplateRows, gap: style.gap, padding: style.padding, margin: style.margin };
+        }),
         brand: document.querySelector(".brand-lockup h1").textContent.trim(),
         brandTransform: getComputedStyle(document.querySelector(".brand-lockup h1")).textTransform,
         headerColor: getComputedStyle(document.querySelector(".brand-lockup h1")).color,
@@ -152,6 +163,8 @@ try {
     await page.screenshot({ path: path.join(outputDirectory, capture.file), fullPage: false });
     measurements.push({ file: capture.file, ...result });
     await checkContrast(page, capture.file);
+    console.log("Viewport measurements:", JSON.stringify(result));
+    recordVerification(capture.file + ": geometry", () => {
     assert.equal(result.document.scrollWidth, capture.viewport.width, "Horizontal overflow");
     assert.equal(result.brand, "SFM Trader");
     assert.equal(result.brandTransform, "none", "Brand capitalization changed by CSS");
@@ -172,6 +185,7 @@ try {
       assert.ok(result.lower.top < capture.viewport.height, "Lower panels must begin within the viewport");
       assert.ok(result.footer.top - result.main.bottom <= 32, "Blank row before footer");
     }
+    });
     checks.push(capture.file + ": geometry, brand, controls, logo colors");
     await modalCheck(page, "#settings-button", "#settings-panel", "#settings-display-name");
     await modalCheck(page, "#notification-button", "#notification-panel", "#notification-close-button");
@@ -196,6 +210,7 @@ try {
         ["calendar", "calendar", "#calendar-section"], ["news", "news", "#economic-news-section"],
         ["ai-analysis", "ai", "#command-center-section"], ["education", "education", "#education-section"]
       ]) {
+        activeCase = capture.file + ": navigation " + view;
         await page.locator('.desktop-trading-rail [data-nav-key="' + key + '"]').click();
         await waitView(page, view);
         await page.locator(selector).waitFor({ state: "visible" });
@@ -214,6 +229,8 @@ try {
     await page.locator("#terminal-symbol-search").press("Enter");
     await page.waitForURL(/detail\.html\?symbol=MSFT/);
     await page.waitForFunction(() => document.querySelector("#detail-heading")?.textContent.includes("MSFT"));
+    activeCase = capture.file + ": detail navigation";
+    assert.equal(await page.locator(".detail-brand-subtitle").innerText(), "AI Market Analysis");
     await checkContrast(page, "detail");
     await page.locator(".detail-back").click();
     await waitView(page, "home");
@@ -277,6 +294,7 @@ try {
   await waitState(loading.page, "fresh");
   await loading.context.close();
   assert.deepEqual(consoleErrors, [], consoleErrors.join("\n"));
+  assert.deepEqual(verificationFailures, [], "All viewport and contrast assertions must pass");
   console.log(JSON.stringify({ checks, measurements }, null, 2));
 } catch (error) {
   console.error("Home verification failed:", activeCase, error);
@@ -292,6 +310,6 @@ try {
   }
   throw error;
 } finally {
-  await writeFile(path.join(outputDirectory, "home-v3-final-corrected-manifest.json"), JSON.stringify({ captureMode: "viewport", fullPage: false, captures, checks, measurements, consoleErrors }, null, 2) + "\n");
+  await writeFile(path.join(outputDirectory, "home-v3-final-corrected-manifest.json"), JSON.stringify({ captureMode: "viewport", fullPage: false, captures, checks, measurements, consoleErrors, verificationFailures }, null, 2) + "\n");
   await browser.close();
 }

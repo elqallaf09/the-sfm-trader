@@ -1214,7 +1214,7 @@ function translateDetailElementAttributes(element) {
 }
 
 function shouldSkipDetailTranslation(element) {
-  return ["SCRIPT", "STYLE", "CANVAS", "SVG", "PATH"].includes(element.tagName);
+  return Boolean(element.closest('[translate="no"]')) || ["SCRIPT", "STYLE", "CANVAS", "SVG", "PATH"].includes(element.tagName);
 }
 
 function translateDetailArabicToEnglish(text) {

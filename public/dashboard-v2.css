@@ -339,9 +339,7 @@ body[data-app-view="home"] .utility-icon { display: block; width: 20px; height: 
   }
 
   body[data-app-view="home"] .desktop-trading-rail .rail-link:is(
-    [data-nav-key="ai-analysis"],
     [data-nav-key="alerts"],
-    [data-nav-key="education"],
     .rail-settings,
     [data-nav-key="voice"]
   ) {
@@ -624,6 +622,24 @@ body[data-app-view="home"] .terminal-home-v3 .v3-opportunity-card .v3-asset-logo
 body[data-app-view="home"] :is(a, button, [tabindex]):focus-visible {
   outline: 2px solid var(--v3-teal) !important;
   outline-offset: 3px;
+}
+
+@media (min-width: 1024px) {
+  /* Fit the complete analysis hierarchy by reducing spacing, preserving type sizes. */
+  .terminal-home-v3 :is(.v3-market-reading, .v3-market-pulse, .v3-opportunities, .v3-heatmap-panel, .v3-followed-panel, .v3-calendar-panel) { padding: 12px; }
+  .v3-section-head { margin-bottom: 10px; }
+  .v3-market-pulse { grid-template-rows: auto 132px auto; }
+  .v3-pulse-chart { height: 132px; min-height: 132px; }
+  .v3-confidence-ring { width: 132px; }
+  .v3-reading-copy p { min-height: 0; margin-bottom: 10px; line-height: 1.65; }
+  .v3-signal-counts > div { min-height: 64px; padding: 8px; }
+  .v3-opportunity-card { padding: 14px; }
+  .v3-opportunity-metrics { margin-top: 12px; }
+  body .app-shell .v3-analysis-summary { margin-top: 8px; }
+  body .app-shell .v3-analysis-summary > [data-analysis-metric] { min-height: 48px; padding: 6px 10px; }
+  .v3-heat-item { min-height: 72px; padding: 8px; }
+
+
 }
 
 @media (max-width: 1279px) and (min-width: 761px) {
