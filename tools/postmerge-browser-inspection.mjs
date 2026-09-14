@@ -18,7 +18,7 @@ try {
    const u=new URL(route.request().url());const respond=x=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(x)});
    if(u.pathname==='/api/recommendations'||u.pathname==='/api/watchlist'){
     const item=base();if(mode==='null-price')item.currentPrice=null;
-    if(mode==='small-price'){item.symbol='SHIB-USD';item.currentPrice=.00000423;item.target1=.00000455;item.expectedPrice=.00000455;}
+    if(mode==='small-price'){item.symbol='SHIB-USD';item.name='TEST ONLY small-price asset';item.currentPrice=.00000423;item.target1=.00000455;item.expectedPrice=.00000455;}
     return respond({...structuredClone(fixture),generatedAt:new Date().toISOString(),recommendations:[item],economicCalendar:{dataState:'empty',upcoming:[],hotEvents:[],recent:[]}});
    }
    if(u.pathname==='/api/asset')return respond({recommendation:finalizeRecommendation({...base(),marketState:'CLOSED'},{session:{isOpen:false}}),profile:{},market:fixture.market});
@@ -34,7 +34,7 @@ try {
   await page.locator('.v3-opportunity-card[data-symbol="META"]').waitFor({state:'visible'});
   await page.evaluate(()=>{const p=document.createElement('p');p.id='test-watermark';p.textContent='TEST FIXTURES — NOT LIVE MARKET PRICES';p.style.cssText='position:fixed;bottom:80px;left:4px;z-index:999999;background:white;color:black;font:11px sans-serif;padding:4px';document.body.append(p);});
   const navigate=async v=>{
-   if(width<1024){await page.locator('#mobile-more-button').click();await page.locator('[data-mobile-view="'+v+'"]').click();}
+   if(width<1024&&v!=='home'){await page.locator('#mobile-more-button').click();await page.locator('[data-mobile-view="'+v+'"]').click();}
    else await page.evaluate(v=>{location.hash='#view-'+v;},v);
    await page.waitForFunction(v=>document.body.dataset.appView===v,v);
   };
@@ -47,14 +47,17 @@ try {
   await page.locator('.scalp-card').waitFor({state:'visible'});const scalpText=await page.locator('.scalp-card').innerText();
   record('Closed-session scalping guard',width,scalpText,'Hold; no Buy now when server executionBlocked=true',scalpText.includes('اشتر الآن'));
   await page.screenshot({path:out+'/scalp-block-'+width+'.png',fullPage:true});
-  mode='null-price';await page.locator('#refresh-button').click();await page.waitForResponse(r=>r.url().includes('/api/recommendations')&&r.status()===200);
+  // Mobile secondary screens hide the global refresh action. Return to Home
+  // through the existing router; never force-click invisible controls.
+  await navigate('home'); mode='null-price';
+  await Promise.all([page.waitForResponse(r=>r.url().includes('/api/recommendations')&&r.status()===200),page.locator('#refresh-button').click()]);
   await navigate('portfolio');await page.locator('#portfolio-symbol').fill('META');await page.locator('#portfolio-qty').fill('1');await page.locator('#portfolio-price').fill('100');await page.locator('#portfolio-form button[type="submit"]').click();
   await page.locator('.portfolio-item').first().waitFor({state:'visible'});const portfolioText=await page.locator('.portfolio-item').first().innerText();
   record('Missing portfolio quote',width,portfolioText,'Unavailable quote and P/L, not -100%',portfolioText.includes('-100')||portfolioText.includes('100.00-'));
   await page.screenshot({path:out+'/portfolio-null-'+width+'.png',fullPage:true});
-  mode='small-price';await page.evaluate(()=>{location.hash='#view-home';});await page.waitForFunction(()=>document.body.dataset.appView==='home');
+  mode='small-price';await navigate('home');
   await page.locator('#refresh-button').click();const small=page.locator('.v3-opportunity-card[data-symbol="SHIB-USD"]');await small.waitFor({state:'visible'});
-  const smallText=await small.innerText();record('Small quote precision',width,smallText,'Preserve positive 0.00000423 quote',smallText.includes('0.000'));
+  const smallText=await small.innerText();record('Small quote precision',width,smallText,'Preserve positive 0.00000423 quote',smallText.includes('0.000')&&!smallText.includes('0.00000423'));
   await page.screenshot({path:out+'/small-price-'+width+'.png'});
   await context.close();
  }

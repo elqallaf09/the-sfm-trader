@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-          fetch-depth: 4
+          fetch-depth: 0
       - name: Verify production source is unchanged from the inspected main
         run: git diff --exit-code 3e7d206395fe19df439ef278f577342706198848 HEAD -- public src server.mjs package.json package-lock.json
       - uses: actions/setup-node@v4
