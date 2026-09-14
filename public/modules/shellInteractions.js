@@ -74,5 +74,7 @@ function installShellInteractions() {
   queueMicrotask(openPanelForNotificationHash);
 }
 
-if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installShellInteractions, { once: true });
-else installShellInteractions();
+if (typeof document !== "undefined" && typeof window !== "undefined") {
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installShellInteractions, { once: true });
+  else installShellInteractions();
+}
