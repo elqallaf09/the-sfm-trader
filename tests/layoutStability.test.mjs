@@ -153,7 +153,7 @@ test("offline shell versions stay aligned with the Home V3 entry files", async (
   assert.ok(homeScript);
   assert.ok(worker.includes(`"${homeScript}"`));
   for (const stylesheet of homeStylesheets) assert.ok(worker.includes(`"${stylesheet}"`));
-  assert.match(worker, /the-sfm-trader-v20260914-modal-focus-2/);
+  assert.match(worker, /the-sfm-trader-v20260914-async-selection-2/);
 });
 
 test("Home V3 visual evidence is captured as exact viewport screenshots", async () => {

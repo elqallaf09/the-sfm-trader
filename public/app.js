@@ -13,7 +13,7 @@ import { initMarketBackground } from "./modules/marketBackground.js?v=20260914-a
 import { getAssetBaseSymbol, getAssetVisual, getPremiumAssetVisual, resolveAssetVisual, getOfficialCompanyName, renderAssetLogo, renderAssetIcon } from "./modules/assetBranding.js?v=20260914-audit-repair-1";
 import { saveDetailReturnContext, readDetailReturnContext, detailPageUrl } from "./modules/detailNavigation.js?v=20260914-audit-repair-1";
 import { createHomeDashboard, getDashboardRecommendations } from "./modules/homeDashboard.js?v=20260914-lifecycle-1";
-import { createInstrumentSearch } from "./modules/instrumentSearch.js?v=20260914-audit-repair-1";
+import { createInstrumentSearch } from "./modules/instrumentSearch.js?v=20260914-async-selection-1";
 import { createRecommendationListRenderer } from "./modules/recommendationList.js?v=20260914-audit-repair-1";
 import { createBoundedMemoryCache } from "./modules/boundedMemoryCache.js?v=20260914-audit-repair-1";
 import { fetchJsonWithPolicy, fetchResponseWithPolicy } from "./modules/requestPolicy.js?v=20260914-audit-repair-1";
@@ -705,6 +705,9 @@ const UI_TEXT_TRANSLATIONS = {
   "المزود مشغول مؤقتاً": "Provider is temporarily busy",
   "جاري تحليل الرمز": "Analyzing symbol",
   "بانتظار تحديث قائمة المراقبة": "Waiting for watchlist update",
+  "أعد التحليل بعد العودة إلى الصفحة.": "Run the analysis again after returning to this page.",
+  "رد التحليل لا يطابق الرمز المطلوب.": "Analysis response does not match the requested instrument.",
+  "رد قائمة المراقبة غير صالح.": "The watchlist response is invalid.",
   "تحميل مستقل": "Independent loading",
   "سيتم التحليل تلقائياً": "Will be analyzed automatically",
   "القائمة تحلل رموزها الآن حتى لو كانت من سوق آخر غير السوق المعروض.": "The list analyzes its symbols now even if they belong to a different market.",
@@ -1125,7 +1128,6 @@ const SYMBOL_ALIASES = {
   APPLE: "AAPL",
   APPL: "AAPL",
   MICROSOFT: "MSFT",
-  MS: "MSFT",
   NVD: "NVDA",
   NVIDIA: "NVDA",
   TESLA: "TSLA",
@@ -1380,6 +1382,9 @@ let settingsReturnFocus = null;
 let notificationReturnFocus = null;
 let globalSessionTimer = null;
 let scalpLoading = false;
+let scalpRequestId = 0;
+let scalpRequestController = null;
+let scalpRequestSymbol = "";
 let lastScalpItem = null;
 let lastScalpDecision = null;
 let marketNetworkOffline = navigator.onLine === false;
@@ -1392,6 +1397,10 @@ appSettings = applyUrlSettingsOverride(appSettings);
 let watchlistData = null;
 let watchlistLoading = false;
 let watchlistLastLoadedAt = 0;
+let watchlistRequestId = 0;
+let watchlistRequestController = null;
+let watchlistRequestKey = "";
+let watchlistDataKey = "";
 let voiceActive = false;
 let voiceRecognition = null;
 let voiceStream = null;
@@ -1552,7 +1561,6 @@ async function init() {
     {
       name: "watchlist",
       intervalMs: WATCHLIST_REFRESH_MS,
-      refreshOnForeground: false,
       run: () => loadWatchlistData()
     },
     {
@@ -2932,29 +2940,76 @@ function getMarketSortIndex(market) {
   return 20 + String(market?.label || market?.id || "").localeCompare("z");
 }
 
+function getRecommendationEndpoint() {
+  return watchlistOnly
+    ? `/api/watchlist?symbols=${encodeURIComponent(watchlist.join(","))}`
+    : `/api/recommendations?market=${encodeURIComponent(activeMarket)}`;
+}
+
+function emptyWatchlistPayload() {
+  return {
+    market: { id: "watchlist", label: localizeUiText("قائمة المراقبة"), totalSymbols: 0, supportedSymbols: [] },
+    recommendations: [], unavailable: [], smartAlerts: [], opportunityRadar: {},
+    partial: false, analyzedCount: 0, pendingCount: 0
+  };
+}
+
+function restrictWatchlistPayload(data, symbols) {
+  if (!data || typeof data !== "object" || !Array.isArray(data.recommendations)
+      || (data.market?.id && data.market.id !== "watchlist")) {
+    throw new Error("رد قائمة المراقبة غير صالح.");
+  }
+  const allowed = new Set(symbols);
+  const matches = item => item && typeof item.symbol === "string" && allowed.has(item.symbol.toUpperCase());
+  const restrict = value => {
+    if (Array.isArray(value)) return value.map(restrict).filter(item => item !== null);
+    if (!value || typeof value !== "object") return value;
+    if (value.symbol) return matches(value) ? value : null;
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, restrict(item)]));
+  };
+  return {
+    ...data,
+    market: { ...data.market, id: "watchlist", totalSymbols: symbols.length,
+      supportedSymbols: (Array.isArray(data.market?.supportedSymbols) ? data.market.supportedSymbols : []).filter(matches) },
+    recommendations: data.recommendations.filter(matches),
+    unavailable: (Array.isArray(data.unavailable) ? data.unavailable : []).filter(matches),
+    smartAlerts: restrict(data.smartAlerts || []), opportunityRadar: restrict(data.opportunityRadar || {})
+  };
+}
+
 async function loadRecommendations(options = {}) {
   const force = Boolean(options.force);
   const background = Boolean(options.background);
   const skipGrace = Boolean(options.marketChanged || options.skipGrace);
   if (options.marketChanged) void getMarketFeeds().load();
   const now = Date.now();
+  const endpoint = getRecommendationEndpoint();
+  const contextChanged = endpoint !== lastDataEndpoint;
+  const requestedWatchlist = watchlistOnly ? [...watchlist] : null;
 
-  if (isLoading && !force) return;
-  if (force && !skipGrace && now - lastRecommendationRefreshAt < RECOMMENDATIONS_FORCE_REFRESH_GRACE_MS) return;
+  if (isLoading && !force && !contextChanged) return;
+  if (force && !skipGrace && !contextChanged && now - lastRecommendationRefreshAt < RECOMMENDATIONS_FORCE_REFRESH_GRACE_MS) return;
   if (background && document.hidden) return;
 
   const requestId = recommendationRequestId + 1;
   recommendationRequestId = requestId;
-  if (force) recommendationRequestController?.abort();
+  recommendationRequestController?.abort();
   recommendationRequestController = new AbortController();
   isLoading = true;
   lastRecommendationRefreshAt = now;
   loadingIndicator.textContent = localizeUiText(background ? "تحديث بالخلفية" : "تحديث");
 
-  const endpoint =
-    watchlistOnly && watchlist.length
-      ? `/api/watchlist?symbols=${encodeURIComponent(watchlist.join(","))}`
-      : `/api/recommendations?market=${encodeURIComponent(activeMarket)}`;
+  // An empty selection is a real empty state, not permission to show another market.
+  if (requestedWatchlist && !requestedWatchlist.length) {
+    lastData = emptyWatchlistPayload();
+    lastDataEndpoint = endpoint;
+    isLoading = false;
+    recommendationRequestController = null;
+    loadingIndicator.textContent = localizeUiText("جاهز");
+    renderRecommendations(lastData);
+    updateConnectionStatus(lastData);
+    return;
+  }
   const cachedData = recommendationResponseCache.get(endpoint);
 
   if (cachedData?.recommendations?.length) {
@@ -2969,7 +3024,9 @@ async function loadRecommendations(options = {}) {
     const selected = lastMarkets.find((market) => market.id === activeMarket);
     lastData = {
       recommendations: [], unavailable: [],
-      market: { id: activeMarket, label: selected?.label || activeMarket }
+      market: requestedWatchlist
+        ? { id: "watchlist", label: localizeUiText("قائمة المراقبة"), totalSymbols: requestedWatchlist.length }
+        : { id: activeMarket, label: selected?.label || activeMarket }
     };
     renderRecommendations(lastData);
     setHomeDashboardState("loading");
@@ -2984,12 +3041,13 @@ async function loadRecommendations(options = {}) {
       fallbackMessage: "تعذر الاتصال بالسيرفر. اضغط زر التحديث أو افتح الرابط الجديد للصفحة."
     });
 
-    if (requestId !== recommendationRequestId) return;
+    if (requestId !== recommendationRequestId || endpoint !== getRecommendationEndpoint()) return;
     if (!data || typeof data !== "object" || Array.isArray(data)) {
       throw new Error("وصل رد غير مفهوم من السيرفر. حدث الصفحة وحاول مرة ثانية.");
     }
     data.recommendations = getDashboardRecommendations(data);
     data.market = data.market && typeof data.market === "object" ? data.market : {};
+    if (requestedWatchlist) Object.assign(data, restrictWatchlistPayload(data, requestedWatchlist));
 
     Object.assign(data, guardDisplayPayload(marketNetworkOffline ? { ...data, stale: true } : data));
     lastData = data;
@@ -3001,7 +3059,7 @@ async function loadRecommendations(options = {}) {
     updateConnectionStatus(data);
     restoreDetailScroll();
   } catch (error) {
-    if (error?.name === "AbortError" || requestId !== recommendationRequestId) return;
+    if (error?.name === "AbortError" || requestId !== recommendationRequestId || endpoint !== getRecommendationEndpoint()) return;
 
     const message = getFriendlyFetchError(error, "تعذر الاتصال بالسيرفر. اضغط تحديث أو أعد فتح الصفحة.");
     setConnectionStatus(lastData?.recommendations?.length ? "stale" : "offline", localizeUiText(lastData?.recommendations?.length ? "اتصال متقطع - آخر بيانات محفوظة" : "تعذر الاتصال"));
@@ -3024,6 +3082,7 @@ async function loadRecommendations(options = {}) {
     if (requestId === recommendationRequestId) {
       loadingIndicator.textContent = localizeUiText("جاهز");
       isLoading = false;
+      recommendationRequestController = null;
     }
   }
 }
@@ -3036,6 +3095,20 @@ function handleIntegrityLifecycle(reason) {
     recommendationRequestController?.abort();
     recommendationRequestController = null;
     isLoading = false;
+    watchlistRequestId += 1;
+    watchlistRequestController?.abort();
+    watchlistRequestController = null;
+    watchlistLoading = false;
+    watchlistLastLoadedAt = 0;
+    scalpRequestId += 1;
+    scalpRequestController?.abort();
+    scalpRequestController = null;
+    if (scalpLoading && scalpResult) {
+      scalpResult.innerHTML = `<div class="scalp-empty">${escapeHtml(localizeUiText("أعد التحليل بعد العودة إلى الصفحة."))}</div>`;
+      if (scalpStatus) scalpStatus.textContent = localizeUiText("انتظار");
+    }
+    scalpLoading = false;
+    if (scalpSubmit) scalpSubmit.disabled = false;
     return;
   }
   if (reason === "offline") marketNetworkOffline = true;
@@ -3085,6 +3158,7 @@ function revalidateDisplayedData() {
 
 function getConnectionStatusText(data) {
   if (marketNetworkOffline) return localizeUiText("غير متصل — بيانات للمراقبة فقط");
+  if (data?.market?.id === "watchlist" && data.market.totalSymbols === 0) return localizeUiText("أضف أول رمز لقائمة المراقبة.");
   if ((data?.recommendations || []).some(item => ["stale", "unknown"].includes(item.priceFreshness?.state))) {
     return localizeUiText("تحتاج الأسعار إلى تحديث — المراقبة فقط للبيانات القديمة");
   }
@@ -3101,7 +3175,7 @@ function setConnectionStatus(kind, text) {
 }
 
 function updateConnectionStatus(data) {
-  const kind = marketNetworkOffline ? "offline" : data?.stale || (data?.recommendations || []).some(item => ["stale", "unknown"].includes(item.priceFreshness?.state)) ? "stale" : data?.partial || data?.refreshing || Number(data?.pendingCount || 0) > 0 ? "updating" : "fresh";
+  const kind = marketNetworkOffline ? "offline" : data?.market?.id === "watchlist" && data.market.totalSymbols === 0 ? "empty" : data?.stale || (data?.recommendations || []).some(item => ["stale", "unknown"].includes(item.priceFreshness?.state)) ? "stale" : data?.partial || data?.refreshing || Number(data?.pendingCount || 0) > 0 ? "updating" : "fresh";
   setConnectionStatus(kind, getConnectionStatusText(data));
 }
 
@@ -3117,14 +3191,19 @@ function updateAiTradingAgentSummary(data, all = [], buys = [], sells = [], avg 
     sells.length > buys.length && marketMove < 0 ? "Bearish" :
     "Mixed";
 
-  if (aiAgentStatus) aiAgentStatus.textContent = isEnglishLanguage() ? "Active" : "نشط";
+  const confidenceValues = all.map(item => toNullableNumber(item.confidence)).filter(value => value !== null && value >= 0 && value <= 100);
+  const meanConfidence = confidenceValues.length ? Math.round(confidenceValues.reduce((sum,value) => sum + value,0) / confidenceValues.length) : null;
+  if (aiAgentStatus) aiAgentStatus.textContent = data?.stale
+    ? (isEnglishLanguage() ? "Observation only" : "للمراقبة فقط")
+    : all.length ? (isEnglishLanguage() ? "Active" : "نشط")
+    : (isEnglishLanguage() ? "Waiting for data" : "بانتظار البيانات");
   if (aiMarketCount) aiMarketCount.textContent = formatNumber(marketsCount);
   if (aiAssetCount) aiAssetCount.textContent = total ? `${formatNumber(analyzed)}/${formatNumber(total)}` : formatNumber(analyzed);
   if (aiBuyCount) aiBuyCount.textContent = formatNumber(buys.length);
   if (aiSellCount) aiSellCount.textContent = formatNumber(sells.length);
-  if (aiAverageConfidence) aiAverageConfidence.textContent = all.length ? `${formatNumber(avg)}%` : "--";
+  if (aiAverageConfidence) aiAverageConfidence.textContent = meanConfidence === null ? "--" : `${formatNumber(meanConfidence)}%`;
   if (aiMarketBias) {
-    aiMarketBias.textContent = isEnglishLanguage()
+    aiMarketBias.textContent = !all.length ? "--" : isEnglishLanguage()
       ? bias
       : bias === "Bullish" ? "صاعد" : bias === "Bearish" ? "هابط" : "مختلط";
     aiMarketBias.className = bias.toLowerCase();
@@ -3181,6 +3260,7 @@ function renderRecommendations(sourceData) {
   if (activeAppView !== "home") updateMarketOverviewBubbles(all);
   if (data.market?.id === "watchlist") {
     watchlistData = sourceData;
+    watchlistDataKey = watchlist.join(",");
     watchlistLastLoadedAt = Date.now();
   }
   renderActivePanel("قائمة المراقبة", () => renderWatchlist(), watchlistCards);
@@ -3373,39 +3453,53 @@ function handleScalpSubmit(event) {
 }
 
 async function analyzeScalpSymbol(rawSymbol) {
-  if (!scalpResult || scalpLoading) return;
-
+  if (!scalpResult) return;
   const symbol = normalizeSymbol(rawSymbol);
+  if (scalpLoading && symbol === scalpRequestSymbol) return;
+  const requestId = ++scalpRequestId;
+  scalpRequestController?.abort();
+  scalpRequestController = null;
+  scalpRequestSymbol = symbol;
+  lastScalpItem = null;
+  lastScalpDecision = null;
   if (!symbol) {
-    scalpResult.innerHTML = "<div class=\"scalp-empty\">اكتب رمز السهم أولاً.</div>";
+    scalpLoading = false;
+    if (scalpSubmit) scalpSubmit.disabled = false;
+    scalpResult.innerHTML = `<div class="scalp-empty">${escapeHtml(localizeUiText("اكتب رمز السهم أولاً."))}</div>`;
     return;
   }
 
+  const controller = new AbortController();
+  scalpRequestController = controller;
   scalpLoading = true;
-  lastScalpItem = null;
-  lastScalpDecision = null;
-  if (scalpStatus) scalpStatus.textContent = "يحلل";
-  if (scalpSubmit) scalpSubmit.disabled = true;
-  scalpResult.innerHTML = `<div class="scalp-empty">جاري تحليل ${escapeHtml(symbol)} لفريم 1m و15m...</div>`;
-
+  if (scalpStatus) scalpStatus.textContent = localizeUiText("يحلل");
+  // Keep the form usable: a different selection supersedes the current request.
+  if (scalpSubmit) scalpSubmit.disabled = false;
+  scalpResult.innerHTML = `<div class="scalp-empty">${escapeHtml(localizeUiText("جاري تحليل"))} ${escapeHtml(symbol)} — 1m / 15m...</div>`;
   try {
     const data = await fetchJson(`/api/asset?symbol=${encodeURIComponent(symbol)}`, {
-      retries: 1,
-      retryDelayMs: 700,
+      retries: 1, retryDelayMs: 700, signal: controller.signal,
       fallbackMessage: "تعذر الاتصال بالسيرفر. حدث الصفحة وحاول مرة ثانية، أو استخدم رمز Yahoo كامل مثل NZDUSD=X."
     });
-
+    if (requestId !== scalpRequestId || controller.signal.aborted) return;
+    if (!data?.recommendation || data.recommendation.symbol !== symbol) {
+      throw new Error("رد التحليل لا يطابق الرمز المطلوب.");
+    }
     const item = guardRecommendationForDisplay(data.recommendation, { stale: marketNetworkOffline || data.stale === true });
     const scalp = buildScalpDecision(item);
     renderScalpResult(item, scalp);
-    if (scalpStatus) scalpStatus.textContent = scalp.statusLabel;
+    if (scalpStatus) scalpStatus.textContent = localizeUiText(scalp.statusLabel);
   } catch (error) {
+    if (requestId !== scalpRequestId || controller.signal.aborted) return;
     const message = getFriendlyFetchError(error, "تعذر الاتصال بالسيرفر. حدث الصفحة وحاول مرة ثانية، أو استخدم رمز Yahoo كامل مثل NZDUSD=X.");
-    scalpResult.innerHTML = `<div class="scalp-empty">${escapeHtml(message)}</div>`;
-    if (scalpStatus) scalpStatus.textContent = "تعذر";
+    scalpResult.innerHTML = `<div class="scalp-empty">${escapeHtml(localizeUiText(message))}</div>`;
+    if (scalpStatus) scalpStatus.textContent = localizeUiText("تعذر");
   } finally {
-    scalpLoading = false;
-    if (scalpSubmit) scalpSubmit.disabled = false;
+    if (requestId === scalpRequestId) {
+      scalpLoading = false;
+      scalpRequestController = null;
+      if (scalpSubmit) scalpSubmit.disabled = false;
+    }
   }
 }
 
@@ -3566,48 +3660,50 @@ function renderCommandCenter(data, filteredRecommendations = []) {
 }
 
 function renderTradingCommandDashboard(data, filteredRecommendations = [], all = [], accuracy = {}) {
-  const ranked = filteredRecommendations.length
-    ? filteredRecommendations
-    : sortRecommendations(filterRecommendations(all));
-  const best = ranked[0] || all[0] || null;
+  const ranked = Array.isArray(filteredRecommendations) ? filteredRecommendations : [];
+  const best = ranked[0] || null;
+  const english = isEnglishLanguage();
+  const text = (ar, en) => english ? en : ar;
   const stockAlertCount = notificationLog.filter(isStockNotification).length;
-  const riskValue = best ? clamp(Math.round(100 - getDataHealthScore(best) * 0.62), 18, 72) : 38;
-  const performanceValue = ranked.length
-    ? ranked.slice(0, 8).reduce((sum, item) => sum + Number(item.expectedMovePct || 0), 0) / Math.min(8, ranked.length)
-    : 1.42;
-  const performanceText = accuracy.closed
-    ? `+${formatNumber(accuracy.winRate / 60, 2)}%`
-    : `${performanceValue >= 0 ? "+" : ""}${formatNumber(performanceValue, 2)}%`;
-  const newsText = data?.market?.session?.riskLabel || "Market moving news";
+  const qualityValues = ranked.map(item => toNullableNumber(item.dataHealth?.score))
+    .filter(value => value !== null && value >= 0 && value <= 100);
+  const quality = qualityValues.length ? Math.round(qualityValues.reduce((sum, value) => sum + value, 0) / qualityValues.length) : null;
+  const forecasts = ranked.map(item => toNullableNumber(item.expectedMovePct)).filter(value => value !== null);
+  const expectedMove = forecasts.length ? forecasts.reduce((sum, value) => sum + value, 0) / forecasts.length : null;
+  const performanceText = expectedMove === null ? "--" : formatPercent(expectedMove);
+  const calendar = data?.economicCalendar;
+  const calendarAvailable = calendar && ["fresh", "empty"].includes(calendar.dataState);
+  const calendarLabel = calendarAvailable ? calendar.source || text("بيانات تقويم متاحة", "Calendar data available")
+    : text("بيانات التقويم غير متاحة", "Calendar data unavailable");
   const bestSymbol = best?.symbol ? escapeHtml(best.symbol) : "";
 
   return `
     <article class="command-card command-dashboard-card command-ai-scan" ${bestSymbol ? `data-symbol="${bestSymbol}" role="link" tabindex="0"` : ""}>
-      <span>AI Scan</span>
-      <strong>Market opportunities</strong>
+      <span>${text("تحليل السوق", "Market analysis")}</span>
+      <strong>${text("الأصول المحللة", "Analyzed instruments")}</strong>
       <div class="command-radar-visual" aria-hidden="true"><i></i><i></i><i></i></div>
-      <em>${best ? escapeHtml(best.symbol) : "SFM"}</em>
+      <em>${bestSymbol || "--"}</em>
     </article>
     <article class="command-card command-dashboard-card command-smart-alerts">
-      <span>Smart Alerts</span>
-      <strong>Active signals</strong>
-      <div class="command-number-row"><b>${formatNumber(stockAlertCount || ranked.length || 12)}</b><i aria-hidden="true"></i></div>
-      <svg class="command-mini-chart" viewBox="0 0 160 56" aria-hidden="true"><polyline points="0,45 16,38 32,42 48,30 64,33 80,24 96,29 112,20 128,22 144,12 160,9"></polyline></svg>
+      <span>${text("التنبيهات", "Alerts")}</span>
+      <strong>${text("تنبيهات السوق المحفوظة", "Saved market alerts")}</strong>
+      <div class="command-number-row"><b>${formatNumber(stockAlertCount)}</b><i aria-hidden="true"></i></div>
     </article>
     <article class="command-card command-dashboard-card command-risk-radar">
-      <span>Risk Radar</span>
-      <strong>Portfolio exposure</strong>
-      <div class="command-gauge" style="--risk:${riskValue}%"><b>${riskValue}%</b><em>${riskValue > 58 ? "High" : riskValue > 38 ? "Moderate" : "Calm"}</em></div>
+      <span>${text("جودة البيانات", "Data quality")}</span>
+      <strong>${text("متوسط جودة الأصول المعروضة", "Mean quality of displayed instruments")}</strong>
+      <b class="command-performance-value command-quality-value">${quality === null ? "--" : `${formatNumber(quality)}%`}</b>
+      <p>${text("ليست نسبة مخاطر المحفظة", "Not portfolio risk exposure")}</p>
     </article>
     <article class="command-card command-dashboard-card command-performance">
-      <span>Performance</span>
-      <strong>Today</strong>
+      <span>${text("التوقعات الفنية", "Technical forecasts")}</span>
+      <strong>${text("متوسط الحركة المتوقعة", "Mean forecast move")}</strong>
       <b class="command-performance-value">${escapeHtml(performanceText)}</b>
-      <svg class="command-mini-chart command-mini-chart-large" viewBox="0 0 170 64" aria-hidden="true"><polyline points="0,50 14,48 28,39 42,44 56,35 70,32 84,28 98,31 112,22 126,25 140,17 154,16 170,9"></polyline></svg>
+      <p>${text("ليست عائداً محققاً أو أداء اليوم", "Not realized return or daily performance")}</p>
     </article>
     <article class="command-card command-dashboard-card command-news-feed">
-      <span>News Feed</span>
-      <strong>${escapeHtml(newsText)}</strong>
+      <span>${text("التقويم الاقتصادي", "Economic calendar")}</span>
+      <strong>${escapeHtml(calendarLabel)}</strong>
       <div class="command-globe" aria-hidden="true"></div>
     </article>
   `;
@@ -4668,42 +4764,56 @@ function renderGoldenOpportunities(data) {
 }
 
 async function loadWatchlistData(force = false) {
-  if (!watchlist.length) {
+  const symbols = [...watchlist];
+  const key = symbols.join(",");
+  if (watchlistLoading && !force && key === watchlistRequestKey) return;
+  if (!force && key === watchlistDataKey && Date.now() - watchlistLastLoadedAt < WATCHLIST_REFRESH_MS) return;
+
+  const requestId = ++watchlistRequestId;
+  watchlistRequestController?.abort();
+  watchlistRequestController = null;
+  watchlistRequestKey = key;
+  if (!symbols.length) {
     watchlistData = null;
+    watchlistDataKey = key;
+    watchlistLastLoadedAt = 0;
     watchlistLoading = false;
     renderWatchlist();
+    renderPortfolio(lastData?.recommendations || []);
     return;
   }
 
-  if (watchlistLoading) return;
-  if (!force && Date.now() - watchlistLastLoadedAt < WATCHLIST_REFRESH_MS) return;
-
+  const controller = new AbortController();
+  watchlistRequestController = controller;
+  const current = () => requestId === watchlistRequestId && key === watchlist.join(",");
+  if (watchlistData && key !== watchlistDataKey) {
+    watchlistData = restrictWatchlistPayload(watchlistData, symbols);
+  }
   watchlistLoading = true;
   renderWatchlist();
-
   try {
-    const data = await fetchJson(`/api/watchlist?symbols=${encodeURIComponent(watchlist.join(","))}`, {
-      retries: 1,
-      retryDelayMs: 700,
+    const data = await fetchJson(`/api/watchlist?symbols=${encodeURIComponent(key)}`, {
+      retries: 1, retryDelayMs: 700, signal: controller.signal,
       fallbackMessage: "تعذر تحميل قائمة المراقبة. تأكد أن السيرفر يعمل ثم حاول مرة ثانية."
     });
-
-    watchlistData = guardDisplayPayload(marketNetworkOffline ? { ...data, stale: true } : data);
+    if (!current()) return;
+    const scoped = restrictWatchlistPayload(data, symbols);
+    watchlistData = guardDisplayPayload(marketNetworkOffline ? { ...scoped, stale: true } : scoped);
+    watchlistDataKey = key;
     watchlistLastLoadedAt = Date.now();
   } catch (error) {
+    if (!current() || controller.signal.aborted) return;
     const message = getFriendlyFetchError(error, "تعذر تحميل قائمة المراقبة. تأكد أن السيرفر يعمل ثم حاول مرة ثانية.");
     watchlistData = {
-      recommendations: [],
-      unavailable: watchlist.map((symbol) => ({
-        symbol,
-        name: symbol,
-        reason: message
-      }))
+      recommendations: [], unavailable: symbols.map(symbol => ({ symbol, name: symbol, reason: message }))
     };
   } finally {
-    watchlistLoading = false;
-    renderWatchlist();
-    renderPortfolio([...(lastData?.recommendations || []), ...(watchlistData?.recommendations || [])]);
+    if (requestId === watchlistRequestId) {
+      watchlistLoading = false;
+      watchlistRequestController = null;
+      renderWatchlist();
+      renderPortfolio([...(lastData?.recommendations || []), ...(watchlistData?.recommendations || [])]);
+    }
   }
 }
 
@@ -7384,7 +7494,7 @@ const SFM_ACCEPTANCE_TEXT_PAIRS = [
   ["Settings", "الإعدادات"],
   ["Voice", "الصوت"],
   ["Scanning markets", "فحص الأسواق"],
-  ["Connected markets", "الأسواق المتصلة"],
+  ["Market categories", "فئات الأسواق"],
   ["Active signals", "التوصيات النشطة"],
   ["Risk status", "حالة المخاطر"],
   ["LIVE MARKET PULSE", "نبض السوق المباشر"],
@@ -8730,27 +8840,27 @@ function updateRightPanel(all = [], buys = [], sells = []) {
           </div>
         </div>
         <span class="rdp-pick-badge${item.action === "sell" ? " sell" : ""}">${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</span>
-        <span class="rdp-pick-confidence">${formatNumber(Number(item.confidence || 0))}%</span>
+        <span class="rdp-pick-confidence">${toNullableNumber(item.confidence) === null ? "--" : `${formatNumber(item.confidence)}%`}</span>
         <span class="rdp-pick-timeframe">${escapeHtml(item.duration || "--")}</span>
       </div>`).join("") : `<div class="rdp-empty-state">${escapeHtml(localizeUiText("بانتظار بيانات موثوقة من مزود السوق."))}</div>`;
   }
 
-  const total = all.length || 1;
-  const bullV = Math.round((buys.length / total) * 100);
-  const bearV = Math.round((sells.length / total) * 100);
-  const neutV = Math.max(0, 100 - bullV - bearV);
+  const total = all.length;
+  const bullV = total ? Math.round((buys.length / total) * 100) : 0;
+  const bearV = total ? Math.round((sells.length / total) * 100) : 0;
+  const neutV = total ? Math.max(0, 100 - bullV - bearV) : 0;
 
   if (bullBar) bullBar.style.width = `${bullV}%`;
   if (bearBar) bearBar.style.width = `${bearV}%`;
   if (neutBar) neutBar.style.width = `${neutV}%`;
-  if (bullPctEl) bullPctEl.textContent = `${bullV}%`;
-  if (bearPctEl) bearPctEl.textContent = `${bearV}%`;
-  if (neutPctEl) neutPctEl.textContent = `${neutV}%`;
+  if (bullPctEl) bullPctEl.textContent = total ? `${bullV}%` : "--";
+  if (bearPctEl) bearPctEl.textContent = total ? `${bearV}%` : "--";
+  if (neutPctEl) neutPctEl.textContent = total ? `${neutV}%` : "--";
 
   if (biasLabel) {
     const bias = bullV > 55 ? "bullish" : bearV > 55 ? "bearish" : "neutral";
     const label = bias === "bullish" ? "صاعد" : bias === "bearish" ? "هابط" : "محايد";
-    biasLabel.textContent = localizeUiText(label);
+    biasLabel.textContent = localizeUiText(total ? label : "بانتظار البيانات");
     biasLabel.className = `rdp-bias-label ${bias === "bearish" ? "rdp-bearish-label" : bias === "neutral" ? "rdp-neutral-label" : ""}`;
   }
 
@@ -8781,6 +8891,14 @@ function updateMarketOverviewBubbles(all = []) {
   const confidenceLabelEl = document.getElementById("mo-confidence-label");
   const confEl = document.getElementById("mo-confidence-pct");
 
+  // A newly selected market must not retain an absent instrument from its predecessor.
+  for (const id of new Set(Object.values(MAP))) {
+    const element = document.getElementById(id);
+    if (element) { element.textContent = "--"; element.className = "mo-bubble-change"; }
+  }
+  if (sentimentEl) sentimentEl.textContent = localizeUiText("بانتظار البيانات");
+  for (const element of [sentimentPctEl, confidenceLabelEl, confEl]) if (element) element.textContent = "--";
+
   all.forEach((item) => {
     const elId = MAP[item.symbol?.toUpperCase()];
     if (!elId) return;
@@ -8794,13 +8912,15 @@ function updateMarketOverviewBubbles(all = []) {
   if (sentimentEl && all.length) {
     const buys = all.filter((r) => r.action === "buy").length;
     const bullPct = Math.round((buys / all.length) * 100);
-    const bias = bullPct > 55 ? "bullish" : buys < all.length * 0.35 ? "bearish" : "neutral";
+    const sells = all.filter(r => r.action === "sell").length;
+    const bias = bullPct > 55 ? "bullish" : (sells / all.length) * 100 > 55 ? "bearish" : "neutral";
     sentimentEl.textContent = localizeUiText(bias === "bullish" ? "صاعد" : bias === "bearish" ? "هابط" : "محايد");
     if (sentimentPctEl) sentimentPctEl.textContent = `${bullPct}%`;
     if (confEl) {
-      const avgConf = Math.round(all.reduce((s, r) => s + (r.confidence || 0), 0) / all.length);
-      confEl.textContent = `${avgConf}%`;
-      if (confidenceLabelEl) confidenceLabelEl.textContent = avgConf >= 75 ? "HIGH" : avgConf >= 55 ? "MEDIUM" : "LOW";
+      const confidences = all.map(item => toNullableNumber(item.confidence)).filter(value => value !== null && value >= 0 && value <= 100);
+      const avgConf = confidences.length ? Math.round(confidences.reduce((sum,value) => sum + value,0) / confidences.length) : null;
+      confEl.textContent = avgConf === null ? "--" : `${avgConf}%`;
+      if (confidenceLabelEl) confidenceLabelEl.textContent = avgConf === null ? "--" : avgConf >= 75 ? "HIGH" : avgConf >= 55 ? "MEDIUM" : "LOW";
     }
   }
 }
