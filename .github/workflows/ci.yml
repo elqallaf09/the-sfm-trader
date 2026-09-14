@@ -66,5 +66,15 @@ jobs:
           name: home-v3-final-corrected-${{ github.sha }}
           path: .artifacts/home-v3
           if-no-files-found: error
+      - name: Deep interaction regression suite
+        id: deep-browser
+        run: node tools/capture-deep-audit.mjs
+      - name: Upload deep interaction evidence
+        if: always() && steps.deep-browser.outcome != 'skipped' && steps.deep-browser.outcome != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: deep-interaction-audit-${{ github.sha }}
+          path: .artifacts/deep-audit
+          if-no-files-found: error
       - name: Build production container
         run: docker build --tag the-sfm-trader:${{ github.sha }} .
