@@ -1,0 +1,28 @@
+name: Pinned async audit snapshot
+on:
+  push:
+    branches: [fix/async-state-integrity]
+    paths: [.github/workflows/async-audit-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 60b2421933f1a2495925debfa25fb99246708faf
+          persist-credentials: false
+      - name: Archive tracked baseline only
+        run: |
+          mkdir -p /tmp/async-audit
+          git archive --format=tar.gz --output=/tmp/async-audit/source.tar.gz HEAD
+          git rev-parse HEAD > /tmp/async-audit/revision.txt
+          git ls-tree -r HEAD > /tmp/async-audit/tree.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: async-audit-baseline
+          path: /tmp/async-audit/
+          retention-days: 1
+          if-no-files-found: error
