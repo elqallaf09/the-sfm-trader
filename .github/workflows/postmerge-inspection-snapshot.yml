@@ -1,0 +1,28 @@
+name: Post-merge inspection snapshot
+on:
+  push:
+    branches: [audit/postmerge-39-inspection]
+    paths: [.github/workflows/postmerge-inspection-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 3e7d206395fe19df439ef278f577342706198848
+          persist-credentials: false
+      - name: Archive only tracked pinned source
+        run: |
+          mkdir -p /tmp/sfm-inspection
+          git archive --format=tar.gz --output=/tmp/sfm-inspection/source.tar.gz HEAD
+          git rev-parse HEAD > /tmp/sfm-inspection/revision.txt
+          git ls-tree -r HEAD > /tmp/sfm-inspection/tree.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: postmerge-39-inspection-source
+          path: /tmp/sfm-inspection/
+          retention-days: 1
+          if-no-files-found: error
