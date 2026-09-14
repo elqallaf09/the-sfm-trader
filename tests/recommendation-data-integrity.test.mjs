@@ -17,26 +17,31 @@ test("mixed-market currencies do not fall back to EUR or USD incorrectly", () =>
 });
 
 test("open market buy signal is blocked when the market timestamp is stale", () => {
-  const now = Date.parse("2026-09-14T14:00:00.000Z");
-  const result = finalizeRecommendation({
-    symbol: "AAPL",
-    currency: "USD",
-    action: "buy",
-    actionLabel: "شراء",
-    confidence: 88,
-    reasons: ["اختبار"],
-    dataProvenance: {
-      freshness: "current",
-      marketTimestamp: "2026-09-14T12:30:00.000Z"
-    },
-    dataHealth: { staleFrames: [] },
-    decision: { kind: "buy", badge: "اشتر", title: "فرصة" }
-  }, { currency: "USD", executionMarketId: "us", session: openSession });
+  const originalNow = Date.now;
+  Date.now = () => Date.parse("2026-09-14T14:00:00.000Z");
+  try {
+    const result = finalizeRecommendation({
+      symbol: "AAPL",
+      currency: "USD",
+      action: "buy",
+      actionLabel: "شراء",
+      confidence: 88,
+      reasons: ["اختبار"],
+      dataProvenance: {
+        freshness: "current",
+        marketTimestamp: "2026-09-14T12:30:00.000Z"
+      },
+      dataHealth: { staleFrames: [] },
+      decision: { kind: "buy", badge: "اشتر", title: "فرصة" }
+    }, { currency: "USD", executionMarketId: "us", session: openSession });
 
-  assert.equal(result.action, "hold");
-  assert.equal(result.stalePriceBlocked, true);
-  assert.equal(result.priceFreshness.state, "stale");
-  assert.ok(result.confidence <= 58);
+    assert.equal(result.action, "hold");
+    assert.equal(result.stalePriceBlocked, true);
+    assert.equal(result.priceFreshness.state, "stale");
+    assert.ok(result.confidence <= 58);
+  } finally {
+    Date.now = originalNow;
+  }
 });
 
 test("open market signal is blocked when market timestamp is missing", () => {
@@ -57,9 +62,8 @@ test("open market signal is blocked when market timestamp is missing", () => {
 });
 
 test("fresh open-market price keeps the actionable signal", () => {
-  const now = Date.parse("2026-09-14T14:00:00.000Z");
   const originalNow = Date.now;
-  Date.now = () => now;
+  Date.now = () => Date.parse("2026-09-14T14:00:00.000Z");
   try {
     const result = finalizeRecommendation({
       symbol: "NVDA",
