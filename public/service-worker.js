@@ -1,10 +1,10 @@
-const CACHE_NAME = "the-sfm-trader-v20260914-audit-repair-1";
+const CACHE_NAME = "the-sfm-trader-v20260914-css-syntax-1";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
   "/detail.html",
   "/color-tokens.css?v=20260914-audit-repair-1",
-  "/styles.css?v=20260914-audit-repair-1",
+  "/styles.css?v=20260914-css-syntax-1",
   "/desktop-balance.css?v=20260914-audit-repair-1",
   "/cinema.css?v=20260914-audit-repair-1",
   "/layout-stability.css?v=20260804-home-v3-layout-fix-1",
