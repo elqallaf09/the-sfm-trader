@@ -1,8 +1,9 @@
-import { toNullableNumber } from "./modules/numberValue.js?v=20260914-audit-repair-1";
-import { normalizeQuoteCurrency, resolveQuoteCurrency, inferQuoteCurrency, guardDisplayPayload } from "./modules/marketIntegrity.js?v=20260914-deep-audit-1";
-import { installShellInteractions } from "./modules/shellInteractions.js?v=20260914-issue36-ui-1";
+import { formatQuotePrice } from "./modules/priceFormat.js?v=20260914-issue40-1";
+import { toNullableNumber, toPositiveNumber } from "./modules/numberValue.js?v=20260914-issue40-1";
+import { normalizeQuoteCurrency, resolveQuoteCurrency, inferQuoteCurrency, guardDisplayPayload, canExecuteRecommendation, hasCurrentPriceObservation, filterDiscoveryPayload, isVerifiedShariaItem } from "./modules/marketIntegrity.js?v=20260914-issue40-1";
+import { installShellInteractions } from "./modules/shellInteractions.js?v=20260914-issue40-1";
 import { createMarketFeeds, renderNewsFeed, renderCalendarFeed } from "./modules/marketFeeds.js?v=20260914-audit-repair-1";
-import { calculateFinalScore, getAnalysisMetrics, getRecommendationAction } from "./modules/analysisMetrics.js?v=20260914-audit-repair-1";
+import { calculateFinalScore, getAnalysisMetrics, getRecommendationAction } from "./modules/analysisMetrics.js?v=20260914-issue40-1";
 import { API_TOKEN_STORAGE_KEY, getApiToken, setApiToken, createIdempotencyKey, readStateVersion } from "./modules/apiClient.js?v=20260914-audit-repair-1";
 import { createVisibilityAwarePoller } from "./modules/polling.js?v=20260914-audit-repair-1";
 import { setUiState } from "./modules/uiState.js?v=20260914-audit-repair-1";
@@ -10,7 +11,7 @@ import "./modules/webVitals.js?v=20260914-audit-repair-1";
 import { initMarketBackground } from "./modules/marketBackground.js?v=20260914-audit-repair-1";
 import { getAssetBaseSymbol, getAssetVisual, getPremiumAssetVisual, resolveAssetVisual, getOfficialCompanyName, renderAssetLogo, renderAssetIcon } from "./modules/assetBranding.js?v=20260914-audit-repair-1";
 import { saveDetailReturnContext, readDetailReturnContext, detailPageUrl } from "./modules/detailNavigation.js?v=20260914-audit-repair-1";
-import { createHomeDashboard, getDashboardRecommendations } from "./modules/homeDashboard.js?v=20260914-audit-repair-1";
+import { createHomeDashboard, getDashboardRecommendations } from "./modules/homeDashboard.js?v=20260914-issue40-1";
 import { createInstrumentSearch } from "./modules/instrumentSearch.js?v=20260914-audit-repair-1";
 import { createRecommendationListRenderer } from "./modules/recommendationList.js?v=20260914-audit-repair-1";
 import { createBoundedMemoryCache } from "./modules/boundedMemoryCache.js?v=20260914-audit-repair-1";
@@ -3039,8 +3040,10 @@ function updateAiTradingAgentSummary(data, all = [], buys = [], sells = [], avg 
   }
 }
 
-function renderRecommendations(data) {
-  if (!data) return;
+function renderRecommendations(sourceData) {
+  if (!sourceData) return;
+  const data = filterDiscoveryPayload(sourceData, appSettings.shariaOnly);
+  const observedItems = Array.isArray(sourceData.recommendations) ? sourceData.recommendations : [];
 
   const all = Array.isArray(data.recommendations) ? data.recommendations : [];
   const recommendations = sortRecommendations(filterRecommendations(all));
@@ -3082,13 +3085,13 @@ function renderRecommendations(data) {
   if (activeAppView !== "home") updateRightPanel(all, buys, sells);
   if (activeAppView !== "home") updateMarketOverviewBubbles(all);
   if (data.market?.id === "watchlist") {
-    watchlistData = data;
+    watchlistData = sourceData;
     watchlistLastLoadedAt = Date.now();
   }
   renderActivePanel("قائمة المراقبة", () => renderWatchlist(), watchlistCards);
-  renderActivePanel("المحفظة", () => renderPortfolio(all), portfolioList);
+  renderActivePanel("المحفظة", () => renderPortfolio(observedItems), portfolioList);
   renderActivePanel("آخر إشارات الوكيل", () => renderHistory(), historyList);
-  safeRenderPanel("متابعة الصفقات", () => checkFollowedTrades(all));
+  safeRenderPanel("متابعة الصفقات", () => checkFollowedTrades(observedItems));
   safeRenderPanel("إشعارات السوق", () => checkSmartMarketNotifications(all));
   safeRenderPanel("المراقبة الصوتية", () => checkVoiceMonitors(all));
   if (activeAppView === "home") safeRenderPanel("واجهة قراءة السوق", () => renderTerminalHomeV3(data));
@@ -3310,7 +3313,15 @@ async function analyzeScalpSymbol(rawSymbol) {
 }
 
 function buildScalpDecision(item) {
-  const frames = item?.timeframes || [];
+  if (!canExecuteRecommendation(item)) {
+    return {
+      action: "hold", actionText: "انتظر", statusLabel: "انتظار",
+      confidence: toNullableNumber(item?.confidence), duration: "مراقبة فقط حتى صدور إشارة موثوقة من السيرفر",
+      target: null, stop: null, movePct: null,
+      reasons: [item?.decision?.message || "التنفيذ محجوب أو السعر والجلسة غير متحققين؛ لا يمكن تجاوز قرار السيرفر."]
+    };
+  }
+  const frames = Array.isArray(item?.timeframes) ? item.timeframes : [];
   const oneMinute = frames.find((frame) => frame.id === "1m");
   const fifteenMinute = frames.find((frame) => frame.id === "15m");
   const thirtyMinute = frames.find((frame) => frame.id === "30m");
@@ -3319,12 +3330,17 @@ function buildScalpDecision(item) {
   const dataScore = Number(item?.dataHealth?.score ?? item?.analysisQuality?.score ?? 0);
   const hasDataHealth = Number.isFinite(dataScore) && dataScore > 0;
 
-  if (usableFrames.length < 2 || !Number.isFinite(price) || price <= 0) {
+  const fastFramesCurrent = usableFrames.every(frame => {
+    const timestamp = Number(frame.latestTimestamp) * 1000;
+    const maxAge = frame.id === "1m" ? 10 * 60000 : 45 * 60000;
+    return Number.isFinite(timestamp) && timestamp > 0 && timestamp <= Date.now() + 120000 && Date.now() - timestamp <= maxAge;
+  });
+  if (usableFrames.length < 2 || !fastFramesCurrent || !Number.isFinite(price) || price <= 0) {
     return {
       action: "hold",
       actionText: "انتظر",
       statusLabel: "انتظار",
-      confidence: 45,
+      confidence: null,
       duration: "5 إلى 15 دقيقة مراقبة فقط",
       target: null,
       stop: null,
@@ -3378,7 +3394,7 @@ function buildScalpDecision(item) {
   const confirmationBoost = thirtyMinute?.action === oneMinute.action ? 5 : 0;
   const averageConfidence = Math.round((Number(oneMinute.confidence || 0) + Number(fifteenMinute.confidence || 0)) / 2);
   const confidence = clamp(averageConfidence + confirmationBoost, 45, 92);
-  const action = fastAgreement && !thirtyOpposite && confidence >= 58 && (!hasDataHealth || dataScore >= 55) ? oneMinute.action : "hold";
+  const action = fastAgreement && oneMinute.action === item.action && !thirtyOpposite && confidence >= 58 && (!hasDataHealth || dataScore >= 55) ? oneMinute.action : "hold";
   const movePct = action === "hold" ? 0 : clamp(0.0012 + ((confidence - 55) / 10000), 0.0012, 0.008);
   const stopPct = movePct * 0.68;
   const direction = action === "sell" ? -1 : 1;
@@ -3404,9 +3420,9 @@ function buildScalpDecision(item) {
 function renderScalpResult(item, scalp) {
   const actionClass = `scalp-action-${scalp.action}`;
   const currency = normalizeDisplayCurrency(item.currency, item.symbol);
-  const current = formatMoney(item.currentPrice, currency);
-  const target = scalp.target ? formatMoney(scalp.target, currency) : "--";
-  const stop = scalp.stop ? formatMoney(scalp.stop, currency) : "--";
+  const current = formatMoney(item.currentPrice, currency, { symbol: item.symbol });
+  const target = scalp.target ? formatMoney(scalp.target, currency, { symbol: item.symbol }) : "--";
+  const stop = scalp.stop ? formatMoney(scalp.stop, currency, { symbol: item.symbol }) : "--";
 
   scalpResult.innerHTML = `
     <article class="scalp-card ${actionClass}">
@@ -3632,7 +3648,7 @@ function setHomeDashboardState(kind = "loading") {
 function getHomeDashboard() {
   homeDashboard ||= createHomeDashboard({
     calculateFinalScore, clamp, localizeUiText, formatNumber, formatPercent,
-    formatDateTime, formatMoney, getMarketPulse, attachDetailOpeners, isEnglishLanguage,
+    formatDateTime, formatMoney: (...args) => formatMoney(...args), getMarketPulse, attachDetailOpeners, isEnglishLanguage,
     getFollowedEntries: () => recommendationHistory.filter(entry => followedTradeKeys.has(entry.key)),
     reload: () => loadRecommendations({ force: true, skipGrace: true })
   });
@@ -3648,6 +3664,7 @@ function setTerminalHomeV3State(kind = "loading") {
 }
 
 function renderTerminalHomeV3(data = {}) {
+  data = filterDiscoveryPayload(data, appSettings.shariaOnly);
   const calendar = getMarketFeeds().snapshot().calendar;
   getHomeDashboard().render({ ...data, economicCalendar: calendar.dataState === "loading" ? data.economicCalendar : calendar });
 }
@@ -3809,7 +3826,7 @@ function filterRecommendations(items) {
       ? terminalSearchController.matches(item, query)
       : `${item.name} ${item.symbol}`.toLowerCase().includes(query));
     const matchesMode = isRecommendationInMode(item);
-    return matchesFilter && matchesSharia && matchesQuery && matchesMode && (!appSettings.shariaOnly || item.shariaStatus === "compliant");
+    return matchesFilter && matchesSharia && matchesQuery && matchesMode && (!appSettings.shariaOnly || isVerifiedShariaItem(item));
   });
 }
 
@@ -4509,7 +4526,7 @@ function renderGoldenOpportunities(data) {
       const backtestOk = Number(item.backtest?.winRate || 0) >= 55;
       return (
         item.action === "buy" &&
-        item.shariaStatus === "compliant" &&
+        isVerifiedShariaItem(item) &&
         item.risk?.level !== "high" &&
         backtestOk &&
         score.score >= 70
@@ -4572,7 +4589,7 @@ async function loadWatchlistData(force = false) {
       fallbackMessage: "تعذر تحميل قائمة المراقبة. تأكد أن السيرفر يعمل ثم حاول مرة ثانية."
     });
 
-    watchlistData = data;
+    watchlistData = guardDisplayPayload(data);
     watchlistLastLoadedAt = Date.now();
   } catch (error) {
     const message = getFriendlyFetchError(error, "تعذر تحميل قائمة المراقبة. تأكد أن السيرفر يعمل ثم حاول مرة ثانية.");
@@ -4587,6 +4604,7 @@ async function loadWatchlistData(force = false) {
   } finally {
     watchlistLoading = false;
     renderWatchlist();
+    renderPortfolio([...(lastData?.recommendations || []), ...(watchlistData?.recommendations || [])]);
   }
 }
 
@@ -4682,13 +4700,18 @@ function renderPortfolio(currentItems = []) {
 
   portfolioList.innerHTML = portfolio.map((position) => {
     const item = lookup.get(position.symbol);
-    const currentPrice = Number(item?.currentPrice);
-    const hasPrice = Number.isFinite(currentPrice);
-    const cost = Number(position.qty) * Number(position.buyPrice);
-    const value = hasPrice ? Number(position.qty) * currentPrice : null;
-    const profit = hasPrice ? value - cost : null;
-    const profitPct = hasPrice && cost > 0 ? (profit / cost) * 100 : null;
-    const resultClass = profit >= 0 ? "profit" : "loss";
+    const currentPrice = toPositiveNumber(item?.currentPrice);
+    const qty = toPositiveNumber(position.qty);
+    const buyPrice = toPositiveNumber(position.buyPrice);
+    const costCurrency = normalizeQuoteCurrency(position.currency || position.buyCurrency) || inferQuoteCurrency(position.symbol);
+    const quoteCurrency = normalizeQuoteCurrency(item?.currency);
+    const hasPrice = currentPrice !== null;
+    const sameUnit = Boolean(costCurrency && quoteCurrency && costCurrency === quoteCurrency);
+    const cost = qty !== null && buyPrice !== null ? qty * buyPrice : null;
+    const value = hasPrice && qty !== null && sameUnit ? qty * currentPrice : null;
+    const profit = value !== null && cost !== null ? toNullableNumber(value - cost) : null;
+    const profitPct = profit !== null && cost > 0 ? toNullableNumber((profit / cost) * 100) : null;
+    const resultClass = profit === null ? "" : profit >= 0 ? "profit" : "loss";
     const visual = getPremiumAssetVisual({ symbol: position.symbol, name: item?.name || position.symbol });
 
     return `
@@ -4702,11 +4725,11 @@ function renderPortfolio(currentItems = []) {
         </div>
         <div>
           <span>الكمية</span>
-          <strong>${formatNumber(position.qty, { maximumFractionDigits: 4 })}</strong>
+          <strong>${formatNumber(position.qty, { maximumFractionDigits: 12 })}</strong>
         </div>
         <div>
           <span>سعر الشراء</span>
-          <strong>${formatMoney(position.buyPrice, item?.currency || "USD")}</strong>
+          <strong>${formatMoney(buyPrice, costCurrency, { symbol: position.symbol })}</strong>
         </div>
         <div>
           <span>السعر الحالي</span>
@@ -4714,7 +4737,7 @@ function renderPortfolio(currentItems = []) {
         </div>
         <div>
           <span>الربح / الخسارة</span>
-          <strong class="${resultClass}">${hasPrice ? `${formatMoney(profit, item.currency)} · ${formatPercent(profitPct)}` : "--"}</strong>
+          <strong class="${resultClass}">${profit !== null && profitPct !== null ? `${formatMoney(profit, costCurrency)} · ${formatPercent(profitPct)}` : "--"}</strong>
         </div>
         <button class="portfolio-remove" type="button" data-remove-position="${escapeHtml(position.id)}">حذف</button>
       </article>
@@ -4740,7 +4763,10 @@ function addPortfolioPosition(event) {
     id: `${symbol}-${Date.now()}`,
     symbol,
     qty,
-    buyPrice
+    buyPrice,
+    // Cost unit is captured once, never relabeled using a later quote.
+    currency: normalizeQuoteCurrency(document.querySelector("#portfolio-currency")?.value)
+      || resolveQuoteCurrency(symbol, getRecommendationLookup([...(lastData?.recommendations || []), ...(watchlistData?.recommendations || [])]).get(symbol)?.currency)
   };
 
   portfolio = [position, ...portfolio].slice(0, 60);
@@ -4754,6 +4780,8 @@ function addPortfolioPosition(event) {
   portfolioSymbol.value = "";
   portfolioQty.value = "";
   portfolioPrice.value = "";
+  const costUnitInput = document.querySelector("#portfolio-currency");
+  if (costUnitInput) costUnitInput.value = "";
   renderWatchlist();
   loadWatchlistData(true);
   renderPortfolio(lastData?.recommendations || []);
@@ -4772,20 +4800,24 @@ function updateRecommendationHistory(items) {
   const byKey = new Map(recommendationHistory.map((entry) => [entry.key, entry]));
 
   for (const item of items) {
+    if (!canExecuteRecommendation(item)) continue;
     const key = `${item.symbol}:${item.action}`;
     const existing = byKey.get(key);
-    const entryPrice = Number(existing?.entryPrice ?? existing?.currentPrice ?? item.currentPrice);
-    const expectedPrice = Number(existing?.expectedPrice ?? item.expectedPrice);
-    const target1 = Number(existing?.target1 ?? item.target1 ?? item.expectedPrice);
-    const target2 = Number(existing?.target2 ?? item.target2 ?? item.expectedPrice);
-    const stopLoss = Number(existing?.stopLoss ?? item.stopLoss);
-    const lastPrice = Number(item.currentPrice);
-    const targetHit = existing?.targetHit || isTargetHit(item.action, lastPrice, target1);
-    const stopHit = existing?.stopHit || isStopHit(item.action, lastPrice, stopLoss);
+    // Existing entry and thresholds stay immutable, including missing values.
+    const entryPrice = toPositiveNumber(existing ? existing.entryPrice ?? existing.currentPrice : item.currentPrice);
+    const expectedPrice = toPositiveNumber(existing ? existing.expectedPrice : item.expectedPrice);
+    const target1 = toPositiveNumber(existing ? existing.target1 ?? existing.expectedPrice : item.target1 ?? item.expectedPrice);
+    const target2 = toPositiveNumber(existing ? existing.target2 : item.target2);
+    const stopLoss = toPositiveNumber(existing ? existing.stopLoss : item.stopLoss);
+    if (existing?.currency && existing.currency !== item.currency) continue;
+    const lastPrice = toPositiveNumber(item.currentPrice);
+    if (lastPrice === null || entryPrice === null) continue;
+    const targetHit = target1 !== null && (existing?.targetHit === true || isTargetHit(item.action, lastPrice, target1));
+    const stopHit = stopLoss !== null && (existing?.stopHit === true || isStopHit(item.action, lastPrice, stopLoss));
     const observedReturnPct = getObservedReturnPct(item.action, entryPrice, lastPrice);
     const bestPrice = pickBestObservedPrice(item.action, existing?.bestPrice, lastPrice);
     const worstPrice = pickWorstObservedPrice(item.action, existing?.worstPrice, lastPrice);
-    const outcome = targetHit ? "target" : stopHit ? "stop" : "pending";
+    const outcome = existing?.outcome === "stop" && stopHit ? "stop" : targetHit ? "target" : stopHit ? "stop" : "pending";
 
     byKey.set(key, {
       key,
@@ -4809,8 +4841,8 @@ function updateRecommendationHistory(items) {
       targetHit,
       stopHit,
       outcome,
-      hitAt: existing?.hitAt || (targetHit ? now : null),
-      stopAt: existing?.stopAt || (stopHit ? now : null),
+      hitAt: targetHit ? existing?.hitAt || now : null,
+      stopAt: stopHit ? existing?.stopAt || now : null,
       observedReturnPct,
       bestPrice,
       worstPrice
@@ -5225,10 +5257,10 @@ function checkFollowedTrades(items) {
     const current = bySymbol.get(entry.symbol.toUpperCase());
     if (!current) continue;
 
-    if (current.executionBlocked || ["stale","unknown"].includes(current.priceFreshness?.state)) continue;
-    const currentPrice = Number(current.currentPrice);
-    const targetPrice = Number(entry.target1 ?? entry.expectedPrice);
-    const stopPrice = Number(entry.stopLoss);
+    if (!hasCurrentPriceObservation(current)) continue;
+    const currentPrice = toPositiveNumber(current.currentPrice);
+    const targetPrice = toPositiveNumber(entry.target1 ?? entry.expectedPrice);
+    const stopPrice = toPositiveNumber(entry.stopLoss);
     const targetHitNow = isTargetHit(entry.action, currentPrice, targetPrice);
     const stopHitNow = isStopHit(entry.action, currentPrice, stopPrice);
     const actionChanged = current.action && current.action !== entry.action;
@@ -5476,7 +5508,7 @@ function checkSmartMarketNotifications(items = []) {
   const nowHour = new Date().toISOString().slice(0, 13);
   let emitted = false;
   const nextState = { ...(recommendationSignalState && typeof recommendationSignalState === "object" ? recommendationSignalState : {}) };
-  const tradable = items.filter((item) => item.action === "buy" || item.action === "sell");
+  const tradable = items.filter(item => canExecuteRecommendation(item));
   const strongest = [...tradable]
     .filter((item) => item.confidence >= 82 && getDataHealthScore(item) >= 58 && !item.timeframeConsensus?.conflict)
     .sort((a, b) => getAnalysisModeScore(b) - getAnalysisModeScore(a))
@@ -6569,6 +6601,7 @@ function applyVoiceMarketData(data, marketId) {
 }
 
 function buildLocalRecommendationReply(data, intent) {
+  data = filterDiscoveryPayload(guardDisplayPayload(data), appSettings.shariaOnly);
   const items = data.recommendations || [];
   const marketLabel = data.market?.label || "السوق";
 
@@ -6922,6 +6955,7 @@ function checkVoiceMonitors(items) {
     const item = lookup.get(symbol.toUpperCase());
     if (!item) continue;
 
+    if (!canExecuteRecommendation(item)) continue;
     const isStrongBuy = item.action === "buy" && item.confidence >= 70;
     const isStrongSell = item.action === "sell" && item.confidence >= 75;
     if (!isStrongBuy && !isStrongSell) continue;
@@ -6980,8 +7014,8 @@ function getRecommendationLookup(items) {
 }
 
 function isTargetHit(action, currentPrice, expectedPrice) {
-  const current = Number(currentPrice);
-  const expected = Number(expectedPrice);
+  const current = toPositiveNumber(currentPrice);
+  const expected = toPositiveNumber(expectedPrice);
   if (!Number.isFinite(current) || !Number.isFinite(expected)) return false;
   if (action === "buy") return current >= expected;
   if (action === "sell") return current <= expected;
@@ -6989,8 +7023,8 @@ function isTargetHit(action, currentPrice, expectedPrice) {
 }
 
 function isStopHit(action, currentPrice, stopLoss) {
-  const current = Number(currentPrice);
-  const stop = Number(stopLoss);
+  const current = toPositiveNumber(currentPrice);
+  const stop = toPositiveNumber(stopLoss);
   if (!Number.isFinite(current) || !Number.isFinite(stop)) return false;
   if (action === "buy") return current <= stop;
   if (action === "sell") return current >= stop;
@@ -6998,49 +7032,49 @@ function isStopHit(action, currentPrice, stopLoss) {
 }
 
 function getObservedReturnPct(action, entryPrice, currentPrice) {
-  const entry = Number(entryPrice);
-  const current = Number(currentPrice);
-  if (!Number.isFinite(entry) || !Number.isFinite(current) || entry <= 0) return 0;
+  const entry = toPositiveNumber(entryPrice);
+  const current = toPositiveNumber(currentPrice);
+  if (!Number.isFinite(entry) || !Number.isFinite(current) || entry <= 0) return null;
   const raw = ((current - entry) / entry) * 100;
   return action === "sell" ? -raw : raw;
 }
 
 function renderHistoryReturn(entry) {
   const value = getHistoryReturnPct(entry);
-  const isFresh = Number.isFinite(Number(entry.lastPrice));
-  const className = value >= 0 ? "profit" : "loss";
+  const isFresh = toPositiveNumber(entry.lastPrice) !== null;
+  const className = value === null ? "" : value >= 0 ? "profit" : "loss";
   const suffix = !isFresh && entry.outcome === "pending" ? " · بانتظار تحديث السعر" : "";
   return `<strong class="${className}">${formatPercent(value)}${suffix}</strong>`;
 }
 
 function getHistoryReturnPct(entry) {
-  const entryPrice = Number(entry.entryPrice ?? entry.currentPrice);
-  const lastPrice = Number(entry.lastPrice ?? entry.currentPrice);
+  const entryPrice = toPositiveNumber(entry.entryPrice ?? entry.currentPrice);
+  const lastPrice = toPositiveNumber(entry.lastPrice);
 
   if (entry.outcome === "target" || entry.targetHit) {
-    const target = Number(entry.target1 ?? entry.expectedPrice);
-    if (Number.isFinite(target)) return getObservedReturnPct(entry.action, entryPrice, target);
+    const target = toPositiveNumber(entry.target1 ?? entry.expectedPrice);
+    if (target !== null) return getObservedReturnPct(entry.action, entryPrice, target);
   }
 
   if (entry.outcome === "stop" || entry.stopHit) {
-    const stop = Number(entry.stopLoss);
-    if (Number.isFinite(stop)) return getObservedReturnPct(entry.action, entryPrice, stop);
+    const stop = toPositiveNumber(entry.stopLoss);
+    if (stop !== null) return getObservedReturnPct(entry.action, entryPrice, stop);
   }
 
   return getObservedReturnPct(entry.action, entryPrice, lastPrice);
 }
 
 function pickBestObservedPrice(action, existing, currentPrice) {
-  const current = Number(currentPrice);
-  const previous = Number(existing);
+  const current = toPositiveNumber(currentPrice);
+  const previous = toPositiveNumber(existing);
   if (!Number.isFinite(current)) return Number.isFinite(previous) ? previous : null;
   if (!Number.isFinite(previous)) return current;
   return action === "sell" ? Math.min(previous, current) : Math.max(previous, current);
 }
 
 function pickWorstObservedPrice(action, existing, currentPrice) {
-  const current = Number(currentPrice);
-  const previous = Number(existing);
+  const current = toPositiveNumber(currentPrice);
+  const previous = toPositiveNumber(existing);
   if (!Number.isFinite(current)) return Number.isFinite(previous) ? previous : null;
   if (!Number.isFinite(previous)) return current;
   return action === "sell" ? Math.max(previous, current) : Math.min(previous, current);
@@ -7182,22 +7216,8 @@ function drawSparkline(canvas, values = [], action) {
   context.fill();
 }
 
-function formatMoney(value, currency) {
-  if (value === null || value === undefined || value === "") {
-    return "--";
-  }
-
-  const number = Number(value);
-  if (!Number.isFinite(number)) {
-    return "--";
-  }
-
-  const normalizedCurrency = normalizeCurrencyCode(currency);
-  const digits = Math.abs(number) < 1 ? 4 : 2;
-  return `${formatNumber(number, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits
-  })}${normalizedCurrency ? ` ${normalizedCurrency}` : ""}`;
+function formatMoney(value, currency, options = {}) {
+  return formatQuotePrice(value, currency, { locale: isEnglishLanguage() ? "en-US" : "ar-KW", unavailable: localizeUiText("غير متاح"), ...options });
 }
 
 function normalizeCurrencyCode(currency) {
@@ -7349,26 +7369,9 @@ function normalizeDisplayCurrency(currency, symbol) {
   return normalizeCurrencyCode(currency) || inferDisplayCurrencyFromSymbol(symbol);
 }
 
-formatMoney = function formatMoney(value, currency) {
-  const numeric = toNullableNumber(value);
-  if (numeric === null) return sfmAcceptanceIsEnglish() ? "Unavailable" : "غير متاح";
-  const normalizedCurrency = normalizeCurrencyCode(currency);
-  const locale = latinLocale(sfmAcceptanceIsEnglish() ? "en-US" : "ar-KW");
-  const fractionDigits = Math.abs(numeric) >= 1000 ? 2 : 3;
-  if (!normalizedCurrency) {
-    return normalizeDigits(new Intl.NumberFormat(locale, { numberingSystem: "latn", maximumFractionDigits: fractionDigits }).format(numeric));
-  }
-  try {
-    return normalizeDigits(new Intl.NumberFormat(locale, {
-      numberingSystem: "latn",
-      style: "currency",
-      currency: normalizedCurrency,
-      maximumFractionDigits: fractionDigits
-    }).format(numeric));
-  } catch (error) {
-    return normalizeDigits(`${new Intl.NumberFormat(locale, { numberingSystem: "latn", maximumFractionDigits: fractionDigits }).format(numeric)} ${normalizedCurrency}`);
-  }
-}
+formatMoney = function formatMoney(value, currency, options = {}) {
+  return formatQuotePrice(value, currency, { locale: isEnglishLanguage() ? "en-US" : "ar-KW", unavailable: localizeUiText("غير متاح"), ...options });
+};
 
 renderHistory = function renderHistory() {
   if (!historyList) return;
@@ -7383,7 +7386,7 @@ renderHistory = function renderHistory() {
 getHistoryGroups = function getHistoryGroups() {
   const values = Array.isArray(recommendationHistory) ? recommendationHistory : [];
   const sorted = values.slice().sort((a, b) => sfmTradeTimestamp(b) - sfmTradeTimestamp(a));
-  const isWaitingTrade = (entry) => entry?.outcome === "pending" && (entry?.marketClosed || String(entry?.action || "").toLowerCase() === "hold" || !Number.isFinite(Number(entry?.lastPrice ?? entry?.currentPrice)));
+  const isWaitingTrade = (entry) => entry?.outcome === "pending" && (entry?.marketClosed || String(entry?.action || "").toLowerCase() === "hold" || toPositiveNumber(entry?.lastPrice) === null);
   const isActiveTrade = (entry) => entry?.outcome === "pending" && !isWaitingTrade(entry);
   const groups = [
     {
@@ -7463,7 +7466,7 @@ renderHistoryItem = function renderHistoryItem(entry) {
   const target = sfmFormatHistoryMoney(entry?.target1 ?? entry?.expectedPrice, currency);
   const stop = sfmFormatHistoryMoney(entry?.stopLoss, currency);
   const confidence = Number.isFinite(Number(entry?.confidence)) ? `${Math.round(Number(entry.confidence))}%` : "-";
-  const pnlValue = typeof getHistoryReturnPct === "function" ? Number(getHistoryReturnPct(entry)) : Number(entry?.returnPct);
+  const pnlValue = typeof getHistoryReturnPct === "function" ? toNullableNumber(getHistoryReturnPct(entry)) : Number(entry?.returnPct);
   const pnl = Number.isFinite(pnlValue) ? `${pnlValue >= 0 ? "+" : ""}${pnlValue.toFixed(2)}%` : "-";
   const pnlClass = Number.isFinite(pnlValue) ? (pnlValue >= 0 ? "is-profit" : "is-loss") : "";
   const status = sfmFormatTradeStatus(entry);
@@ -7989,34 +7992,8 @@ normalizeDisplayCurrency = function normalizeDisplayCurrency(currency, symbol) {
   return resolveQuoteCurrency(symbol, currency);
 };
 
-formatMoney = function formatMoney(value, currency) {
-  const numeric = toNullableNumber(value);
-  if (numeric === null) return sfmFinalIsEnglish() ? "Unavailable" : "غير متاح";
-  const normalizedCurrency = normalizeCurrencyCode(currency);
-  const locale = latinLocale(sfmFinalIsEnglish() ? "en-US" : "ar-KW");
-  const fractionDigits = Math.abs(numeric) >= 1000 ? 2 : Math.abs(numeric) >= 10 ? 2 : 3;
-  if (!normalizedCurrency) {
-    return normalizeDigits(new Intl.NumberFormat(locale, {
-      numberingSystem: "latn",
-      minimumFractionDigits: fractionDigits,
-      maximumFractionDigits: fractionDigits
-    }).format(numeric));
-  }
-  try {
-    return normalizeDigits(new Intl.NumberFormat(locale, {
-      numberingSystem: "latn",
-      style: "currency",
-      currency: normalizedCurrency,
-      minimumFractionDigits: fractionDigits,
-      maximumFractionDigits: fractionDigits
-    }).format(numeric));
-  } catch {
-    return normalizeDigits(`${new Intl.NumberFormat(locale, {
-      numberingSystem: "latn",
-      minimumFractionDigits: fractionDigits,
-      maximumFractionDigits: fractionDigits
-    }).format(numeric)} ${normalizedCurrency}`);
-  }
+formatMoney = function formatMoney(value, currency, options = {}) {
+  return formatQuotePrice(value, currency, { locale: isEnglishLanguage() ? "en-US" : "ar-KW", unavailable: localizeUiText("غير متاح"), ...options });
 };
 
 function sfmFinalNormalizeAssetCurrency(item) {
@@ -8144,7 +8121,7 @@ function sfmFinalTradeStatus(entry) {
 }
 
 function sfmFinalTradePnl(entry) {
-  const value = typeof getHistoryReturnPct === "function" ? Number(getHistoryReturnPct(entry)) : Number(entry?.observedReturnPct || 0);
+  const value = typeof getHistoryReturnPct === "function" ? toNullableNumber(getHistoryReturnPct(entry)) : toNullableNumber(entry?.observedReturnPct);
   if (!Number.isFinite(value)) return { label: "-", className: "" };
   return { label: `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`, className: value >= 0 ? "is-profit" : "is-loss" };
 }
@@ -8152,7 +8129,7 @@ function sfmFinalTradePnl(entry) {
 function sfmFinalGetTradeGroups() {
   const values = Array.isArray(recommendationHistory) ? recommendationHistory.map(sfmFinalNormalizeAssetCurrency) : [];
   const sorted = values.slice().sort((a, b) => sfmFinalTradeTimestamp(b, "lastSeen") - sfmFinalTradeTimestamp(a, "lastSeen"));
-  const waiting = (entry) => entry?.outcome === "pending" && (entry?.marketClosed || String(entry?.action || "").toLowerCase() === "hold" || !Number.isFinite(Number(entry?.lastPrice ?? entry?.currentPrice)));
+  const waiting = (entry) => entry?.outcome === "pending" && (entry?.marketClosed || String(entry?.action || "").toLowerCase() === "hold" || toPositiveNumber(entry?.lastPrice) === null);
   const active = (entry) => entry?.outcome === "pending" && !waiting(entry);
   return [
     {
@@ -8161,7 +8138,7 @@ function sfmFinalGetTradeGroups() {
       titleEn: "Winning trades",
       hintAr: "صفقات وصلت إلى الهدف أو حققت ربحا في السجل.",
       hintEn: "Trades that reached target or currently show profit.",
-      items: sorted.filter((entry) => entry?.outcome === "target" || Number(getHistoryReturnPct(entry)) > 0).slice(0, 40)
+      items: sorted.filter((entry) => entry?.outcome === "target" || toNullableNumber(getHistoryReturnPct(entry)) > 0).slice(0, 40)
     },
     {
       key: "losing",
@@ -8169,7 +8146,7 @@ function sfmFinalGetTradeGroups() {
       titleEn: "Losing trades",
       hintAr: "صفقات وصلت إلى وقف الخسارة أو تظهر خسارة في السجل.",
       hintEn: "Trades that hit stop loss or currently show loss.",
-      items: sorted.filter((entry) => entry?.outcome === "stop" || Number(getHistoryReturnPct(entry)) < 0).slice(0, 40)
+      items: sorted.filter((entry) => entry?.outcome === "stop" || toNullableNumber(getHistoryReturnPct(entry)) < 0).slice(0, 40)
     },
     {
       key: "waiting",
@@ -8273,7 +8250,7 @@ function sfmFinalRenderTradeRow(rawEntry) {
       <span>${sfmFormatHistoryMoney(entry?.entryPrice ?? entry?.currentPrice, currency)}</span>
       <span>${sfmFormatHistoryMoney(entry?.lastPrice ?? entry?.currentPrice, currency)}</span>
       <span>${sfmFormatHistoryMoney(entry?.target1 ?? entry?.expectedPrice, currency)}</span>
-      <span>${Number.isFinite(Number(entry?.stopLoss)) ? sfmFormatHistoryMoney(entry.stopLoss, currency) : "-"}</span>
+      <span>${toPositiveNumber(entry?.stopLoss) !== null ? sfmFormatHistoryMoney(entry.stopLoss, currency) : "-"}</span>
       <span>${Number.isFinite(Number(entry?.confidence)) ? `${Math.round(Number(entry.confidence))}%` : "-"}</span>
       <span class="${pnl.className}">${pnl.label}</span>
       <span class="trade-status-cell">

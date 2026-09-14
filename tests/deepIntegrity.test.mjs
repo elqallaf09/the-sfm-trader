@@ -70,7 +70,7 @@ test('Sharia screening requires matching symbol, source and actual valid screeni
 test('stale browser fallback cannot retain actionable recommendations; cached is not stale',()=>{
  const raw={recommendations:[item],smartAlerts:[item]};
  const stale=guardDisplayPayload({...raw,stale:true});assert.equal(stale.recommendations[0].action,'hold');assert.deepEqual(stale.smartAlerts,[]);
- assert.equal(guardDisplayPayload({...raw,cached:true}).recommendations[0].action,'buy');assert.equal(raw.recommendations[0].action,'buy');
+ assert.equal(guardDisplayPayload({...raw,cached:true,recommendations:[{...item,executionSession:{isOpen:true},priceFreshness:{state:"current",marketTimestamp:item.dataProvenance.marketTimestamp,maxAgeSeconds:1200}}]},now).recommendations[0].action,'buy');assert.equal(raw.recommendations[0].action,'buy');
 });
 test('Home tolerates null calendars, missing forecasts and partial empty responses',()=>{
  const dom=new JSDOM('<section id="terminal-home-v3"><span id="v3-pulse-change"></span><div id="v3-pulse-chart"></div><div id="v3-calendar-list"></div></section>');

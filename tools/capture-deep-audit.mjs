@@ -108,3 +108,6 @@ try{
 assert.deepEqual(errors,[],'Unhandled browser exceptions');
 assert.deepEqual(failures,[],'Deep interaction failures');
 console.log('Deep audit passed',checks.length,'scenario groups.');
+
+// Issue #40 adds assertions for defects reproduced after the initial deep audit.
+await import("./capture-issue40.mjs");

@@ -5,3 +5,9 @@ export function toNullableNumber(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }
+
+// Trading thresholds and quoted asset prices must be finite and positive.
+export function toPositiveNumber(value) {
+  const number = toNullableNumber(value);
+  return number !== null && number > 0 ? number : null;
+}
