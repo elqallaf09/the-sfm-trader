@@ -1,6 +1,7 @@
-import { toNullableNumber } from "./modules/numberValue.js?v=20260914-audit-repair-1";
-import { normalizeQuoteCurrency } from "./modules/marketIntegrity.js?v=20260914-deep-audit-1";
-import { getAnalysisMetrics } from "./modules/analysisMetrics.js?v=20260914-audit-repair-1";
+import { formatQuotePrice } from "./modules/priceFormat.js?v=20260914-issue40-1";
+import { toNullableNumber } from "./modules/numberValue.js?v=20260914-issue40-1";
+import { normalizeQuoteCurrency } from "./modules/marketIntegrity.js?v=20260914-issue40-1";
+import { getAnalysisMetrics } from "./modules/analysisMetrics.js?v=20260914-issue40-1";
 import { navigateBackFromDetail, safeHomeUrl } from "./modules/detailNavigation.js?v=20260914-audit-repair-1";
 import { API_TOKEN_STORAGE_KEY } from "./modules/apiClient.js?v=20260914-audit-repair-1";
 import { setUiState } from "./modules/uiState.js?v=20260914-audit-repair-1";
@@ -1314,15 +1315,7 @@ window.addEventListener("storage", (event) => {
 });
 
 function formatMoney(value, currency) {
-  if (value === null || value === undefined || value === "") return "--";
-  const number = Number(value);
-  if (!Number.isFinite(number)) return "--";
-  const normalizedCurrency = normalizeCurrencyCode(currency);
-  const digits = Math.abs(number) < 1 ? 4 : 2;
-  return `${formatNumber(number, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits
-  })}${normalizedCurrency ? ` ${normalizedCurrency}` : ""}`;
+  return formatQuotePrice(value, currency, { locale: NUMBER_LOCALE });
 }
 
 function formatDateTime(value) {

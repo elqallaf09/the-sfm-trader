@@ -42,18 +42,67 @@ export function isoTimestampMs(value) {
   return Number.isFinite(ms) && ms > 0 ? ms : null;
 }
 
-// Browser fallback data is for observation only, never a fresh executable signal.
-export function guardDisplayPayload(data) {
+// Browser fallback data is for observation only, never an executable signal.
+export function guardRecommendationForDisplay(item, { stale = false, now = Date.now() } = {}) {
+  if (!item || typeof item !== 'object') return item;
+  const blocked = stale || item.executionBlocked || item.marketClosed || item.stalePriceBlocked
+    || item.economicNewsRisk?.blockTrading || item.tradePlan?.executionBlocked
+    || ['stale','unknown','closed'].includes(item.priceFreshness?.state)
+    || (['buy','sell'].includes(item.action) && !canExecuteRecommendation(item, now));
+  if (!blocked) return item;
+  const message = stale ? 'اتصال متقطع؛ هذه بيانات محفوظة للمراقبة فقط.'
+    : item.decision?.message || 'انتظر سعراً حديثاً وقرار تنفيذ موثوقاً من السيرفر.';
+  return {...item, setupAction:item.setupAction || item.action, action:'hold', actionLabel:'انتظار', executionBlocked:true,
+    tradePlan:item.tradePlan ? {...item.tradePlan,action:'hold',executionBlocked:true} : item.tradePlan,
+    decision:{...(item.decision || {}),kind:'hold',badge:'انتظار',title:'بيانات للمراقبة فقط',message,summary:message}};
+}
+
+export function guardDisplayPayload(data, now = Date.now()) {
   if (!data || typeof data !== 'object') return data;
-  const blocked = data.stale === true;
-  const guard = item => {
-    if (!item || typeof item !== 'object') return item;
-    if (!blocked && !item.executionBlocked && !['stale','unknown'].includes(item.priceFreshness?.state)) return item;
-    return {...item,setupAction:item.setupAction || item.action,action:'hold',actionLabel:'انتظار',executionBlocked:true,
-      tradePlan:item.tradePlan ? {...item.tradePlan,action:'hold',executionBlocked:true} : item.tradePlan,
-      decision:{...(item.decision || {}),kind:'hold',badge:'انتظار',title:'بيانات للمراقبة فقط',message:'انتظر سعراً حديثاً قبل اتخاذ قرار تنفيذ.'}};
-  };
+  const stale = data.stale === true;
+  const guard = item => guardRecommendationForDisplay(item, { stale, now });
   const recommendations = Array.isArray(data.recommendations) ? data.recommendations.map(guard) : [];
-  return {...data,recommendations,smartAlerts:blocked ? [] : data.smartAlerts,
-    opportunityRadar:blocked ? {} : data.opportunityRadar};
+  const radar = value => {
+    if (Array.isArray(value)) return value.map(radar);
+    if (!value || typeof value !== 'object') return value;
+    if (value.symbol) return guard(value);
+    return Object.fromEntries(Object.entries(value).map(([key,nested])=>[key,radar(nested)]));
+  };
+  return {...data,recommendations,
+    smartAlerts:stale ? [] : (data.smartAlerts || []).filter(item=>canExecuteRecommendation(item,now)),
+    opportunityRadar:stale ? {} : radar(data.opportunityRadar)};
+}
+
+export function hasCurrentPriceObservation(item, now = Date.now()) {
+  if (!item || item.executionBlocked || item.marketClosed || item.stalePriceBlocked
+      || item.stale || item.economicNewsRisk?.blockTrading || item.tradePlan?.executionBlocked) return false;
+  if (item.executionSession?.isOpen !== true || item.priceFreshness?.state !== 'current') return false;
+  const value = item.currentPrice;
+  const price = (typeof value === 'number' || (typeof value === 'string' && value.trim())) ? Number(value) : NaN;
+  const timestamp = isoTimestampMs(item.priceFreshness.marketTimestamp || item.dataProvenance?.marketTimestamp);
+  const maxAge = Number(item.priceFreshness.maxAgeSeconds);
+  return Number.isFinite(price) && price > 0 && timestamp !== null && timestamp <= now + 120000
+    && Number.isFinite(maxAge) && maxAge > 0 && now - timestamp <= maxAge * 1000;
+}
+
+// A derived view may downgrade the server decision, never upgrade Hold to Buy/Sell.
+export function canExecuteRecommendation(item, now = Date.now()) {
+  return ['buy', 'sell'].includes(item?.action) && hasCurrentPriceObservation(item, now);
+}
+
+export function isVerifiedShariaItem(item) {
+  return item?.shariaStatus === 'compliant' && item.shariaVerified === true;
+}
+
+// Apply preferences only to discovery surfaces, never to saved holdings/history.
+export function filterDiscoveryPayload(data, shariaOnly = false) {
+  if (!shariaOnly || !data || typeof data !== 'object') return data;
+  const filter = value => {
+    if (Array.isArray(value)) return value.filter(item => !item?.symbol || isVerifiedShariaItem(item)).map(filter);
+    if (!value || typeof value !== 'object') return value;
+    if (value.symbol) return isVerifiedShariaItem(value) ? value : null;
+    return Object.fromEntries(Object.entries(value).map(([key, nested]) => [key, filter(nested)]));
+  };
+  return { ...data, recommendations: (data.recommendations || []).filter(isVerifiedShariaItem),
+    smartAlerts: filter(data.smartAlerts), opportunityRadar: filter(data.opportunityRadar) };
 }

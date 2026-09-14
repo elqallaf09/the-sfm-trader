@@ -1,3 +1,4 @@
+import { formatQuotePrice } from "./public/modules/priceFormat.js";
 import { normalizeQuoteCurrency, resolveQuoteCurrency } from "./public/modules/marketIntegrity.js";
 import { normalizeShariaEvidence } from "./src/shariaEvidence.mjs";
 import "./src/loadEnv.mjs";
@@ -469,7 +470,8 @@ function buildRecommendationsPayload(marketId, market, settled = [], options = {
   });
 
   const economicCalendar = options.economicCalendar || null;
-  const recommendations = applyEconomicNewsOverlayToRecommendations(rawRecommendations, marketId, economicCalendar);
+  // Cache the unguarded analysis. Time-sensitive news/session guards run on each response.
+  const recommendations = [...rawRecommendations];
 
   recommendations.sort((a, b) => {
     const priority = { buy: 0, sell: 1, hold: 2 };
@@ -520,7 +522,7 @@ function finalizeRecommendationsPayloadForSession(payload, marketId) {
   const session = getExecutionSessionState(marketId);
   const marketWideSession = session && !isAggregateMarket(marketId);
   const closed = marketWideSession && session.isOpen === false;
-  const recommendations = (payload.recommendations || []).map((item) => (
+  const recommendations = applyEconomicNewsOverlayToRecommendations(payload.recommendations || [], marketId, payload.economicCalendar).map((item) => (
     finalizeRecommendationForExecutionSession(normalizeRecommendationCurrency(item, marketId), marketId, session)
   ));
   const note = closed
@@ -747,7 +749,7 @@ function buildWatchlistPayload(assets, settled = [], options = {}) {
   });
 
   const economicCalendar = options.economicCalendar || null;
-  const recommendations = applyEconomicNewsOverlayToRecommendations(rawRecommendations, "watchlist", economicCalendar)
+  const recommendations = rawRecommendations
     .map((item) => normalizeRecommendationCurrency(item, resolveSymbolExecutionMarketId(item.symbol, "watchlist")));
 
   recommendations.sort((a, b) => b.confidence - a.confidence || Math.abs(b.expectedMovePct) - Math.abs(a.expectedMovePct));
@@ -1386,7 +1388,7 @@ async function getMarketPayloadForVoice(marketId) {
   const fullMarketCached = cache.get(`market:${marketId}`);
   if (fullMarketCached && Date.now() - fullMarketCached.createdAt < CACHE_TTL_MS) {
     const calendar = await getEconomicCalendarForMarket(marketId, (fullMarketCached.payload.recommendations || []).map(item => item.symbol));
-    const guardedPayload = finalizeRecommendationsPayloadForSession({...fullMarketCached.payload, recommendations:applyEconomicNewsOverlayToRecommendations(fullMarketCached.payload.recommendations || [], marketId, calendar)}, marketId);
+    const guardedPayload = finalizeRecommendationsPayloadForSession({...fullMarketCached.payload, economicCalendar:calendar}, marketId);
     return { recommendations: guardedPayload.recommendations || [] };
   }
 
@@ -1394,7 +1396,7 @@ async function getMarketPayloadForVoice(marketId) {
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.createdAt < CACHE_TTL_MS) {
     const calendar = await getEconomicCalendarForMarket(marketId, (cached.payload.recommendations || []).map(item => item.symbol));
-    const guardedPayload = finalizeRecommendationsPayloadForSession({...cached.payload, recommendations:applyEconomicNewsOverlayToRecommendations(cached.payload.recommendations || [], marketId, calendar)}, marketId);
+    const guardedPayload = finalizeRecommendationsPayloadForSession({...cached.payload, economicCalendar:calendar}, marketId);
     return { recommendations: guardedPayload.recommendations || [] };
   }
 
@@ -1419,7 +1421,7 @@ async function getMarketPayloadForVoice(marketId) {
   };
   cache.set(cacheKey, { createdAt: Date.now(), payload });
   const calendar = await getEconomicCalendarForMarket(marketId, recommendations.map(item => item.symbol));
-  const guardedPayload = finalizeRecommendationsPayloadForSession({...payload, recommendations:applyEconomicNewsOverlayToRecommendations(recommendations, marketId, calendar)}, marketId);
+  const guardedPayload = finalizeRecommendationsPayloadForSession({...payload, economicCalendar:calendar}, marketId);
   return { recommendations: guardedPayload.recommendations || [] };
 }
 
@@ -1709,13 +1711,7 @@ function buildAssetVoiceReply(item, profile, monitor) {
 }
 
 function formatVoiceMoney(value, currency) {
-  const number = toNullableNumber(value);
-  if (number === null) return "--";
-  const digits = Math.abs(number) < 1 ? 4 : 2;
-  return `${number.toLocaleString("en-US", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits
-  })}${currency ? ` ${currency}` : ""}`;
+  return formatQuotePrice(value, currency);
 }
 
 function formatVoicePercent(value) {
@@ -2078,7 +2074,7 @@ function buildOpportunityRadar(recommendations) {
   const items = Array.isArray(recommendations) ? recommendations : [];
   const buys = items.filter((item) => item.action === "buy");
   const sells = items.filter((item) => item.action === "sell");
-  const shariaBuys = buys.filter((item) => item.shariaStatus === "compliant");
+  const shariaBuys = buys.filter((item) => item.shariaStatus === "compliant" && item.shariaVerified === true);
   const highRisk = items
     .filter((item) => item.risk?.level === "high" || item.decision?.kind === "avoid")
     .sort((a, b) => getRadarScore(b) - getRadarScore(a))
@@ -2152,6 +2148,9 @@ function toRadarItem(item, label) {
     latestVolume: item.latestVolume,
     relativeVolume: item.relativeVolume,
     shariaStatus: item.shariaStatus,
+    shariaVerified: item.shariaVerified === true,
+    executionBlocked: item.executionBlocked, executionSession: item.executionSession, priceFreshness: item.priceFreshness,
+    economicNewsRisk: item.economicNewsRisk,
     shariaLabel: item.shariaLabel,
     risk: item.risk,
     decision: item.decision,
@@ -2171,7 +2170,7 @@ function buildSmartAlerts(recommendations) {
       const agreement = item.timeframeConsensus?.agreementPct || 0;
       return (
         item.action === "buy" &&
-        item.shariaStatus === "compliant" &&
+        item.shariaStatus === "compliant" && item.shariaVerified === true && !item.executionBlocked &&
         item.confidence >= 70 &&
         agreement >= 60 &&
         Number(item.dataHealth?.score || 0) >= 60 &&
@@ -2182,6 +2181,10 @@ function buildSmartAlerts(recommendations) {
     .slice(0, 8)
     .map((item) => ({
       symbol: item.symbol,
+      action: item.action, actionLabel: item.actionLabel,
+      shariaStatus: item.shariaStatus, shariaVerified: item.shariaVerified === true,
+      executionBlocked: item.executionBlocked, executionSession: item.executionSession, priceFreshness: item.priceFreshness,
+      economicNewsRisk: item.economicNewsRisk,
       name: item.name,
       confidence: item.confidence,
       currentPrice: item.currentPrice,

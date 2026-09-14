@@ -1,4 +1,4 @@
-import { getAnalysisMetrics } from "./analysisMetrics.js?v=20260914-audit-repair-1";
+import { getAnalysisMetrics } from "./analysisMetrics.js?v=20260914-issue40-1";
 
 // Only the recommendation list is rebuilt when its query or sort order changes.
 export function createRecommendationListRenderer({ cards, template, expandedSignalCards, getPremiumAssetVisual, getOfficialCompanyName,

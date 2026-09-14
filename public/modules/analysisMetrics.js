@@ -1,4 +1,4 @@
-import { toNullableNumber } from "./numberValue.js?v=20260914-audit-repair-1";
+import { toNullableNumber } from "./numberValue.js?v=20260914-issue40-1";
 
 // One scoring formula and presentation contract for Home, cards and detail pages.
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));

@@ -1054,7 +1054,8 @@
             <input id="portfolio-qty" type="number" min="0" step="0.01" placeholder="الكمية" aria-label="الكمية" />
             <label class="sr-only" for="portfolio-price">سعر الشراء</label>
             <input id="portfolio-price" type="number" min="0" step="0.01" placeholder="سعر الشراء" aria-label="سعر الشراء" />
-            <button type="submit">إضافة للمحفظة</button>
+            <label><span>عملة سعر الشراء</span><input id="portfolio-currency" type="text" maxlength="4" placeholder="USD / KWD / GBX" aria-label="عملة سعر الشراء" autocomplete="off" /></label>
+              <button type="submit">إضافة للمحفظة</button>
           </form>
           <div id="portfolio-list" class="portfolio-list"></div>
         </section>
@@ -1411,6 +1412,6 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260914-deep-audit-1" type="module"></script>
+    <script src="/app.js?v=20260914-issue40-1" type="module"></script>
   </body>
 </html>

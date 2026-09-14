@@ -1,3 +1,4 @@
+import { toNullableNumber } from "../public/modules/numberValue.js";
 import "./loadEnv.mjs";
 const FOREX_FACTORY_CALENDAR_URL = process.env.FOREX_FACTORY_CALENDAR_URL || "https://nfs.faireconomy.media/ff_calendar_thisweek.json";
 const ECONOMIC_CALENDAR_TZ = process.env.ECONOMIC_CALENDAR_TZ || "America/New_York";
@@ -66,9 +67,9 @@ export function buildEconomicCalendarPayload(marketId = "us", symbols = [], even
 }
 
 export function applyEconomicNewsOverlayToRecommendations(recommendations = [], marketId = "us", calendarPayload = null) {
-  const events = Array.isArray(calendarPayload?.upcoming)
-    ? [...calendarPayload.hotEvents || [], ...calendarPayload.upcoming]
-    : [];
+  const events = ["hotEvents", "upcoming", "recent"].flatMap(key => Array.isArray(calendarPayload?.[key]) ? calendarPayload[key] : [])
+    .filter((event, index, all) => event && Number.isFinite(event.timestamp)
+      && all.findIndex(other => other?.timestamp === event.timestamp && other?.title === event.title && other?.currency === event.currency) === index);
 
   if (!calendarPayload || calendarPayload?.dataState === "unavailable" || calendarPayload?.dataState === "stale" || calendarPayload?.error) {
     return recommendations.map(item => ({
@@ -354,10 +355,10 @@ function buildCalendarSummary(upcoming, hotEvents, nextHighImpact) {
 function applyEconomicNewsOverlay(item, marketId, events) {
   const currencies = new Set(getSymbolCurrencies(item.symbol, marketId));
   const relevantEvents = events
-    .filter((event) => currencies.has(event.currency))
+    .filter((event) => (currencies.has(event.currency) || event.currency === "ALL"))
     .map((event) => ({
       ...event,
-      minutesToEvent: Math.round((event.timestamp - Date.now()) / 60_000)
+      minutesToEvent: (event.timestamp - Date.now()) / 60_000
     }))
     .sort((a, b) => {
       const impactRank = { high: 0, medium: 1, low: 2 };
@@ -377,28 +378,25 @@ function applyEconomicNewsOverlay(item, marketId, events) {
     reasons: uniqueReasons([newsRisk.summary, ...reasons]).slice(0, 6)
   };
 
-  if (newsRisk.blockTrading && item.action !== "hold") {
+  if (newsRisk.blockTrading) {
     return {
       ...next,
-      setupAction: item.action,
-      setupActionLabel: item.actionLabel,
+      setupAction: item.setupAction || item.action,
+      setupActionLabel: item.setupActionLabel || item.actionLabel,
       action: "hold",
       actionLabel: "انتظار",
-      confidence: Math.min(Number(item.confidence || 0), 58),
+      executionBlocked: true,
+      tradePlan: item.tradePlan ? { ...item.tradePlan, action: "hold", executionBlocked: true, note: newsRisk.summary } : item.tradePlan,
+      confidence: toNullableNumber(item.confidence) === null ? null : Math.min(toNullableNumber(item.confidence), 58),
       duration: "انتظار حتى يهدأ تأثير الخبر ثم إعادة قراءة الشارت",
-      decision: item.decision
-        ? {
-            ...item.decision,
-            badge: "انتظار",
-            summary: newsRisk.summary
-          }
-        : item.decision
+      decision: { ...(item.decision || {}), kind: "hold", badge: "انتظار", title: "انتظار الخبر", message: newsRisk.summary, summary: newsRisk.summary }
+
     };
   }
 
   return {
     ...next,
-    confidence: Math.min(Number(item.confidence || 0), newsRisk.confidenceCap)
+    confidence: toNullableNumber(item.confidence) === null ? null : Math.min(toNullableNumber(item.confidence), newsRisk.confidenceCap)
   };
 }
 
@@ -466,7 +464,7 @@ function buildNewsRisk(events, item, marketId) {
 }
 
 function formatMinutesToEvent(minutes) {
-  const abs = Math.abs(Number(minutes || 0));
+  const abs = Math.round(Math.abs(Number(minutes || 0)));
   if (minutes < 0) {
     return abs < 60 ? `منذ ${abs} دقيقة` : `منذ ${Math.round(abs / 60)} ساعة`;
   }

@@ -19,6 +19,11 @@ const recommendations = [
   action,
   actionLabel,
   currency: "USD",
+  shariaStatus: "compliant", shariaVerified: true, // Isolated screening fixture, not a real classification.
+
+  executionSession: { isOpen: true },
+  priceFreshness: { state: "current", marketTimestamp: new Date().toISOString(), maxAgeSeconds: 1200 },
+  dataProvenance: { priceKind: "quote", marketTimestamp: new Date().toISOString() },
   market: "us",
   reasons: [],
   timeframes: [],

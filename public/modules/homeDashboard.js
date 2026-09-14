@@ -1,6 +1,6 @@
-import { toNullableNumber } from "./numberValue.js?v=20260914-audit-repair-1";
+import { toNullableNumber } from "./numberValue.js?v=20260914-issue40-1";
 import { escapeHtml, safeHttpUrl } from "./html.js?v=20260914-audit-repair-1";
-import { getAnalysisMetrics } from "./analysisMetrics.js?v=20260914-audit-repair-1";
+import { getAnalysisMetrics } from "./analysisMetrics.js?v=20260914-issue40-1";
 import { renderAssetLogo, getOfficialCompanyName } from "./assetBranding.js?v=20260914-audit-repair-1";
 
 export function getDashboardRecommendations(data = {}) {
@@ -192,7 +192,7 @@ function renderV3Opportunity(item) {
   const companyName = getOfficialCompanyName(item);
   return `<article class="v3-opportunity-card ${tone}" data-symbol="${escapeHtml(item.symbol)}" tabindex="0" role="link">
     <header>${renderAssetLogo(item, { className: "v3-asset-logo" })}<div><strong>${escapeHtml(item.symbol)}</strong><span>${escapeHtml(companyName)}</span></div><b>${escapeHtml(localizeUiText(item.actionLabel || item.action || "انتظار"))}</b></header>
-    <div class="v3-opportunity-metrics"><div><span>${escapeHtml(localizeUiText("السعر الحالي"))}</span><strong>${formatMoney(item.currentPrice, item.currency)}</strong></div><div><span>${escapeHtml(localizeUiText("الهدف"))}</span><strong>${target !== null ? formatMoney(target, item.currency) : escapeHtml(metrics.unavailable)}</strong></div><div class="v3-confidence-metric"><span>${escapeHtml(localizeUiText("ثقة التحليل"))}</span><span class="v3-card-confidence" style="--v3-card-confidence:${confidence}%" aria-label="${escapeHtml(`${metrics.confidenceLabel}: ${metrics.confidenceText}`)}" data-metric-value="confidence"><i>${escapeHtml(metrics.confidenceRingText)}</i></span></div></div>
+    <div class="v3-opportunity-metrics"><div><span>${escapeHtml(localizeUiText("السعر الحالي"))}</span><strong>${formatMoney(item.currentPrice, item.currency, { symbol: item.symbol })}</strong></div><div><span>${escapeHtml(localizeUiText("الهدف"))}</span><strong>${target !== null ? formatMoney(target, item.currency, { symbol: item.symbol }) : escapeHtml(metrics.unavailable)}</strong></div><div class="v3-confidence-metric"><span>${escapeHtml(localizeUiText("ثقة التحليل"))}</span><span class="v3-card-confidence" style="--v3-card-confidence:${confidence}%" aria-label="${escapeHtml(`${metrics.confidenceLabel}: ${metrics.confidenceText}`)}" data-metric-value="confidence"><i>${escapeHtml(metrics.confidenceRingText)}</i></span></div></div>
     <div class="analysis-summary v3-analysis-summary" aria-label="${escapeHtml(isEnglishLanguage() ? "Analysis information" : "معلومات التحليل")}">
       <div data-analysis-metric="duration"><span class="analysis-metric-label">${metrics.durationLabel}</span><strong data-metric-value="duration" dir="auto">${escapeHtml(metrics.duration)}</strong></div>
       <div data-analysis-metric="score" title="${escapeHtml(metrics.scoreDescription)}"><span class="analysis-metric-label">${metrics.scoreLabel}</span><strong data-metric-value="score" dir="ltr">${escapeHtml(metrics.scoreText)}</strong></div>

@@ -2,6 +2,9 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 const syntaxFiles = [
+  "tools/capture-issue40.mjs",
+  "public/modules/priceFormat.js",
+  "tests/issue40.test.mjs",
   "tools/capture-deep-audit.mjs",
   "public/modules/marketIntegrity.js",
   "public/modules/shellInteractions.js",
