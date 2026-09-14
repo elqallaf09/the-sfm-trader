@@ -5,7 +5,7 @@ import { fixture } from './fixtures/home-v3.mjs';
 const base=process.env.VISUAL_BASE_URL || 'http://127.0.0.1:4173';
 const out='.artifacts/deep-audit'; await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true});
-const checks=[],failures=[],errors=[];
+const checks=[],failures=[],errors=[],modalDiagnostics=[];
 async function check(name,fn,page){try{await fn();checks.push(name);console.log('PASS',name);}catch(error){failures.push({name,message:error.message});console.error('FAIL',name,error.message);if(page)await page.screenshot({path:out+'/failure-'+failures.length+'.png'});}}
 async function waitView(page,view){await page.waitForFunction(v=>document.body.dataset.appView===v,view,{timeout:10000});}
 async function waitHome(page,state='fresh'){await page.locator('#terminal-home-v3[data-ui-state="'+state+'"]').waitFor({state:'visible',timeout:20000});}
@@ -62,6 +62,28 @@ try{
    assert.equal(new URL(page.url()).hash,'#view-markets');
   },page);
   await page.goto(base+'/?skipIntro=1');await waitHome(page);
+  await check(prefix+'rapid modal opening owns focus before immediate Escape',async()=>{
+   for(let cycle=0;cycle<10;cycle++) {
+    for(const [trigger,panel,initialFocus] of [
+     ['#notification-button','#notification-panel','notification-close-button'],
+     ['#settings-button','#settings-panel','settings-display-name']
+    ]) {
+     await page.locator(trigger).click();
+     assert.equal(await page.evaluate(()=>document.activeElement?.id),initialFocus);
+     await page.keyboard.press('Escape');
+     await page.locator(panel).waitFor({state:'hidden'});
+     assert.equal(await page.evaluate(()=>document.activeElement?.id),trigger.slice(1));
+    }
+   }
+   // Opening and the first keydown in one task must not depend on a zero-delay timer.
+   const immediate=await page.evaluate(()=>{
+    const trigger=document.getElementById('notification-button'); trigger.click();
+    const focused=document.activeElement?.id;
+    document.activeElement.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true,cancelable:true}));
+    return {focused,closed:document.getElementById('notification-panel').hidden};
+   });
+   assert.deepEqual(immediate,{focused:'notification-close-button',closed:true});
+  },page);
   await check(prefix+'preferences persist after save and reload',async()=>{
    await page.locator('#settings-button').click();
    await page.locator('#settings-notify-sound').uncheck();await page.locator('#settings-notify-target').uncheck();
@@ -94,7 +116,19 @@ try{
   },page);
   await check(prefix+'deep-linked notification opens and closes without blank view',async()=>{
    await page.goto(base+'/?skipIntro=1#notification-panel');await page.locator('#notification-panel').waitFor({state:'visible'});
-   await page.keyboard.press('Escape');await waitHome(page);assert.equal(new URL(page.url()).hash,'#view-home');
+   const before=await page.evaluate(()=>({focus:document.activeElement?.id||document.activeElement?.tagName,hash:location.hash,hidden:document.getElementById('notification-panel').hidden}));
+   await page.keyboard.press('Escape');await waitHome(page);
+   const after=await page.evaluate(()=>({focus:document.activeElement?.id||document.activeElement?.tagName,hash:location.hash,hidden:document.getElementById('notification-panel').hidden}));
+   modalDiagnostics.push({width,path:'same-document fragment',before,after});
+   assert.equal(after.hidden,true,'Escape closes the deep-linked panel');
+   assert.equal(new URL(page.url()).hash,'#view-home');
+  },page);
+  await check(prefix+'cold document notification link owns a working Escape dismissal',async()=>{
+   await page.goto(base+'/?skipIntro=1&modal-cold='+width+'#notification-panel');
+   await page.locator('#notification-panel').waitFor({state:'visible'});
+   await page.keyboard.press('Escape');
+   await page.locator('#notification-panel').waitFor({state:'hidden'});
+   await waitHome(page);assert.equal(new URL(page.url()).hash,'#view-home');
   },page);
   await page.evaluate(()=>{const badge=document.createElement('p');badge.textContent='TEST FIXTURES — NOT LIVE MARKET PRICES';badge.style.cssText='position:fixed;bottom:85px;left:5px;z-index:999999;background:#fff;color:#111;padding:3px;font:10px sans-serif';document.body.append(badge);});
   await page.screenshot({path:out+'/home-'+width+'.png',fullPage:false});
@@ -103,7 +137,7 @@ try{
  }
 }finally{
  await browser.close();
- await writeFile(out+'/report.json',JSON.stringify({scope:'Isolated test fixtures; no production-price comparison',checks,failures,errors},null,2));
+ await writeFile(out+'/report.json',JSON.stringify({scope:'Isolated test fixtures; no production-price comparison',checks,failures,errors,modalDiagnostics},null,2));
 }
 assert.deepEqual(errors,[],'Unhandled browser exceptions');
 assert.deepEqual(failures,[],'Deep interaction failures');
