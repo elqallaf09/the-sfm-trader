@@ -1,4 +1,7 @@
 // Deterministic browser test data only; never imported by production code.
+// These fields describe one snapshot. Separate clock reads can differ by 1ms
+// and correctly fail the production source/display timestamp integrity check.
+const snapshotTimestamp = new Date().toISOString();
 const recommendations = [
   ["META", "Meta Platforms", 590.24, 617.75, 89, 4.66, "buy", "شراء"],
   ["MSFT", "Microsoft Corp.", 487.65, 521.79, 86, 7.00, "buy", "شراء"],
@@ -22,8 +25,8 @@ const recommendations = [
   shariaStatus: "compliant", shariaVerified: true, // Isolated screening fixture, not a real classification.
 
   executionSession: { isOpen: true },
-  priceFreshness: { state: "current", marketTimestamp: new Date().toISOString(), maxAgeSeconds: 1200 },
-  dataProvenance: { priceKind: "quote", marketTimestamp: new Date().toISOString() },
+  priceFreshness: { state: "current", marketTimestamp: snapshotTimestamp, maxAgeSeconds: 1200 },
+  dataProvenance: { priceKind: "quote", marketTimestamp: snapshotTimestamp },
   market: "us",
   reasons: [],
   timeframes: [],
@@ -38,7 +41,7 @@ const recommendations = [
 
 export const fixture = {
   recommendations,
-  generatedAt: "2026-09-03T12:00:00.000Z",
+  generatedAt: snapshotTimestamp,
   cached: false,
   refreshing: false,
   dataStatus: "fresh",
