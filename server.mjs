@@ -1,3 +1,5 @@
+import { normalizeQuoteCurrency, resolveQuoteCurrency } from "./public/modules/marketIntegrity.js";
+import { normalizeShariaEvidence } from "./src/shariaEvidence.mjs";
 import "./src/loadEnv.mjs";
 import { toNullableNumber } from "./public/modules/numberValue.js";
 import { createSharedTasks } from "./src/sharedTasks.mjs";
@@ -85,7 +87,6 @@ const symbolAliases = {
   APPLE: "AAPL",
   APPL: "AAPL",
   MICROSOFT: "MSFT",
-  MS: "MSFT",
   NVD: "NVDA",
   NVIDIA: "NVDA",
   TESLA: "TSLA",
@@ -560,70 +561,10 @@ function normalizeRecommendationCurrency(item = {}, marketId = "") {
   };
 }
 
-function normalizeCurrencyCode(currency) {
-  const code = String(currency || "").trim().toUpperCase();
-  return {
-    PAIR: "PAIR",
-    MIXED: "MIXED",
-    GCC: "GCC",
-    KWF: "KWD",
-    KW: "KWD",
-    KWD: "KWD",
-    SAR: "SAR",
-    AED: "AED",
-    QAR: "QAR",
-    BHD: "BHD",
-    OMR: "OMR",
-    USD: "USD",
-    EUR: "EUR"
-  }[code] || code;
-}
-
+function normalizeCurrencyCode(currency) { return normalizeQuoteCurrency(currency); }
 function resolveCurrencyForAsset(asset = {}, marketId = "") {
-  const symbolCurrency = inferCurrencyFromSymbol(asset.symbol);
-  const providerCurrency = normalizeCurrencyCode(asset.currency);
-  const marketCurrency = inferCurrencyFromMarketId(marketId);
-
-  if (symbolCurrency) return symbolCurrency;
-  if (providerCurrency && !["GCC", "MIXED"].includes(providerCurrency)) return providerCurrency;
-  if (marketCurrency && !["GCC", "MIXED"].includes(marketCurrency)) return marketCurrency;
-  return "USD";
+  return resolveQuoteCurrency(asset.symbol, asset.currency);
 }
-
-function inferCurrencyFromMarketId(marketId) {
-  const id = String(marketId || "").toLowerCase();
-  if (!id) return "";
-  if (id.includes("kuwait") || id.includes("bourse-kuwait")) return "KWD";
-  if (id.includes("saudi") || id.includes("tadawul")) return "SAR";
-  if (id.includes("uae") || id.includes("dubai") || id.includes("adx") || id.includes("dfm")) return "AED";
-  if (id.includes("qatar")) return "QAR";
-  if (id.includes("bahrain")) return "BHD";
-  if (id.includes("oman") || id.includes("muscat")) return "OMR";
-  if (id.includes("forex") || id.includes("fx") || id.includes("currency")) return "PAIR";
-  if (id.includes("crypto")) return "USD";
-  if (id.includes("commodity") || id.includes("commodities") || id.includes("energy")) return "USD";
-  if (id.includes("us") || id.includes("technology") || id.includes("food") || id.includes("pharmaceutical") || id.includes("banking") || id.includes("ai") || id.includes("semiconductor")) return "USD";
-  if (id.includes("europe")) return "EUR";
-  if (id.includes("asia") || id.includes("asian")) return "MIXED";
-  return "";
-}
-
-function inferCurrencyFromSymbol(symbol) {
-  const upper = String(symbol || "").toUpperCase();
-  if (upper.endsWith("=X")) return "PAIR";
-  if (upper.includes("-USD")) return "USD";
-  if (upper.endsWith("=F")) return "USD";
-  if (upper.endsWith(".KW")) return "KWD";
-  if (upper.endsWith(".SR")) return "SAR";
-  if (upper.endsWith(".AE") || upper.endsWith(".AD") || upper.endsWith(".DU")) return "AED";
-  if (upper.endsWith(".QA")) return "QAR";
-  if (upper.endsWith(".BH")) return "BHD";
-  if (upper.endsWith(".OM")) return "OMR";
-  if (upper.endsWith(".AS") || upper.endsWith(".DE") || upper.endsWith(".PA") || upper.endsWith(".SW") || upper.endsWith(".L")) return "EUR";
-  if (upper.startsWith("^") || /^[A-Z]{1,5}$/.test(upper)) return "USD";
-  return "";
-}
-
 
 function getExecutionSessionState(marketId, now = new Date()) {
   const config = getExecutionSessionConfig(marketId);
@@ -665,7 +606,8 @@ function getExecutionSessionConfig(marketId) {
     dividends: "us",
     healthcare: "healthcare",
     commodities: "commodities",
-    food: "commodities",
+    food: "us",
+    banking: "us", energy: "us", semiconductors: "us",
     crypto: "crypto"
   };
   const alias = aliases[marketId];
@@ -776,7 +718,7 @@ async function handleWatchlist(response, symbols) {
 
   if (cached && Date.now() - cached.createdAt < STALE_CACHE_TTL_MS) {
     refreshWatchlistCache(cacheKey, uniqueSymbols);
-    return sendJson(response, { ...cached.payload, cached: true, stale: true, refreshing: true });
+    return sendJson(response, { ...finalizeRecommendationsPayloadForSession(cached.payload, "watchlist"), cached: true, stale: true, refreshing: true });
   }
 
   const assets = uniqueSymbols.map(resolveAsset);
@@ -1121,7 +1063,7 @@ async function handleVoiceCommand(response, payload) {
 
   const activeMarket = String(payload?.activeMarket || "");
   const requestedMarket = resolveVoiceMarketId(transcript) || activeMarket;
-  const rawRecommendations = summarizeVoiceRecommendations(payload?.recommendations || []);
+  const rawRecommendations = []; // Client-supplied prices and actions are not trusted.
   const recommendations = await getVoiceRecommendationsForTranscript(transcript, requestedMarket, rawRecommendations, activeMarket);
 
   const voicePayload = {
@@ -1234,36 +1176,12 @@ function includesAnyText(value, needles) {
   return needles.some((needle) => value.includes(needle));
 }
 
-async function getVoiceRecommendationsForTranscript(transcript, requestedMarket, currentRecommendations, originalActiveMarket = "") {
-  const clean = normalizeArabicText(transcript);
-  if (requestedMarket && requestedMarket !== originalActiveMarket && markets[requestedMarket]) {
-    try {
-      const payload = await getMarketPayloadForVoice(requestedMarket);
-      return summarizeVoiceRecommendations(payload.recommendations || []);
-    } catch {
-      return currentRecommendations;
-    }
-  }
-
-  const asksForStock =
-    clean.includes("سهم") ||
-    clean.includes("اسهم") ||
-    clean.includes("افضل") ||
-    clean.includes("اقوي") ||
-    clean.includes("اشتري") ||
-    clean.includes("شراء");
-  const nonStockMarket = ["forex", "crypto"].includes(requestedMarket);
-
-  if (!asksForStock || (!nonStockMarket && currentRecommendations.length)) {
-    return currentRecommendations;
-  }
-
+async function getVoiceRecommendationsForTranscript(transcript, requestedMarket) {
+  const marketId = markets[requestedMarket] ? requestedMarket : "us";
   try {
-    const payload = await getMarketPayloadForVoice("us");
+    const payload = await getMarketPayloadForVoice(marketId);
     return summarizeVoiceRecommendations(payload.recommendations || []);
-  } catch {
-    return currentRecommendations;
-  }
+  } catch { return []; } // Never fall back to client-supplied prices or signals.
 }
 
 function getVoiceMarketSessionReply(transcript) {
@@ -1467,14 +1385,16 @@ function resolveVoiceMarketId(transcript) {
 async function getMarketPayloadForVoice(marketId) {
   const fullMarketCached = cache.get(`market:${marketId}`);
   if (fullMarketCached && Date.now() - fullMarketCached.createdAt < CACHE_TTL_MS) {
-    const guardedPayload = finalizeRecommendationsPayloadForSession(fullMarketCached.payload, marketId);
+    const calendar = await getEconomicCalendarForMarket(marketId, (fullMarketCached.payload.recommendations || []).map(item => item.symbol));
+    const guardedPayload = finalizeRecommendationsPayloadForSession({...fullMarketCached.payload, recommendations:applyEconomicNewsOverlayToRecommendations(fullMarketCached.payload.recommendations || [], marketId, calendar)}, marketId);
     return { recommendations: guardedPayload.recommendations || [] };
   }
 
   const cacheKey = `voice-market:${marketId}`;
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.createdAt < CACHE_TTL_MS) {
-    const guardedPayload = finalizeRecommendationsPayloadForSession(cached.payload, marketId);
+    const calendar = await getEconomicCalendarForMarket(marketId, (cached.payload.recommendations || []).map(item => item.symbol));
+    const guardedPayload = finalizeRecommendationsPayloadForSession({...cached.payload, recommendations:applyEconomicNewsOverlayToRecommendations(cached.payload.recommendations || [], marketId, calendar)}, marketId);
     return { recommendations: guardedPayload.recommendations || [] };
   }
 
@@ -1498,7 +1418,8 @@ async function getMarketPayloadForVoice(marketId) {
     recommendations
   };
   cache.set(cacheKey, { createdAt: Date.now(), payload });
-  const guardedPayload = finalizeRecommendationsPayloadForSession(payload, marketId);
+  const calendar = await getEconomicCalendarForMarket(marketId, recommendations.map(item => item.symbol));
+  const guardedPayload = finalizeRecommendationsPayloadForSession({...payload, recommendations:applyEconomicNewsOverlayToRecommendations(recommendations, marketId, calendar)}, marketId);
   return { recommendations: guardedPayload.recommendations || [] };
 }
 
@@ -1788,8 +1709,8 @@ function buildAssetVoiceReply(item, profile, monitor) {
 }
 
 function formatVoiceMoney(value, currency) {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return "--";
+  const number = toNullableNumber(value);
+  if (number === null) return "--";
   const digits = Math.abs(number) < 1 ? 4 : 2;
   return `${number.toLocaleString("en-US", {
     minimumFractionDigits: digits,
@@ -1798,8 +1719,8 @@ function formatVoiceMoney(value, currency) {
 }
 
 function formatVoicePercent(value) {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return "--";
+  const number = toNullableNumber(value);
+  if (number === null) return "--";
   return `${number.toLocaleString("en-US", {
     maximumFractionDigits: 0
   })}%`;
@@ -1883,7 +1804,7 @@ async function enrichShariaAsset(asset) {
       },
       1800
     );
-    const value = normalizeExternalSharia(data);
+    const value = normalizeShariaEvidence(data, symbol);
     shariaCache.set(symbol, { createdAt: Date.now(), value });
     return { ...asset, ...value };
   } catch {
@@ -1891,26 +1812,8 @@ async function enrichShariaAsset(asset) {
   }
 }
 
-function normalizeExternalSharia(data) {
-  const rawStatus = String(data?.status || data?.shariaStatus || data?.compliance || data?.result || "").toLowerCase();
-  const compliant = data?.compliant === true || ["compliant", "halal", "pass", "passed"].includes(rawStatus);
-  const notCompliant = data?.compliant === false || ["not_compliant", "non_compliant", "non-compliant", "haram", "fail", "failed"].includes(rawStatus);
-  const doubtful = ["doubtful", "questionable", "mixed", "review"].includes(rawStatus);
-  const shariaStatus = compliant ? "compliant" : notCompliant ? "not_compliant" : doubtful ? "doubtful" : "unknown";
-  const labels = {
-    compliant: "مطابق للشريعة",
-    not_compliant: "غير مطابق للشريعة",
-    doubtful: "مختلف عليه",
-    unknown: "غير معروف"
-  };
-
-  return {
-    shariaStatus,
-    shariaLabel: data?.label || data?.shariaLabel || labels[shariaStatus],
-    shariaSource: data?.source || data?.provider || "مزود فحص شرعي خارجي",
-    shariaCheckedAt: data?.checkedAt || data?.updatedAt || new Date().toISOString().slice(0, 10)
-  };
-}
+// External Sharia labels require symbol, source and actual screening date;
+// retrieval time is never substituted for screening time.
 
 function getKnownAssetInfo(symbol, name) {
   const profiles = {

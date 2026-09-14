@@ -58,7 +58,7 @@ export function getAnalysisMetrics(item = {}, { english = false, localize = Stri
     confidenceLabel: english ? "Confidence" : "الثقة",
     durationLabel: english ? "Expected duration" : "المدة المتوقعة",
     scoreLabel: english ? "AI score" : "تقييم AI",
-    scoreDescription: english ? "Composite analysis score out of 100" : "تقييم التحليل المركب من 100"
+    scoreDescription: english ? "Composite technical score, not a calibrated probability of profit" : "تقييم فني مركب من 100؛ ليس احتمال ربح مضموناً"
   };
 }
 

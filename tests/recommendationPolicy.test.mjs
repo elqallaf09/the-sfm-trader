@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { finalizeRecommendation } from "../src/recommendationPolicy.mjs";
-const item = { symbol: "AAPL", action: "buy", actionLabel: "شراء", confidence: 80, decision: { kind: "buy", title: "Buy", message: "Buy now" } };
+const item = { symbol: "AAPL", action: "buy", actionLabel: "شراء", confidence: 80, currentPrice: 100, dataProvenance: {marketTimestamp:new Date().toISOString(),priceKind:"quote",freshness:"current"}, decision: { kind: "buy", title: "Buy", message: "Buy now" } };
 test("closed-session policy preserves setup but removes executable and textual buy instructions", () => {
   const result = finalizeRecommendation(item, { currency: "USD", executionMarketId: "us", session: { isOpen: false } });
   assert.equal(result.action, "hold");

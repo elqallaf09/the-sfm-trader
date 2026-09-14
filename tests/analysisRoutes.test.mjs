@@ -23,7 +23,7 @@ test("cached market, watchlist and detail responses apply the same closed-sessio
   ]);
   let calendars = 0;
   const context = vm.createContext({
-    cache: entries, CACHE_TTL_MS: 90000, STALE_CACHE_TTL_MS: 600000, markets: { us: { symbols: [] } },
+    refreshMarketCache() {}, refreshWatchlistCache() {}, cache: entries, CACHE_TTL_MS: 90000, STALE_CACHE_TTL_MS: 600000, markets: { us: { symbols: [] } },
     sendJson: (_response, value) => value,
     getExecutionSessionState: () => ({ isOpen: false }),
     isAggregateMarket: id => id === "watchlist",
@@ -47,4 +47,9 @@ test("cached market, watchlist and detail responses apply the same closed-sessio
   }
   assert.equal(detail.recommendation.economicNewsRisk.level, "unavailable");
   assert.equal(calendars, 1);
+  for (const value of entries.values()) value.createdAt = Date.now() - 120000;
+  const staleWatchlist = await context.handleWatchlist({}, ["AAPL"]);
+  assert.equal(staleWatchlist.stale, true);
+  assert.equal(staleWatchlist.recommendations[0].action, "hold");
+  assert.equal(staleWatchlist.recommendations[0].marketClosed, true);
 });

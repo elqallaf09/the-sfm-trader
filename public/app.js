@@ -1,3 +1,6 @@
+import { toNullableNumber } from "./modules/numberValue.js?v=20260914-audit-repair-1";
+import { normalizeQuoteCurrency, resolveQuoteCurrency, inferQuoteCurrency, guardDisplayPayload } from "./modules/marketIntegrity.js?v=20260914-deep-audit-1";
+import { installShellInteractions } from "./modules/shellInteractions.js?v=20260914-issue36-ui-1";
 import { createMarketFeeds, renderNewsFeed, renderCalendarFeed } from "./modules/marketFeeds.js?v=20260914-audit-repair-1";
 import { calculateFinalScore, getAnalysisMetrics, getRecommendationAction } from "./modules/analysisMetrics.js?v=20260914-audit-repair-1";
 import { API_TOKEN_STORAGE_KEY, getApiToken, setApiToken, createIdempotencyKey, readStateVersion } from "./modules/apiClient.js?v=20260914-audit-repair-1";
@@ -1471,6 +1474,7 @@ async function init() {
   installLatinDigitNormalizer();
   initSettingsPanel();
   initModalPanelControls();
+  installShellInteractions({navigate:view => showAppView(view,{push:true})});
   initTerminalSearch();
   initInterfaceTranslator();
   initTemporaryLegalNotices();
@@ -1672,7 +1676,8 @@ function initLiveFloor() {
 
 function initAppNavigation() {
   const initialView = getAppViewFromHash(window.location.hash) || "home";
-  showAppView(initialView, { scroll: false, replace: true });
+  showAppView(initialView === "alerts" ? "home" : initialView, {scroll:false,replace:initialView !== "alerts"});
+  if (initialView === "alerts") setNotificationPanelOpen(true);
 
   document.querySelectorAll(".rail-link, .ios-tab-link, .rdp-view-all").forEach((link) => {
     link.addEventListener("click", (event) => {
@@ -1702,7 +1707,7 @@ function initAppNavigation() {
   });
 
   window.addEventListener("popstate", () => {
-    showAppView(getAppViewFromHash(window.location.hash) || "home", { scroll: false, replace: true });
+    showAppView(getAppViewFromHash(window.location.hash) || "home", { scroll: false });
   });
 
   window.addEventListener("hashchange", () => {
@@ -1773,6 +1778,13 @@ function syncAppSectionVisibility(section, view = activeAppView) {
 }
 
 function showAppView(view, options = {}) {
+  if (view === "alerts") {
+    if (options.push && !["#notification-panel","#view-alerts"].includes(location.hash)) {
+      history.pushState({...history.state,sfmNotificationReturn:location.hash || "#view-home"}, "", "#notification-panel");
+    }
+    setNotificationPanelOpen(true);
+    return;
+  }
   const nextView = APP_VIEW_GROUPS[view] ? view : "home";
   activeAppView = nextView;
   document.body.dataset.appView = nextView;
@@ -1799,14 +1811,14 @@ function showAppView(view, options = {}) {
 
   if (options.push) {
     const hash = nextView === "home" ? "#view-home" : `#view-${nextView}`;
-    history.pushState({ view: nextView }, "", hash);
+    history.pushState({ ...history.state, view: nextView }, "", hash);
   } else if (options.replace) {
     const hash = nextView === "home" ? "#view-home" : `#view-${nextView}`;
-    history.replaceState({ view: nextView }, "", hash);
+    history.replaceState({ ...history.state, view: nextView }, "", hash);
   }
 
   if (options.scroll !== false) {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
   }
 }
 
@@ -2032,9 +2044,15 @@ function initSettingsPanel() {
   settingsForm.addEventListener("submit", (event) => {
     event.preventDefault();
     appSettings = normalizeAppSettings({
+      ...appSettings,
+      notifyTarget: document.querySelector("#settings-notify-target")?.checked !== false,
+      notifySound: document.querySelector("#settings-notify-sound")?.checked !== false,
+      shariaOnly: document.querySelector("#settings-sharia-only")?.checked === true,
       language: settingsLanguage?.value,
       displayName: settingsDisplayName?.value
     });
+    activeAnalysisMode = document.querySelector("#settings-analysis-mode")?.value || "balanced";
+    saveStored("the-sfm-trader-analysis-mode", activeAnalysisMode);
     saveStored(APP_SETTINGS_STORAGE_KEY, appSettings);
     const apiToken = String(settingsApiToken?.value || "").trim();
     setApiToken(apiToken);
@@ -2137,6 +2155,10 @@ function handleModalKeydown(event, panel, close) {
 }
 
 function syncSettingsForm() {
+  for (const [id,key] of [["settings-notify-target","notifyTarget"],["settings-notify-sound","notifySound"],["settings-sharia-only","shariaOnly"]]) {
+    const input = document.getElementById(id); if (input) input.checked = Boolean(appSettings[key]);
+  }
+  const mode = document.getElementById("settings-analysis-mode"); if (mode) mode.value = activeAnalysisMode;
   if (settingsLanguage) settingsLanguage.value = getAppLanguage();
   if (settingsDisplayName) settingsDisplayName.value = getUserDisplayName();
   if (settingsApiToken) settingsApiToken.value = getApiToken();
@@ -2316,7 +2338,10 @@ function normalizeAppSettings(value) {
   const settings = value && typeof value === "object" ? value : {};
   return {
     language: normalizeLocaleCode(settings.language),
-    displayName: sanitizeDisplayName(settings.displayName || DEFAULT_USER_DISPLAY_NAME)
+    displayName: sanitizeDisplayName(settings.displayName || DEFAULT_USER_DISPLAY_NAME),
+    notifyTarget: settings.notifyTarget !== false,
+    notifySound: settings.notifySound !== false,
+    shariaOnly: settings.shariaOnly === true
   };
 }
 
@@ -2929,6 +2954,7 @@ async function loadRecommendations(options = {}) {
     data.recommendations = getDashboardRecommendations(data);
     data.market = data.market && typeof data.market === "object" ? data.market : {};
 
+    Object.assign(data, guardDisplayPayload(data));
     lastData = data;
     lastDataEndpoint = endpoint;
     recommendationResponseCache.set(endpoint, data);
@@ -2944,7 +2970,8 @@ async function loadRecommendations(options = {}) {
     setConnectionStatus(lastData?.recommendations?.length ? "stale" : "offline", localizeUiText(lastData?.recommendations?.length ? "اتصال متقطع - آخر بيانات محفوظة" : "تعذر الاتصال"));
 
     if (lastData?.recommendations?.length) {
-      renderRecommendations({ ...lastData, cached: true, stale: true });
+      lastData = guardDisplayPayload({ ...lastData, cached: true, stale: true });
+      renderRecommendations(lastData);
     } else {
       setUiState(cards, {
         kind: "error",
@@ -2967,7 +2994,7 @@ async function loadRecommendations(options = {}) {
 function getConnectionStatusText(data) {
   if (data?.refreshing) return localizeUiText("متصل - يحدث في الخلفية");
   if (data?.partial || Number(data?.pendingCount || 0) > 0) return localizeUiText("متصل - تحليل أولي");
-  if (data?.cached || data?.stale) return localizeUiText("متصل - آخر بيانات محفوظة");
+  if (data?.stale) return localizeUiText("متصل - آخر بيانات محفوظة");
   return localizeUiText("متصل - بيانات جديدة");
 }
 
@@ -2978,7 +3005,7 @@ function setConnectionStatus(kind, text) {
 }
 
 function updateConnectionStatus(data) {
-  const kind = data?.cached || data?.stale ? "stale" : data?.partial || data?.refreshing || Number(data?.pendingCount || 0) > 0 ? "updating" : "fresh";
+  const kind = data?.stale ? "stale" : data?.partial || data?.refreshing || Number(data?.pendingCount || 0) > 0 ? "updating" : "fresh";
   setConnectionStatus(kind, getConnectionStatusText(data));
 }
 
@@ -3782,7 +3809,7 @@ function filterRecommendations(items) {
       ? terminalSearchController.matches(item, query)
       : `${item.name} ${item.symbol}`.toLowerCase().includes(query));
     const matchesMode = isRecommendationInMode(item);
-    return matchesFilter && matchesSharia && matchesQuery && matchesMode;
+    return matchesFilter && matchesSharia && matchesQuery && matchesMode && (!appSettings.shariaOnly || item.shariaStatus === "compliant");
   });
 }
 
@@ -5198,6 +5225,7 @@ function checkFollowedTrades(items) {
     const current = bySymbol.get(entry.symbol.toUpperCase());
     if (!current) continue;
 
+    if (current.executionBlocked || ["stale","unknown"].includes(current.priceFreshness?.state)) continue;
     const currentPrice = Number(current.currentPrice);
     const targetPrice = Number(entry.target1 ?? entry.expectedPrice);
     const stopPrice = Number(entry.stopLoss);
@@ -5218,6 +5246,7 @@ function checkFollowedTrades(items) {
 }
 
 function notifyFollowedTrade(entry, current, eventType) {
+  if (eventType === "target" && appSettings.notifyTarget === false) return;
   const alertKey = `${entry.key}:${eventType}`;
   if (followedTradeAlerts.has(alertKey)) return;
 
@@ -5421,6 +5450,10 @@ function toggleNotificationPanel() {
 function setNotificationPanelOpen(open, options = {}) {
   if (!notificationButton || !notificationPanel) return;
 
+  if (!open && ["#notification-panel","#view-alerts"].includes(location.hash)) {
+    const target = history.state?.sfmNotificationReturn || `#view-${activeAppView}`;
+    history.replaceState({...history.state,sfmNotificationReturn:null}, "", /^#(?:view-|[a-z-]+section)/.test(target) ? target : "#view-home");
+  }
   notificationPanelOpen = Boolean(open);
   notificationPanel.hidden = !notificationPanelOpen;
   notificationButton.setAttribute("aria-expanded", String(notificationPanelOpen));
@@ -5575,6 +5608,7 @@ function sendBrowserTradeNotification(title, message) {
 }
 
 function playSignalTone() {
+  if (appSettings.notifySound === false) return;
   try {
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     if (!AudioContext) return;
@@ -5589,6 +5623,7 @@ function playSignalTone() {
     oscillator.connect(gain);
     gain.connect(context.destination);
     oscillator.start();
+    oscillator.onended = () => { context.close().catch(() => {}); };
     oscillator.stop(context.currentTime + 0.24);
   } catch {
     // المتصفح قد يمنع الصوت قبل أول تفاعل من المستخدم.
@@ -7166,29 +7201,12 @@ function formatMoney(value, currency) {
 }
 
 function normalizeCurrencyCode(currency) {
-  const code = String(currency || "").trim().toUpperCase();
-  const currencyMap = {
-    KWF: "KWD",
-    KW: "KWD",
-    KWD: "KWD",
-    SAR: "SAR",
-    SA: "SAR",
-    AED: "AED",
-    AE: "AED",
-    QAR: "QAR",
-    QA: "QAR",
-    BHD: "BHD",
-    BH: "BHD",
-    OMR: "OMR",
-    OM: "OMR",
-    USD: "USD",
-    EUR: "EUR"
-  };
-  return currencyMap[code] || code;
+  const code = normalizeQuoteCurrency(currency); return code === "PAIR" ? "" : code;
 }
 
 function formatPercent(value) {
-  const number = Number(value || 0);
+  const number = toNullableNumber(value);
+  if (number === null) return "--";
   const prefix = number > 0 ? "+" : "";
   return `${prefix}${formatNumber(number, {
     minimumFractionDigits: 2,
@@ -7216,7 +7234,8 @@ function normalizeDateString(value) {
 }
 
 function formatNumber(value, options = {}) {
-  const number = Number(value);
+  const number = toNullableNumber(value);
+  if (number === null) return "--";
   if (!Number.isFinite(number)) return "--";
   return normalizeDigits(number.toLocaleString(NUMBER_LOCALE, {
     ...NUMBER_OPTIONS,
@@ -7321,55 +7340,18 @@ function sfmAcceptanceIsEnglish() {
 }
 
 normalizeCurrencyCode = function normalizeCurrencyCode(currency) {
-  const code = String(currency || "").trim().toUpperCase();
-  if (!code || code === "PAIR" || code === "MIXED" || code === "GCC") return "";
-  const currencyMap = {
-    KWF: "KWD",
-    KW: "KWD",
-    KWD: "KWD",
-    SAR: "SAR",
-    AED: "AED",
-    QAR: "QAR",
-    BHD: "BHD",
-    OMR: "OMR",
-    USD: "USD",
-    USDT: "USD",
-    USDC: "USD",
-    EUR: "EUR",
-    GBP: "GBP",
-    JPY: "JPY",
-    CHF: "CHF",
-    CAD: "CAD",
-    AUD: "AUD",
-    CNY: "CNY",
-    HKD: "HKD"
-  };
-  return currencyMap[code] || code;
-}
+  const code = normalizeQuoteCurrency(currency); return code === "PAIR" ? "" : code;
+};
 
-function inferDisplayCurrencyFromSymbol(symbol) {
-  const upper = String(symbol || "").trim().toUpperCase();
-  if (!upper) return "";
-  if (upper.endsWith("=X")) return "";
-  if (upper.endsWith("-USD") || upper.endsWith("USDT") || upper.endsWith("USDC")) return "USD";
-  if (upper.endsWith("=F")) return "USD";
-  if (upper.endsWith(".KW")) return "KWD";
-  if (upper.endsWith(".SR")) return "SAR";
-  if (upper.endsWith(".AE") || upper.endsWith(".AD") || upper.endsWith(".DU")) return "AED";
-  if (upper.endsWith(".QA")) return "QAR";
-  if (upper.endsWith(".BH")) return "BHD";
-  if (upper.endsWith(".OM")) return "OMR";
-  if (upper.endsWith(".AS") || upper.endsWith(".DE") || upper.endsWith(".PA") || upper.endsWith(".SW") || upper.endsWith(".L")) return "EUR";
-  return "USD";
-}
+function inferDisplayCurrencyFromSymbol(symbol) { return inferQuoteCurrency(symbol); }
 
 function normalizeDisplayCurrency(currency, symbol) {
   return normalizeCurrencyCode(currency) || inferDisplayCurrencyFromSymbol(symbol);
 }
 
 formatMoney = function formatMoney(value, currency) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return sfmAcceptanceIsEnglish() ? "Unavailable" : "غير متاح";
+  const numeric = toNullableNumber(value);
+  if (numeric === null) return sfmAcceptanceIsEnglish() ? "Unavailable" : "غير متاح";
   const normalizedCurrency = normalizeCurrencyCode(currency);
   const locale = latinLocale(sfmAcceptanceIsEnglish() ? "en-US" : "ar-KW");
   const fractionDigits = Math.abs(numeric) >= 1000 ? 2 : 3;
@@ -8001,34 +7983,15 @@ function sfmFinalIsEnglish() {
   return String(appSettings?.language || "").toLowerCase() === "en";
 }
 
-function sfmFinalInferCurrencyFromSymbol(symbol) {
-  const upper = String(symbol || "").trim().toUpperCase();
-  if (!upper) return "";
-  if (SFM_FINAL_CURRENCY_BY_SYMBOL[upper]) return SFM_FINAL_CURRENCY_BY_SYMBOL[upper];
-  if (upper.endsWith("=X")) return "";
-  if (upper.endsWith("-USD") || upper.endsWith("USDT") || upper.endsWith("USDC")) return "USD";
-  if (upper.endsWith("=F")) return "USD";
-  if (upper.endsWith(".KW")) return "KWD";
-  if (upper.endsWith(".SR")) return "SAR";
-  if (upper.endsWith(".AE") || upper.endsWith(".AD") || upper.endsWith(".DU")) return "AED";
-  if (upper.endsWith(".QA")) return "QAR";
-  if (upper.endsWith(".BH")) return "BHD";
-  if (upper.endsWith(".OM")) return "OMR";
-  if (upper.endsWith(".AS") || upper.endsWith(".DE") || upper.endsWith(".PA") || upper.endsWith(".SW") || upper.endsWith(".L")) return "EUR";
-  if (upper.endsWith(".HK")) return "HKD";
-  if (upper.endsWith(".T")) return "JPY";
-  if (upper.endsWith(".KS")) return "KRW";
-  if (upper.startsWith("^") || /^[A-Z]{1,5}$/.test(upper)) return "USD";
-  return "";
-}
+function sfmFinalInferCurrencyFromSymbol(symbol) { return inferQuoteCurrency(symbol); }
 
 normalizeDisplayCurrency = function normalizeDisplayCurrency(currency, symbol) {
-  return sfmFinalInferCurrencyFromSymbol(symbol) || normalizeCurrencyCode(currency) || "USD";
+  return resolveQuoteCurrency(symbol, currency);
 };
 
 formatMoney = function formatMoney(value, currency) {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return sfmFinalIsEnglish() ? "Unavailable" : "غير متاح";
+  const numeric = toNullableNumber(value);
+  if (numeric === null) return sfmFinalIsEnglish() ? "Unavailable" : "غير متاح";
   const normalizedCurrency = normalizeCurrencyCode(currency);
   const locale = latinLocale(sfmFinalIsEnglish() ? "en-US" : "ar-KW");
   const fractionDigits = Math.abs(numeric) >= 1000 ? 2 : Math.abs(numeric) >= 10 ? 2 : 3;
@@ -8076,6 +8039,7 @@ function sfmFinalNormalizeSupportedSymbol(item) {
 
 function sfmFinalNormalizePayloadCurrencies(data) {
   if (!data || typeof data !== "object") return data;
+  Object.assign(data, guardDisplayPayload(data));
   if (Array.isArray(data.recommendations)) {
     data.recommendations = data.recommendations.map(sfmFinalNormalizeAssetCurrency);
   }

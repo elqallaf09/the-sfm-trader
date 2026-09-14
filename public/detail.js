@@ -1,3 +1,5 @@
+import { toNullableNumber } from "./modules/numberValue.js?v=20260914-audit-repair-1";
+import { normalizeQuoteCurrency } from "./modules/marketIntegrity.js?v=20260914-deep-audit-1";
 import { getAnalysisMetrics } from "./modules/analysisMetrics.js?v=20260914-audit-repair-1";
 import { navigateBackFromDetail, safeHomeUrl } from "./modules/detailNavigation.js?v=20260914-audit-repair-1";
 import { API_TOKEN_STORAGE_KEY } from "./modules/apiClient.js?v=20260914-audit-repair-1";
@@ -1336,31 +1338,11 @@ function formatDateTime(value) {
   }).format(date));
 }
 
-function normalizeCurrencyCode(currency) {
-  const code = String(currency || "").trim().toUpperCase();
-  const currencyMap = {
-    KWF: "KWD",
-    KW: "KWD",
-    KWD: "KWD",
-    SAR: "SAR",
-    SA: "SAR",
-    AED: "AED",
-    AE: "AED",
-    QAR: "QAR",
-    QA: "QAR",
-    BHD: "BHD",
-    BH: "BHD",
-    OMR: "OMR",
-    OM: "OMR",
-    USD: "USD",
-    EUR: "EUR",
-    GBP: "GBP"
-  };
-  return currencyMap[code] || code;
-}
+function normalizeCurrencyCode(currency) { const code = normalizeQuoteCurrency(currency); return code === "PAIR" ? "" : code; }
 
 function formatPercent(value) {
-  const number = Number(value || 0);
+  const number = toNullableNumber(value);
+  if (number === null) return "--";
   const prefix = number > 0 ? "+" : "";
   return `${prefix}${formatNumber(number, {
     minimumFractionDigits: 2,
@@ -1369,7 +1351,8 @@ function formatPercent(value) {
 }
 
 function formatNumber(value, options = {}) {
-  const number = Number(value);
+  const number = toNullableNumber(value);
+  if (number === null) return "--";
   if (!Number.isFinite(number)) return "--";
   return normalizeDigits(number.toLocaleString(NUMBER_LOCALE, {
     ...NUMBER_OPTIONS,

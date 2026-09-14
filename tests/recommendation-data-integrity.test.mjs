@@ -17,12 +17,12 @@ const closedSession = {
 const frame = (id, iso, label = id) => ({ id, label, latestTimestamp: Date.parse(iso) / 1000 });
 
 test("mixed-market currencies do not fall back to EUR or USD incorrectly", () => {
-  assert.equal(resolveTrustedCurrency("NESN.SW", "EUR", "EUR"), "CHF");
+  assert.equal(resolveTrustedCurrency("NESN.SW", "", "MIXED"), "CHF");
   assert.equal(resolveTrustedCurrency("AZN.L", "GBp", "EUR"), "GBX");
   assert.equal(resolveTrustedCurrency("AZN.L", "GBP", "EUR"), "GBP");
-  assert.equal(resolveTrustedCurrency("005930.KS", "USD", "MIXED"), "KRW");
-  assert.equal(resolveTrustedCurrency("9988.HK", "USD", "MIXED"), "HKD");
-  assert.equal(resolveTrustedCurrency("7203.T", "USD", "MIXED"), "JPY");
+  assert.equal(resolveTrustedCurrency("005930.KS", "", "MIXED"), "KRW");
+  assert.equal(resolveTrustedCurrency("9988.HK", "", "MIXED"), "HKD");
+  assert.equal(resolveTrustedCurrency("7203.T", "", "MIXED"), "JPY");
 });
 
 test("freshness selects a current fast frame instead of aging the daily frame", () => {
@@ -45,13 +45,13 @@ test("open market buy signal is blocked when every fast frame is stale", () => {
   try {
     const result = finalizeRecommendation({
       symbol: "AAPL",
-      currency: "USD",
+      currency: "USD", currentPrice: 100,
       action: "buy",
       actionLabel: "شراء",
       confidence: 88,
       reasons: ["اختبار"],
       dataProvenance: {
-        freshness: "current",
+        freshness: "current", priceKind:"quote",
         marketTimestamp: "2026-09-14T00:00:00.000Z",
         retrievedAt: "2026-09-14T14:00:00.000Z"
       },
@@ -76,7 +76,7 @@ test("open market buy signal is blocked when every fast frame is stale", () => {
 test("open market signal is blocked when no fast timeframe timestamp exists", () => {
   const result = finalizeRecommendation({
     symbol: "MSFT",
-    currency: "USD",
+    currency: "USD", currentPrice:100,
     action: "sell",
     actionLabel: "بيع",
     confidence: 79,
@@ -88,23 +88,23 @@ test("open market signal is blocked when no fast timeframe timestamp exists", ()
   assert.equal(result.action, "hold");
   assert.equal(result.stalePriceBlocked, true);
   assert.equal(result.priceFreshness.state, "unknown");
-  assert.equal(result.priceFreshness.reason, "fast-frame-missing");
+  assert.equal(result.priceFreshness.reason, "price-observation-unverified");
 });
 
-test("fresh intraday frame keeps an actionable open-market signal even when daily timestamp is old", () => {
+test("fresh primary quote keeps an actionable signal even when the daily candle is old", () => {
   const originalNow = Date.now;
   Date.now = () => Date.parse("2026-09-14T14:00:00.000Z");
   try {
     const result = finalizeRecommendation({
       symbol: "NVDA",
-      currency: "USD",
+      currency: "USD", currentPrice: 100,
       action: "buy",
       actionLabel: "شراء",
       confidence: 82,
       reasons: [],
       dataProvenance: {
-        freshness: "current",
-        marketTimestamp: "2026-09-14T00:00:00.000Z",
+        freshness: "current", priceKind:"quote",
+        marketTimestamp: "2026-09-14T13:45:00.000Z",
         retrievedAt: "2026-09-14T14:00:00.000Z"
       },
       timeframes: [
@@ -116,7 +116,7 @@ test("fresh intraday frame keeps an actionable open-market signal even when dail
     assert.equal(result.action, "buy");
     assert.equal(result.stalePriceBlocked, undefined);
     assert.equal(result.priceFreshness.state, "current");
-    assert.equal(result.priceFreshness.frame, "15m");
+    assert.equal(result.priceFreshness.priceKind, "quote");
   } finally {
     Date.now = originalNow;
   }
@@ -125,7 +125,7 @@ test("fresh intraday frame keeps an actionable open-market signal even when dail
 test("closed market and holiday-like closed sessions do not raise false stale alarms", () => {
   const result = finalizeRecommendation({
     symbol: "AAPL",
-    currency: "USD",
+    currency: "USD", currentPrice:100,
     action: "buy",
     actionLabel: "شراء",
     confidence: 86,

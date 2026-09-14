@@ -139,7 +139,7 @@ test("Home V3 starts with explicit loading and unavailable panel states", async 
   assert.match(app, /const state = unavailable \? "unavailable" : "loading"/);
   assert.match(app, /لا توجد قيم بديلة معروضة/);
   assert.match(app, /root\.dataset\.uiState = state/);
-  assert.match(app, /data\.cached \|\| data\.stale \? "stale" : "fresh"/);
+  assert.match(app, /data\.stale \? "stale" : "fresh"/);
   assert.match(css, /\.v3-panel-state\[data-ui-state="unavailable"\]/);
 });
 
@@ -153,7 +153,7 @@ test("offline shell versions stay aligned with the Home V3 entry files", async (
   assert.ok(homeScript);
   assert.ok(worker.includes(`"${homeScript}"`));
   for (const stylesheet of homeStylesheets) assert.ok(worker.includes(`"${stylesheet}"`));
-  assert.match(worker, /the-sfm-trader-v20260914-detail-navigation-1/);
+  assert.match(worker, /the-sfm-trader-v20260914-deep-audit-1/);
 });
 
 test("Home V3 visual evidence is captured as exact viewport screenshots", async () => {
