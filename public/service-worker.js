@@ -1,4 +1,4 @@
-const CACHE_NAME = "the-sfm-trader-v20260914-view-routing-1";
+const CACHE_NAME = "the-sfm-trader-v20260914-detail-navigation-1";
 const STATIC_ASSETS = [
   "/",
   "/index.html",
@@ -10,7 +10,7 @@ const STATIC_ASSETS = [
   "/layout-stability.css?v=20260804-home-v3-layout-fix-1",
   "/dashboard-v2.css?v=20260914-view-routing-1",
   "/app.js?v=20260914-view-routing-1",
-  "/detail.js?v=20260914-audit-repair-1",
+  "/detail.js?v=20260914-detail-navigation-1",
   "/modules/apiClient.js?v=20260914-audit-repair-1",
   "/modules/polling.js?v=20260914-audit-repair-1",
   "/modules/uiState.js?v=20260914-audit-repair-1",
@@ -34,7 +34,7 @@ const STATIC_ASSETS = [
   "/market-feeds.css?v=20260914-audit-repair-1",
   "/analysis-metrics.css?v=20260914-audit-repair-1",
   "/instrument-search.css?v=20260914-audit-repair-1",
-  "/detail-brand.css?v=20260914-audit-repair-1",
+  "/detail-brand.css?v=20260914-detail-navigation-1",
   "/manifest.webmanifest",
   "/assets/sfm-trader-logo.svg",
   "/the-sfm-trader-icon-256.png",

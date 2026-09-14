@@ -229,6 +229,8 @@ try {
     await page.locator("#terminal-symbol-search").press("Enter");
     await page.waitForURL(/detail\.html\?symbol=MSFT/);
     await page.waitForFunction(() => document.querySelector("#detail-heading")?.textContent.includes("MSFT"));
+    activeCase = capture.file + ": detail navigation";
+    assert.equal(await page.locator(".detail-brand-subtitle").innerText(), "AI Market Analysis");
     await checkContrast(page, "detail");
     await page.locator(".detail-back").click();
     await waitView(page, "home");
