@@ -42,18 +42,53 @@ export function isoTimestampMs(value) {
   return Number.isFinite(ms) && ms > 0 ? ms : null;
 }
 
-// Browser fallback data is for observation only, never an executable signal.
+// A quote is an observation; permission to open a new trade is a separate policy.
+export function priceObservationState(item, now = Date.now()) {
+  if (!item || typeof item !== 'object') return 'unknown';
+  const freshness = item.priceFreshness || {};
+  const value = item.currentPrice;
+  const price = typeof value === 'number' || (typeof value === 'string' && value.trim()) ? Number(value) : NaN;
+  const timestamp = isoTimestampMs(freshness.marketTimestamp || item.dataProvenance?.marketTimestamp);
+  const sourceTimestamp = isoTimestampMs(item.dataProvenance?.marketTimestamp);
+  const maxAge = Number(freshness.maxAgeSeconds);
+  if (!Number.isFinite(now) || !Number.isFinite(price) || price <= 0 || timestamp === null || timestamp > now + 120000
+      || (sourceTimestamp !== null && sourceTimestamp !== timestamp)) return 'unknown';
+  if (item.stale || item.stalePriceBlocked || item.dataProvenance?.freshness === 'stale' || freshness.state === 'stale') return 'stale';
+  if (freshness.state === 'closed') return 'closed';
+  if (freshness.state !== 'current' || !Number.isFinite(maxAge) || maxAge <= 0) return 'unknown';
+  return now - timestamp > maxAge * 1000 ? 'stale' : 'current';
+}
+
+export function isExecutionSessionOpen(item, now = Date.now()) {
+  if (item?.marketClosed || item?.executionSession?.isOpen !== true) return false;
+  const closeAt = item.executionSession.closeAt;
+  if (closeAt == null) return true; // Includes explicitly always-open sessions.
+  const close = isoTimestampMs(closeAt);
+  return close !== null && now < close;
+}
+
+// Downgrade cached display data without reviving the original setup or its prose.
 export function guardRecommendationForDisplay(item, { stale = false, now = Date.now() } = {}) {
   if (!item || typeof item !== 'object') return item;
+  const observation = priceObservationState(item, now);
+  const sessionOpen = isExecutionSessionOpen(item, now);
   const blocked = stale || item.executionBlocked || item.marketClosed || item.stalePriceBlocked
     || item.economicNewsRisk?.blockTrading || item.tradePlan?.executionBlocked
-    || ['stale','unknown','closed'].includes(item.priceFreshness?.state)
-    || (['buy','sell'].includes(item.action) && !canExecuteRecommendation(item, now));
+    || observation !== 'current' || !sessionOpen;
   if (!blocked) return item;
   const message = stale ? 'اتصال متقطع؛ هذه بيانات محفوظة للمراقبة فقط.'
-    : item.decision?.message || 'انتظر سعراً حديثاً وقرار تنفيذ موثوقاً من السيرفر.';
+    : observation === 'stale' ? 'انتهت صلاحية السعر المعروض؛ انتظر تحديثاً موثوقاً قبل اتخاذ قرار دخول.'
+    : observation === 'unknown' ? 'لا يوجد سعر بتوقيت موثوق؛ البيانات للمراقبة فقط.'
+    : !sessionOpen ? 'جلسة التداول مغلقة أو غير مؤكدة؛ لا توجد إشارة دخول حالياً.'
+    : item.decision?.kind === 'hold' && item.decision.message ? item.decision.message
+    : 'التنفيذ محجوب؛ انتظر قراراً حديثاً من السيرفر.';
+  const state = stale ? 'stale' : observation;
   return {...item, setupAction:item.setupAction || item.action, action:'hold', actionLabel:'انتظار', executionBlocked:true,
-    tradePlan:item.tradePlan ? {...item.tradePlan,action:'hold',executionBlocked:true} : item.tradePlan,
+    ...(stale ? {stale:true} : {}),
+    priceFreshness:{...(item.priceFreshness || {}),state},
+    dataProvenance:{...(item.dataProvenance || {}),freshness:state},
+    duration:'مراقبة فقط حتى وصول تحديث موثوق', reasons:[message],
+    tradePlan:item.tradePlan ? {...item.tradePlan,action:'hold',executionBlocked:true,note:message} : item.tradePlan,
     decision:{...(item.decision || {}),kind:'hold',badge:'انتظار',title:'بيانات للمراقبة فقط',message,summary:message}};
 }
 
@@ -74,20 +109,15 @@ export function guardDisplayPayload(data, now = Date.now()) {
 }
 
 export function hasCurrentPriceObservation(item, now = Date.now()) {
-  if (!item || item.executionBlocked || item.marketClosed || item.stalePriceBlocked
-      || item.stale || item.economicNewsRisk?.blockTrading || item.tradePlan?.executionBlocked) return false;
-  if (item.executionSession?.isOpen !== true || item.priceFreshness?.state !== 'current') return false;
-  const value = item.currentPrice;
-  const price = (typeof value === 'number' || (typeof value === 'string' && value.trim())) ? Number(value) : NaN;
-  const timestamp = isoTimestampMs(item.priceFreshness.marketTimestamp || item.dataProvenance?.marketTimestamp);
-  const maxAge = Number(item.priceFreshness.maxAgeSeconds);
-  return Number.isFinite(price) && price > 0 && timestamp !== null && timestamp <= now + 120000
-    && Number.isFinite(maxAge) && maxAge > 0 && now - timestamp <= maxAge * 1000;
+  // News/strategy may forbid ENTRY while a genuine quote still updates an existing trade.
+  return isExecutionSessionOpen(item, now) && priceObservationState(item, now) === 'current';
 }
 
 // A derived view may downgrade the server decision, never upgrade Hold to Buy/Sell.
 export function canExecuteRecommendation(item, now = Date.now()) {
-  return ['buy', 'sell'].includes(item?.action) && hasCurrentPriceObservation(item, now);
+  return ['buy', 'sell'].includes(item?.action)
+    && !item.executionBlocked && !item.tradePlan?.executionBlocked && !item.economicNewsRisk?.blockTrading
+    && hasCurrentPriceObservation(item, now);
 }
 
 export function isVerifiedShariaItem(item) {

@@ -1,3 +1,4 @@
+import * as tradeObservation from '../public/modules/tradeObservation.js';
 // Negative cases reproduced on 3e7d206. All amounts are synthetic test inputs.
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -14,7 +15,7 @@ function fn(source,name){const start=source.search(new RegExp('^(?:async )?funct
 const now=Date.parse('2026-09-14T14:00:00Z');
 const raw={symbol:'AAPL',currentPrice:100,currency:'USD',action:'buy',actionLabel:'شراء',confidence:82,tradePlan:{action:'buy'},decision:{kind:'buy'},dataHealth:{score:90},timeframeConsensus:{},dataProvenance:{priceKind:'quote',marketTimestamp:new Date(now-60000).toISOString(),retrievedAt:new Date(now).toISOString()},timeframes:[{id:'1m',action:'buy',actionLabel:'شراء',confidence:82,latestTimestamp:(now-60000)/1000},{id:'15m',action:'buy',actionLabel:'شراء',confidence:82,latestTimestamp:(now-60000)/1000}]};
 const guarded=(input=raw,session={isOpen:true})=>finalizeRecommendation(input,{session,now});
-function appContext(extra={}){return vm.createContext({...numbers,...integrity,canExecuteRecommendation: item => integrity.canExecuteRecommendation(item,now),hasCurrentPriceObservation: item => integrity.hasCurrentPriceObservation(item,now),Date:class extends Date{static now(){return now;}},formatNumber:String,clamp:(v,a,b)=>Math.min(b,Math.max(a,v)),...extra});}
+function appContext(extra={}){return vm.createContext({...numbers,...integrity,...tradeObservation,recordTradeHistory:(h,i)=>tradeObservation.recordTradeHistory(h,i,now),canObserveTrade:(e,i)=>tradeObservation.canObserveTrade(e,i,now),observeTrade:(e,i)=>tradeObservation.observeTrade(e,i,now),canExecuteRecommendation: item => integrity.canExecuteRecommendation(item,now),hasCurrentPriceObservation: item => integrity.hasCurrentPriceObservation(item,now),Date:class extends Date{static now(){return now;}},formatNumber:String,clamp:(v,a,b)=>Math.min(b,Math.max(a,v)),...extra});}
 for(const [name,input,session] of [['closed',raw,{isOpen:false}],['stale',{...raw,dataProvenance:{...raw.dataProvenance,marketTimestamp:'2026-09-11T14:00:00Z'}},{isOpen:true}],['missing source',{...raw,dataProvenance:null},{isOpen:true}],['unknown session',raw,null],['server hold',{...raw,action:'hold'},{isOpen:true}],['news block',{...raw,economicNewsRisk:{blockTrading:true}},{isOpen:true}]]){
  test('scalping cannot override '+name,()=>{const ctx=appContext();vm.runInContext(fn(app,'buildScalpDecision'),ctx);const result=ctx.buildScalpDecision(guarded(input,session));assert.equal(result.action,'hold');assert.equal(result.target,null);assert.equal(result.stop,null);assert.doesNotMatch(result.actionText,/اشتر|بيع الآن/);});
 }

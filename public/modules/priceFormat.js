@@ -1,5 +1,5 @@
 import { toNullableNumber } from './numberValue.js?v=20260914-issue40-1';
-import { normalizeQuoteCurrency } from './marketIntegrity.js?v=20260914-issue40-1';
+import { normalizeQuoteCurrency } from './marketIntegrity.js?v=20260914-lifecycle-1';
 
 /** Display only: never changes the stored price or converts currency subunits. */
 export function formatQuotePrice(value, currency, { locale = 'en-US', unavailable = '--', symbol = '' } = {}) {
