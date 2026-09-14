@@ -1,7 +1,18 @@
-const COMPLIANT = { shariaStatus: "compliant", shariaLabel: "مطابق للشريعة" };
-const DOUBTFUL = { shariaStatus: "doubtful", shariaLabel: "يحتاج مراجعة شرعية" };
-const NOT_COMPLIANT = { shariaStatus: "not_compliant", shariaLabel: "غير مطابق للشريعة" };
-const COMMODITY_NOTE = { shariaStatus: "doubtful", shariaLabel: "عقد سلعي يحتاج تحقق شرعي" };
+const LOCAL_SHARIA_UNVERIFIED = Object.freeze({
+  shariaStatus: "unknown",
+  shariaLabel: "غير متحقق آلياً",
+  shariaSource: "تصنيف محلي سابق غير صالح كتأكيد شرعي حالي",
+  shariaCheckedAt: "unverified"
+});
+const COMPLIANT = LOCAL_SHARIA_UNVERIFIED;
+const DOUBTFUL = LOCAL_SHARIA_UNVERIFIED;
+const NOT_COMPLIANT = LOCAL_SHARIA_UNVERIFIED;
+const COMMODITY_NOTE = {
+  shariaStatus: "doubtful",
+  shariaLabel: "عقد سلعي يحتاج تحقق شرعي",
+  shariaSource: "تصنيف محلي غير متحقق آلياً",
+  shariaCheckedAt: "unverified"
+};
 
 const asset = (symbol, name, meta = {}) => ({ symbol, name, ...meta });
 

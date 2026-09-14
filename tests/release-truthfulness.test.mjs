@@ -13,3 +13,12 @@ test("web vital telemetry forwards the session credential in production", async 
   assert.match(source, /getApiToken\(\)/);
   assert.match(source, /headers\.set\("authorization", `Bearer \$\{token\}`\)/);
 });
+
+test("static market metadata never acts as a current Sharia verification", async () => {
+  const source = await readFile(new URL("../src/markets.mjs", import.meta.url), "utf8");
+  assert.match(source, /const LOCAL_SHARIA_UNVERIFIED/);
+  assert.match(source, /shariaStatus:\s*"unknown"/);
+  assert.match(source, /shariaCheckedAt:\s*"unverified"/);
+  assert.doesNotMatch(source, /const COMPLIANT = \{\s*shariaStatus:\s*"compliant"/);
+  assert.doesNotMatch(source, /const NOT_COMPLIANT = \{\s*shariaStatus:\s*"not_compliant"/);
+});
