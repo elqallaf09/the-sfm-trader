@@ -94,12 +94,11 @@ function renderTerminalHomeV3(data = {}) {
   const averageConfidence = confidences.length
     ? Math.round(confidences.reduce((sum, value) => sum + value, 0) / confidences.length)
     : 0;
-  const averageMove = items.length
-    ? items.reduce((sum, item) => sum + Number(item.expectedMovePct || 0), 0) / items.length
-    : 0;
+  const moves = items.map(item => toNullableNumber(item.expectedMovePct)).filter(value => value !== null);
+  const averageMove = moves.length ? moves.reduce((sum,value) => sum+value,0)/moves.length : null;
   const bias = buys.length > sells.length ? "صاعد" : sells.length > buys.length ? "هابط" : "محايد";
   const ranked = [...items].sort((a, b) => getDashboardScore(b) - getDashboardScore(a));
-  const state = items.length ? (data.cached || data.stale ? "stale" : "fresh") : "empty";
+  const state = items.length ? (data.stale ? "stale" : "fresh") : data.partial ? "loading" : "empty";
   root.dataset.uiState = state;
   root.setAttribute("aria-busy", "false");
 
@@ -113,7 +112,7 @@ function renderTerminalHomeV3(data = {}) {
   setText("#v3-sell-count", formatNumber(sells.length));
   setText("#v3-hold-count", formatNumber(holds.length));
   setText("#v3-market-bias", localizeUiText(bias));
-  setText("#v3-pulse-change", items.length ? formatPercent(averageMove) : "--");
+  setText("#v3-pulse-change", averageMove !== null ? formatPercent(averageMove) : "--");
   setText("#v3-pulse-label", items.length ? localizeUiText(getMarketPulse(items)) : localizeUiText("بانتظار البيانات"));
   setText("#v3-pulse-assets", items.length ? `${localizeUiText("الأصول المحللة")}: ${formatNumber(items.length)}` : localizeUiText("لا توجد بيانات مكتملة"));
   setText("#v3-pulse-updated", data.generatedAt ? `${localizeUiText("آخر تحديث")} ${formatDateTime(data.generatedAt)}` : localizeUiText("آخر تحديث --"));
@@ -172,6 +171,7 @@ function renderTerminalHomeV3(data = {}) {
 }
 
 function renderCalendar(calendar = {}) {
+  calendar = calendar && typeof calendar === "object" ? calendar : {};
   const calendarList = document.querySelector("#v3-calendar-list");
   if (!calendarList) return;
   const events = [...(calendar.hotEvents || []), ...(calendar.upcoming || []), ...(calendar.recent || [])]
@@ -209,9 +209,10 @@ function renderV3HeatItem(item) {
 function renderV3PulseChart(items) {
   if (!items.length) return renderV3EmptyState("بانتظار بيانات حركة الأصول.");
   const values = items.slice(0, 20)
-    .map((item) => Number(item.expectedMovePct || 0))
-    .filter(Number.isFinite)
+    .map((item) => toNullableNumber(item.expectedMovePct))
+    .filter(value => value !== null)
     .sort((a, b) => a - b);
+  if (!values.length) return renderV3EmptyState("لا توجد توقعات حركة متاحة.");
   const max = Math.max(1, ...values.map((value) => Math.abs(value)));
   const points = values.map((value, index) => {
     const x = values.length === 1 ? 50 : (index / (values.length - 1)) * 100;
@@ -219,7 +220,7 @@ function renderV3PulseChart(items) {
     return `${x.toFixed(1)},${y.toFixed(1)}`;
   }).join(" ");
   const areaPoints = `0,50 ${points} 100,50`;
-  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="${escapeHtml(localizeUiText("توزيع حركة الأصول المحللة"))}"><defs><linearGradient id="v3-pulse-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#2fd6c0" stop-opacity=".32"></stop><stop offset="100%" stop-color="#2fd6c0" stop-opacity="0"></stop></linearGradient></defs><g class="v3-pulse-grid"><line x1="0" y1="16" x2="100" y2="16"></line><line x1="0" y1="33" x2="100" y2="33"></line><line x1="0" y1="50" x2="100" y2="50"></line><line x1="0" y1="67" x2="100" y2="67"></line><line x1="0" y1="84" x2="100" y2="84"></line></g><polygon points="${areaPoints}"></polygon><polyline points="${points}"></polyline></svg>`;
+  return `<svg viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="${escapeHtml(localizeUiText("توزيع الحركة المتوقعة للأصول — ليس شارت أسعار"))}"><defs><linearGradient id="v3-pulse-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#2fd6c0" stop-opacity=".32"></stop><stop offset="100%" stop-color="#2fd6c0" stop-opacity="0"></stop></linearGradient></defs><g class="v3-pulse-grid"><line x1="0" y1="16" x2="100" y2="16"></line><line x1="0" y1="33" x2="100" y2="33"></line><line x1="0" y1="50" x2="100" y2="50"></line><line x1="0" y1="67" x2="100" y2="67"></line><line x1="0" y1="84" x2="100" y2="84"></line></g><polygon points="${areaPoints}"></polygon><polyline points="${points}"></polyline></svg>`;
 }
 
 function renderV3FollowedTrade(entry) {

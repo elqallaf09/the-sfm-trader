@@ -332,7 +332,7 @@
               </div>
             </div>
             <label class="settings-switch">
-              <input type="checkbox" name="latin-digits" id="settings-latin-digits" checked />
+              <input type="checkbox" name="latin-digits" id="settings-latin-digits" checked disabled title="الأرقام الإنجليزية ثابتة في هذه النسخة" />
               <span>استخدام الأرقام الإنجليزية داخل الواجهة</span>
             </label>
           </section>
@@ -359,10 +359,12 @@
             </div>
             <label class="settings-field">
               <span>نمط التحليل الافتراضي</span>
-              <select>
-                <option>قيادة السوق</option>
-                <option>مضاربة 5-15 دقيقة</option>
-                <option>استثمار شهري</option>
+              <select id="settings-analysis-mode">
+                <option value="balanced">قيادة السوق</option>
+                <option value="scalp">مضاربة 5-15 دقيقة</option>
+                <option value="swing">استثمار شهري</option>
+                <option value="sharia">متوافق مع الشريعة</option>
+                <option value="safe">مخاطرة أقل</option>
               </select>
             </label>
             <label class="settings-switch">
@@ -466,7 +468,7 @@
             </article>
             <article class="v3-market-pulse">
               <header class="v3-section-head">
-                <div><span>توزيع حركة الأصول المحللة</span><h2>نبض السوق</h2></div>
+                <div><span>توزيع الحركة المتوقعة للأصول — ليس شارت أسعار</span><h2>نبض السوق</h2></div>
                 <b id="v3-pulse-change">--</b>
               </header>
               <div id="v3-pulse-chart" class="v3-pulse-chart"><div class="v3-panel-state" data-ui-state="loading" role="status">جارٍ تحميل توزيع حركة الأصول.</div></div>
@@ -1409,6 +1411,6 @@
       </article>
     </template>
 
-    <script src="/app.js?v=20260914-view-routing-1" type="module"></script>
+    <script src="/app.js?v=20260914-deep-audit-1" type="module"></script>
   </body>
 </html>

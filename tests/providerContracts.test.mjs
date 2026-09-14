@@ -13,7 +13,7 @@ test("Yahoo provider adapter preserves the normalized chart contract", async (co
     else process.env.DATA_PROVIDER = originalProvider;
   });
   process.env.DATA_PROVIDER = "yahoo";
-  globalThis.fetch = async () => new Response(JSON.stringify(fixture), { status: 200, headers: { "content-type": "application/json" } });
+  globalThis.fetch = async (url) => new Response(JSON.stringify(fixtureForUrl(fixture, url)), { status: 200, headers: { "content-type": "application/json" } });
 
   const chart = await fetchChart("SFMTEST", { range: "5d", interval: "1d" });
   const result = chart.chart.result[0];
@@ -44,9 +44,9 @@ test("provider response cache is bounded and evicts least-recently-used entries"
   process.env.PROVIDER_CACHE_MAX_ENTRIES = "2";
   process.env.PROVIDER_MIN_START_GAP_MS = "0";
   let requests = 0;
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (url) => {
     requests += 1;
-    return new Response(JSON.stringify(fixture), { status: 200, headers: { "content-type": "application/json" } });
+    return new Response(JSON.stringify(fixtureForUrl(fixture, url)), { status: 200, headers: { "content-type": "application/json" } });
   };
   const provider = await import(`../src/dataProviders.mjs?bounded-cache=${Date.now()}`);
 
@@ -74,10 +74,10 @@ test("concurrent requests for one provider URL share a single upstream request",
   process.env.DATA_PROVIDER = "yahoo";
   process.env.PROVIDER_MIN_START_GAP_MS = "0";
   let requests = 0;
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (url) => {
     requests += 1;
     await new Promise((resolve) => setTimeout(resolve, 10));
-    return new Response(JSON.stringify(fixture), { status: 200, headers: { "content-type": "application/json" } });
+    return new Response(JSON.stringify(fixtureForUrl(fixture, url)), { status: 200, headers: { "content-type": "application/json" } });
   };
   const provider = await import(`../src/dataProviders.mjs?request-coalescing=${Date.now()}`);
 
@@ -112,10 +112,10 @@ test("provider honors bounded Retry-After before retrying rate limits", async (c
   process.env.PROVIDER_MIN_START_GAP_MS = "0";
   process.env.PROVIDER_MAX_RETRY_DELAY_MS = "10";
   let requests = 0;
-  globalThis.fetch = async () => {
+  globalThis.fetch = async (url) => {
     requests += 1;
     if (requests === 1) return new Response("", { status: 429, headers: { "retry-after": "0" } });
-    return new Response(JSON.stringify(fixture), { status: 200, headers: { "content-type": "application/json" } });
+    return new Response(JSON.stringify(fixtureForUrl(fixture, url)), { status: 200, headers: { "content-type": "application/json" } });
   };
   const provider = await import(`../src/dataProviders.mjs?retry-after=${Date.now()}`);
 
@@ -123,4 +123,18 @@ test("provider honors bounded Retry-After before retrying rate limits", async (c
 
   assert.equal(requests, 2);
   assert.equal(chart.chart.result[0].meta.dataProvider, "Yahoo Finance");
+});
+
+function fixtureForUrl(fixture, url) {
+  const copy = structuredClone(fixture);
+  copy.chart.result[0].meta.symbol = decodeURIComponent(new URL(url).pathname.split("/").at(-1));
+  return copy;
+}
+test("a successful HTTP response cannot supply a different symbol", async context => {
+  const originalFetch=globalThis.fetch;
+  context.after(()=>{globalThis.fetch=originalFetch;});
+  const fixture=JSON.parse(await readFile(new URL("./fixtures/yahoo-chart.json",import.meta.url),"utf8"));
+  globalThis.fetch=async()=>new Response(JSON.stringify(fixture),{status:200});
+  const provider=await import("../src/dataProviders.mjs?wrong-symbol");
+  await assert.rejects(provider.fetchChart("WRONG"),/لا يطابق/);
 });

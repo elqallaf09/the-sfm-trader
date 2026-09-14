@@ -1,4 +1,3 @@
-import "./shellInteractions.js?v=20260914-issue36-ui-1";
 
 const VALID_KINDS = new Set(["loading", "empty", "error", "stale", "offline", "unauthorized"]);
 

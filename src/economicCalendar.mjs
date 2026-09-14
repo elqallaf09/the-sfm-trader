@@ -70,7 +70,7 @@ export function applyEconomicNewsOverlayToRecommendations(recommendations = [], 
     ? [...calendarPayload.hotEvents || [], ...calendarPayload.upcoming]
     : [];
 
-  if (calendarPayload?.dataState === "unavailable" || calendarPayload?.dataState === "stale" || calendarPayload?.error) {
+  if (!calendarPayload || calendarPayload?.dataState === "unavailable" || calendarPayload?.dataState === "stale" || calendarPayload?.error) {
     return recommendations.map(item => ({
       ...item,
       economicNewsRisk: {

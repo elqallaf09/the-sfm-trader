@@ -2,12 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-test("alerts rail opens the actual notification panel instead of routing to unrelated sections", async () => {
-  const source = await readFile(new URL("../public/modules/shellInteractions.js", import.meta.url), "utf8");
-  assert.match(source, /data-nav-key=\\?"alerts\\?"/);
-  assert.match(source, /#notification-button, #mobile-notification-button/);
-  assert.match(source, /stopImmediatePropagation/);
-  assert.match(source, /#notification-panel/);
+test("notification route opens a modal without replacing the underlying view", async () => {
+  const source = await readFile(new URL("../public/app.js", import.meta.url), "utf8");
+  assert.match(source, /if \(view === "alerts"\)/);
+  assert.match(source, /sfmNotificationReturn/);
+  const ui = await readFile(new URL("../public/modules/uiState.js", import.meta.url), "utf8");
+  assert.doesNotMatch(ui, /shellInteractions/);
 });
 
 test("mobile notification action keeps a stable touch target and contained badge", async () => {

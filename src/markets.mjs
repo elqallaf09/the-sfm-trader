@@ -213,7 +213,7 @@ export const markets = {
     label: "الأسهم الأوروبية",
     labelEn: "European stocks",
     region: "Europe",
-    currency: "EUR",
+    currency: "MIXED",
     timezone: "Europe/Paris",
     note: "أسهم أوروبية من هولندا وألمانيا وفرنسا وسويسرا وبريطانيا.",
     symbols: [
@@ -232,7 +232,7 @@ export const markets = {
     label: "الأسهم الآسيوية",
     labelEn: "Asian stocks",
     region: "Asia",
-    currency: "USD",
+    currency: "MIXED",
     timezone: "Asia/Tokyo",
     note: "أسهم آسيوية من اليابان والصين وهونغ كونغ وكوريا وتايوان.",
     symbols: [
