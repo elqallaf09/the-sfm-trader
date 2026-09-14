@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 const syntaxFiles = [
   "tools/check.mjs",
   "tests/cssSyntax.test.mjs",
+  "tests/dynamicSections.test.mjs",
   "tests/analysisRoutes.test.mjs",
   "public/modules/numberValue.js",
   "tests/analysisMetrics.test.mjs",

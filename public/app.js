@@ -1758,26 +1758,27 @@ function syncAppViewShell(view) {
   });
 }
 
+function syncAppSectionVisibility(section, view = activeAppView) {
+  const selectors = APP_VIEW_GROUPS[view] || APP_VIEW_GROUPS.home;
+  const visible = selectors.some((selector) => section.matches(selector));
+  section.classList.toggle("app-view-hidden", !visible);
+  // Routing owns display even when legacy selectors use !important.
+  section.hidden = !visible;
+  if (visible) {
+    section.style.removeProperty("display");
+    if (section.id === "temporary-legal-notices") syncTemporaryLegalNoticeRegion(section);
+  } else {
+    section.style.setProperty("display", "none", "important");
+  }
+}
+
 function showAppView(view, options = {}) {
   const nextView = APP_VIEW_GROUPS[view] ? view : "home";
-  const visibleSelectors = APP_VIEW_GROUPS[nextView] || APP_VIEW_GROUPS.home;
   activeAppView = nextView;
   document.body.dataset.appView = nextView;
   syncAppViewShell(nextView);
 
-  document.querySelectorAll("main > section").forEach((section) => {
-    const visible = visibleSelectors.some((selector) => section.matches(selector));
-    section.classList.toggle("app-view-hidden", !visible);
-    // The router owns display, including sections with old ID-based CSS.
-    if (visible) {
-      section.style.removeProperty("display");
-      section.hidden = false;
-      if (section.id === "temporary-legal-notices") syncTemporaryLegalNoticeRegion(section);
-    } else {
-      section.hidden = true;
-      section.style.setProperty("display", "none", "important");
-    }
-  });
+  document.querySelectorAll("main > section").forEach((section) => syncAppSectionVisibility(section, nextView));
 
   document.querySelectorAll(".rail-link, .ios-tab-link").forEach((link) => {
     const linkView = getAppViewFromNavigationLink(link);
@@ -7591,6 +7592,7 @@ function ensureEducationSection() {
       ].map(([title, body]) => `<article><strong>${title}</strong><p>${body}</p></article>`).join("")}
     </div>`;
   const anchor = document.querySelector("#voice-section") || document.querySelector("#temporary-legal-notices") || document.body.lastElementChild;
+  syncAppSectionVisibility(section);
   anchor?.parentNode?.insertBefore(section, anchor);
 }
 
