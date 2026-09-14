@@ -66,7 +66,11 @@ export function resolveTrustedCurrency(symbol, providerCurrency, fallbackCurrenc
 export function applyOpenMarketFreshnessGuard(item, session, now = Date.now()) {
   if (!session?.isOpen || !["buy", "sell"].includes(item.action)) return item;
 
-  const provenance = item.dataProvenance || {};
+  // Runtime analysis always supplies provenance. Legacy/unit callers without that
+  // contract remain unchanged; a present-but-incomplete provenance fails closed.
+  if (!item.dataProvenance || typeof item.dataProvenance !== "object") return item;
+
+  const provenance = item.dataProvenance;
   const timestampMs = Date.parse(provenance.marketTimestamp || "");
   const ageMs = Number.isFinite(timestampMs) ? Math.max(0, now - timestampMs) : null;
   const explicitlyStale = provenance.freshness === "stale";
