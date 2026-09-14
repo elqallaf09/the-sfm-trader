@@ -1,28 +1,44 @@
-name: Post-merge inspection snapshot
+name: Post-merge browser inspection
 on:
   push:
     branches: [audit/postmerge-39-inspection]
-    paths: [.github/workflows/postmerge-inspection-snapshot.yml]
+    paths: [.github/workflows/postmerge-inspection-snapshot.yml, tools/postmerge-browser-inspection.mjs]
 permissions:
   contents: read
 jobs:
-  snapshot:
+  inspect:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
+    env:
+      NODE_ENV: development
+      OLLAMA_ENABLED: 'false'
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 3e7d206395fe19df439ef278f577342706198848
           persist-credentials: false
-      - name: Archive only tracked pinned source
-        run: |
-          mkdir -p /tmp/sfm-inspection
-          git archive --format=tar.gz --output=/tmp/sfm-inspection/source.tar.gz HEAD
-          git rev-parse HEAD > /tmp/sfm-inspection/revision.txt
-          git ls-tree -r HEAD > /tmp/sfm-inspection/tree.txt
-      - uses: actions/upload-artifact@v4
+          fetch-depth: 4
+      - name: Verify production source is unchanged from the inspected main
+        run: git diff --exit-code 3e7d206395fe19df439ef278f577342706198848 HEAD -- public src server.mjs package.json package-lock.json
+      - uses: actions/setup-node@v4
         with:
-          name: postmerge-39-inspection-source
-          path: /tmp/sfm-inspection/
-          retention-days: 1
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Start isolated server
+        run: |
+          npm start > /tmp/sfm-inspection-server.log 2>&1 &
+          for attempt in {1..30}; do
+            curl --fail --silent http://127.0.0.1:4173/api/health >/dev/null && exit 0
+            sleep 1
+          done
+          exit 1
+      - name: Execute observation probes
+        run: node tools/postmerge-browser-inspection.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postmerge-39-browser-observations
+          path: .artifacts/postmerge-inspection/
+          retention-days: 3
           if-no-files-found: error
