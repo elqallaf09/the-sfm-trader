@@ -1,0 +1,21 @@
+name: Materialize verified empty-state follow-up
+on:
+  push:
+    branches: [fix/async-state-integrity]
+    paths: [.github/workflows/empty-display-repair.yml]
+permissions:
+  contents: write
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/async-state-integrity
+          fetch-depth: 0
+      - name: Apply exact locally tested empty-state correction
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          python3 .empty-apply.py
