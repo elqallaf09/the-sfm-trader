@@ -1,6 +1,12 @@
 import { toNullableNumber } from "../public/modules/numberValue.js";
 
-const OPEN_MARKET_MAX_PRICE_AGE_MS = 45 * 60 * 1000;
+const FAST_FRAME_MAX_AGE_MS = Object.freeze({
+  "1m": 10 * 60 * 1000,
+  "15m": 45 * 60 * 1000,
+  "30m": 90 * 60 * 1000,
+  "1h": 150 * 60 * 1000
+});
+const FAST_FRAME_PRIORITY = ["1m", "15m", "30m", "1h"];
 
 export function applyClosedMarketGuard(item, session) {
   const reasons = Array.isArray(item.reasons) ? item.reasons : [];
@@ -24,7 +30,7 @@ export function applyClosedMarketGuard(item, session) {
     marketClosed: true,
     marketSession: session,
     reasons: [
-      `السوق مغلق الآن؛ لا توجد توصية دخول فورية قبل عودة التداول.`,
+      "السوق مغلق الآن؛ لا توجد توصية دخول فورية قبل عودة التداول.",
       ...reasons.filter(Boolean)
     ].slice(0, 6),
     decision: item.decision
@@ -63,38 +69,84 @@ export function resolveTrustedCurrency(symbol, providerCurrency, fallbackCurrenc
   return provider || fallback || "USD";
 }
 
+export function getFastPriceFreshness(item, now = Date.now()) {
+  const frames = Array.isArray(item?.timeframes) ? item.timeframes : [];
+  const candidates = frames
+    .filter((frame) => FAST_FRAME_PRIORITY.includes(frame?.id))
+    .map((frame) => {
+      const timestampSeconds = Number(frame?.latestTimestamp || 0);
+      const timestampMs = Number.isFinite(timestampSeconds) && timestampSeconds > 0 ? timestampSeconds * 1000 : NaN;
+      const maxAgeMs = FAST_FRAME_MAX_AGE_MS[frame.id];
+      const ageMs = Number.isFinite(timestampMs) ? Math.max(0, now - timestampMs) : null;
+      return {
+        id: frame.id,
+        label: frame.label || frame.id,
+        timestampMs,
+        marketTimestamp: Number.isFinite(timestampMs) ? new Date(timestampMs).toISOString() : null,
+        ageMs,
+        maxAgeMs,
+        current: Number.isFinite(ageMs) && ageMs <= maxAgeMs
+      };
+    })
+    .filter((frame) => Number.isFinite(frame.timestampMs))
+    .sort((a, b) => {
+      if (a.current !== b.current) return a.current ? -1 : 1;
+      if (a.timestampMs !== b.timestampMs) return b.timestampMs - a.timestampMs;
+      return FAST_FRAME_PRIORITY.indexOf(a.id) - FAST_FRAME_PRIORITY.indexOf(b.id);
+    });
+
+  const best = candidates[0] || null;
+  if (!best) {
+    return {
+      state: "unknown",
+      frame: null,
+      marketTimestamp: null,
+      ageSeconds: null,
+      maxAgeSeconds: null,
+      reason: "fast-frame-missing"
+    };
+  }
+
+  return {
+    state: best.current ? "current" : "stale",
+    frame: best.id,
+    frameLabel: best.label,
+    marketTimestamp: best.marketTimestamp,
+    ageSeconds: Math.round(best.ageMs / 1000),
+    maxAgeSeconds: Math.round(best.maxAgeMs / 1000),
+    reason: best.current ? "fast-frame-current" : "fast-frame-stale"
+  };
+}
+
 export function applyOpenMarketFreshnessGuard(item, session, now = Date.now()) {
   if (!session?.isOpen || !["buy", "sell"].includes(item.action)) return item;
 
-  // Runtime analysis always supplies provenance. Legacy/unit callers without that
-  // contract remain unchanged; a present-but-incomplete provenance fails closed.
+  // Runtime analysis always supplies provenance and timeframe timestamps. Legacy/unit
+  // callers without provenance remain unchanged instead of being silently reclassified.
   if (!item.dataProvenance || typeof item.dataProvenance !== "object") return item;
 
   const provenance = item.dataProvenance;
-  const timestampMs = Date.parse(provenance.marketTimestamp || "");
-  const ageMs = Number.isFinite(timestampMs) ? Math.max(0, now - timestampMs) : null;
-  const explicitlyStale = provenance.freshness === "stale";
-  const missingTimestamp = !Number.isFinite(timestampMs);
-  const tooOld = Number.isFinite(ageMs) && ageMs > OPEN_MARKET_MAX_PRICE_AGE_MS;
+  const primaryExplicitlyStale = provenance.freshness === "stale";
+  const freshness = getFastPriceFreshness(item, now);
+  const blocked = primaryExplicitlyStale || freshness.state !== "current";
 
-  if (!explicitlyStale && !missingTimestamp && !tooOld) {
+  if (!blocked) {
     return {
       ...item,
       priceFreshness: {
-        state: "current",
-        marketTimestamp: provenance.marketTimestamp,
-        ageSeconds: Math.round(ageMs / 1000),
-        maxAgeSeconds: Math.round(OPEN_MARKET_MAX_PRICE_AGE_MS / 1000)
+        ...freshness,
+        retrievedAt: provenance.retrievedAt || null,
+        primaryMarketTimestamp: provenance.marketTimestamp || null
       }
     };
   }
 
   const reasons = Array.isArray(item.reasons) ? item.reasons : [];
-  const message = missingTimestamp
-    ? "لا يوجد توقيت سوق موثوق للسعر الحالي، لذلك تم منع إشارة الدخول أثناء السوق المفتوح."
-    : explicitlyStale
-      ? "السعر الأساسي مصنف stale من مسار البيانات، لذلك تم منع إشارة الدخول أثناء السوق المفتوح."
-      : `عمر السعر تجاوز ${Math.round(OPEN_MARKET_MAX_PRICE_AGE_MS / 60000)} دقيقة أثناء السوق المفتوح، لذلك تم منع إشارة الدخول.`;
+  const message = primaryExplicitlyStale
+    ? "مسار السعر الأساسي مصنف stale، لذلك تم منع إشارة الدخول أثناء السوق المفتوح."
+    : freshness.state === "unknown"
+      ? "لا يوجد فريم سريع موثوق بوقت سوق صالح، لذلك تم منع إشارة الدخول أثناء السوق المفتوح."
+      : `أحدث فريم سريع (${freshness.frameLabel || freshness.frame}) تجاوز حد حداثته، لذلك تم منع إشارة الدخول.`;
 
   return {
     ...item,
@@ -105,10 +157,10 @@ export function applyOpenMarketFreshnessGuard(item, session, now = Date.now()) {
     confidence: toNullableNumber(item.confidence) === null ? null : Math.min(toNullableNumber(item.confidence), 58),
     stalePriceBlocked: true,
     priceFreshness: {
-      state: missingTimestamp ? "unknown" : "stale",
-      marketTimestamp: provenance.marketTimestamp || null,
-      ageSeconds: Number.isFinite(ageMs) ? Math.round(ageMs / 1000) : null,
-      maxAgeSeconds: Math.round(OPEN_MARKET_MAX_PRICE_AGE_MS / 1000)
+      ...freshness,
+      state: primaryExplicitlyStale ? "stale" : freshness.state,
+      retrievedAt: provenance.retrievedAt || null,
+      primaryMarketTimestamp: provenance.marketTimestamp || null
     },
     reasons: [message, ...reasons.filter(Boolean)].slice(0, 6),
     decision: {
