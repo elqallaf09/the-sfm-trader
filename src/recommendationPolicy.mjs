@@ -57,10 +57,7 @@ export function resolveTrustedCurrency(symbol, providerCurrency, fallbackCurrenc
   if (upper.endsWith(".HK")) return "HKD";
   if (upper.endsWith(".KS")) return "KRW";
   if (upper.endsWith(".T")) return "JPY";
-  if (upper.endsWith(".L")) {
-    if (["GBP", "GBX"].includes(provider)) return provider;
-    return "GBX";
-  }
+  if (upper.endsWith(".L")) return provider === "GBX" ? "GBX" : provider === "GBP" ? "GBP" : "GBX";
   if (upper.endsWith(".AS") || upper.endsWith(".DE") || upper.endsWith(".PA")) return "EUR";
 
   return provider || fallback || "USD";
@@ -72,7 +69,7 @@ export function applyOpenMarketFreshnessGuard(item, session, now = Date.now()) {
   const provenance = item.dataProvenance || {};
   const timestampMs = Date.parse(provenance.marketTimestamp || "");
   const ageMs = Number.isFinite(timestampMs) ? Math.max(0, now - timestampMs) : null;
-  const explicitlyStale = provenance.freshness === "stale" || item.dataHealth?.staleFrames?.length > 0;
+  const explicitlyStale = provenance.freshness === "stale";
   const missingTimestamp = !Number.isFinite(timestampMs);
   const tooOld = Number.isFinite(ageMs) && ageMs > OPEN_MARKET_MAX_PRICE_AGE_MS;
 
@@ -92,7 +89,7 @@ export function applyOpenMarketFreshnessGuard(item, session, now = Date.now()) {
   const message = missingTimestamp
     ? "لا يوجد توقيت سوق موثوق للسعر الحالي، لذلك تم منع إشارة الدخول أثناء السوق المفتوح."
     : explicitlyStale
-      ? "بيانات السعر قديمة أو تحتوي فريمات stale، لذلك تم منع إشارة الدخول أثناء السوق المفتوح."
+      ? "السعر الأساسي مصنف stale من مسار البيانات، لذلك تم منع إشارة الدخول أثناء السوق المفتوح."
       : `عمر السعر تجاوز ${Math.round(OPEN_MARKET_MAX_PRICE_AGE_MS / 60000)} دقيقة أثناء السوق المفتوح، لذلك تم منع إشارة الدخول.`;
 
   return {
@@ -133,11 +130,11 @@ export function finalizeRecommendation(item, { currency, executionMarketId, sess
 }
 
 function normalizeCurrency(currency) {
-  const code = String(currency || "").trim().toUpperCase();
+  const raw = String(currency || "").trim();
+  if (raw === "GBp" || raw.toLowerCase() === "gbpence") return "GBX";
+  const code = raw.toUpperCase();
   return {
     KWF: "KWD",
-    KW: "KWD",
-    GBp: "GBX",
-    GBPENCE: "GBX"
+    KW: "KWD"
   }[code] || code;
 }
