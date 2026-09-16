@@ -25,6 +25,7 @@ const syntaxFiles = [
   "public/modules/marketBackground.js",
   "public/modules/boundedMemoryCache.js",
   "public/modules/requestPolicy.js",
+  "public/modules/symbolDetailData.js",
   "tools/set-ios-server-url.mjs",
   "tools/smoke.mjs",
   "tools/migrate.mjs",

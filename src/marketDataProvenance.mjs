@@ -29,3 +29,13 @@ export function buildMarketDataProvenance({ provider, symbol, marketTimestamp, r
       : "Latency depends on the active provider plan and exchange."
   };
 }
+
+// Percent change against the provider's previous close, not an analyst price target.
+export function observedDailyChangePercent(meta = {}, currentPrice) {
+  const finite = value => (typeof value === "number" || (typeof value === "string" && value.trim())) && Number.isFinite(Number(value)) ? Number(value) : null;
+  const explicit = finite(meta.regularMarketChangePercent);
+  if (explicit !== null) return explicit;
+  const previous = finite(meta.previousClose);
+  const current = finite(currentPrice);
+  return previous !== null && previous > 0 && current !== null && current > 0 ? (current - previous) / previous * 100 : null;
+}

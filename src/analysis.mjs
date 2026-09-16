@@ -1,5 +1,5 @@
 import { fetchChart } from "./dataProviders.mjs";
-import { buildMarketDataProvenance } from "./marketDataProvenance.mjs";
+import { buildMarketDataProvenance, observedDailyChangePercent } from "./marketDataProvenance.mjs";
 
 const TIMEFRAME_CONFIGS = [
   { id: "1m", label: "دقيقة", range: "1d", interval: "1m", weight: 0.06, minBars: 25 },
@@ -102,6 +102,7 @@ export async function analyzeSymbol(asset, options = {}) {
     tradePlan,
     dataHealth,
     expectedMovePct: pctChange(currentPrice, expectedPrice),
+    changePercent: observedDailyChangePercent(meta, currentPrice),
     confidence: recommendation.confidence,
     action: recommendation.action,
     actionLabel: recommendation.actionLabel,
