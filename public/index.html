@@ -3,39 +3,45 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>اس اف ام المحلل الذكي</title>
-    <meta name="theme-color" content="#05090d" />
+    <title>SFM Trader</title>
+    <meta name="theme-color" content="#06111f" />
     <meta name="google" content="notranslate" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="اس اف ام المحلل الذكي" />
+    <meta name="apple-mobile-web-app-title" content="SFM Trader" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/the-sfm-trader-icon-256.png" />
     <link rel="icon" type="image/png" sizes="256x256" href="/the-sfm-trader-icon-256.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/desktop-balance.css?v=20260801-hardening-2" />
-    <link rel="stylesheet" href="/styles.css?v=20260801-hardening-2" />
-    <link rel="stylesheet" href="/cinema.css?v=20260801-hardening-2" />
-    <link rel="stylesheet" href="/layout-stability.css?v=20260802-dashboard-data-ux-4" />
-    <link rel="stylesheet" href="/dashboard-v2.css?v=20260802-terminal-home-v3-visual-fix" />
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/color-tokens.css?v=20260914-audit-repair-1" />
+    <link rel="stylesheet" href="/desktop-balance.css?v=20260914-audit-repair-1" />
+    <link rel="stylesheet" href="/styles.css?v=20260914-css-syntax-1" />
+    <link rel="stylesheet" href="/cinema.css?v=20260914-audit-repair-1" />
+    <link rel="stylesheet" href="/layout-stability.css?v=20260804-home-v3-layout-fix-1" />
+    <link rel="stylesheet" href="/instrument-search.css?v=20260914-audit-repair-1" />
+    <link rel="stylesheet" href="/market-feeds.css?v=20260914-audit-repair-1" />
+    <link rel="stylesheet" href="/analysis-metrics.css?v=20260914-audit-repair-1" />
+    <link rel="stylesheet" href="/dashboard-v2.css?v=20260914-view-routing-1" />
     <link rel="stylesheet" href="/symbol-detail-mobile.css?v=20260916-symbol-data" />
   </head>
-  <body class="notranslate" translate="no">
+  <body class="notranslate" data-app-view="home" translate="no">
     <a class="skip-link" href="#main-content">تجاوز إلى المحتوى الرئيسي</a>
     <canvas id="market-bg" class="market-bg" aria-hidden="true"></canvas>
 
     <div class="app-shell sfm-dashboard">
       <header class="topbar">
         <div class="brand-lockup">
-          <p class="eyebrow">وكيل تحليل الأسواق</p>
-          <h1 data-brand-title>اس اف ام المحلل الذكي</h1>
-          <p class="brand-subtitle">منصة تداول وتحليل ذكية</p>
+          <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M5 23 12 16l4 4 11-12"></path><path d="M21 8h6v6"></path><path d="M6 27h20"></path></svg></span>
+          <div>
+            <h1>SFM Trader</h1>
+            <p class="brand-subtitle">AI Market Analysis</p>
+          </div>
         </div>
         <form class="terminal-search" role="search" action="/">
           <span aria-hidden="true">⌕</span>
-          <input id="terminal-symbol-search" type="search" autocomplete="off" inputmode="search" placeholder="ابحث عن أصل، سهم، رمز أو سوق..." aria-label="بحث عن رمز أو سوق">
+          <input id="terminal-symbol-search" type="search" autocomplete="off" inputmode="search" placeholder="ابحث باسم الشركة أو رمزها…" aria-label="البحث عن أصل مالي">
           <kbd>Ctrl K</kbd>
         </form>
         <div class="header-session-mini" aria-live="polite">
@@ -48,11 +54,14 @@
             <span class="pulse"></span>
             <span id="connection-status" role="status" aria-live="polite" data-connection-state="updating">جاري الاتصال</span>
           </div>
-          <button id="notification-button" class="notification-button" type="button" aria-expanded="false" aria-controls="notification-panel">
+          <button id="language-quick-toggle" class="language-quick-toggle" type="button" aria-label="تبديل اللغة" title="تبديل اللغة">AR</button>
+          <button id="notification-button" class="notification-button" type="button" aria-label="الإشعارات" aria-expanded="false" aria-controls="notification-panel">
+            <svg class="utility-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0v5l2 3H4l2-3V9M10 21h4"></path></svg>
             <span>الإشعارات</span>
             <strong id="notification-count">0</strong>
           </button>
-          <button id="settings-button" class="settings-button" type="button" aria-expanded="false" aria-controls="settings-panel">
+          <button id="settings-button" class="settings-button" type="button" aria-label="الإعدادات" aria-expanded="false" aria-controls="settings-panel">
+            <svg class="utility-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16"></path><circle cx="9" cy="7" r="3"></circle><circle cx="15" cy="17" r="3"></circle></svg>
             <span>الإعدادات</span>
           </button>
           <button id="refresh-button" class="icon-button" title="تحديث الآن" aria-label="تحديث الآن">↻</button>
@@ -75,8 +84,8 @@
             <path d="m22 3-8.5 8.5-4-4L2 15"></path>
           </svg>
           <div class="sidebar-brand-text">
-            <strong data-brand-title>اس اف ام المحلل الذكي</strong>
-            <span data-brand-title-short>اس اف ام</span>
+            <strong>SFM Trader</strong>
+            <span>AI Market Analysis</span>
           </div>
         </div>
         <div class="rail-top-mark" aria-hidden="true">
@@ -150,7 +159,7 @@
           </span>
           <b>سجل الصفقات</b>
         </a>
-        <a href="#home-heatmap-section" class="rail-link" data-nav-key="opportunities" aria-label="الفرص">
+        <a href="#view-recommendations" class="rail-link" data-nav-key="opportunities" aria-label="الفرص">
           <span class="rail-icon rail-opportunities" aria-hidden="true">
             <svg class="rail-lucide-icon" viewBox="0 0 24 24">
               <path d="M12 2v4"></path>
@@ -324,7 +333,7 @@
               </div>
             </div>
             <label class="settings-switch">
-              <input type="checkbox" name="latin-digits" id="settings-latin-digits" checked />
+              <input type="checkbox" name="latin-digits" id="settings-latin-digits" checked disabled title="الأرقام الإنجليزية ثابتة في هذه النسخة" />
               <span>استخدام الأرقام الإنجليزية داخل الواجهة</span>
             </label>
           </section>
@@ -351,10 +360,12 @@
             </div>
             <label class="settings-field">
               <span>نمط التحليل الافتراضي</span>
-              <select>
-                <option>قيادة السوق</option>
-                <option>مضاربة 5-15 دقيقة</option>
-                <option>استثمار شهري</option>
+              <select id="settings-analysis-mode">
+                <option value="balanced">قيادة السوق</option>
+                <option value="scalp">مضاربة 5-15 دقيقة</option>
+                <option value="swing">استثمار شهري</option>
+                <option value="sharia">متوافق مع الشريعة</option>
+                <option value="safe">مخاطرة أقل</option>
               </select>
             </label>
             <label class="settings-switch">
@@ -437,17 +448,17 @@
       </section>
 
       <main id="main-content" tabindex="-1">
-        <section id="terminal-home-v3" class="terminal-home-v3" aria-label="لوحة قراءة السوق">
+        <section id="terminal-home-v3" class="terminal-home-v3" aria-label="لوحة قراءة السوق" aria-busy="true" data-ui-state="loading">
           <div class="v3-overview-grid">
             <article class="v3-market-reading">
               <header class="v3-section-head">
                 <div><span>تحليل SFM الذكي</span><h2>قراءة السوق الآن</h2></div>
-                <b id="v3-market-bias">--</b>
+                <b id="v3-market-bias">جاري التحميل</b>
               </header>
               <div class="v3-reading-body">
-                <div class="v3-confidence-ring" id="v3-confidence-ring"><strong id="v3-confidence">--</strong><span>ثقة التحليل</span></div>
+                <div class="v3-confidence-ring" id="v3-confidence-ring" role="img" aria-label="جارٍ تحميل ثقة التحليل"><strong id="v3-confidence">--</strong><span>ثقة التحليل</span></div>
                 <div class="v3-reading-copy">
-                  <p id="v3-market-summary">بانتظار وصول بيانات موثوقة من مزود السوق.</p>
+                  <p id="v3-market-summary">جارٍ تحميل بيانات السوق من مزود موثوق.</p>
                   <div class="v3-signal-counts">
                     <div class="buy"><span>شراء</span><strong id="v3-buy-count">--</strong></div>
                     <div class="sell"><span>بيع</span><strong id="v3-sell-count">--</strong></div>
@@ -458,11 +469,11 @@
             </article>
             <article class="v3-market-pulse">
               <header class="v3-section-head">
-                <div><span>توزيع حركة الأصول المحللة</span><h2>نبض السوق</h2></div>
+                <div><span>توزيع الحركة المتوقعة للأصول — ليس شارت أسعار</span><h2>نبض السوق</h2></div>
                 <b id="v3-pulse-change">--</b>
               </header>
-              <div id="v3-pulse-chart" class="v3-pulse-chart"></div>
-              <footer><span id="v3-pulse-label">--</span><em id="v3-pulse-updated">آخر تحديث --</em></footer>
+              <div id="v3-pulse-chart" class="v3-pulse-chart"><div class="v3-panel-state" data-ui-state="loading" role="status">جارٍ تحميل توزيع حركة الأصول.</div></div>
+              <footer><span id="v3-pulse-label">جارٍ التحميل</span><em id="v3-pulse-assets">--</em><em id="v3-pulse-updated">آخر تحديث --</em></footer>
             </article>
           </div>
 
@@ -471,7 +482,7 @@
               <div><span>أعلى النتائج حسب قوة التحليل</span><h2>أفضل الفرص</h2></div>
               <a href="#view-recommendations" class="v3-view-all" data-v3-view="recommendations">عرض جميع الفرص</a>
             </header>
-            <div id="v3-opportunity-grid" class="v3-opportunity-grid"></div>
+            <div id="v3-opportunity-grid" class="v3-opportunity-grid"><div class="v3-panel-state" data-ui-state="loading" role="status">جارٍ تحميل الفرص الموثقة.</div></div>
           </article>
 
           <article class="v3-heatmap-panel">
@@ -479,20 +490,20 @@
               <div><span>مقارنة مختصرة للحركة والثقة</span><h2>خريطة حرارة الفرص</h2></div>
               <span id="v3-heatmap-leader">--</span>
             </header>
-            <div id="v3-heatmap-grid" class="v3-heatmap-grid"></div>
+            <div id="v3-heatmap-grid" class="v3-heatmap-grid"><div class="v3-panel-state" data-ui-state="loading" role="status">جارٍ تحميل خريطة حركة الأصول.</div></div>
           </article>
 
           <div class="v3-bottom-grid">
             <article class="v3-followed-panel">
-              <header class="v3-section-head"><div><span>آخر الحالات المحفوظة</span><h2>الصفقات المتابعة</h2></div></header>
-              <div id="v3-followed-list" class="v3-followed-list"></div>
+              <header class="v3-section-head"><div><span>المراكز التي اخترتها للمراقبة</span><h2>الصفقات المتابعة</h2></div></header>
+              <div id="v3-followed-list" class="v3-followed-list"><div class="v3-panel-state" data-ui-state="loading" role="status">جارٍ تحميل الصفقات المتابعة.</div></div>
             </article>
             <article class="v3-calendar-panel">
               <header class="v3-section-head">
                 <div><span>أحداث موثقة من التقويم الاقتصادي</span><h2>الأخبار الاقتصادية القادمة</h2></div>
                 <a href="#view-calendar" class="v3-view-all" data-v3-view="calendar">عرض التقويم</a>
               </header>
-              <div id="v3-calendar-list" class="v3-calendar-list"></div>
+              <div id="v3-calendar-list" class="v3-calendar-list"><div class="v3-panel-state" data-ui-state="loading" role="status">جارٍ تحميل الأحداث الاقتصادية.</div></div>
             </article>
           </div>
         </section>
@@ -542,9 +553,9 @@
               <em>Scanning markets</em>
             </article>
             <article>
-              <span>الأسواق المتابعة</span>
+              <span>فئات الأسواق</span>
               <strong id="ai-market-count">--</strong>
-              <em>Connected markets</em>
+              <em>Market categories</em>
             </article>
             <article>
               <span>الأصول المحللة</span>
@@ -822,19 +833,22 @@
           <div id="market-hours-grid" class="market-hours-grid"></div>
         </section>
 
-        <section id="economic-news-section" class="economic-news-band" aria-label="رزنامة الأخبار الاقتصادية">
+        <section id="economic-calendar-section" class="market-feed-section" aria-label="التقويم الاقتصادي">
           <div class="section-head">
-            <div>
-              <p class="eyebrow">FOREXFACTORY NEWS RISK</p>
-              <h2>رزنامة الأخبار الاقتصادية</h2>
-              <p>يربط SFM أحداث ForexFactory مع التحليل الفني حتى يخفض الثقة أو ينتظر وقت الأخبار القوية.</p>
-            </div>
-            <div class="scan-meter">
-              <span>حالة الأخبار</span>
-              <strong id="economic-news-status">--</strong>
-            </div>
+            <div><p class="eyebrow">ECONOMIC CALENDAR</p><h2>التقويم الاقتصادي</h2><p>أحداث الأسبوع والنتائج المنشورة من المصدر.</p></div>
+            <strong id="economic-calendar-status" class="feed-status" role="status">جارٍ التحميل</strong>
           </div>
-          <div id="economic-news-grid" class="economic-news-grid"></div>
+          <p id="economic-calendar-source" class="market-feed-source"></p>
+          <div id="economic-calendar-grid" class="market-feed-grid" aria-busy="true"></div>
+        </section>
+
+        <section id="economic-news-section" class="economic-news-band market-feed-section" aria-label="الأخبار الاقتصادية">
+          <div class="section-head">
+            <div><p class="eyebrow">ECONOMIC NEWS</p><h2>الأخبار الاقتصادية</h2><p>عناوين مؤرخة وروابط مباشرة إلى المصادر.</p></div>
+            <strong id="economic-news-status" class="feed-status" role="status">جارٍ التحميل</strong>
+          </div>
+          <p id="economic-news-source" class="market-feed-source"></p>
+          <div id="economic-news-grid" class="economic-news-grid market-feed-grid" aria-busy="true"></div>
         </section>
 
         <section id="voice-section" class="voice-band" aria-label="محادثة SFM الصوتية">
@@ -1041,7 +1055,8 @@
             <input id="portfolio-qty" type="number" min="0" step="0.01" placeholder="الكمية" aria-label="الكمية" />
             <label class="sr-only" for="portfolio-price">سعر الشراء</label>
             <input id="portfolio-price" type="number" min="0" step="0.01" placeholder="سعر الشراء" aria-label="سعر الشراء" />
-            <button type="submit">إضافة للمحفظة</button>
+            <label><span>عملة سعر الشراء</span><input id="portfolio-currency" type="text" maxlength="4" placeholder="USD / KWD / GBX" aria-label="عملة سعر الشراء" autocomplete="off" /></label>
+              <button type="submit">إضافة للمحفظة</button>
           </form>
           <div id="portfolio-list" class="portfolio-list"></div>
         </section>
@@ -1199,7 +1214,7 @@
         <strong>Powered by M.ALQ</strong>
       </footer>
 
-      <aside class="right-dashboard-panel" aria-label="ملخص السوق">
+      <aside class="right-dashboard-panel" aria-label="ملخص السوق" data-app-view-shell="legacy-summary" hidden>
 
         <div class="rdp-block">
           <div class="rdp-block-head">
@@ -1338,6 +1353,12 @@
           </div>
         </div>
 
+        <div class="analysis-summary signal-analysis-summary" aria-label="معلومات التحليل">
+          <div data-analysis-metric="confidence"><span class="analysis-metric-label">الثقة</span><strong data-metric-value="confidence" dir="ltr">--</strong></div>
+          <div data-analysis-metric="duration"><span class="analysis-metric-label">المدة المتوقعة</span><strong data-metric-value="duration" dir="auto">--</strong></div>
+          <div data-analysis-metric="score"><span class="analysis-metric-label">تقييم AI</span><strong data-metric-value="score" dir="ltr">--</strong></div>
+        </div>
+
         <div class="card-body">
           <canvas class="sparkline" aria-hidden="true"></canvas>
 
@@ -1371,14 +1392,6 @@
             </div>
           </div>
 
-          <div class="confidence-wrap">
-            <div>
-              <span>نسبة الثقة</span>
-              <strong class="confidence"></strong>
-            </div>
-            <div class="confidence-track"><span class="confidence-fill"></span></div>
-          </div>
-
           <div class="indicator-grid">
             <div><span>RSI</span><strong class="rsi"></strong></div>
             <div><span>زخم</span><strong class="momentum"></strong></div>
@@ -1386,13 +1399,11 @@
             <div><span>المخاطرة</span><strong class="risk-label"></strong></div>
             <div><span>Backtest</span><strong class="backtest-label"></strong></div>
             <div><span>صحة البيانات</span><strong class="data-health-label"></strong></div>
-            <div><span>النقاط</span><strong class="final-score"></strong></div>
           </div>
 
           <div class="timeframe-grid" aria-label="تحليل الفريمات"></div>
 
           <div class="meta-row">
-            <span class="duration"></span>
             <span class="expected-move"></span>
             <span class="data-source"></span>
             <span class="data-freshness"></span>

@@ -1,3 +1,4 @@
+
 const VALID_KINDS = new Set(["loading", "empty", "error", "stale", "offline", "unauthorized"]);
 
 export function renderUiState({ kind = "empty", title = "", message = "", actionLabel = "", actionId = "", compact = false } = {}) {

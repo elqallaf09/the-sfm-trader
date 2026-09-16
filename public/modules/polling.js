@@ -1,15 +1,22 @@
-export function createVisibilityAwarePoller(tasks, { documentRef = document, windowRef = window } = {}) {
+export function createVisibilityAwarePoller(tasks, { documentRef = document, windowRef = window, onLifecycle = () => {} } = {}) {
   const timers = new Map();
   const inFlight = new Map();
   let listening = false;
+  let active = false;
+  let suspended = false;
+
+  function lifecycle(reason) {
+    try { onLifecycle(reason); }
+    catch (error) { console.warn('Lifecycle update failed', { reason, message: error?.message }); }
+  }
 
   function run(task, reason) {
-    if (documentRef.hidden && reason !== "manual") return;
+    if (!active || suspended || (documentRef.hidden && reason !== 'manual')) return;
     if (inFlight.has(task.name)) return inFlight.get(task.name);
     const pending = Promise.resolve()
-      .then(() => task.run({ reason }))
+      .then(() => active && !suspended ? task.run({ reason }) : undefined)
       .catch((error) => {
-        console.warn("Background refresh failed", { task: task.name, reason, message: error?.message || String(error) });
+        console.warn('Background refresh failed', { task: task.name, reason, message: error?.message || String(error) });
       })
       .finally(() => {
         if (inFlight.get(task.name) === pending) inFlight.delete(task.name);
@@ -20,48 +27,74 @@ export function createVisibilityAwarePoller(tasks, { documentRef = document, win
 
   function attachListeners() {
     if (listening) return;
-    documentRef.addEventListener("visibilitychange", handleVisibilityChange);
-    windowRef.addEventListener("pagehide", stop);
+    documentRef.addEventListener('visibilitychange', handleVisibilityChange);
+    windowRef.addEventListener('pagehide', handlePageHide);
+    windowRef.addEventListener('pageshow', handlePageShow);
+    windowRef.addEventListener('offline', handleOffline);
+    windowRef.addEventListener('online', handleOnline);
     listening = true;
   }
 
-  function detachListeners() {
-    if (!listening) return;
-    documentRef.removeEventListener("visibilitychange", handleVisibilityChange);
-    windowRef.removeEventListener("pagehide", stop);
-    listening = false;
+  function clearTimers() {
+    for (const timer of timers.values()) windowRef.clearInterval(timer);
+    timers.clear();
+  }
+
+  function startTimers() {
+    for (const task of tasks) {
+      if (timers.has(task.name) || !Number.isFinite(task.intervalMs) || task.intervalMs <= 0) continue;
+      timers.set(task.name, windowRef.setInterval(() => run(task, 'interval'), task.intervalMs));
+    }
   }
 
   function start() {
+    active = true;
+    suspended = false;
     attachListeners();
-    for (const task of tasks) {
-      if (timers.has(task.name)) continue;
-      if (!Number.isFinite(task.intervalMs) || task.intervalMs <= 0) continue;
-      timers.set(task.name, windowRef.setInterval(() => run(task, "interval"), task.intervalMs));
-    }
+    startTimers();
   }
 
   function stop() {
-    for (const timer of timers.values()) windowRef.clearInterval(timer);
-    timers.clear();
-    detachListeners();
+    active = false;
+    suspended = false;
+    clearTimers();
+    if (!listening) return;
+    documentRef.removeEventListener('visibilitychange', handleVisibilityChange);
+    windowRef.removeEventListener('pagehide', handlePageHide);
+    windowRef.removeEventListener('pageshow', handlePageShow);
+    windowRef.removeEventListener('offline', handleOffline);
+    windowRef.removeEventListener('online', handleOnline);
+    listening = false;
+  }
+
+  function refreshForeground(reason) {
+    lifecycle(reason); // Revalidate displayed data before starting network work.
+    for (const task of tasks) if (task.refreshOnForeground !== false) run(task, reason);
   }
 
   function handleVisibilityChange() {
-    if (documentRef.hidden) return;
-    for (const task of tasks) {
-      if (task.refreshOnForeground !== false) run(task, "foreground");
-    }
+    if (!documentRef.hidden && !suspended) refreshForeground('foreground');
   }
-
-  attachListeners();
+  function handlePageHide(event) {
+    lifecycle('pagehide');
+    if (event.persisted) { suspended = true; clearTimers(); }
+    else stop();
+  }
+  function handlePageShow(event) {
+    if (!active || !event.persisted) return;
+    suspended = false;
+    startTimers();
+    refreshForeground('resume');
+  }
+  function handleOffline() { lifecycle('offline'); }
+  function handleOnline() { if (!suspended) refreshForeground('online'); }
 
   return {
     start,
     stop,
     refresh(name) {
       const task = tasks.find((item) => item.name === name);
-      return task ? run(task, "manual") : undefined;
+      return task ? run(task, 'manual') : undefined;
     }
   };
 }

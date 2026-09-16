@@ -1,3 +1,4 @@
+import { epochSecondsToMs } from "../public/modules/marketIntegrity.js";
 const PROVIDER_SOURCES = Object.freeze({
   "Yahoo Finance": "https://finance.yahoo.com/",
   Finnhub: "https://finnhub.io/",
@@ -5,11 +6,11 @@ const PROVIDER_SOURCES = Object.freeze({
   "Twelve Data": "https://twelvedata.com/"
 });
 
-export function buildMarketDataProvenance({ provider, symbol, marketTimestamp, retrievedAt = new Date().toISOString(), stale = false }) {
+export function buildMarketDataProvenance({ provider, symbol, marketTimestamp, retrievedAt = new Date().toISOString(), stale = false, priceKind = null, priceInterval = null }) {
   const normalizedProvider = String(provider || "Unknown").trim() || "Unknown";
-  const timestampSeconds = Number(marketTimestamp || 0);
-  const marketTime = Number.isFinite(timestampSeconds) && timestampSeconds > 0
-    ? new Date(timestampSeconds * 1000).toISOString()
+  const timestampMs = epochSecondsToMs(marketTimestamp);
+  const marketTime = timestampMs !== null
+    ? new Date(timestampMs).toISOString()
     : null;
   const retrievedMs = Date.parse(retrievedAt);
   const ageSeconds = marketTime && Number.isFinite(retrievedMs)
@@ -18,6 +19,7 @@ export function buildMarketDataProvenance({ provider, symbol, marketTimestamp, r
 
   return {
     provider: normalizedProvider,
+    priceKind, priceInterval,
     sourceUrl: PROVIDER_SOURCES[normalizedProvider] || null,
     symbol: String(symbol || "").trim(),
     marketTimestamp: marketTime,

@@ -26,12 +26,15 @@ jobs:
       BUNDLE_ID: com.malq.thesfmtrader
       SCHEME: App
       PROJECT: ios/App/App.xcodeproj
-      ARCHIVE_PATH: ${{ runner.temp }}/the-sfm-trader.xcarchive
       EXPORT_PATH: ${{ github.workspace }}/build/ios
-      KEYCHAIN_PATH: ${{ runner.temp }}/the-sfm-trader-signing.keychain-db
       KEYCHAIN_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}
 
     steps:
+      - name: Initialize runner paths
+        run: |
+          echo "ARCHIVE_PATH=$RUNNER_TEMP/the-sfm-trader.xcarchive" >> "$GITHUB_ENV"
+          echo "KEYCHAIN_PATH=$RUNNER_TEMP/the-sfm-trader-signing.keychain-db" >> "$GITHUB_ENV"
+
       - name: Checkout
         uses: actions/checkout@v4
 

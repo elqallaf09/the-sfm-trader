@@ -1,3 +1,4 @@
+import "../src/loadEnv.mjs";
 const required = ["DATABASE_URL", "SFM_AUTH_TOKENS", "SFM_ALLOWED_ORIGINS", "SFM_OPERATOR_NAME", "SFM_LEGAL_CONTACT"];
 const missing = required.filter((name) => !String(process.env[name] || "").trim());
 if (missing.length) throw new Error(`Missing production configuration: ${missing.join(", ")}`);

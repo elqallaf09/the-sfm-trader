@@ -52,7 +52,7 @@ test("response policy preserves state headers and bounds non-JSON requests", asy
   await assert.rejects(() => fetchResponseWithPolicy("/api/state", {
     timeoutMs: 10,
     fetchRef: (_url, { signal }) => new Promise((_resolve, reject) => signal.addEventListener("abort", () => reject(signal.reason), { once: true }))
-  }), /Ø§Ù†ØªÙ‡Øª Ù…Ù‡Ù„Ø© Ø§Ù„Ø§ØªØµØ§Ù„/);
+  }), /انتهت مهلة الاتصال/);
 });
 
 test("state and telemetry requests use the bounded response policy", async () => {
@@ -82,4 +82,15 @@ test("request policy does not wait to retry after the caller aborts", async () =
   });
   await assert.rejects(pending);
   assert.equal(requests, 1);
+});
+
+test("state response timeout includes reading the response body", async () => {
+  await assert.rejects(fetchResponseWithPolicy("/api/state", {
+    timeoutMs: 15,
+    fetchRef: async (_url, { signal }) => new Response(new ReadableStream({
+      start(controller) {
+        signal.addEventListener("abort", () => controller.error(signal.reason), { once: true });
+      }
+    }))
+  }), /انتهت مهلة الاتصال/);
 });

@@ -67,3 +67,20 @@ test("calendar failure cooldown prevents repeated upstream hammering", async (co
   assert.match(first.error, /provider unavailable/);
   assert.match(second.error, /provider unavailable/);
 });
+
+
+test("calendar accepts JSON and keeps later weekly and low-impact events", async () => {
+  const calendar = await import("../src/economicCalendar.mjs");
+  const date = new Date(Date.now() + 5 * 86400_000).toISOString();
+  const events = calendar.parseEconomicCalendarFeed(JSON.stringify([{ title: "Weekly event", country: "USD", date, impact: "Low", forecast: "2", previous: "1" }]));
+  const payload = calendar.buildEconomicCalendarPayload("us", [], events);
+  assert.equal(payload.upcoming.length, 1);
+  assert.equal(payload.upcoming[0].forecast, "2");
+  assert.equal(payload.upcoming[0].impact, "low");
+});
+
+test("XML fields tolerate whitespace around CDATA", async () => {
+  const calendar = await import("../src/economicCalendar.mjs");
+  const events = calendar.parseEconomicCalendarFeed('<weeklyevents><event><title>Event</title><country>USD</country><date> <![CDATA[09-15-2026]]> </date><time>8:30am</time><impact>High</impact></event></weeklyevents>');
+  assert.ok(Number.isFinite(events[0].timestamp));
+});

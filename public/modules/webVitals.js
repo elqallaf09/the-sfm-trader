@@ -1,5 +1,5 @@
-import { API_TOKEN_STORAGE_KEY } from "./apiClient.js";
-import { fetchResponseWithPolicy } from "./requestPolicy.js";
+import { getApiToken } from "./apiClient.js?v=20260914-audit-repair-1";
+import { fetchResponseWithPolicy } from "./requestPolicy.js?v=20260914-audit-repair-1";
 
 const supported = typeof PerformanceObserver !== "undefined";
 const latest = new Map();
@@ -9,7 +9,7 @@ function report(name, value, rating) {
   const key = `${name}:${Math.round(value)}`;
   if (latest.get(name) === key) return;
   latest.set(name, key);
-  const token = window.sessionStorage.getItem(API_TOKEN_STORAGE_KEY);
+  const token = getApiToken();
   const headers = new Headers({ "content-type": "application/json" });
   if (token) headers.set("authorization", `Bearer ${token}`);
   fetchResponseWithPolicy("/api/telemetry/web-vitals", {

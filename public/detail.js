@@ -1,7 +1,13 @@
-import { API_TOKEN_STORAGE_KEY } from "./modules/apiClient.js";
-import { setUiState } from "./modules/uiState.js";
-import "./modules/webVitals.js";
-import { initMarketBackground } from "./modules/marketBackground.js";
+import { createVisibilityAwarePoller } from "./modules/polling.js?v=20260914-lifecycle-1";
+import { formatQuotePrice } from "./modules/priceFormat.js?v=20260914-lifecycle-1";
+import { toNullableNumber } from "./modules/numberValue.js?v=20260914-issue40-1";
+import { normalizeQuoteCurrency, guardRecommendationForDisplay } from "./modules/marketIntegrity.js?v=20260914-lifecycle-1";
+import { getAnalysisMetrics } from "./modules/analysisMetrics.js?v=20260914-issue40-1";
+import { navigateBackFromDetail, safeHomeUrl } from "./modules/detailNavigation.js?v=20260914-audit-repair-1";
+import { API_TOKEN_STORAGE_KEY } from "./modules/apiClient.js?v=20260914-audit-repair-1";
+import { setUiState } from "./modules/uiState.js?v=20260914-audit-repair-1";
+import "./modules/webVitals.js?v=20260914-audit-repair-1";
+import { initMarketBackground } from "./modules/marketBackground.js?v=20260914-audit-repair-1";
 
 const params = new URLSearchParams(window.location.search);
 const symbol = normalizeDetailSymbol(params.get("symbol"));
@@ -9,8 +15,8 @@ const NUMBER_LOCALE = "ar-KW-u-nu-latn";
 const NUMBER_OPTIONS = { numberingSystem: "latn" };
 const APP_SETTINGS_STORAGE_KEY = "the-sfm-trader-settings";
 const DETAIL_BRAND_TITLES = {
-  ar: "اس اف ام المحلل الذكي",
-  en: "SFM Smart Analyzer"
+  ar: "SFM Trader",
+  en: "SFM Trader"
 };
 const DETAIL_PAGE_TITLES = {
   ar: "تفاصيل السهم",
@@ -18,6 +24,8 @@ const DETAIL_PAGE_TITLES = {
 };
 let activeDetailTitleSymbol = symbol;
 let detailRequestController = null;
+let currentDetailData = null;
+let detailNetworkOffline = navigator.onLine === false;
 
 function normalizeDetailSymbol(value) {
   return String(value || "")
@@ -127,6 +135,16 @@ function installLatinDigitNormalizer() {
 }
 
 const DETAIL_TEXT_TRANSLATIONS = {
+  "اتصال متقطع؛ هذه بيانات محفوظة للمراقبة فقط.": "Connection interrupted; cached data is for observation only.",
+  "انتهت صلاحية السعر المعروض؛ انتظر تحديثاً موثوقاً قبل اتخاذ قرار دخول.": "The displayed quote has expired. Wait for a verified update before considering an entry.",
+  "لا يوجد سعر بتوقيت موثوق؛ البيانات للمراقبة فقط.": "No quote with a verified timestamp is available. Observation only.",
+  "جلسة التداول مغلقة أو غير مؤكدة؛ لا توجد إشارة دخول حالياً.": "The trading session is closed or unverified. No entry signal is available.",
+  "التنفيذ محجوب؛ انتظر قراراً حديثاً من السيرفر.": "Entry is blocked. Wait for a fresh server decision.",
+  "مراقبة فقط حتى وصول تحديث موثوق": "Observation only until a verified update arrives",
+  "غير متصل — بيانات للمراقبة فقط": "Offline \u2014 observation only",
+  "تحتاج الأسعار إلى تحديث — المراقبة فقط للبيانات القديمة": "Quotes need updating \u2014 old data is for observation only",
+  "بيانات للمراقبة فقط": "Data for observation only",
+
   "تفاصيل السهم - اس اف ام المحلل الذكي": "Stock details - SFM Smart Analyzer",
   "صفحة تحليل السهم": "Stock analysis page",
   "رجوع للأسواق": "Back to markets",
@@ -653,23 +671,28 @@ initMarketBackground();
 initDetailBackButton();
 registerPwaServiceWorker();
 loadDetail();
+createVisibilityAwarePoller([
+  { name: "detail-integrity", intervalMs: 5_000, refreshOnForeground: false, run: revalidateDetail },
+  { name: "detail-refresh", intervalMs: 60_000, run: () => loadDetail({ background: true }) }
+], { onLifecycle: reason => {
+  if (reason === "pagehide") {
+    detailRequestController?.abort();
+    detailRequestController = null;
+    return;
+  }
+  if (reason === "offline") detailNetworkOffline = true;
+  if (reason === "online") detailNetworkOffline = false;
+  revalidateDetail();
+} }).start();
 
 function initDetailBackButton() {
-  elements.back?.addEventListener("click", (event) => {
+  if (!elements.back) return;
+  elements.back.href = safeHomeUrl(params.get("returnTo")) || "/#view-home";
+  elements.back.textContent = detailText("العودة", "Back");
+  elements.back.addEventListener("click", (event) => {
+    if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
     event.preventDefault();
-    try {
-      sessionStorage.setItem("the-sfm-trader-skip-intro", "1");
-    } catch {}
-
-    try {
-      const referrer = document.referrer ? new URL(document.referrer) : null;
-      if (referrer?.origin === window.location.origin && history.length > 1) {
-        history.back();
-        return;
-      }
-    } catch {}
-
-    window.location.href = "/?skipIntro=1#view-markets";
+    navigateBackFromDetail();
   });
 }
 
@@ -681,29 +704,24 @@ function registerPwaServiceWorker() {
   });
 }
 
-async function loadDetail() {
+async function loadDetail({ background = false } = {}) {
+  if (background && detailRequestController) return;
   if (!symbol) {
     showError(detailText("لم يتم تحديد رمز السهم.", "No stock symbol was selected."));
     return;
   }
 
+  detailRequestController?.abort();
+  const controller = new AbortController();
+  detailRequestController = controller;
+  const timeout = window.setTimeout(() => controller.abort(), 15_000);
   try {
-    detailRequestController?.abort();
-    const controller = new AbortController();
-    detailRequestController = controller;
-    const timeout = window.setTimeout(() => controller.abort(), 15_000);
-    elements.status.textContent = detailText("جاري تحليل السهم", "Analyzing the stock");
+    if (!currentDetailData) elements.status.textContent = detailText("جاري تحليل السهم", "Analyzing the stock");
     applyDetailLanguage();
-    let response;
-    try {
-      response = await fetch(`/api/asset?symbol=${encodeURIComponent(symbol)}`, {
-        cache: "no-store",
-        signal: controller.signal
-      });
-    } finally {
-      window.clearTimeout(timeout);
-      if (detailRequestController === controller) detailRequestController = null;
-    }
+    const response = await fetch(`/api/asset?symbol=${encodeURIComponent(symbol)}`, {
+      cache: "no-store",
+      signal: controller.signal
+    });
     const contentType = String(response.headers.get("content-type") || "");
     if (!contentType.toLowerCase().includes("application/json")) {
       throw new Error(detailText("استجابة الخادم غير صالحة.", "The server returned an invalid response."));
@@ -714,24 +732,55 @@ async function loadDetail() {
       throw new Error(localizeDetailText(data.error || detailText("تعذر تحميل تفاصيل السهم", "Could not load stock details")));
     }
 
+    if (detailRequestController !== controller) return;
+    if (!data.recommendation || data.recommendation.symbol !== symbol) {
+      throw new Error(detailText("رد التحليل لا يطابق الرمز المطلوب.", "Analysis response does not match the requested instrument."));
+    }
     renderDetail(data);
-    elements.status.textContent = data.cached ? detailText("بيانات مخزنة لحظياً", "Live cached data") : detailText("تحليل جديد", "Fresh analysis");
     applyDetailLanguage();
   } catch (error) {
+    if (detailRequestController !== controller) return;
     const message = error?.name === "AbortError"
       ? detailText("انتهت مهلة تحميل التحليل. حاول مرة أخرى.", "Analysis loading timed out. Please try again.")
       : error.message;
-    showError(message);
+    if (currentDetailData) {
+      currentDetailData = { ...currentDetailData, stale: true };
+      revalidateDetail();
+    } else showError(message);
+  } finally {
+    window.clearTimeout(timeout);
+    if (detailRequestController === controller) detailRequestController = null;
   }
 }
 
-window.addEventListener("pagehide", () => detailRequestController?.abort(), { once: true });
+window.addEventListener("pagehide", () => detailRequestController?.abort());
+
+function updateDetailStatus(item) {
+  elements.status.dataset.connectionState = detailNetworkOffline ? "offline" : item.executionBlocked ? "stale" : "fresh";
+  elements.status.textContent = detailNetworkOffline ? detailText("غير متصل — بيانات للمراقبة فقط", "Offline — observation only")
+    : item.executionBlocked ? detailText("المراقبة فقط — التنفيذ غير متاح", "Observation only — entry unavailable")
+    : detailText("تحليل بسعر حديث", "Analysis with a current quote");
+}
+
+function revalidateDetail() {
+  if (!currentDetailData) return;
+  const old = currentDetailData.recommendation;
+  const next = guardRecommendationForDisplay(old, { stale: detailNetworkOffline || currentDetailData.stale === true });
+  if (old.action !== next.action || old.executionBlocked !== next.executionBlocked
+      || old.priceFreshness?.state !== next.priceFreshness?.state || old.decision?.message !== next.decision?.message) {
+    renderDetail({ ...currentDetailData, recommendation: next });
+  } else updateDetailStatus(next);
+}
 
 function renderDetail(data) {
-  const item = data.recommendation;
+  const item = guardRecommendationForDisplay(data.recommendation, { stale: detailNetworkOffline || data.stale === true });
+  currentDetailData = { ...data, recommendation: item };
+  document.querySelector("#detail-error")?.remove();
+  document.querySelector("#detail-content").hidden = false;
+  updateDetailStatus(item);
   const profile = data.profile || {};
   const market = data.market || {};
-  const finalScore = calculateFinalScore(item);
+  const metrics = getAnalysisMetrics(item, { english: isDetailEnglishLanguage(), localize: localizeDetailText });
   const decision = item.decision || buildDecision(item);
 
   activeDetailTitleSymbol = item.symbol;
@@ -744,7 +793,11 @@ function renderDetail(data) {
 
   elements.action.textContent = localizeActionLabel(item.action, item.actionLabel);
   elements.action.className = `action-badge action-${item.action}`;
-  elements.confidence.textContent = localizeConfidenceText(item.confidence);
+  elements.confidence.textContent = metrics.confidenceText;
+  for (const key of ["confidence", "duration", "score"]) {
+    const cell = document.querySelector('.detail-analysis-summary [data-analysis-metric="' + key + '"]');
+    if (cell) cell.querySelector(".analysis-metric-label").textContent = metrics[key + "Label"];
+  }
   elements.agreement.textContent = localizeAgreementText(item.timeframeConsensus);
 
   elements.currentPrice.textContent = formatMoney(item.currentPrice, item.currency);
@@ -756,8 +809,9 @@ function renderDetail(data) {
   elements.resistance.textContent = formatMoney(item.resistance, item.currency);
   elements.riskReward.textContent = item.riskReward ? `${formatNumber(item.riskReward, { maximumFractionDigits: 2 })}:1` : "--";
   elements.expectedMove.textContent = formatPercent(item.expectedMovePct);
-  elements.duration.textContent = localizeDetailText(item.duration);
-  elements.score.textContent = `${finalScore.score}% · ${localizeScoreLabel(finalScore.label)}`;
+  elements.duration.textContent = metrics.duration;
+  elements.score.textContent = metrics.scoreText;
+  elements.score.title = metrics.scoreDescription;
   elements.risk.textContent = localizeRiskLabel(item.risk);
   elements.quality.textContent = item.analysisQuality ? `${item.analysisQuality.score}% · ${localizeDetailText(item.analysisQuality.label)}` : "--";
   elements.dataHealth.textContent = item.dataHealth ? `${item.dataHealth.score}% · ${localizeDetailText(item.dataHealth.label || "صحة البيانات")}` : "--";
@@ -940,42 +994,26 @@ function renderInfoRow(label, value) {
 
 function showError(message) {
   elements.status.textContent = detailText("تعذر التحميل", "Loading failed");
-  setUiState(document.querySelector("#detail-content"), {
+  const content = document.querySelector("#detail-content");
+  content.hidden = true;
+  let errorPanel = document.querySelector("#detail-error");
+  if (!errorPanel) {
+    errorPanel = document.createElement("section");
+    errorPanel.id = "detail-error";
+    content.before(errorPanel);
+  }
+  setUiState(errorPanel, {
     kind: "error",
     title: detailText("تعذر تحميل تفاصيل الأصل", "Could not load asset details"),
     message: localizeDetailText(message),
     actionLabel: detailText("إعادة المحاولة", "Retry"),
     actionId: "retry-detail"
   });
-  document.querySelector('[data-ui-state-action="retry-detail"]')?.addEventListener("click", loadDetail);
+  document.querySelector('[data-ui-state-action="retry-detail"]')?.addEventListener("click", () => loadDetail());
   applyDetailLanguage();
 }
 
-function calculateFinalScore(item) {
-  const confidencePoints = clamp(Number(item.confidence || 0), 0, 100) * 0.35;
-  const agreementPoints = clamp(Number(item.timeframeConsensus?.agreementPct || 0), 0, 100) * 0.15;
-  const shariaPoints = {
-    compliant: 20,
-    doubtful: 8,
-    unknown: 4,
-    not_compliant: 0
-  }[item.shariaStatus] ?? 4;
-  const riskPoints = {
-    low: 15,
-    medium: 9,
-    high: 3
-  }[item.risk?.level] ?? 8;
-  const winRate = Number(item.backtest?.winRate);
-  const backtestPoints = Number.isFinite(winRate) ? clamp(winRate * 0.1, 0, 10) : 4;
-  const movePoints = clamp(Math.abs(Number(item.expectedMovePct || 0)) * 1.2, 0, 5);
-  const qualityPoints = clamp(Number(item.analysisQuality?.score || 0), 0, 100) * 0.08;
-  const riskRewardPoints = clamp(Number(item.riskReward || 0), 0, 3) * 2;
-  const conflictPenalty = item.timeframeConsensus?.conflict ? 6 : 0;
-  const score = Math.round(clamp(confidencePoints + agreementPoints + shariaPoints + riskPoints + backtestPoints + movePoints + qualityPoints + riskRewardPoints - conflictPenalty, 0, 100));
-  const label = score >= 80 ? "قوي جداً" : score >= 70 ? "قوي" : score >= 55 ? "متوسط" : "ضعيف";
 
-  return { score, label };
-}
 
 function drawSparkline(canvas, values = [], action) {
   const context = canvas?.getContext?.("2d");
@@ -1068,8 +1106,8 @@ function syncDetailBrandTitle(symbolValue = activeDetailTitleSymbol) {
 
   for (const element of document.querySelectorAll("[data-brand-title]")) {
     if (element.textContent !== brandTitle) element.textContent = brandTitle;
-    element.lang = textLang;
-    element.dir = textDir;
+    element.lang = "en";
+    element.dir = "ltr";
   }
 }
 
@@ -1240,7 +1278,7 @@ function translateDetailElementAttributes(element) {
 }
 
 function shouldSkipDetailTranslation(element) {
-  return ["SCRIPT", "STYLE", "CANVAS", "SVG", "PATH"].includes(element.tagName);
+  return Boolean(element.closest('[translate="no"]')) || ["SCRIPT", "STYLE", "CANVAS", "SVG", "PATH"].includes(element.tagName);
 }
 
 function translateDetailArabicToEnglish(text) {
@@ -1338,15 +1376,7 @@ window.addEventListener("storage", (event) => {
 });
 
 function formatMoney(value, currency) {
-  if (value === null || value === undefined || value === "") return "--";
-  const number = Number(value);
-  if (!Number.isFinite(number)) return "--";
-  const normalizedCurrency = normalizeCurrencyCode(currency);
-  const digits = Math.abs(number) < 1 ? 4 : 2;
-  return `${formatNumber(number, {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits
-  })}${normalizedCurrency ? ` ${normalizedCurrency}` : ""}`;
+  return formatQuotePrice(value, currency, { locale: NUMBER_LOCALE });
 }
 
 function formatDateTime(value) {
@@ -1362,31 +1392,11 @@ function formatDateTime(value) {
   }).format(date));
 }
 
-function normalizeCurrencyCode(currency) {
-  const code = String(currency || "").trim().toUpperCase();
-  const currencyMap = {
-    KWF: "KWD",
-    KW: "KWD",
-    KWD: "KWD",
-    SAR: "SAR",
-    SA: "SAR",
-    AED: "AED",
-    AE: "AED",
-    QAR: "QAR",
-    QA: "QAR",
-    BHD: "BHD",
-    BH: "BHD",
-    OMR: "OMR",
-    OM: "OMR",
-    USD: "USD",
-    EUR: "EUR",
-    GBP: "GBP"
-  };
-  return currencyMap[code] || code;
-}
+function normalizeCurrencyCode(currency) { const code = normalizeQuoteCurrency(currency); return code === "PAIR" ? "" : code; }
 
 function formatPercent(value) {
-  const number = Number(value || 0);
+  const number = toNullableNumber(value);
+  if (number === null) return "--";
   const prefix = number > 0 ? "+" : "";
   return `${prefix}${formatNumber(number, {
     minimumFractionDigits: 2,
@@ -1395,7 +1405,8 @@ function formatPercent(value) {
 }
 
 function formatNumber(value, options = {}) {
-  const number = Number(value);
+  const number = toNullableNumber(value);
+  if (number === null) return "--";
   if (!Number.isFinite(number)) return "--";
   return normalizeDigits(number.toLocaleString(NUMBER_LOCALE, {
     ...NUMBER_OPTIONS,

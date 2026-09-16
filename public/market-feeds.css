@@ -1,0 +1,51 @@
+/* Feed text owns its contrast instead of inheriting dark legacy badge colors. */
+body .app-shell .market-feed-section {
+  padding: 20px;
+  border: 1px solid var(--ui-border);
+  border-radius: 16px;
+  color: var(--ui-text) !important;
+  background: var(--ui-surface) !important;
+}
+body :is(.market-feed-section, .rdp-news-list) .market-feed-card {
+  display: flex; flex-direction: column; gap: 12px; min-width: 0;
+  padding: 16px; border: 1px solid var(--ui-border); border-radius: 12px;
+  background: var(--ui-raised) !important; color: var(--ui-text) !important;
+}
+body .app-shell .market-feed-grid {
+  display: grid !important; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 12px; min-width: 0; width: 100%;
+}
+body :is(.market-feed-section, .rdp-news-list) .market-feed-title,
+body :is(.market-feed-section, .rdp-news-list) .market-feed-title a,
+body .app-shell .market-feed-section :is(h2, dd) {
+  color: var(--ui-text) !important; -webkit-text-fill-color: currentColor !important;
+  font-weight: 700; line-height: 1.7; opacity: 1 !important; text-shadow: none !important;
+}
+body :is(.market-feed-section, .rdp-news-list) .market-feed-title {
+  display: block; margin: 0; font-size: 15px; text-decoration: none; overflow-wrap: anywhere;
+}
+body :is(.market-feed-section, .rdp-news-list) a:hover { color: var(--ui-accent) !important; text-decoration: underline; }
+body :is(.market-feed-section, .rdp-news-list) .market-feed-meta,
+body :is(.market-feed-section, .rdp-news-list) .market-feed-meta span,
+body :is(.market-feed-section, .rdp-news-list) time,
+body .app-shell .market-feed-section :is(p, dt, .feed-status) {
+  color: var(--ui-muted) !important; -webkit-text-fill-color: currentColor !important;
+  font-size: 12px; line-height: 1.7; opacity: 1 !important; text-shadow: none !important;
+}
+body :is(.market-feed-section, .rdp-news-list) .market-feed-meta {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+}
+body .app-shell .market-feed-source { margin: 0 0 14px; }
+body .app-shell .calendar-feed-values { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: auto 0 0; padding-top: 10px; border-top: 1px solid var(--ui-border); }
+body .app-shell .calendar-feed-values :is(dt, dd) { margin: 0; overflow-wrap: anywhere; }
+body .app-shell .calendar-feed-values dd { font-size: 14px; font-variant-numeric: tabular-nums; }
+body .app-shell .feed-impact { padding: 3px 10px; border-radius: 999px; font-size: 11px; }
+body .app-shell .feed-impact.is-high { color: var(--ui-negative) !important; background: var(--ui-negative-soft) !important; }
+body .app-shell .feed-impact.is-medium { color: var(--ui-warning) !important; background: var(--ui-warning-soft) !important; }
+body .app-shell .feed-impact.is-low { color: var(--ui-muted) !important; background: var(--ui-neutral-soft) !important; }
+body .market-feed-empty { grid-column: 1 / -1; padding: 18px; border: 1px dashed var(--ui-border); border-radius: 12px; color: var(--ui-muted); }
+body [data-feed-refresh] { color: var(--ui-accent) !important; background: var(--ui-accent-soft) !important; border: 1px solid var(--ui-accent-border); padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+body .rdp-news-list { display: grid; gap: 10px; }
+body .rdp-news-list .market-feed-card { padding: 10px; }
+body .rdp-news-list .market-feed-title { font-size: 12px; }
+body .rdp-news-list .market-feed-meta { font-size: 10px; }

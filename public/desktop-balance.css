@@ -1,5 +1,5 @@
 /* Final desktop-only balance layer for thesfm trader.
-   Loaded after styles.css so it wins over legacy layout locks. */
+   Loaded before styles.css on both pages; the final Home grid belongs to dashboard-v2.css. */
 /* Final market-icon visibility layer.
    Keeps decorative terminal light behind the tabs, never over icons or labels. */
 body:not(.intro-running) .market-band,

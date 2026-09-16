@@ -13,9 +13,11 @@ const scenarios = [
   { width: 1440, height: 900, language: 'ar' },
 ];
 function row(symbol, price = 151.23) {
+  const observed = new Date().toISOString();
   return { symbol, name: `Fixture ${symbol}`, currency: 'USD', currentPrice: price, confidence: 80, action: 'hold', target1: 160,
     expectedMovePct: 30, changePercent: 0, dataProvider: 'Fixture provider', reasons: ['Fixture explanation'], risk: { level: 'medium' },
-    dataHealth: { coverage: 4, score: 80 }, dataProvenance: { marketTimestamp: new Date().toISOString(), freshness: 'current', provider: 'Fixture provider' },
+    executionSession: { isOpen: true }, priceFreshness: { state: 'current', marketTimestamp: observed, maxAgeSeconds: 1200 },
+    dataHealth: { coverage: 4, score: 80 }, dataProvenance: { priceKind: 'quote', marketTimestamp: observed, freshness: 'current', provider: 'Fixture provider' },
     indicators: {}, timeframes: [], sparkline: [], updatedAt: new Date().toISOString() };
 }
 async function fixtureServer() {
@@ -36,7 +38,7 @@ async function fixtureServer() {
 export async function runCapture(mode = 'drawer') {
   const server = await fixtureServer(); const browserName = process.env.MOBILE_TEST_BROWSER || 'chromium';
   const browser = await (browserName === 'webkit' ? webkit : chromium).launch();
-  const output = mode === 'home' ? '.artifacts/home-v3' : '.artifacts/deep-audit'; await mkdir(output, { recursive: true });
+  const output = mode === 'home' ? '.artifacts/mobile-home' : '.artifacts/mobile-symbols'; await mkdir(output, { recursive: true });
   const results = [];
   try {
     for (const setup of scenarios) {
@@ -68,15 +70,15 @@ export async function runCapture(mode = 'drawer') {
         if (mode === 'drawer') {
           const button = page.locator('button[data-recommendation-index="0"]:visible').first(); await button.waitFor({ state: 'visible' });
           await button.click(); const drawer = page.locator('[data-recommendation-drawer]');
-          await page.waitForFunction(() => document.querySelector('#recommendation-detail-content')?.textContent.includes('152.34'));
+          await page.waitForFunction(() => document.querySelector('#recommendation-detail-content')?.textContent.includes('152.34'), undefined, { polling: 100 });
           assert.ok(assetCalls > 0, 'cold drawer must fetch exact symbol');
           assert.equal(await drawer.locator('[data-symbol-full]').getAttribute('href'), '/detail.html?symbol=MSFT');
           assert.ok((await drawer.innerText()).includes('Fixture provider'));
           assert.ok(!(await drawer.innerText()).includes('30.00%'), 'forecast must not be shown as daily change');
           assetMode = 'fail'; await drawer.locator('[data-symbol-retry]').click();
-          await page.waitForFunction(() => !document.querySelector('[data-symbol-retry]')?.disabled && /Retry|أعد المحاولة/.test(document.querySelector('[data-symbol-retry]')?.textContent || ''));
+          await page.waitForFunction(() => !document.querySelector('[data-symbol-retry]')?.disabled && /Retry|أعد المحاولة/.test(document.querySelector('[data-symbol-retry]')?.textContent || ''), undefined, { polling: 100 });
           assetMode = 'success'; await drawer.locator('[data-symbol-retry]').click();
-          await page.waitForFunction(() => document.querySelector('#recommendation-detail-content')?.getAttribute('aria-busy') === 'false');
+          await page.waitForFunction(() => document.querySelector('#recommendation-detail-content')?.getAttribute('aria-busy') === 'false', undefined, { polling: 100 });
           const rect = await drawer.locator('.recommendation-drawer-panel').evaluate(element => {
             const r = element.getBoundingClientRect(), content = element.querySelector('.recommendation-detail-content').getBoundingClientRect();
             return { left: r.left, right: r.right, height: r.height, content: content.height, overflow: element.scrollWidth > element.clientWidth + 1 };
@@ -85,13 +87,13 @@ export async function runCapture(mode = 'drawer') {
           assert.ok(rect.height <= setup.height + 1 && rect.content > 75, JSON.stringify(rect)); assert.equal(rect.overflow, false);
           await page.screenshot({ path: `${output}/${browserName}-${setup.width}-${setup.language}.png`, scale: 'css' });
           assetMode = 'wrong'; await drawer.locator('[data-symbol-retry]').click();
-          await page.waitForFunction(() => /Retry|أعد المحاولة/.test(document.querySelector('[data-symbol-retry]')?.textContent || ''));
+          await page.waitForFunction(() => /Retry|أعد المحاولة/.test(document.querySelector('[data-symbol-retry]')?.textContent || ''), undefined, { polling: 100 });
           assert.ok(!(await drawer.innerText()).includes('Fixture NVDA'), 'wrong-symbol result must be rejected');
           assetMode = 'slow'; await drawer.locator('[data-symbol-retry]').click();
           await drawer.locator('button[data-recommendation-close]').click();
           assert.equal(await drawer.getAttribute('aria-hidden'), 'true');
           await page.locator('button[data-recommendation-index="1"]:visible').first().click();
-          await page.waitForFunction(() => document.querySelector('#recommendation-detail-content')?.textContent.includes('Fixture AAPL') && document.querySelector('#recommendation-detail-content')?.getAttribute('aria-busy') === 'false');
+          await page.waitForFunction(() => document.querySelector('#recommendation-detail-content')?.textContent.includes('Fixture AAPL') && document.querySelector('#recommendation-detail-content')?.getAttribute('aria-busy') === 'false', undefined, { polling: 100 });
           assert.ok(!(await drawer.innerText()).includes('Fixture MSFT'), 'late MSFT result must not overwrite AAPL');
           await page.keyboard.press('Escape'); assert.equal(await drawer.getAttribute('aria-hidden'), 'true');
           assert.ok(await page.locator('button[data-recommendation-index="1"]:visible').first().evaluate(element => element === document.activeElement));
@@ -104,7 +106,7 @@ export async function runCapture(mode = 'drawer') {
         assert.deepEqual(errors, []); results.push({ ...setup, browserName, passed: true, assetCalls });
       } catch (error) {
         await page.screenshot({ path: `${output}/FAILED-${browserName}-${setup.width}.png`, scale: 'css' });
-        await writeFile(`${output}/failure.json`, JSON.stringify({ error: error.message, stack: error.stack, errors, network, assetCalls, setup, drawer: await page.locator("[data-recommendation-drawer]").innerText().catch(() => "closed") }, null, 2)); throw error;
+        await writeFile(`${output}/failure.json`, JSON.stringify({ error: error.message, stack: error.stack, errors, network, assetCalls, setup, dom: await page.locator("#recommendation-detail-content").evaluateAll(elements => elements.map(element => ({ text: element.textContent, busy: element.getAttribute("aria-busy"), connected: element.isConnected }))), drawer: await page.locator("[data-recommendation-drawer]").innerText().catch(() => "closed") }, null, 2)); throw error;
       } finally { await context.close(); }
     }
   } finally {

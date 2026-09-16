@@ -1,3 +1,6 @@
+import { normalizeQuoteCurrency, resolveQuoteCurrency } from "../public/modules/marketIntegrity.js";
+import { parseProviderTimestamp } from "./providerTime.mjs";
+import "./loadEnv.mjs";
 import { createBoundedCache } from "./boundedCache.mjs";
 
 const YAHOO_CHART_BASES = [
@@ -122,6 +125,8 @@ async function fetchYahooChart(symbol, options = {}) {
     throw new Error(response.chart?.error?.description || "لا توجد بيانات متاحة لهذا الرمز");
   }
 
+  if (result.meta?.symbol && result.meta.symbol.toUpperCase() !== String(symbol).toUpperCase()) throw new Error("رمز مزود البيانات لا يطابق الرمز المطلوب");
+
   result.meta = {
     ...result.meta,
     dataProvider: "Yahoo Finance"
@@ -176,13 +181,13 @@ async function fetchAlphaVantageChart(symbol, options = {}) {
   const rows = Object.entries(series)
     .sort(([a], [b]) => new Date(a) - new Date(b))
     .map(([date, row]) => ({
-      timestamp: parseAlphaVantageTimestamp(date),
+      timestamp: parseProviderTimestamp(date, data["Meta Data"]?.["6. Time Zone"] || data["Meta Data"]?.["5. Time Zone"] || data["Meta Data"]?.["4. Time Zone"]),
       close: Number(row["4. close"]),
       high: Number(row["2. high"]),
       low: Number(row["3. low"]),
       volume: Number(row["5. volume"])
     }))
-    .filter((row) => Number.isFinite(row.close));
+    .filter((row) => Number.isFinite(row.close) && Number.isFinite(row.timestamp));
 
   if (rows.length < 35) {
     throw new Error("بيانات Alpha Vantage غير كافية");
@@ -201,11 +206,7 @@ async function fetchAlphaVantageChart(symbol, options = {}) {
   });
 }
 
-function parseAlphaVantageTimestamp(value) {
-  const text = String(value);
-  const normalized = text.includes(" ") ? text.replace(" ", "T") : `${text}T00:00:00`;
-  return Math.floor(new Date(`${normalized}Z`).getTime() / 1000);
-}
+// Timestamp conversion is shared and independently tested in providerTime.mjs.
 
 async function fetchTwelveDataChart(symbol, options = {}) {
   const apiKey = process.env.TWELVE_DATA_API_KEY;
@@ -222,6 +223,7 @@ async function fetchTwelveDataChart(symbol, options = {}) {
     interval,
     outputsize: String(outputsize),
     format: "JSON",
+    timezone: "UTC",
     apikey: apiKey
   });
   const data = await fetchJson(`${TWELVE_DATA_BASE}/time_series?${params}`);
@@ -232,7 +234,7 @@ async function fetchTwelveDataChart(symbol, options = {}) {
 
   const rows = data.values
     .map((row) => ({
-      timestamp: Math.floor(new Date(row.datetime).getTime() / 1000),
+      timestamp: parseProviderTimestamp(row.datetime, ["1day","1week","1month"].includes(interval) ? data.meta?.exchange_timezone : "UTC"),
       close: Number(row.close),
       high: Number(row.high),
       low: Number(row.low),
@@ -270,6 +272,7 @@ function buildAlphaVantageRequest(symbol, options, apiKey) {
     return {
       ...common,
       function: "TIME_SERIES_INTRADAY",
+      extended_hours: options.includePrePost ? "true" : "false",
       interval: interval === "1m" ? "1min" : interval === "60m" ? "60min" : interval.replace("m", "min"),
       seriesKey: `Time Series (${interval === "1m" ? "1min" : interval === "60m" ? "60min" : interval.replace("m", "min")})`
     };
@@ -327,36 +330,8 @@ function mapTwelveDataSymbol(symbol) {
   return symbol;
 }
 
-function inferCurrency(symbol, meta = {}) {
-  if (meta.currency) return normalizeCurrencyCode(meta.currency);
-  if (symbol.endsWith("=F")) return "USD";
-  if (symbol.endsWith("-USD")) return "USD";
-  if (symbol.endsWith("=X")) return "PAIR";
-  if (symbol.endsWith(".KW")) return "KWD";
-  if (symbol.endsWith(".SR")) return "SAR";
-  if (symbol.endsWith(".AE") || symbol.endsWith(".AD") || symbol.endsWith(".DU")) return "AED";
-  if (symbol.endsWith(".QA")) return "QAR";
-  if (symbol.endsWith(".BH")) return "BHD";
-  if (symbol.endsWith(".OM")) return "OMR";
-  return "USD";
-}
-
-function normalizeCurrencyCode(currency) {
-  const code = String(currency || "").trim().toUpperCase();
-  return {
-    PAIR: "PAIR",
-    KWF: "KWD",
-    KW: "KWD",
-    KWD: "KWD",
-    SAR: "SAR",
-    AED: "AED",
-    QAR: "QAR",
-    BHD: "BHD",
-    OMR: "OMR",
-    USD: "USD",
-    EUR: "EUR"
-  }[code] || code;
-}
+function inferCurrency(symbol, meta = {}) { return resolveQuoteCurrency(symbol, meta.currency); }
+function normalizeCurrencyCode(currency) { return normalizeQuoteCurrency(currency); }
 
 function getRangeSeconds(range) {
   return {
@@ -429,25 +404,33 @@ async function loadJson(url) {
     throw new Error(`تعذر جلب البيانات: ${response?.status ?? "لا استجابة"}`);
   }
 
-  const data = await response.json();
+  const data = response.data;
   responseCache.set(url, { createdAt: Date.now(), data });
   return data;
 }
 
-function fetchWithTimeout(url) {
+async function fetchWithTimeout(url) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PROVIDER_REQUEST_TIMEOUT_MS);
-
-  return fetch(url, {
-    signal: controller.signal,
-    headers: {
-      accept: "application/json",
-      "accept-language": "en-US,en;q=0.9,ar;q=0.8",
-      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        accept: "application/json",
+        "accept-language": "en-US,en;q=0.9,ar;q=0.8",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36"
+      }
+    });
+    // The request slot and deadline cover the body, not just the response headers.
+    if (!response.ok) {
+      await response.body?.cancel();
+      return { ok: false, status: response.status, headers: response.headers };
     }
-  }).finally(() => {
+    const data = await response.json();
+    return { ok: true, status: response.status, headers: response.headers, data };
+  } finally {
     clearTimeout(timer);
-  });
+  }
 }
 
 function scheduleProviderRequest(task) {
@@ -543,5 +526,5 @@ function normalizeProviderResult({ symbol, currency, exchangeName, dataProvider,
 }
 
 function isPlainTicker(symbol) {
-  return /^[A-Z.]{1,10}$/.test(symbol) && !symbol.includes("=") && !symbol.includes(".SR") && !symbol.includes(".KW");
+  return /^[A-Z]{1,5}$/.test(symbol);
 }

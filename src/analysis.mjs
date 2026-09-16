@@ -1,3 +1,6 @@
+import { normalizeQuoteCurrency, inferQuoteCurrency, epochSecondsToMs } from "../public/modules/marketIntegrity.js";
+import { selectPriceObservation } from "./priceObservation.mjs";
+import "./loadEnv.mjs";
 import { fetchChart } from "./dataProviders.mjs";
 import { buildMarketDataProvenance, observedDailyChangePercent } from "./marketDataProvenance.mjs";
 
@@ -45,7 +48,8 @@ export async function analyzeSymbol(asset, options = {}) {
   const lows = primaryFrame.lows;
   const volumes = primaryFrame.volumes;
   const latestVolume = finiteOr(volumes.at(-1), 0);
-  const currentPrice = pickValidPrice(meta.regularMarketPrice, primaryFrame.currentPrice, closes.at(-1));
+  const observation = selectPriceObservation(primaryFrame);
+  const currentPrice = observation.price;
   const indicators = primaryFrame.indicators;
   const dataHealth = buildDataHealth(timeframeAnalyses, primaryFrame, currentPrice);
   const backtest = backtestSignals(closes, highs, lows, volumes);
@@ -75,7 +79,8 @@ export async function analyzeSymbol(asset, options = {}) {
   const dataProvenance = buildMarketDataProvenance({
     provider: meta.dataProvider || "Yahoo Finance",
     symbol: asset.symbol,
-    marketTimestamp: primaryFrame.latestTimestamp,
+    marketTimestamp: observation.timestamp,
+    priceKind: observation.priceKind, priceInterval: observation.priceInterval,
     retrievedAt: updatedAt,
     stale: dataHealth.staleFrames.includes(primaryFrame.label)
   });
@@ -86,7 +91,8 @@ export async function analyzeSymbol(asset, options = {}) {
     shariaStatus: asset.shariaStatus || "unknown",
     shariaLabel: asset.shariaLabel || "",
     shariaSource: asset.shariaSource || getDefaultShariaSource(asset.shariaStatus),
-    shariaCheckedAt: asset.shariaCheckedAt || new Date().toISOString().slice(0, 7),
+    shariaCheckedAt: asset.shariaCheckedAt || null,
+    shariaVerified: asset.shariaVerified === true,
     exchangeName: meta.exchangeName || meta.fullExchangeName || "",
     currency: normalizeCurrencyCode(meta.currency || inferCurrencyFromSymbol(asset.symbol)),
     dataProvider: meta.dataProvider || "Yahoo Finance",
@@ -169,37 +175,8 @@ export async function analyzeSymbol(asset, options = {}) {
   };
 }
 
-function normalizeCurrencyCode(currency) {
-  const code = String(currency || "").trim().toUpperCase();
-  return {
-    PAIR: "PAIR",
-    KWF: "KWD",
-    KW: "KWD",
-    KWD: "KWD",
-    SAR: "SAR",
-    AED: "AED",
-    QAR: "QAR",
-    BHD: "BHD",
-    OMR: "OMR",
-    USD: "USD",
-    EUR: "EUR"
-  }[code] || code;
-}
-
-function inferCurrencyFromSymbol(symbol) {
-  const upper = String(symbol || "").toUpperCase();
-  if (upper.endsWith("=X")) return "PAIR";
-  if (upper.includes("-USD")) return "USD";
-  if (upper.endsWith("=F")) return "USD";
-  if (upper.endsWith(".KW")) return "KWD";
-  if (upper.endsWith(".SR")) return "SAR";
-  if (upper.endsWith(".AE") || upper.endsWith(".AD") || upper.endsWith(".DU")) return "AED";
-  if (upper.endsWith(".QA")) return "QAR";
-  if (upper.endsWith(".BH")) return "BHD";
-  if (upper.endsWith(".OM")) return "OMR";
-  if (upper.endsWith(".AS") || upper.endsWith(".DE") || upper.endsWith(".PA") || upper.endsWith(".SW") || upper.endsWith(".L")) return "EUR";
-  return "USD";
-}
+function normalizeCurrencyCode(currency) { return normalizeQuoteCurrency(currency); }
+function inferCurrencyFromSymbol(symbol) { return inferQuoteCurrency(symbol); }
 
 async function fetchTimeframeAnalyses(symbol, options = {}) {
   const frames = [];
@@ -269,7 +246,11 @@ function buildTimeframeAnalysis(config, chart) {
       low: Number(quote.low?.[index] ?? close),
       volume: Number(quote.volume?.[index] ?? 0)
     }))
-    .filter((row) => row.close > 0 && row.high > 0 && row.low > 0);
+    .filter((row) => [row.close,row.high,row.low].every(value => Number.isFinite(value) && value > 0)
+      && row.low <= row.high && row.close >= row.low && row.close <= row.high
+      && epochSecondsToMs(row.timestamp) !== null && row.timestamp * 1000 <= Date.now() + 120000)
+    .sort((a,b) => a.timestamp-b.timestamp)
+    .filter((row,index,all) => index === 0 || row.timestamp !== all[index-1].timestamp);
 
   if (rows.length < config.minBars) return null;
 
@@ -279,7 +260,7 @@ function buildTimeframeAnalysis(config, chart) {
   const volumes = rows.map((row) => Number.isFinite(row.volume) ? row.volume : 0);
   const timestamps = rows.map((row) => row.timestamp).filter((timestamp) => Number.isFinite(timestamp) && timestamp > 0);
   const latestTimestamp = timestamps.at(-1) || 0;
-  const currentPrice = pickValidPrice(meta.regularMarketPrice, closes.at(-1));
+  const currentPrice = selectPriceObservation({meta,closes,latestTimestamp,id:config.id}).price;
 
   if (!Number.isFinite(currentPrice) || currentPrice <= 0) return null;
 
@@ -512,7 +493,7 @@ function applyPrecisionGate(recommendation, backtest) {
   next.precision.passed = true;
   next.confidence = clamp(Math.round(Math.min(96, smoothedWinRate * 0.7 + next.confidence * 0.3)), 62, 96);
   next.reasons = uniqueReasons([
-    `اجتاز فلتر الدقة العالية: إصابة الهدف الأول ${winRate}% عبر ${samples} صفقة تاريخية على نفس الرمز`,
+    `اجتاز فلتر الدقة العالية: إصابة الهدف الأول ${winRate}% عبر ${samples} صفقة تاريخية على نفس الرمز؛ هذا اختبار أحادي الفريم وليس احتمال نجاح مضموناً`,
     ...next.reasons
   ]).slice(0, 6);
 
@@ -842,7 +823,7 @@ function backtestSignals(closes, highs, lows, volumes) {
 
     if (outcome === null) {
       exitPrice = closes[index + horizonDays];
-      outcome = direction === 1 ? exitPrice > entry : exitPrice < entry;
+      outcome = false; // A profitable horizon exit is not a target hit.
     }
 
     const grossReturnPct = pctChange(entry, exitPrice) * direction;
@@ -861,7 +842,7 @@ function backtestSignals(closes, highs, lows, volumes) {
   if (samples.length < 3) {
     return {
       samples: samples.length,
-      wins: 0,
+      wins: samples.filter(sample => sample.success).length,
       winRate: null,
       avgReturnPct: null,
       horizonDays,

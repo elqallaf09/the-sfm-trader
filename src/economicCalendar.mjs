@@ -1,7 +1,9 @@
-const FOREX_FACTORY_CALENDAR_URL = process.env.FOREX_FACTORY_CALENDAR_URL || "https://nfs.faireconomy.media/ff_calendar_thisweek.xml";
+import { toNullableNumber } from "../public/modules/numberValue.js";
+import "./loadEnv.mjs";
+const FOREX_FACTORY_CALENDAR_URL = process.env.FOREX_FACTORY_CALENDAR_URL || "https://nfs.faireconomy.media/ff_calendar_thisweek.json";
 const ECONOMIC_CALENDAR_TZ = process.env.ECONOMIC_CALENDAR_TZ || "America/New_York";
 const ECONOMIC_CALENDAR_CACHE_TTL_MS = positiveInteger(process.env.ECONOMIC_CALENDAR_CACHE_TTL_MS, 15 * 60_000);
-const ECONOMIC_CALENDAR_TIMEOUT_MS = positiveInteger(process.env.ECONOMIC_CALENDAR_TIMEOUT_MS, 2_500);
+const ECONOMIC_CALENDAR_TIMEOUT_MS = positiveInteger(process.env.ECONOMIC_CALENDAR_TIMEOUT_MS, 5_000);
 const ECONOMIC_CALENDAR_MAX_BYTES = positiveInteger(process.env.ECONOMIC_CALENDAR_MAX_BYTES, 2_000_000);
 const ECONOMIC_CALENDAR_RETRY_DELAY_MS = positiveInteger(process.env.ECONOMIC_CALENDAR_RETRY_DELAY_MS, 30_000);
 const HIGH_IMPACT_BLOCK_BEFORE_MIN = 75;
@@ -26,8 +28,8 @@ export function buildEconomicCalendarPayload(marketId = "us", symbols = [], even
   const now = Date.now();
   const currencies = getMarketCurrencies(marketId, symbols);
   const relevant = events
-    .filter((event) => currencies.has(event.currency))
-    .filter((event) => Math.abs(event.timestamp - now) <= 72 * 60 * 60 * 1000)
+    .filter((event) => currencies.has(event.currency) || event.currency === "ALL")
+    .filter((event) => event.timestamp >= now - 24 * 60 * 60 * 1000 && event.timestamp <= now + 7 * 24 * 60 * 60 * 1000)
     .sort((a, b) => a.timestamp - b.timestamp);
   const highImpact = relevant.filter((event) => event.impact === "high");
   const upcoming = relevant.filter((event) => event.timestamp >= now).slice(0, 12);
@@ -39,6 +41,9 @@ export function buildEconomicCalendarPayload(marketId = "us", symbols = [], even
     })
     .slice(0, 6);
 
+  const recent = relevant.filter(event => event.timestamp < now).reverse().slice(0, 12);
+  const hasEvents = upcoming.length > 0 || recent.length > 0;
+  const dataState = calendarCache.error ? (hasEvents ? "stale" : "unavailable") : (hasEvents ? "fresh" : "empty");
   return {
     source: "ForexFactory / Fair Economy",
     sourceUrl: FOREX_FACTORY_CALENDAR_URL,
@@ -46,19 +51,37 @@ export function buildEconomicCalendarPayload(marketId = "us", symbols = [], even
     generatedAt: new Date().toISOString(),
     marketId,
     currencies: [...currencies],
-    status: hotEvents.length ? "hot" : nextHighImpact ? "watch" : "clear",
-    summary: buildCalendarSummary(upcoming, hotEvents, nextHighImpact),
+    status: dataState === "unavailable" ? "unavailable" : hotEvents.length ? "hot" : nextHighImpact ? "watch" : "clear",
+    dataState,
+    fetchedAt: calendarCache.createdAt ? new Date(calendarCache.createdAt).toISOString() : null,
+    summary: dataState === "unavailable"
+      ? "تعذر تحميل التقويم الاقتصادي من المصدر. أعد المحاولة لاحقاً."
+      : dataState === "stale" ? "تعذر تحديث التقويم؛ تظهر آخر أحداث محفوظة مع توقيتها."
+      : buildCalendarSummary(upcoming, hotEvents, nextHighImpact),
     nextHighImpact,
     upcoming,
+    recent,
     hotEvents,
     error: calendarCache.error
   };
 }
 
 export function applyEconomicNewsOverlayToRecommendations(recommendations = [], marketId = "us", calendarPayload = null) {
-  const events = Array.isArray(calendarPayload?.upcoming)
-    ? [...calendarPayload.hotEvents || [], ...calendarPayload.upcoming]
-    : [];
+  const events = ["hotEvents", "upcoming", "recent"].flatMap(key => Array.isArray(calendarPayload?.[key]) ? calendarPayload[key] : [])
+    .filter((event, index, all) => event && Number.isFinite(event.timestamp)
+      && all.findIndex(other => other?.timestamp === event.timestamp && other?.title === event.title && other?.currency === event.currency) === index);
+
+  if (!calendarPayload || calendarPayload?.dataState === "unavailable" || calendarPayload?.dataState === "stale" || calendarPayload?.error) {
+    return recommendations.map(item => ({
+      ...item,
+      economicNewsRisk: {
+        level: "unavailable", label: "مخاطر الأخبار غير متاحة", score: null,
+        blockTrading: false, confidenceCap: null,
+        summary: "تعذر تحديث التقويم؛ لا يمكن تأكيد هدوء الأخبار على هذا الرمز.",
+        currencies: getSymbolCurrencies(item.symbol, marketId), events: []
+      }
+    }));
+  }
 
   if (!events.length) {
     return recommendations.map((item) => ({
@@ -71,7 +94,7 @@ export function applyEconomicNewsOverlayToRecommendations(recommendations = [], 
 }
 
 async function getEconomicCalendarEvents() {
-  if (calendarCache.events.length && Date.now() - calendarCache.createdAt < ECONOMIC_CALENDAR_CACHE_TTL_MS) {
+  if (calendarCache.createdAt && Date.now() - calendarCache.createdAt < ECONOMIC_CALENDAR_CACHE_TTL_MS) {
     return calendarCache.events;
   }
   if (Date.now() < calendarRetryAt) return calendarCache.events || [];
@@ -108,9 +131,10 @@ async function refreshEconomicCalendar() {
     if (buffer.byteLength > ECONOMIC_CALENDAR_MAX_BYTES) {
       throw new Error("calendar response is too large");
     }
-    const xml = new TextDecoder("windows-1252").decode(buffer);
-    const events = parseForexFactoryXml(xml)
-      .filter((event) => event.timestamp && event.currency && event.impact !== "low")
+    const utf8 = new TextDecoder("utf-8").decode(buffer);
+    const text = utf8.trimStart().startsWith("<") ? new TextDecoder(/encoding=["'](?:windows-1252|iso-8859-1)/i.test(utf8) ? "windows-1252" : "utf-8").decode(buffer) : utf8;
+    const events = parseEconomicCalendarFeed(text)
+      .filter((event) => Number.isFinite(event.timestamp) && event.currency && event.title)
       .sort((a, b) => a.timestamp - b.timestamp);
 
     calendarCache = {
@@ -137,6 +161,30 @@ function positiveInteger(value, fallback) {
   return Number.isFinite(number) && number > 0 ? Math.floor(number) : fallback;
 }
 
+export function parseEconomicCalendarFeed(text) {
+  const source = String(text || "").trim();
+  if (source.startsWith("[")) {
+    const records = JSON.parse(source);
+    return records.map(event => {
+      const timestamp = Date.parse(event.date || event.isoTime || "");
+      if (!Number.isFinite(timestamp)) return null;
+      const date = new Date(timestamp);
+      return {
+        title: String(event.title || "").trim(),
+        currency: String(event.country || event.currency || "").toUpperCase(),
+        impact: normalizeImpact(event.impact),
+        timestamp, isoTime: date.toISOString(),
+        date: "", time: "", exactTime: true,
+        forecast: String(event.forecast ?? ""), previous: String(event.previous ?? ""),
+        actual: String(event.actual ?? ""), url: String(event.url || ""),
+        localTimeLabel: formatEventTime(date)
+      };
+    }).filter(Boolean);
+  }
+  if (!/<(?:weeklyevents|event)[\s>]/i.test(source)) throw new Error("calendar returned an invalid feed");
+  return parseForexFactoryXml(source);
+}
+
 function parseForexFactoryXml(xml) {
   return [...String(xml || "").matchAll(/<event>([\s\S]*?)<\/event>/gi)]
     .map((match) => {
@@ -156,6 +204,7 @@ function parseForexFactoryXml(xml) {
         exactTime: parsedDate.exact,
         forecast: readXmlField(block, "forecast"),
         previous: readXmlField(block, "previous"),
+        actual: readXmlField(block, "actual"),
         url: readXmlField(block, "url"),
         localTimeLabel: parsedDate.date ? formatEventTime(parsedDate.date) : ""
       };
@@ -165,7 +214,7 @@ function parseForexFactoryXml(xml) {
 function readXmlField(block, field) {
   const match = String(block || "").match(new RegExp(`<${field}>([\\s\\S]*?)<\\/${field}>`, "i"));
   if (!match) return "";
-  return decodeXml(match[1].replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "").trim());
+  return decodeXml(match[1].trim().replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "").trim());
 }
 
 function decodeXml(value) {
@@ -306,10 +355,10 @@ function buildCalendarSummary(upcoming, hotEvents, nextHighImpact) {
 function applyEconomicNewsOverlay(item, marketId, events) {
   const currencies = new Set(getSymbolCurrencies(item.symbol, marketId));
   const relevantEvents = events
-    .filter((event) => currencies.has(event.currency))
+    .filter((event) => (currencies.has(event.currency) || event.currency === "ALL"))
     .map((event) => ({
       ...event,
-      minutesToEvent: Math.round((event.timestamp - Date.now()) / 60_000)
+      minutesToEvent: (event.timestamp - Date.now()) / 60_000
     }))
     .sort((a, b) => {
       const impactRank = { high: 0, medium: 1, low: 2 };
@@ -329,28 +378,25 @@ function applyEconomicNewsOverlay(item, marketId, events) {
     reasons: uniqueReasons([newsRisk.summary, ...reasons]).slice(0, 6)
   };
 
-  if (newsRisk.blockTrading && item.action !== "hold") {
+  if (newsRisk.blockTrading) {
     return {
       ...next,
-      setupAction: item.action,
-      setupActionLabel: item.actionLabel,
+      setupAction: item.setupAction || item.action,
+      setupActionLabel: item.setupActionLabel || item.actionLabel,
       action: "hold",
       actionLabel: "انتظار",
-      confidence: Math.min(Number(item.confidence || 0), 58),
+      executionBlocked: true,
+      tradePlan: item.tradePlan ? { ...item.tradePlan, action: "hold", executionBlocked: true, note: newsRisk.summary } : item.tradePlan,
+      confidence: toNullableNumber(item.confidence) === null ? null : Math.min(toNullableNumber(item.confidence), 58),
       duration: "انتظار حتى يهدأ تأثير الخبر ثم إعادة قراءة الشارت",
-      decision: item.decision
-        ? {
-            ...item.decision,
-            badge: "انتظار",
-            summary: newsRisk.summary
-          }
-        : item.decision
+      decision: { ...(item.decision || {}), kind: "hold", badge: "انتظار", title: "انتظار الخبر", message: newsRisk.summary, summary: newsRisk.summary }
+
     };
   }
 
   return {
     ...next,
-    confidence: Math.min(Number(item.confidence || 0), newsRisk.confidenceCap)
+    confidence: toNullableNumber(item.confidence) === null ? null : Math.min(toNullableNumber(item.confidence), newsRisk.confidenceCap)
   };
 }
 
@@ -418,7 +464,7 @@ function buildNewsRisk(events, item, marketId) {
 }
 
 function formatMinutesToEvent(minutes) {
-  const abs = Math.abs(Number(minutes || 0));
+  const abs = Math.round(Math.abs(Number(minutes || 0)));
   if (minutes < 0) {
     return abs < 60 ? `منذ ${abs} دقيقة` : `منذ ${Math.round(abs / 60)} ساعة`;
   }

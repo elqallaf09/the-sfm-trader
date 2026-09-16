@@ -1,0 +1,24 @@
+/* Search controls are shared by Home and the other application views. */
+body .app-shell .terminal-search { position: relative; overflow: visible !important; z-index: 80; }
+body .app-shell .terminal-search:focus-within { z-index: 90; }
+body .app-shell .terminal-search .instrument-search-popup {
+  position: absolute; inset-inline: 0; top: calc(100% + 8px);
+  min-width: 0; max-height: min(440px, 65dvh); overflow: auto;
+  padding: 8px; border: 1px solid var(--ui-border); border-radius: 12px;
+  color: var(--ui-text); background: var(--ui-surface); box-shadow: 0 12px 30px #0006;
+  text-align: start; white-space: normal;
+}
+body .app-shell .terminal-search .instrument-search-popup[hidden] { display: none; }
+body .app-shell .terminal-search .instrument-search-status { margin: 4px 6px 8px; color: var(--ui-muted); font-size: 12px; line-height: 1.6; }
+body .app-shell .terminal-search .instrument-search-option {
+  display: flex; align-items: center; gap: 10px; min-height: 56px;
+  padding: 8px; border-radius: 8px; cursor: pointer;
+}
+body .app-shell .terminal-search .instrument-search-option:is(:hover, [aria-selected="true"]) { background: var(--ui-accent-soft); outline: 1px solid var(--ui-accent); }
+body .app-shell .terminal-search .instrument-search-copy { display: grid; gap: 4px; min-width: 0; }
+body .app-shell .terminal-search .instrument-search-copy strong { font-size: 14px; color: var(--ui-text); line-height: 1.4; }
+body .app-shell .terminal-search .instrument-search-copy small { font-size: 11px; color: var(--ui-muted); line-height: 1.5; overflow-wrap: anywhere; }
+body .app-shell .terminal-search .instrument-search-mark { flex: 0 0 34px; }
+body .app-shell .terminal-search .instrument-search-mark .asset-logo { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; overflow: hidden; }
+body .app-shell .terminal-search .instrument-search-mark svg { width: 26px; height: 26px; }
+body .app-shell .terminal-search .instrument-search-direct { width: 100%; min-height: 44px; padding: 8px; border: 1px solid var(--ui-border); border-radius: 8px; background: var(--ui-accent-soft); color: var(--ui-accent); cursor: pointer; }

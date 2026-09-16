@@ -1,0 +1,18 @@
+{
+  "captureMode": "viewport",
+  "fullPage": false,
+  "captures": [
+    {
+      "file": "home-v3-fixed-1680x945.png",
+      "viewport": { "width": 1680, "height": 945 }
+    },
+    {
+      "file": "home-v3-fixed-1440x900.png",
+      "viewport": { "width": 1440, "height": 900 }
+    },
+    {
+      "file": "home-v3-fixed-mobile-390x844.png",
+      "viewport": { "width": 390, "height": 844 }
+    }
+  ]
+}

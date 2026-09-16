@@ -1,15 +1,24 @@
-﻿import http from "node:http";
+import { formatQuotePrice } from "./public/modules/priceFormat.js";
+import { normalizeQuoteCurrency, resolveQuoteCurrency } from "./public/modules/marketIntegrity.js";
+import { normalizeShariaEvidence } from "./src/shariaEvidence.mjs";
+import "./src/loadEnv.mjs";
+import { toNullableNumber } from "./public/modules/numberValue.js";
+import { createSharedTasks } from "./src/sharedTasks.mjs";
+import { finalizeRecommendation } from "./src/recommendationPolicy.mjs";
+import { calculateFinalScore } from "./public/modules/analysisMetrics.js";
+import { createMarketNewsService } from "./src/marketNews.mjs";
+import http from "node:http";
 import { spawn } from "node:child_process";
 import crypto from "node:crypto";
 import { brotliCompress, brotliCompressSync, constants as zlibConstants } from "node:zlib";
 import { promisify } from "node:util";
-import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { analyzeSymbol } from "./src/analysis.mjs";
 import { getConfiguredProvider, getProviderHealth } from "./src/dataProviders.mjs";
 import { applyEconomicNewsOverlayToRecommendations, getEconomicCalendarForMarket } from "./src/economicCalendar.mjs";
 import { getMarketSummaries, markets } from "./src/markets.mjs";
+import { instrumentCatalog } from "./src/instrumentCatalog.mjs";
 import { createStateStore } from "./src/stateStore.mjs";
 import { createSecurity, securityHeaders } from "./src/security.mjs";
 import { configureHttpServer, normalizeRequestId, readJsonBody } from "./src/http.mjs";
@@ -20,7 +29,6 @@ import { createMetrics } from "./src/metrics.mjs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const publicDir = path.join(__dirname, "public");
-loadEnvFile(path.join(__dirname, ".env"));
 const production = process.env.NODE_ENV === "production";
 const processStartedAt = Date.now();
 const metrics = createMetrics({ startedAt: processStartedAt });
@@ -49,7 +57,7 @@ const shariaCache = createBoundedCache({
   maxEntries: boundedInteger(process.env.SFM_SHARIA_CACHE_MAX_ENTRIES, 1_000, 1, 10_000),
   maxAgeMs: 24 * 60 * 60 * 1000
 });
-const aggregateMarketIds = new Set(["gcc", "world"]);
+const aggregateMarketIds = new Set(["gcc", "world", "watchlist"]);
 const canonicalMarketPriority = [
   "kuwait",
   "saudi",
@@ -73,12 +81,13 @@ const symbolExecutionMarketCache = createBoundedCache({
   maxEntries: boundedInteger(process.env.SFM_SYMBOL_MARKET_CACHE_MAX_ENTRIES, 2_000, 1, 10_000),
   maxAgeMs: 24 * 60 * 60 * 1000
 });
-const readOnlyApiPaths = new Set(["/api/health", "/api/ready", "/api/markets", "/api/recommendations", "/api/economic-calendar", "/api/watchlist", "/api/asset", "/api/ollama-status"]);
+const getMarketNews = createMarketNewsService();
+const analysisTasks = createSharedTasks();
+const readOnlyApiPaths = new Set(["/api/market-news", "/api/health", "/api/ready", "/api/markets", "/api/instruments", "/api/recommendations", "/api/economic-calendar", "/api/watchlist", "/api/asset", "/api/ollama-status"]);
 const symbolAliases = {
   APPLE: "AAPL",
   APPL: "AAPL",
   MICROSOFT: "MSFT",
-  MS: "MSFT",
   NVD: "NVDA",
   NVIDIA: "NVDA",
   TESLA: "TSLA",
@@ -185,20 +194,6 @@ const voiceSessionKnowledge = {
   healthcare: { name: "أسهم الرعاية الصحية والطب", type: "regular", timeZone: "America/New_York", label: "نيويورك", days: [1, 2, 3, 4, 5], open: "09:30", close: "16:00" }
 };
 
-function loadEnvFile(filePath) {
-  if (!existsSync(filePath)) return;
-
-  const lines = readFileSync(filePath, "utf8").split(/\r?\n/);
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#") || !trimmed.includes("=")) continue;
-    const [key, ...valueParts] = trimmed.split("=");
-    if (!process.env[key]) {
-      process.env[key] = valueParts.join("=").trim().replace(/^["']|["']$/g, "");
-    }
-  }
-}
-
 const server = http.createServer(async (request, response) => {
   try {
     const url = new URL(request.url, "http://localhost");
@@ -230,6 +225,10 @@ const server = http.createServer(async (request, response) => {
         response.setHeader("retry-after", String(Math.max(1, Math.ceil((rate.resetAt - Date.now()) / 1000))));
         return sendJson(response, { error: "طلبات كثيرة جدًا. حاول بعد قليل." }, 429, request);
       }
+    }
+
+    if (readOnlyApiPaths.has(url.pathname) && request.method !== "GET") {
+      return sendJson(response, { error: "Method not allowed" }, 405, request);
     }
 
     if (url.pathname === "/api/health") {
@@ -284,8 +283,9 @@ const server = http.createServer(async (request, response) => {
       return sendJson(response, { error: "Method not allowed" }, 405, request);
     }
 
-    if (readOnlyApiPaths.has(url.pathname) && request.method !== "GET") {
-      return sendJson(response, { error: "Method not allowed" }, 405, request);
+
+    if (url.pathname === "/api/instruments") {
+      return sendJson(response, { instruments: instrumentCatalog });
     }
 
     if (url.pathname === "/api/markets") {
@@ -298,6 +298,10 @@ const server = http.createServer(async (request, response) => {
     if (url.pathname === "/api/recommendations") {
       const marketId = url.searchParams.get("market") || "us";
       return await handleRecommendations(response, marketId);
+    }
+
+    if (url.pathname === "/api/market-news") {
+      return sendJson(response, await getMarketNews());
     }
 
     if (url.pathname === "/api/economic-calendar") {
@@ -431,39 +435,19 @@ if (process.send) process.on("message", (message) => {
 
 async function handleRecommendations(response, marketId) {
   const market = markets[marketId];
-
-  if (!market) {
-    return sendJson(response, { error: "السوق غير معروف" }, 404);
-  }
-
+  if (!market) return sendJson(response, { error: "السوق غير معروف" }, 404);
   const cacheKey = `market:${marketId}`;
   const cached = cache.get(cacheKey);
-
   if (cached && Date.now() - cached.createdAt < CACHE_TTL_MS) {
     return sendJson(response, { ...finalizeRecommendationsPayloadForSession(cached.payload, marketId), cached: true });
   }
-
   if (cached && Date.now() - cached.createdAt < STALE_CACHE_TTL_MS) {
     refreshMarketCache(cacheKey, marketId, market);
     return sendJson(response, { ...finalizeRecommendationsPayloadForSession(cached.payload, marketId), cached: true, stale: true, refreshing: true });
   }
-
-  const economicCalendar = await getEconomicCalendarForMarket(marketId, market.symbols.map((asset) => asset.symbol));
-  const job = createAnalyzeAssetsJob(market.symbols, getAnalysisConcurrency(market.symbols.length), { fast: true });
-  const completed = await waitForPromise(job.done, FIRST_RESPONSE_BUDGET_MS);
-  const settled = completed ? await job.done : job.results.slice();
-  const payload = buildRecommendationsPayload(marketId, market, settled, {
-    partial: !completed,
-    analyzedCount: job.completed,
-    economicCalendar
-  });
-
-  if (completed) {
-    cache.set(cacheKey, { createdAt: Date.now(), payload });
-  } else {
-    completeMarketJobInBackground(cacheKey, marketId, market, job, economicCalendar);
-  }
-
+  const buildPayload = (results, options) => buildRecommendationsPayload(marketId, market, results, options);
+  const task = getAnalysisTask(cacheKey, marketId, market.symbols, buildPayload);
+  const payload = await firstAnalysisPayload(task, buildPayload);
   return sendJson(response, finalizeRecommendationsPayloadForSession(payload, marketId));
 }
 
@@ -486,7 +470,8 @@ function buildRecommendationsPayload(marketId, market, settled = [], options = {
   });
 
   const economicCalendar = options.economicCalendar || null;
-  const recommendations = applyEconomicNewsOverlayToRecommendations(rawRecommendations, marketId, economicCalendar);
+  // Cache the unguarded analysis. Time-sensitive news/session guards run on each response.
+  const recommendations = [...rawRecommendations];
 
   recommendations.sort((a, b) => {
     const priority = { buy: 0, sell: 1, hold: 2 };
@@ -514,8 +499,8 @@ function buildRecommendationsPayload(marketId, market, settled = [], options = {
     economicCalendar,
     unavailable,
     partial: Boolean(options.partial),
-    analyzedCount: Number(options.analyzedCount || recommendations.length + unavailable.length),
-    pendingCount: Math.max(0, market.symbols.length - Number(options.analyzedCount || recommendations.length + unavailable.length)),
+    analyzedCount: Number(options.analyzedCount ?? recommendations.length + unavailable.length),
+    pendingCount: Math.max(0, market.symbols.length - Number(options.analyzedCount ?? recommendations.length + unavailable.length)),
     generatedAt: new Date().toISOString(),
     dataProvider: {
       active: getConfiguredProvider(),
@@ -537,7 +522,7 @@ function finalizeRecommendationsPayloadForSession(payload, marketId) {
   const session = getExecutionSessionState(marketId);
   const marketWideSession = session && !isAggregateMarket(marketId);
   const closed = marketWideSession && session.isOpen === false;
-  const recommendations = (payload.recommendations || []).map((item) => (
+  const recommendations = applyEconomicNewsOverlayToRecommendations(payload.recommendations || [], marketId, payload.economicCalendar).map((item) => (
     finalizeRecommendationForExecutionSession(normalizeRecommendationCurrency(item, marketId), marketId, session)
   ));
   const note = closed
@@ -566,18 +551,9 @@ function finalizeRecommendationForExecutionSession(item, marketId, marketSession
   const aggregate = isAggregateMarket(marketId);
   const executionMarketId = aggregate ? resolveSymbolExecutionMarketId(item.symbol, marketId) : marketId;
   const session = aggregate ? getExecutionSessionState(executionMarketId) : marketSession;
-  const enriched = {
-    ...item,
-    currency: resolveCurrencyForAsset(item, executionMarketId),
-    executionMarketId,
-    executionSession: session || null
-  };
-
-  if (session?.isOpen === false) {
-    return applyClosedMarketGuard(enriched, session);
-  }
-
-  return enriched;
+  return finalizeRecommendation(item, {
+    currency: resolveCurrencyForAsset(item, executionMarketId), executionMarketId, session
+  });
 }
 
 function normalizeRecommendationCurrency(item = {}, marketId = "") {
@@ -587,103 +563,9 @@ function normalizeRecommendationCurrency(item = {}, marketId = "") {
   };
 }
 
-function normalizeCurrencyCode(currency) {
-  const code = String(currency || "").trim().toUpperCase();
-  return {
-    PAIR: "PAIR",
-    MIXED: "MIXED",
-    GCC: "GCC",
-    KWF: "KWD",
-    KW: "KWD",
-    KWD: "KWD",
-    SAR: "SAR",
-    AED: "AED",
-    QAR: "QAR",
-    BHD: "BHD",
-    OMR: "OMR",
-    USD: "USD",
-    EUR: "EUR"
-  }[code] || code;
-}
-
+function normalizeCurrencyCode(currency) { return normalizeQuoteCurrency(currency); }
 function resolveCurrencyForAsset(asset = {}, marketId = "") {
-  const symbolCurrency = inferCurrencyFromSymbol(asset.symbol);
-  const providerCurrency = normalizeCurrencyCode(asset.currency);
-  const marketCurrency = inferCurrencyFromMarketId(marketId);
-
-  if (symbolCurrency) return symbolCurrency;
-  if (providerCurrency && !["GCC", "MIXED"].includes(providerCurrency)) return providerCurrency;
-  if (marketCurrency && !["GCC", "MIXED"].includes(marketCurrency)) return marketCurrency;
-  return "USD";
-}
-
-function inferCurrencyFromMarketId(marketId) {
-  const id = String(marketId || "").toLowerCase();
-  if (!id) return "";
-  if (id.includes("kuwait") || id.includes("bourse-kuwait")) return "KWD";
-  if (id.includes("saudi") || id.includes("tadawul")) return "SAR";
-  if (id.includes("uae") || id.includes("dubai") || id.includes("adx") || id.includes("dfm")) return "AED";
-  if (id.includes("qatar")) return "QAR";
-  if (id.includes("bahrain")) return "BHD";
-  if (id.includes("oman") || id.includes("muscat")) return "OMR";
-  if (id.includes("forex") || id.includes("fx") || id.includes("currency")) return "PAIR";
-  if (id.includes("crypto")) return "USD";
-  if (id.includes("commodity") || id.includes("commodities") || id.includes("energy")) return "USD";
-  if (id.includes("us") || id.includes("technology") || id.includes("food") || id.includes("pharmaceutical") || id.includes("banking") || id.includes("ai") || id.includes("semiconductor")) return "USD";
-  if (id.includes("europe")) return "EUR";
-  if (id.includes("asia") || id.includes("asian")) return "MIXED";
-  return "";
-}
-
-function inferCurrencyFromSymbol(symbol) {
-  const upper = String(symbol || "").toUpperCase();
-  if (upper.endsWith("=X")) return "PAIR";
-  if (upper.includes("-USD")) return "USD";
-  if (upper.endsWith("=F")) return "USD";
-  if (upper.endsWith(".KW")) return "KWD";
-  if (upper.endsWith(".SR")) return "SAR";
-  if (upper.endsWith(".AE") || upper.endsWith(".AD") || upper.endsWith(".DU")) return "AED";
-  if (upper.endsWith(".QA")) return "QAR";
-  if (upper.endsWith(".BH")) return "BHD";
-  if (upper.endsWith(".OM")) return "OMR";
-  if (upper.endsWith(".AS") || upper.endsWith(".DE") || upper.endsWith(".PA") || upper.endsWith(".SW") || upper.endsWith(".L")) return "EUR";
-  if (upper.startsWith("^") || /^[A-Z]{1,5}$/.test(upper)) return "USD";
-  return "";
-}
-
-function applyClosedMarketGuard(item, session) {
-  const reasons = Array.isArray(item.reasons) ? item.reasons : [];
-  const nextOpen = session.openAt ? new Date(session.openAt).toLocaleString("ar-KW-u-nu-latn", {
-    timeZone: session.timeZone,
-    hour: "2-digit",
-    minute: "2-digit",
-    weekday: "long",
-    day: "2-digit",
-    month: "2-digit"
-  }) : "";
-
-  return {
-    ...item,
-    setupAction: item.action,
-    setupActionLabel: item.actionLabel,
-    action: "hold",
-    actionLabel: "انتظار",
-    confidence: Math.min(Number(item.confidence) || 0, 62),
-    duration: session.openAt ? `مراقبة حتى افتتاح السوق: ${nextOpen} بتوقيت ${session.label}` : "مراقبة حتى افتتاح السوق",
-    marketClosed: true,
-    marketSession: session,
-    reasons: [
-      `السوق مغلق الآن؛ لا توجد توصية دخول فورية قبل عودة التداول.`,
-      ...reasons.filter(Boolean)
-    ].slice(0, 6),
-    decision: item.decision
-      ? {
-          ...item.decision,
-          badge: "انتظار",
-          summary: "السوق مغلق الآن؛ راقب الإشارة عند الافتتاح ولا تدخل قبل ظهور أسعار حية."
-        }
-      : item.decision
-  };
+  return resolveQuoteCurrency(asset.symbol, asset.currency);
 }
 
 function getExecutionSessionState(marketId, now = new Date()) {
@@ -726,7 +608,8 @@ function getExecutionSessionConfig(marketId) {
     dividends: "us",
     healthcare: "healthcare",
     commodities: "commodities",
-    food: "commodities",
+    food: "us",
+    banking: "us", energy: "us", semiconductors: "us",
     crypto: "crypto"
   };
   const alias = aliases[marketId];
@@ -770,39 +653,34 @@ function inferExecutionMarketFromSymbol(symbol) {
   return "";
 }
 
+function getAnalysisTask(cacheKey, marketId, assets, buildPayload) {
+  return analysisTasks.getOrCreate(cacheKey, () => {
+    const job = createAnalyzeAssetsJob(assets, getAnalysisConcurrency(assets.length), { fast: true });
+    const calendarReady = getEconomicCalendarForMarket(marketId, assets.map(asset => asset.symbol));
+    const done = Promise.all([job.done, calendarReady]).then(([results, economicCalendar]) => {
+      const payload = buildPayload(results, { economicCalendar, analyzedCount: job.completed });
+      cache.set(cacheKey, { createdAt: Date.now(), payload });
+      return payload;
+    });
+    return { job, calendarReady, done };
+  });
+}
+
+async function firstAnalysisPayload(task, buildPayload) {
+  const completed = await waitForPromise(task.done, FIRST_RESPONSE_BUDGET_MS);
+  if (completed) return task.done;
+  const economicCalendar = await task.calendarReady;
+  return buildPayload(task.job.results.slice(), {
+    partial: true, analyzedCount: task.job.completed, economicCalendar
+  });
+}
+
 function refreshMarketCache(cacheKey, marketId, market) {
-  const refreshKey = `${cacheKey}:refreshing`;
-  if (cache.get(refreshKey)) return;
-
-  cache.set(refreshKey, { createdAt: Date.now(), payload: true });
-  const job = createAnalyzeAssetsJob(market.symbols, getAnalysisConcurrency(market.symbols.length), { fast: true });
-  Promise.all([
-    job.done,
-    getEconomicCalendarForMarket(marketId, market.symbols.map((asset) => asset.symbol))
-  ]).then(([settled, economicCalendar]) => {
-    const payload = buildRecommendationsPayload(marketId, market, settled, { economicCalendar });
-    cache.set(cacheKey, { createdAt: Date.now(), payload });
-  }).catch(() => {
-    // الخلفية اختيارية؛ إذا فشلت يبقى الكاش القديم متاحاً للمستخدم.
-  }).finally(() => {
-    cache.delete(refreshKey);
-  });
+  const buildPayload = (results, options) => buildRecommendationsPayload(marketId, market, results, options);
+  try { getAnalysisTask(cacheKey, marketId, market.symbols, buildPayload).done.catch(() => {}); }
+  catch { /* Existing cached data remains usable while the analysis queue is full. */ }
 }
 
-function completeMarketJobInBackground(cacheKey, marketId, market, job, economicCalendar) {
-  const refreshKey = `${cacheKey}:completing`;
-  if (cache.get(refreshKey)) return;
-
-  cache.set(refreshKey, { createdAt: Date.now(), payload: true });
-  job.done.then((settled) => {
-    const payload = buildRecommendationsPayload(marketId, market, settled, { economicCalendar });
-    cache.set(cacheKey, { createdAt: Date.now(), payload });
-  }).catch(() => {
-    // Keep the first fast response if the background completion fails.
-  }).finally(() => {
-    cache.delete(refreshKey);
-  });
-}
 
 async function handleWatchlist(response, symbols) {
   const uniqueSymbols = [...new Set(symbols)];
@@ -837,33 +715,19 @@ async function handleWatchlist(response, symbols) {
   const cached = cache.get(cacheKey);
 
   if (cached && Date.now() - cached.createdAt < CACHE_TTL_MS) {
-    return sendJson(response, { ...cached.payload, cached: true });
+    return sendJson(response, { ...finalizeRecommendationsPayloadForSession(cached.payload, "watchlist"), cached: true });
   }
 
   if (cached && Date.now() - cached.createdAt < STALE_CACHE_TTL_MS) {
     refreshWatchlistCache(cacheKey, uniqueSymbols);
-    return sendJson(response, { ...cached.payload, cached: true, stale: true, refreshing: true });
+    return sendJson(response, { ...finalizeRecommendationsPayloadForSession(cached.payload, "watchlist"), cached: true, stale: true, refreshing: true });
   }
 
   const assets = uniqueSymbols.map(resolveAsset);
-  const economicCalendar = await getEconomicCalendarForMarket("watchlist", assets.map((asset) => asset.symbol));
-  const job = createAnalyzeAssetsJob(assets, getAnalysisConcurrency(assets.length), { fast: true });
-  const completed = await waitForPromise(job.done, FIRST_RESPONSE_BUDGET_MS);
-  const settled = completed ? await job.done : job.results.slice();
-  const payload = buildWatchlistPayload(assets, settled, {
-    partial: !completed,
-    analyzedCount: job.completed,
-    economicCalendar
-  });
-
-  if (completed) {
-    cache.set(cacheKey, { createdAt: Date.now(), payload });
-  } else {
-    cache.set(cacheKey, { createdAt: Date.now(), payload });
-    completeWatchlistJobInBackground(cacheKey, assets, job, economicCalendar);
-  }
-
-  return sendJson(response, payload);
+  const buildPayload = (results, options) => buildWatchlistPayload(assets, results, options);
+  const task = getAnalysisTask(cacheKey, "watchlist", assets, buildPayload);
+  const payload = await firstAnalysisPayload(task, buildPayload);
+  return sendJson(response, finalizeRecommendationsPayloadForSession(payload, "watchlist"));
 }
 
 function buildWatchlistPayload(assets, settled = [], options = {}) {
@@ -885,7 +749,7 @@ function buildWatchlistPayload(assets, settled = [], options = {}) {
   });
 
   const economicCalendar = options.economicCalendar || null;
-  const recommendations = applyEconomicNewsOverlayToRecommendations(rawRecommendations, "watchlist", economicCalendar)
+  const recommendations = rawRecommendations
     .map((item) => normalizeRecommendationCurrency(item, resolveSymbolExecutionMarketId(item.symbol, "watchlist")));
 
   recommendations.sort((a, b) => b.confidence - a.confidence || Math.abs(b.expectedMovePct) - Math.abs(a.expectedMovePct));
@@ -910,8 +774,8 @@ function buildWatchlistPayload(assets, settled = [], options = {}) {
     economicCalendar,
     unavailable,
     partial: Boolean(options.partial),
-    analyzedCount: Number(options.analyzedCount || recommendations.length + unavailable.length),
-    pendingCount: Math.max(0, assets.length - Number(options.analyzedCount || recommendations.length + unavailable.length)),
+    analyzedCount: Number(options.analyzedCount ?? recommendations.length + unavailable.length),
+    pendingCount: Math.max(0, assets.length - Number(options.analyzedCount ?? recommendations.length + unavailable.length)),
     generatedAt: new Date().toISOString(),
     dataProvider: {
       active: getConfiguredProvider(),
@@ -923,40 +787,12 @@ function buildWatchlistPayload(assets, settled = [], options = {}) {
 }
 
 function refreshWatchlistCache(cacheKey, symbols) {
-  const refreshKey = `${cacheKey}:refreshing`;
-  if (cache.get(refreshKey)) return;
-
   const assets = symbols.map(resolveAsset);
-  cache.set(refreshKey, { createdAt: Date.now(), payload: true });
-  const job = createAnalyzeAssetsJob(assets, getAnalysisConcurrency(assets.length), { fast: true });
-  Promise.all([
-    job.done,
-    getEconomicCalendarForMarket("watchlist", assets.map((asset) => asset.symbol))
-  ]).then(([settled, economicCalendar]) => {
-    cache.set(cacheKey, { createdAt: Date.now(), payload: buildWatchlistPayload(assets, settled, { economicCalendar }) });
-  }).catch(() => {
-    // تحديث الخلفية اختياري.
-  }).finally(() => {
-    cache.delete(refreshKey);
-  });
+  const buildPayload = (results, options) => buildWatchlistPayload(assets, results, options);
+  try { getAnalysisTask(cacheKey, "watchlist", assets, buildPayload).done.catch(() => {}); }
+  catch { /* Keep the last completed watchlist while the queue is full. */ }
 }
 
-function completeWatchlistJobInBackground(cacheKey, assets, job, economicCalendar) {
-  const refreshKey = `${cacheKey}:completing`;
-  if (cache.get(refreshKey)) return;
-
-  cache.set(refreshKey, { createdAt: Date.now(), payload: true });
-  job.done.then((settled) => {
-    cache.set(cacheKey, {
-      createdAt: Date.now(),
-      payload: buildWatchlistPayload(assets, settled, { economicCalendar })
-    });
-  }).catch(() => {
-    // Keep the first fast response if the background completion fails.
-  }).finally(() => {
-    cache.delete(refreshKey);
-  });
-}
 
 async function handleFollowedTrades(request, response, userId) {
   if (request.method === "GET") {
@@ -1070,11 +906,6 @@ function uniqueStrings(values, limit) {
   return [...new Set((Array.isArray(values) ? values : []).map((value) => String(value || "").slice(0, 120)).filter(Boolean))].slice(0, limit);
 }
 
-function toNullableNumber(value) {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : null;
-}
-
 function normalizeIsoDate(value) {
   const date = new Date(value || Date.now());
   return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
@@ -1115,8 +946,7 @@ async function readNotificationLog(userId) {
 
 async function writeNotificationLog(userId, notifications, options = {}) {
   const payload = {
-    notifications: normalizeNotificationLog(notifications),
-    updatedAt: new Date().toISOString()
+    notifications: normalizeNotificationLog(notifications)
   };
   return userStore.writeVersioned(userId, "notifications", payload, options);
 }
@@ -1170,11 +1000,22 @@ async function handleAssetDetail(response, symbol) {
 async function getAssetDetailPayload(symbol) {
   const cacheKey = `asset:${symbol}`;
   const cached = cache.get(cacheKey);
+  const raw = cached && Date.now() - cached.createdAt < CACHE_TTL_MS
+    ? { ...cached.payload, cached: true }
+    : await analysisTasks.getOrCreate(cacheKey, () => ({ done: loadAssetDetailPayload(symbol, cacheKey) })).done;
+  // Session and news restrictions are evaluated at response time, including cache hits.
+  const marketId = resolveSymbolExecutionMarketId(symbol, raw.market.id);
+  const economicCalendar = await getEconomicCalendarForMarket(marketId, [symbol]);
+  const [overlaid] = applyEconomicNewsOverlayToRecommendations([raw.recommendation], marketId, economicCalendar);
+  const recommendation = finalizeRecommendationForExecutionSession(overlaid, marketId, getExecutionSessionState(marketId));
+  return {
+    ...raw, recommendation, economicCalendar,
+    asset: { ...raw.asset, currency: recommendation.currency },
+    market: { ...raw.market, session: recommendation.executionSession }
+  };
+}
 
-  if (cached && Date.now() - cached.createdAt < CACHE_TTL_MS) {
-    return { ...cached.payload, cached: true };
-  }
-
+async function loadAssetDetailPayload(symbol, cacheKey) {
   const asset = resolveAsset(symbol);
   const market = findMarketForAsset(asset.symbol);
   const recommendation = await analyzeSymbol(await enrichShariaAsset(asset));
@@ -1224,7 +1065,7 @@ async function handleVoiceCommand(response, payload) {
 
   const activeMarket = String(payload?.activeMarket || "");
   const requestedMarket = resolveVoiceMarketId(transcript) || activeMarket;
-  const rawRecommendations = summarizeVoiceRecommendations(payload?.recommendations || []);
+  const rawRecommendations = []; // Client-supplied prices and actions are not trusted.
   const recommendations = await getVoiceRecommendationsForTranscript(transcript, requestedMarket, rawRecommendations, activeMarket);
 
   const voicePayload = {
@@ -1337,36 +1178,12 @@ function includesAnyText(value, needles) {
   return needles.some((needle) => value.includes(needle));
 }
 
-async function getVoiceRecommendationsForTranscript(transcript, requestedMarket, currentRecommendations, originalActiveMarket = "") {
-  const clean = normalizeArabicText(transcript);
-  if (requestedMarket && requestedMarket !== originalActiveMarket && markets[requestedMarket]) {
-    try {
-      const payload = await getMarketPayloadForVoice(requestedMarket);
-      return summarizeVoiceRecommendations(payload.recommendations || []);
-    } catch {
-      return currentRecommendations;
-    }
-  }
-
-  const asksForStock =
-    clean.includes("سهم") ||
-    clean.includes("اسهم") ||
-    clean.includes("افضل") ||
-    clean.includes("اقوي") ||
-    clean.includes("اشتري") ||
-    clean.includes("شراء");
-  const nonStockMarket = ["forex", "crypto"].includes(requestedMarket);
-
-  if (!asksForStock || (!nonStockMarket && currentRecommendations.length)) {
-    return currentRecommendations;
-  }
-
+async function getVoiceRecommendationsForTranscript(transcript, requestedMarket) {
+  const marketId = markets[requestedMarket] ? requestedMarket : "us";
   try {
-    const payload = await getMarketPayloadForVoice("us");
+    const payload = await getMarketPayloadForVoice(marketId);
     return summarizeVoiceRecommendations(payload.recommendations || []);
-  } catch {
-    return currentRecommendations;
-  }
+  } catch { return []; } // Never fall back to client-supplied prices or signals.
 }
 
 function getVoiceMarketSessionReply(transcript) {
@@ -1570,14 +1387,16 @@ function resolveVoiceMarketId(transcript) {
 async function getMarketPayloadForVoice(marketId) {
   const fullMarketCached = cache.get(`market:${marketId}`);
   if (fullMarketCached && Date.now() - fullMarketCached.createdAt < CACHE_TTL_MS) {
-    const guardedPayload = finalizeRecommendationsPayloadForSession(fullMarketCached.payload, marketId);
+    const calendar = await getEconomicCalendarForMarket(marketId, (fullMarketCached.payload.recommendations || []).map(item => item.symbol));
+    const guardedPayload = finalizeRecommendationsPayloadForSession({...fullMarketCached.payload, economicCalendar:calendar}, marketId);
     return { recommendations: guardedPayload.recommendations || [] };
   }
 
   const cacheKey = `voice-market:${marketId}`;
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.createdAt < CACHE_TTL_MS) {
-    const guardedPayload = finalizeRecommendationsPayloadForSession(cached.payload, marketId);
+    const calendar = await getEconomicCalendarForMarket(marketId, (cached.payload.recommendations || []).map(item => item.symbol));
+    const guardedPayload = finalizeRecommendationsPayloadForSession({...cached.payload, economicCalendar:calendar}, marketId);
     return { recommendations: guardedPayload.recommendations || [] };
   }
 
@@ -1601,7 +1420,8 @@ async function getMarketPayloadForVoice(marketId) {
     recommendations
   };
   cache.set(cacheKey, { createdAt: Date.now(), payload });
-  const guardedPayload = finalizeRecommendationsPayloadForSession(payload, marketId);
+  const calendar = await getEconomicCalendarForMarket(marketId, recommendations.map(item => item.symbol));
+  const guardedPayload = finalizeRecommendationsPayloadForSession({...payload, economicCalendar:calendar}, marketId);
   return { recommendations: guardedPayload.recommendations || [] };
 }
 
@@ -1891,18 +1711,12 @@ function buildAssetVoiceReply(item, profile, monitor) {
 }
 
 function formatVoiceMoney(value, currency) {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return "--";
-  const digits = Math.abs(number) < 1 ? 4 : 2;
-  return `${number.toLocaleString("en-US", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits
-  })}${currency ? ` ${currency}` : ""}`;
+  return formatQuotePrice(value, currency);
 }
 
 function formatVoicePercent(value) {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return "--";
+  const number = toNullableNumber(value);
+  if (number === null) return "--";
   return `${number.toLocaleString("en-US", {
     maximumFractionDigits: 0
   })}%`;
@@ -1986,7 +1800,7 @@ async function enrichShariaAsset(asset) {
       },
       1800
     );
-    const value = normalizeExternalSharia(data);
+    const value = normalizeShariaEvidence(data, symbol);
     shariaCache.set(symbol, { createdAt: Date.now(), value });
     return { ...asset, ...value };
   } catch {
@@ -1994,26 +1808,8 @@ async function enrichShariaAsset(asset) {
   }
 }
 
-function normalizeExternalSharia(data) {
-  const rawStatus = String(data?.status || data?.shariaStatus || data?.compliance || data?.result || "").toLowerCase();
-  const compliant = data?.compliant === true || ["compliant", "halal", "pass", "passed"].includes(rawStatus);
-  const notCompliant = data?.compliant === false || ["not_compliant", "non_compliant", "non-compliant", "haram", "fail", "failed"].includes(rawStatus);
-  const doubtful = ["doubtful", "questionable", "mixed", "review"].includes(rawStatus);
-  const shariaStatus = compliant ? "compliant" : notCompliant ? "not_compliant" : doubtful ? "doubtful" : "unknown";
-  const labels = {
-    compliant: "مطابق للشريعة",
-    not_compliant: "غير مطابق للشريعة",
-    doubtful: "مختلف عليه",
-    unknown: "غير معروف"
-  };
-
-  return {
-    shariaStatus,
-    shariaLabel: data?.label || data?.shariaLabel || labels[shariaStatus],
-    shariaSource: data?.source || data?.provider || "مزود فحص شرعي خارجي",
-    shariaCheckedAt: data?.checkedAt || data?.updatedAt || new Date().toISOString().slice(0, 10)
-  };
-}
+// External Sharia labels require symbol, source and actual screening date;
+// retrieval time is never substituted for screening time.
 
 function getKnownAssetInfo(symbol, name) {
   const profiles = {
@@ -2278,7 +2074,7 @@ function buildOpportunityRadar(recommendations) {
   const items = Array.isArray(recommendations) ? recommendations : [];
   const buys = items.filter((item) => item.action === "buy");
   const sells = items.filter((item) => item.action === "sell");
-  const shariaBuys = buys.filter((item) => item.shariaStatus === "compliant");
+  const shariaBuys = buys.filter((item) => item.shariaStatus === "compliant" && item.shariaVerified === true);
   const highRisk = items
     .filter((item) => item.risk?.level === "high" || item.decision?.kind === "avoid")
     .sort((a, b) => getRadarScore(b) - getRadarScore(a))
@@ -2352,6 +2148,9 @@ function toRadarItem(item, label) {
     latestVolume: item.latestVolume,
     relativeVolume: item.relativeVolume,
     shariaStatus: item.shariaStatus,
+    shariaVerified: item.shariaVerified === true,
+    executionBlocked: item.executionBlocked, executionSession: item.executionSession, priceFreshness: item.priceFreshness,
+    economicNewsRisk: item.economicNewsRisk,
     shariaLabel: item.shariaLabel,
     risk: item.risk,
     decision: item.decision,
@@ -2362,17 +2161,7 @@ function toRadarItem(item, label) {
 }
 
 function getRadarScore(item) {
-  const confidence = Number(item.confidence || 0) * 0.34;
-  const agreement = Number(item.timeframeConsensus?.agreementPct || 0) * 0.15;
-  const quality = Number(item.analysisQuality?.score || 0) * 0.16;
-  const dataHealth = Number(item.dataHealth?.score || 0) * 0.1;
-  const riskReward = Math.min(Number(item.riskReward || 0), 3) * 7;
-  const backtest = Number.isFinite(item.backtest?.winRate) ? Number(item.backtest.winRate) * 0.08 : 4;
-  const sharia = item.shariaStatus === "compliant" ? 6 : item.shariaStatus === "not_compliant" ? -4 : 0;
-  const risk = item.risk?.level === "low" ? 6 : item.risk?.level === "medium" ? 2 : -6;
-  const conflict = item.timeframeConsensus?.conflict ? -8 : 0;
-  const lowDataPenalty = Number(item.dataHealth?.score || 100) < 55 ? -7 : 0;
-  return Math.round(Math.max(0, Math.min(100, confidence + agreement + quality + dataHealth + riskReward + backtest + sharia + risk + conflict + lowDataPenalty)));
+  return calculateFinalScore(item).score;
 }
 
 function buildSmartAlerts(recommendations) {
@@ -2381,7 +2170,7 @@ function buildSmartAlerts(recommendations) {
       const agreement = item.timeframeConsensus?.agreementPct || 0;
       return (
         item.action === "buy" &&
-        item.shariaStatus === "compliant" &&
+        item.shariaStatus === "compliant" && item.shariaVerified === true && !item.executionBlocked &&
         item.confidence >= 70 &&
         agreement >= 60 &&
         Number(item.dataHealth?.score || 0) >= 60 &&
@@ -2392,6 +2181,10 @@ function buildSmartAlerts(recommendations) {
     .slice(0, 8)
     .map((item) => ({
       symbol: item.symbol,
+      action: item.action, actionLabel: item.actionLabel,
+      shariaStatus: item.shariaStatus, shariaVerified: item.shariaVerified === true,
+      executionBlocked: item.executionBlocked, executionSession: item.executionSession, priceFreshness: item.priceFreshness,
+      economicNewsRisk: item.economicNewsRisk,
       name: item.name,
       confidence: item.confidence,
       currentPrice: item.currentPrice,
