@@ -1,0 +1,70 @@
+name: Mobile focus acceptance
+on:
+  push:
+    branches: [fix/mobile-symbol-data-20260916]
+    paths: [.github/workflows/mobile-focus-acceptance.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Capture the activating control instead of relying on pointer focus
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('public/app.js')
+          s = p.read_text(encoding='utf-8-sig')
+          old = 'sfmFinalDrawer.returnFocusTo = document.activeElement instanceof HTMLElement ? document.activeElement : null;'
+          assert s.count(old) == 1
+          s = s.replace(old, 'sfmFinalDrawer.returnFocusTo ??= document.activeElement instanceof HTMLElement ? document.activeElement : null;')
+          old = '        sfmFinalSelectedRow = row;\n        sfmFinalDrawerContent.scrollTop = 0;'
+          assert s.count(old) == 1
+          s = s.replace(old, '        sfmFinalSelectedRow = row;\n        // Safari pointer activation need not focus the clicked button.\n        sfmFinalDrawer.returnFocusTo = target;\n        sfmFinalDrawerContent.scrollTop = 0;')
+          old = '  function sfmFinalCloseRecommendationDrawer() {\n    if (!sfmFinalDrawer) return;'
+          assert s.count(old) == 1
+          s = s.replace(old, '  function sfmFinalCloseRecommendationDrawer() {\n    if (!sfmFinalDrawer?.classList.contains("is-open")) return;')
+          p.write_text('\ufeff'+s)
+          PY
+          npm ci
+          npm run check
+          git diff --check
+          git rm .github/workflows/mobile-focus-acceptance.yml
+          git add public/app.js
+          git -c user.name='SFM repair' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'fix(trader): preserve actual symbol trigger for Safari focus restoration'
+          git push origin HEAD:fix/mobile-symbol-data-20260916
+      - name: Unit and accessibility regression checks
+        run: |
+          mkdir -p .artifacts
+          npm test > .artifacts/unit.log 2>&1 || { tail -100 .artifacts/unit.log; exit 1; }
+          npm run test:a11y
+      - name: Install browsers
+        if: success() || failure()
+        run: npx playwright install --with-deps chromium webkit > .artifacts/browser-install.log 2>&1
+      - name: Chromium journeys
+        if: success() || failure()
+        run: node tools/capture-mobile-symbols.mjs
+      - name: WebKit journeys
+        if: success() || failure()
+        env:
+          MOBILE_TEST_BROWSER: webkit
+        run: node tools/capture-mobile-symbols.mjs
+      - name: Archive tested source
+        if: always()
+        run: |
+          mkdir -p .artifacts/source
+          git rev-parse HEAD > .artifacts/source/head.txt
+          git archive --format=tar.gz HEAD > .artifacts/source/trader-tested.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-focus-acceptance
+          path: .artifacts/
+          include-hidden-files: true
+          retention-days: 3
