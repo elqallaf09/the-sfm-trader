@@ -11,7 +11,7 @@ test('symbol drawer records the activating button rather than assuming pointer f
   assert.match(app, /sfmFinalDrawer\.returnFocusTo \?\?=/);
   const close = app.slice(app.indexOf('function sfmFinalCloseRecommendationDrawer()'), app.indexOf('function sfmFinalSetupRecommendationDrawer()'));
   assert.match(close, /if \(!sfmFinalDrawer\?\.classList\.contains\("is-open"\)\) return/);
-  assert.ok(close.indexOf('element.inert = inert') < close.indexOf('returnFocusTo?.focus'));
+  assert.ok(close.indexOf('element.inert = inert') < close.indexOf('returnFocusTo.focus'));
 });
 
 test('mobile symbol triggers have bottom-navigation clearance and honor reduced motion', async () => {
@@ -19,4 +19,14 @@ test('mobile symbol triggers have bottom-navigation clearance and honor reduced 
   assert.match(css, /scroll-padding-block-end: calc\(96px \+ env\(safe-area-inset-bottom\)\)/);
   assert.match(css, /\.recommendation-detail-button \{ scroll-margin-block: 96px/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*html \{ scroll-behavior: auto !important/);
+});
+
+test('restore focus only to a connected, visible, non-inert target without scrolling', async () => {
+  const app = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
+  const close = app.slice(app.indexOf('function sfmFinalCloseRecommendationDrawer()'), app.indexOf('function sfmFinalSetupRecommendationDrawer()'));
+  assert.match(close, /returnFocusTo\?\.isConnected/);
+  assert.match(close, /!returnFocusTo\.closest\("\[inert\]"\)/);
+  assert.match(close, /returnFocusTo\.getClientRects\(\)\.length/);
+  assert.match(close, /returnFocusTo\.focus\(\{ preventScroll: true \}\)/);
+  assert.ok(close.indexOf('getClientRects') < close.indexOf('returnFocusTo.focus'));
 });

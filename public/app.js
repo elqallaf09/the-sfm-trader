@@ -9520,7 +9520,11 @@ function updateMarketOverviewBubbles(all = []) {
     sfmFinalDrawer.setAttribute("aria-hidden", "true");
     sfmFinalDrawer.inert = true;
     document.body.classList.remove("recommendation-drawer-open");
-    sfmFinalDrawer.returnFocusTo?.focus?.();
+    // Resolve visibility after removing inert and the drawer scroll lock.
+    const returnFocusTo = sfmFinalDrawer.returnFocusTo;
+    if (returnFocusTo?.isConnected && !returnFocusTo.closest("[inert]") && returnFocusTo.getClientRects().length) {
+      returnFocusTo.focus({ preventScroll: true });
+    }
     sfmFinalDrawer.returnFocusTo = null;
   }
 
@@ -9554,7 +9558,11 @@ function updateMarketOverviewBubbles(all = []) {
 
     document.addEventListener("keydown", (event) => {
       if (!sfmFinalDrawer.classList.contains("is-open")) return;
-      if (event.key === "Escape") sfmFinalCloseRecommendationDrawer();
+      if (event.key === "Escape") {
+      event.preventDefault();
+      sfmFinalCloseRecommendationDrawer();
+      return;
+    }
       if (event.key !== "Tab") return;
       const focusable = Array.from(sfmFinalDrawer.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"))
         .filter((element) => element.getClientRects().length > 0 && !element.hasAttribute("disabled"));
