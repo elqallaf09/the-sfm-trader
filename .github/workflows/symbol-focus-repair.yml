@@ -1,0 +1,80 @@
+name: Apply verified symbol focus repair
+on:
+  pull_request:
+    paths:
+      - .github/workflows/symbol-focus-repair.yml
+permissions:
+  contents: write
+jobs:
+  repair:
+    if: github.event.pull_request.number == 46 && github.head_ref == 'fix/mobile-symbol-data-20260916' && github.event.pull_request.head.repo.full_name == 'elqallaf09/the-sfm-trader'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - name: Apply exact reviewed focus patch
+        run: |
+          test "$(git rev-parse HEAD:public/app.js)" = 46db476c34fb57a881e4632b046d54806a59bf05
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('public/app.js')
+          s = p.read_text()
+          old = '    sfmFinalDrawer.returnFocusTo?.focus?.();'
+          new = '''    // Visibility must be resolved after removing inert and the drawer scroll lock.
+              const returnFocusTo = sfmFinalDrawer.returnFocusTo;
+              if (returnFocusTo?.isConnected && !returnFocusTo.closest("[inert]") && returnFocusTo.getClientRects().length) {
+                returnFocusTo.focus({ preventScroll: true });
+              }'''
+          assert s.count(old) == 1
+          p.write_text(s.replace(old, new))
+          p = Path('tests/symbolDrawerFocus.test.mjs')
+          s = p.read_text()
+          old = "close.indexOf('returnFocusTo?.focus')"
+          assert s.count(old) == 1
+          s = s.replace(old, "close.indexOf('returnFocusTo.focus')")
+          s += '''
+          test('focus restoration checks connected, visible and non-inert target before focusing without scroll', async () => {
+            const app = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
+            const close = app.slice(app.indexOf('function sfmFinalCloseRecommendationDrawer()'), app.indexOf('function sfmFinalSetupRecommendationDrawer()'));
+            assert.match(close, /returnFocusTo\\?\\.isConnected/);
+            assert.match(close, /!returnFocusTo\\.closest\\("\\[inert\\]"\\)/);
+            assert.match(close, /returnFocusTo\\.getClientRects\\(\\)\\.length/);
+            assert.match(close, /returnFocusTo\\.focus\\(\\{ preventScroll: true \\}\\)/);
+            assert.ok(close.indexOf('getClientRects') < close.indexOf('returnFocusTo.focus'));
+          });
+          '''
+          p.write_text(s)
+          PY
+          git diff --check
+          node --check public/app.js
+          npm test
+      - name: Verify original unweakened WebKit and Chromium journeys
+        run: |
+          MOBILE_TEST_BROWSER=webkit node tools/capture-mobile-symbols.mjs
+          MOBILE_TEST_BROWSER=chromium node tools/capture-mobile-symbols.mjs
+      - name: Commit only the verified source and regression test
+        env:
+          EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          test "$(git ls-remote origin refs/heads/fix/mobile-symbol-data-20260916 | cut -f1)" = "$EXPECTED_HEAD"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/app.js tests/symbolDrawerFocus.test.mjs
+          git commit -m 'fix(trader): restore drawer focus only after target visibility resolves'
+          git push origin HEAD:refs/heads/fix/mobile-symbol-data-20260916
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: verified-symbol-focus-repair
+          path: |
+            .artifacts/mobile-symbols
+            .artifacts/mobile-home
+          retention-days: 7
