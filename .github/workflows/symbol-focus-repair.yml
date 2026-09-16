@@ -20,28 +20,32 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium webkit
-      - name: Apply exact reviewed focus patch
+      - name: Apply reviewed source and browser assertion repairs
         run: |
           test "$(git rev-parse HEAD:public/app.js)" = 46db476c34fb57a881e4632b046d54806a59bf05
+          test "$(git rev-parse HEAD:tools/mobile-symbol-regression.mjs)" = 6d0afe05fdb36803f1c4ca943e1113c2dd66ef45
           python - <<'PY'
           from pathlib import Path
+          def replace_once(text, old, new):
+              assert text.count(old) == 1, old
+              return text.replace(old, new)
           p = Path('public/app.js')
           s = p.read_text()
-          old = '    sfmFinalDrawer.returnFocusTo?.focus?.();'
-          new = '''    // Visibility must be resolved after removing inert and the drawer scroll lock.
+          s = replace_once(s, '    sfmFinalDrawer.returnFocusTo?.focus?.();', '''    // Resolve visibility after removing inert and the drawer scroll lock.
               const returnFocusTo = sfmFinalDrawer.returnFocusTo;
               if (returnFocusTo?.isConnected && !returnFocusTo.closest("[inert]") && returnFocusTo.getClientRects().length) {
                 returnFocusTo.focus({ preventScroll: true });
-              }'''
-          assert s.count(old) == 1
-          p.write_text(s.replace(old, new))
+              }''')
+          s = replace_once(s, '      if (event.key === "Escape") sfmFinalCloseRecommendationDrawer();', '''      if (event.key === "Escape") {
+                event.preventDefault();
+                sfmFinalCloseRecommendationDrawer();
+                return;
+              }''')
+          p.write_text(s)
           p = Path('tests/symbolDrawerFocus.test.mjs')
-          s = p.read_text()
-          old = "close.indexOf('returnFocusTo?.focus')"
-          assert s.count(old) == 1
-          s = s.replace(old, "close.indexOf('returnFocusTo.focus')")
+          s = replace_once(p.read_text(), "close.indexOf('returnFocusTo?.focus')", "close.indexOf('returnFocusTo.focus')")
           s += '''
-          test('focus restoration checks connected, visible and non-inert target before focusing without scroll', async () => {
+          test('restore focus only to a connected, visible, non-inert target without scrolling', async () => {
             const app = await readFile(new URL('../public/app.js', import.meta.url), 'utf8');
             const close = app.slice(app.indexOf('function sfmFinalCloseRecommendationDrawer()'), app.indexOf('function sfmFinalSetupRecommendationDrawer()'));
             assert.match(close, /returnFocusTo\\?\\.isConnected/);
@@ -52,23 +56,41 @@ jobs:
           });
           '''
           p.write_text(s)
+          p = Path('tools/mobile-symbol-regression.mjs')
+          s = p.read_text()
+          replacements = [
+            ("await assertDom(page, () => document.querySelector('#recommendation-detail-content')?.textContent.includes('152.34'), 'cold detail price must render');", "await page.locator('#recommendation-detail-content').filter({ hasText: '152.34' }).waitFor({ state: 'visible', timeout: 10000 });"),
+            ("await assertDom(page, () => !document.querySelector('[data-symbol-retry]')?.disabled && /Retry|أعد المحاولة/.test(document.querySelector('[data-symbol-retry]')?.textContent || ''), 'failed resource must expose enabled retry');", "await page.locator('[data-symbol-retry]:enabled').filter({ hasText: /Retry|أعد المحاولة/ }).waitFor({ state: 'visible', timeout: 10000 });"),
+            ("await assertDom(page, () => document.querySelector('#recommendation-detail-content')?.getAttribute('aria-busy') === 'false', 'successful retry must settle');", "await page.locator('#recommendation-detail-content[aria-busy=\"false\"]').waitFor({ state: 'visible', timeout: 10000 });"),
+            ("await assertDom(page, () => /Retry|أعد المحاولة/.test(document.querySelector('[data-symbol-retry]')?.textContent || ''), 'wrong-symbol response must remain a failed request');", "await page.locator('[data-symbol-retry]:enabled').filter({ hasText: /Retry|أعد المحاولة/ }).waitFor({ state: 'visible', timeout: 10000 });"),
+            ("await assertDom(page, () => document.querySelector('#recommendation-detail-content')?.textContent.includes('Fixture AAPL') && document.querySelector('#recommendation-detail-content')?.getAttribute('aria-busy') === 'false', 'AAPL must settle after switching away from an in-flight MSFT request');", "await page.locator('#recommendation-detail-content[aria-busy=\"false\"]').filter({ hasText: 'Fixture AAPL' }).waitFor({ state: 'visible', timeout: 10000 });"),
+            ("await assertDom(page, () => document.activeElement?.matches('button[data-recommendation-index=\"1\"]'), 'Escape must return focus to the AAPL trigger');", "await page.locator('button[data-recommendation-index=\"1\"]:focus').waitFor({ state: 'visible', timeout: 10000 });")
+          ]
+          for old, new in replacements:
+              s = replace_once(s, old, new)
+          start = s.index('// Poll from Node, not page timers:')
+          end = s.index('function row(', start)
+          s = s[:start] + '// Native locator waits assert visible state, content and actual focus; no manual polling or screenshots are used to satisfy assertions.\n' + s[end:]
+          assert 'assertDom(' not in s
+          p.write_text(s)
           PY
           git diff --check
           node --check public/app.js
+          node --check tools/mobile-symbol-regression.mjs
           npm test
-      - name: Verify original unweakened WebKit and Chromium journeys
+      - name: Verify all original scenarios in both browser engines
         run: |
           MOBILE_TEST_BROWSER=webkit node tools/capture-mobile-symbols.mjs
           MOBILE_TEST_BROWSER=chromium node tools/capture-mobile-symbols.mjs
-      - name: Commit only the verified source and regression test
+      - name: Commit only verified source and regression tests
         env:
           EXPECTED_HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           test "$(git ls-remote origin refs/heads/fix/mobile-symbol-data-20260916 | cut -f1)" = "$EXPECTED_HEAD"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add public/app.js tests/symbolDrawerFocus.test.mjs
-          git commit -m 'fix(trader): restore drawer focus only after target visibility resolves'
+          git add public/app.js tests/symbolDrawerFocus.test.mjs tools/mobile-symbol-regression.mjs
+          git commit -m 'fix(trader): restore visible drawer focus and assert browser-native loading state'
           git push origin HEAD:refs/heads/fix/mobile-symbol-data-20260916
       - uses: actions/upload-artifact@v4
         if: always()
