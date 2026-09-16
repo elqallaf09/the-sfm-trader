@@ -1,0 +1,37 @@
+name: Inspect concurrent mobile changes
+on:
+  push:
+    branches: [fix/mobile-symbol-data-20260916]
+    paths: [.github/workflows/mobile-repair-sync.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Preserve exact concurrent source and inspect merge conflicts
+        run: |
+          mkdir -p .artifacts
+          git archive --format=tar.gz 70828beb2092804abde214c9e65ae7121bc0cde8 > .artifacts/concurrent-main.tar.gz
+          git -c user.name='SFM repair' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' merge --no-commit --no-ff 70828beb2092804abde214c9e65ae7121bc0cde8 > .artifacts/merge.log 2>&1 || true
+          git diff --name-only --diff-filter=U > .artifacts/conflicted-files.txt
+          git diff --cc > .artifacts/conflicts.diff
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          for name in Path('.artifacts/conflicted-files.txt').read_text().splitlines():
+            target = Path('.artifacts/conflicts') / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(name, target)
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: concurrent-mobile-inspection
+          path: .artifacts/
+          include-hidden-files: true
+          retention-days: 1
