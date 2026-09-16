@@ -1,0 +1,54 @@
+name: Symbol focus diagnostic
+on:
+  pull_request:
+    paths:
+      - .github/workflows/symbol-focus-diagnostic.yml
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    if: github.head_ref == 'fix/mobile-symbol-data-20260916' && github.event.pull_request.head.repo.full_name == 'elqallaf09/the-sfm-trader'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit
+      - name: Add test-only focus telemetry
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tools/mobile-symbol-regression.mjs')
+          s = p.read_text()
+          needle = "await page.keyboard.press('Escape'); assert.equal(await drawer.getAttribute('aria-hidden'), 'true');"
+          telemetry = '''await page.evaluate(() => {
+            const describe = element => element ? ({ tag: element.tagName, id: element.id, index: element.getAttribute('data-recommendation-index'), connected: element.isConnected, inert: Boolean(element.closest('[inert]')), rects: element.getClientRects().length, html: element.outerHTML.slice(0, 600) }) : null;
+            window.__focusDiagnostic = () => ({ active: describe(document.activeElement), stored: describe(document.querySelector('[data-recommendation-drawer]').returnFocusTo), buttons: [...document.querySelectorAll('button[data-recommendation-index="1"]')].map(describe) });
+            window.__focusEvents = [];
+            ['focusin', 'focusout', 'keydown', 'keyup'].forEach(type => document.addEventListener(type, event => window.__focusEvents.push({ type, key: event.key, target: describe(event.target), active: describe(document.activeElement) }), true));
+          });
+          console.log('BEFORE_ESCAPE', JSON.stringify(await page.evaluate(() => window.__focusDiagnostic())));
+          await page.keyboard.press('Escape');
+          console.log('AFTER_ESCAPE', JSON.stringify(await page.evaluate(() => ({ ...window.__focusDiagnostic(), events: window.__focusEvents }))));
+          assert.equal(await drawer.getAttribute('aria-hidden'), 'true');'''
+          assert s.count(needle) == 1
+          p.write_text(s.replace(needle, telemetry))
+          app = Path('public/app.js').read_text().splitlines()
+          for i, line in enumerate(app):
+            if ('Escape' in line or 'returnFocusTo' in line or 'sfm:integrity-updated' in line):
+              print('\nSOURCE', i + 1, '\n' + '\n'.join(app[max(0,i-4):i+6]))
+          PY
+      - name: Reproduce on unchanged application
+        env:
+          MOBILE_TEST_BROWSER: webkit
+        run: node tools/capture-mobile-symbols.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: symbol-focus-diagnostic
+          path: .artifacts/mobile-symbols
+          retention-days: 3
