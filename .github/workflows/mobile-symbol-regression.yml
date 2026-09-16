@@ -1,0 +1,46 @@
+name: Mobile symbol regression
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-symbol-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mobile-symbol:
+    name: Mobile symbol (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install fixture browser
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Verify cold loads, retries, evidence, focus and viewport bounds
+        env:
+          MOBILE_TEST_BROWSER: ${{ matrix.browser }}
+        run: node tools/capture-mobile-symbols.mjs
+      - name: Upload isolated mobile fixture evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-symbol-${{ matrix.browser }}-${{ github.sha }}
+          path: |
+            .artifacts/mobile-symbols
+            .artifacts/mobile-home
+          if-no-files-found: warn
+          retention-days: 7
