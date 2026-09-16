@@ -1,0 +1,34 @@
+name: Mobile repair workbench
+on:
+  push:
+    branches: [fix/mobile-symbol-data-20260916]
+    paths: [.github/workflows/mobile-repair-workbench.yml]
+permissions:
+  contents: read
+jobs:
+  source-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: a0dd3a18286eec0dc4da0c5abdb553478fa04469
+          path: trader
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: elqallaf09/thesfm
+          ref: bcc895f47ab000479f6b711185bb3e96a9c827d8
+          path: sfm
+          persist-credentials: false
+      - name: Archive tracked source only
+        run: |
+          mkdir -p bundles
+          git -C trader archive --format=tar.gz --prefix=trader/ HEAD > bundles/trader.tar.gz
+          git -C sfm archive --format=tar.gz --prefix=sfm/ HEAD > bundles/sfm.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mobile-repair-sources
+          path: bundles/
+          retention-days: 1
+          if-no-files-found: error
