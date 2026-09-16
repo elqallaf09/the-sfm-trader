@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
+import { setTimeout as delay } from 'node:timers/promises';
 import path from 'node:path';
 import { chromium, webkit } from 'playwright';
 
@@ -12,6 +13,15 @@ const scenarios = [
   { width: 844, height: 390, language: 'en' },
   { width: 1440, height: 900, language: 'ar' },
 ];
+// Poll from Node, not page timers: WebKit can throttle in-page polling even after the DOM is ready.
+// Every original predicate stays mandatory; this deadline is shorter than waitForFunction's default.
+async function assertDom(page, predicate, message) {
+  const deadline = Date.now() + 10000;
+  while (!(await page.evaluate(predicate))) {
+    assert.ok(Date.now() < deadline, message);
+    await delay(100);
+  }
+}
 function row(symbol, price = 151.23) {
   const observed = new Date().toISOString();
   return { symbol, name: `Fixture ${symbol}`, currency: 'USD', currentPrice: price, confidence: 80, action: 'hold', target1: 160,
@@ -56,7 +66,7 @@ export async function runCapture(mode = 'drawer') {
         if (url.pathname === '/api/asset') {
           assetCalls++;
           if (assetMode === 'fail') return route.fulfill({ status: 429, json: { error: 'Fixture rate limit' } });
-          if (assetMode === 'slow') await new Promise(resolve => setTimeout(resolve, 350));
+          if (assetMode === 'slow') await delay(350);
           const symbol = url.searchParams.get('symbol');
           return route.fulfill({ status: 200, json: { asset: { symbol }, recommendation: row(assetMode === 'wrong' ? 'NVDA' : symbol, 152.34) } });
         }
@@ -70,15 +80,15 @@ export async function runCapture(mode = 'drawer') {
         if (mode === 'drawer') {
           const button = page.locator('button[data-recommendation-index="0"]:visible').first(); await button.waitFor({ state: 'visible' });
           await button.click(); const drawer = page.locator('[data-recommendation-drawer]');
-          await page.waitForFunction(() => document.querySelector('#recommendation-detail-content')?.textContent.includes('152.34'), undefined, { polling: 100 });
+          await assertDom(page, () => document.querySelector('#recommendation-detail-content')?.textContent.includes('152.34'), 'cold detail price must render');
           assert.ok(assetCalls > 0, 'cold drawer must fetch exact symbol');
           assert.equal(await drawer.locator('[data-symbol-full]').getAttribute('href'), '/detail.html?symbol=MSFT');
           assert.ok((await drawer.innerText()).includes('Fixture provider'));
           assert.ok(!(await drawer.innerText()).includes('30.00%'), 'forecast must not be shown as daily change');
           assetMode = 'fail'; await drawer.locator('[data-symbol-retry]').click();
-          await page.waitForFunction(() => !document.querySelector('[data-symbol-retry]')?.disabled && /Retry|أعد المحاولة/.test(document.querySelector('[data-symbol-retry]')?.textContent || ''), undefined, { polling: 100 });
+          await assertDom(page, () => !document.querySelector('[data-symbol-retry]')?.disabled && /Retry|أعد المحاولة/.test(document.querySelector('[data-symbol-retry]')?.textContent || ''), 'failed resource must expose enabled retry');
           assetMode = 'success'; await drawer.locator('[data-symbol-retry]').click();
-          await page.waitForFunction(() => document.querySelector('#recommendation-detail-content')?.getAttribute('aria-busy') === 'false', undefined, { polling: 100 });
+          await assertDom(page, () => document.querySelector('#recommendation-detail-content')?.getAttribute('aria-busy') === 'false', 'successful retry must settle');
           const rect = await drawer.locator('.recommendation-drawer-panel').evaluate(element => {
             const r = element.getBoundingClientRect(), content = element.querySelector('.recommendation-detail-content').getBoundingClientRect();
             return { left: r.left, right: r.right, height: r.height, content: content.height, overflow: element.scrollWidth > element.clientWidth + 1 };
@@ -87,15 +97,16 @@ export async function runCapture(mode = 'drawer') {
           assert.ok(rect.height <= setup.height + 1 && rect.content > 75, JSON.stringify(rect)); assert.equal(rect.overflow, false);
           await page.screenshot({ path: `${output}/${browserName}-${setup.width}-${setup.language}.png`, scale: 'css' });
           assetMode = 'wrong'; await drawer.locator('[data-symbol-retry]').click();
-          await page.waitForFunction(() => /Retry|أعد المحاولة/.test(document.querySelector('[data-symbol-retry]')?.textContent || ''), undefined, { polling: 100 });
+          await assertDom(page, () => /Retry|أعد المحاولة/.test(document.querySelector('[data-symbol-retry]')?.textContent || ''), 'wrong-symbol response must remain a failed request');
           assert.ok(!(await drawer.innerText()).includes('Fixture NVDA'), 'wrong-symbol result must be rejected');
           assetMode = 'slow'; await drawer.locator('[data-symbol-retry]').click();
           await drawer.locator('button[data-recommendation-close]').click();
           assert.equal(await drawer.getAttribute('aria-hidden'), 'true');
           await page.locator('button[data-recommendation-index="1"]:visible').first().click();
-          await page.waitForFunction(() => document.querySelector('#recommendation-detail-content')?.textContent.includes('Fixture AAPL') && document.querySelector('#recommendation-detail-content')?.getAttribute('aria-busy') === 'false', undefined, { polling: 100 });
+          await assertDom(page, () => document.querySelector('#recommendation-detail-content')?.textContent.includes('Fixture AAPL') && document.querySelector('#recommendation-detail-content')?.getAttribute('aria-busy') === 'false', 'AAPL must settle after switching away from an in-flight MSFT request');
           assert.ok(!(await drawer.innerText()).includes('Fixture MSFT'), 'late MSFT result must not overwrite AAPL');
           await page.keyboard.press('Escape'); assert.equal(await drawer.getAttribute('aria-hidden'), 'true');
+          await assertDom(page, () => document.activeElement?.matches('button[data-recommendation-index="1"]'), 'Escape must return focus to the AAPL trigger');
           assert.ok(await page.locator('button[data-recommendation-index="1"]:visible').first().evaluate(element => element === document.activeElement));
         } else {
           await page.locator('.topbar').waitFor({ state: 'visible' });
