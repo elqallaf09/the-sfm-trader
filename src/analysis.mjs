@@ -1,8 +1,9 @@
 import { normalizeQuoteCurrency, inferQuoteCurrency, epochSecondsToMs } from "../public/modules/marketIntegrity.js";
+import { resolveYahooSessionQuote } from "./yahooSessionQuote.mjs";
 import { selectPriceObservation } from "./priceObservation.mjs";
 import "./loadEnv.mjs";
 import { fetchChart } from "./dataProviders.mjs";
-import { buildMarketDataProvenance, observedDailyChangePercent } from "./marketDataProvenance.mjs";
+import { buildMarketDataProvenance } from "./marketDataProvenance.mjs";
 
 const TIMEFRAME_CONFIGS = [
   { id: "1m", label: "دقيقة", range: "1d", interval: "1m", weight: 0.06, minBars: 25 },
@@ -47,9 +48,12 @@ export async function analyzeSymbol(asset, options = {}) {
   const highs = primaryFrame.highs;
   const lows = primaryFrame.lows;
   const volumes = primaryFrame.volumes;
-  const latestVolume = finiteOr(volumes.at(-1), 0);
   const observation = selectPriceObservation(primaryFrame);
   const currentPrice = observation.price;
+  const dailyFrame = timeframeAnalyses.find(frame => frame.id === "1d");
+  const session = resolveYahooSessionQuote({ ...meta, regularMarketPrice: currentPrice,
+    regularMarketTime: observation.timestamp }, dailyFrame?.timestamps,
+    { close: dailyFrame?.closes, volume: dailyFrame?.observedVolumes });
   const indicators = primaryFrame.indicators;
   const dataHealth = buildDataHealth(timeframeAnalyses, primaryFrame, currentPrice);
   const backtest = backtestSignals(closes, highs, lows, volumes);
@@ -108,7 +112,8 @@ export async function analyzeSymbol(asset, options = {}) {
     tradePlan,
     dataHealth,
     expectedMovePct: pctChange(currentPrice, expectedPrice),
-    changePercent: observedDailyChangePercent(meta, currentPrice),
+    changePercent: session.changePercent,
+    previousClose: session.previousClose,
     confidence: recommendation.confidence,
     action: recommendation.action,
     actionLabel: recommendation.actionLabel,
@@ -116,7 +121,9 @@ export async function analyzeSymbol(asset, options = {}) {
     updatedAt,
     dataProvenance,
     marketState: meta.marketState || "",
-    latestVolume,
+    latestVolume: session.volume,
+    volume: session.volume,
+    volumeAsOf: session.volumeAsOf,
     averageVolume20: round(indicators.averageVolume20, 2),
     averageVolume50: round(indicators.averageVolume50, 2),
     relativeVolume: round(indicators.relativeVolume, 2),
@@ -244,7 +251,7 @@ function buildTimeframeAnalysis(config, chart) {
       close: Number(close),
       high: Number(quote.high?.[index] ?? close),
       low: Number(quote.low?.[index] ?? close),
-      volume: Number(quote.volume?.[index] ?? 0)
+      volume: quote.volume?.[index] == null || quote.volume[index] === "" ? null : Number(quote.volume[index])
     }))
     .filter((row) => [row.close,row.high,row.low].every(value => Number.isFinite(value) && value > 0)
       && row.low <= row.high && row.close >= row.low && row.close <= row.high
@@ -275,6 +282,7 @@ function buildTimeframeAnalysis(config, chart) {
     highs,
     lows,
     volumes,
+    observedVolumes: rows.map(row => Number.isFinite(row.volume) && row.volume >= 0 ? row.volume : null),
     timestamps,
     latestTimestamp,
     indicators,
