@@ -41,7 +41,7 @@ export async function runCapture(mode = 'drawer') {
   try {
     for (const setup of scenarios) {
       const context = await browser.newContext({ viewport: { width: setup.width, height: setup.height }, serviceWorkers: 'block', reducedMotion: 'reduce' });
-      const page = await context.newPage(); const errors = []; page.on('pageerror', error => errors.push(error.message));
+      const page = await context.newPage(); const errors = []; const network = []; page.on('requestfailed', request => network.push({ url: request.url(), failure: request.failure() })); page.on('response', response => { if (response.url().includes('/api/asset')) network.push({ url: response.url(), status: response.status() }); }); page.on('pageerror', error => errors.push(error.message));
       let assetMode = 'success', assetCalls = 0;
       await page.addInitScript(language => {
         localStorage.setItem('the-sfm-trader-settings', JSON.stringify({ language }));
@@ -104,7 +104,7 @@ export async function runCapture(mode = 'drawer') {
         assert.deepEqual(errors, []); results.push({ ...setup, browserName, passed: true, assetCalls });
       } catch (error) {
         await page.screenshot({ path: `${output}/FAILED-${browserName}-${setup.width}.png`, scale: 'css' });
-        await writeFile(`${output}/failure.json`, JSON.stringify({ error: error.message, errors, setup }, null, 2)); throw error;
+        await writeFile(`${output}/failure.json`, JSON.stringify({ error: error.message, stack: error.stack, errors, network, assetCalls, setup, drawer: await page.locator("[data-recommendation-drawer]").innerText().catch(() => "closed") }, null, 2)); throw error;
       } finally { await context.close(); }
     }
   } finally {

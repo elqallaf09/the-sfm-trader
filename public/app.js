@@ -9257,7 +9257,7 @@ function updateMarketOverviewBubbles(all = []) {
     const symbol = sfmFinalSelectedRow?.symbol;
     if (!symbol) return;
     sfmFinalDetailStore.load(symbol, async signal => {
-      const payload = await fetchJsonWithPolicy(`/api/asset?symbol=${encodeURIComponent(symbol)}`, { signal, timeoutMs: 20000, retries: 1 });
+      const payload = await fetchJsonWithPolicy(`/api/asset?symbol=${encodeURIComponent(symbol)}`, { signal, timeoutMs: 12000, retries: 0 });
       return validateSymbolDetail(payload, symbol);
     }, { force }).then(entry => {
       // A cached successful request needs rendering too. Never reopen a closed or switched drawer.
