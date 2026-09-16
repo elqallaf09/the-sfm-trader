@@ -1,0 +1,45 @@
+name: Signal session repair workbench
+on:
+  push:
+    branches: [fix/signal-card-evidence-20260916]
+    paths: [.github/workflows/signal-card-repair.yml]
+permissions:
+  contents: write
+jobs:
+  repair:
+    if: github.ref == 'refs/heads/fix/signal-card-evidence-20260916'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Verify source and apply reviewed patch
+        shell: python
+        run: |
+          import pathlib, hashlib, gzip, base64, subprocess
+          source = pathlib.Path('src/analysis.mjs')
+          assert hashlib.sha256(source.read_bytes()).hexdigest() == '654e6eae70c07ddf73c69aedcf62635b873a589b6540450cda216014d18670ff'
+          assert not pathlib.Path('src/yahooSessionQuote.mjs').exists()
+          assert not pathlib.Path('tests/yahooSessionQuote.test.mjs').exists()
+          encoded = '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'
+          patch = gzip.decompress(base64.b64decode(encoded))
+          assert hashlib.sha256(patch).hexdigest() == 'f22dcb1dc221f48a04da03da4a51495a214bc8f50b860d9bc70f954f0e125101'
+          subprocess.run(['git','apply','--check','--unidiff-zero','-'], input=patch, check=True)
+          subprocess.run(['git','apply','--unidiff-zero','-'], input=patch, check=True)
+      - run: npm ci
+      - run: npm test
+      - name: Publish only reviewed source and tests to the repair branch
+        run: |
+          git diff --check
+          node --check src/analysis.mjs
+          git add src/analysis.mjs src/yahooSessionQuote.mjs tests/yahooSessionQuote.test.mjs
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'fix(data): use previous daily session and preserve observed volume'
+          git push origin HEAD:refs/heads/fix/signal-card-evidence-20260916
+          git rev-parse HEAD
