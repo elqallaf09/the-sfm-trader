@@ -1,4 +1,4 @@
-import { recordTradeHistory, canObserveTrade, observeTrade } from "./modules/tradeObservation.js?v=20260914-lifecycle-1";
+﻿import { recordTradeHistory, canObserveTrade, observeTrade } from "./modules/tradeObservation.js?v=20260914-lifecycle-1";
 import { formatQuotePrice } from "./modules/priceFormat.js?v=20260914-lifecycle-1";
 import { toNullableNumber, toPositiveNumber } from "./modules/numberValue.js?v=20260914-issue40-1";
 import { normalizeQuoteCurrency, resolveQuoteCurrency, inferQuoteCurrency, guardDisplayPayload, guardRecommendationForDisplay, canExecuteRecommendation, hasCurrentPriceObservation, filterDiscoveryPayload, isVerifiedShariaItem } from "./modules/marketIntegrity.js?v=20260914-lifecycle-1";
@@ -9499,7 +9499,7 @@ function updateMarketOverviewBubbles(all = []) {
   function sfmFinalOpenRecommendationDrawer() {
     if (!sfmFinalDrawer) return;
     if (sfmFinalDrawer.classList.contains("is-open")) return;
-    sfmFinalDrawer.returnFocusTo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    sfmFinalDrawer.returnFocusTo ??= document.activeElement instanceof HTMLElement ? document.activeElement : null;
     sfmFinalDrawer.classList.add("is-open");
     sfmFinalDrawer.setAttribute("aria-hidden", "false");
     sfmFinalDrawer.inert = false;
@@ -9511,7 +9511,7 @@ function updateMarketOverviewBubbles(all = []) {
   }
 
   function sfmFinalCloseRecommendationDrawer() {
-    if (!sfmFinalDrawer) return;
+    if (!sfmFinalDrawer?.classList.contains("is-open")) return;
     sfmFinalDetailStore.cancelPending();
     sfmFinalSelectedRow = null;
     sfmFinalBackground.forEach(({ element, inert }) => { element.inert = inert; });
@@ -9581,6 +9581,8 @@ function updateMarketOverviewBubbles(all = []) {
         if (!row) return;
         sfmFinalDetailStore.cancelPending();
         sfmFinalSelectedRow = row;
+        // Safari pointer activation need not focus the clicked button.
+        sfmFinalDrawer.returnFocusTo = target;
         sfmFinalDrawerContent.scrollTop = 0;
         sfmFinalRenderRecommendationDetail(row);
         sfmFinalLoadDrawerDetail();
