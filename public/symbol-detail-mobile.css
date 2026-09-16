@@ -1,0 +1,28 @@
+.recommendation-detail-drawer.is-open { z-index: 10000; }
+.recommendation-detail-drawer .recommendation-drawer-panel { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; height: 100vh; height: 100dvh; min-height: 0; max-height: 100vh; max-height: 100dvh; overflow: hidden; width: min(460px, 100%); }
+.recommendation-detail-drawer .recommendation-drawer-head { padding: 10px 14px; gap: 10px; }
+.recommendation-detail-drawer .recommendation-drawer-head h3 { margin: 0; font-size: 18px; }
+.recommendation-detail-drawer button, .recommendation-detail-drawer a { min-width: 44px; min-height: 44px; }
+.recommendation-detail-drawer .recommendation-detail-content { overflow-y: auto; overscroll-behavior: contain; min-height: 0; padding: 10px 14px; overflow-wrap: anywhere; }
+.recommendation-detail-drawer .recommendation-detail-grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.recommendation-detail-drawer .recommendation-detail-row { min-width: 0; padding: 10px; }
+.recommendation-detail-drawer .recommendation-detail-row strong { min-width: 0; overflow-wrap: anywhere; }
+.recommendation-detail-drawer .symbol-detail-status { padding: 8px 14px; font-size: 12px; line-height: 1.6; }
+.recommendation-detail-drawer .symbol-detail-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 10px 14px max(10px, env(safe-area-inset-bottom)); border-top: 1px solid currentColor; }
+.recommendation-detail-drawer .symbol-detail-actions :is(button, a) { display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 10px; font: inherit; font-size: 13px; text-decoration: none; }
+.recommendation-detail-drawer :is(button, a):focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.recommendation-drawer-open { overflow: hidden; }
+/* A landscape phone is wider than the portrait breakpoint but still needs a full-height sheet. */
+@media (max-width: 760px), (max-width: 950px) and (max-height: 500px) {
+  .recommendation-detail-drawer .recommendation-drawer-panel { inset: 0; width: 100%; max-width: 100%; border-radius: 0; box-sizing: border-box; padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+}
+
+/* Leave focus/scroll targets above the fixed mobile navigation. */
+@media (max-width: 760px) {
+  html { scroll-padding-block-end: calc(96px + env(safe-area-inset-bottom)); }
+  .recommendation-detail-button { scroll-margin-block: 96px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  .recommendation-detail-drawer, .recommendation-detail-drawer * { transition: none !important; animation: none !important; }
+}

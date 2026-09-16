@@ -1,4 +1,4 @@
-import { recordTradeHistory, canObserveTrade, observeTrade } from "./modules/tradeObservation.js?v=20260914-lifecycle-1";
+﻿import { recordTradeHistory, canObserveTrade, observeTrade } from "./modules/tradeObservation.js?v=20260914-lifecycle-1";
 import { formatQuotePrice } from "./modules/priceFormat.js?v=20260914-lifecycle-1";
 import { toNullableNumber, toPositiveNumber } from "./modules/numberValue.js?v=20260914-issue40-1";
 import { normalizeQuoteCurrency, resolveQuoteCurrency, inferQuoteCurrency, guardDisplayPayload, guardRecommendationForDisplay, canExecuteRecommendation, hasCurrentPriceObservation, filterDiscoveryPayload, isVerifiedShariaItem } from "./modules/marketIntegrity.js?v=20260914-lifecycle-1";
@@ -17,6 +17,7 @@ import { createInstrumentSearch } from "./modules/instrumentSearch.js?v=20260914
 import { createRecommendationListRenderer } from "./modules/recommendationList.js?v=20260914-audit-repair-1";
 import { createBoundedMemoryCache } from "./modules/boundedMemoryCache.js?v=20260914-audit-repair-1";
 import { fetchJsonWithPolicy, fetchResponseWithPolicy } from "./modules/requestPolicy.js?v=20260914-audit-repair-1";
+import { nullableNumber, normalizeSymbolEvidence, validateSymbolDetail, createStore as createSymbolDetailStore } from "./modules/symbolDetailData.js";
 
 const marketTabs = document.querySelector("#market-tabs");
 const introOverlay = document.querySelector("#intro-overlay");
@@ -8267,7 +8268,7 @@ function sfmFinalTradeTimestamp(entry, key) {
 function sfmFinalFormatDate(value) {
   const timestamp = Number(new Date(value || 0));
   if (!Number.isFinite(timestamp) || timestamp <= 0) return "-";
-  return normalizeDigits(new Intl.DateTimeFormat(latinLocale(sfmFinalIsEnglish() ? "en-US" : "ar-KW"), {
+  return normalizeDigits(new Intl.DateTimeFormat(latinLocale(sfmFinalIsEnglish() ? "en-US" : "ar-KW-u-nu-latn"), {
     numberingSystem: "latn",
     dateStyle: "medium",
     timeStyle: "short"
@@ -8548,7 +8549,7 @@ function sfmFinalSessionState(session, now = new Date()) {
   const close = sfmTimeToMinutes(session.close);
   const openNow = !session.weekend.includes(parts.weekday) && minutes >= open && minutes <= close;
   const nextEvent = openNow ? close - minutes : minutes < open ? open - minutes : (24 * 60 - minutes) + open;
-  const localTime = normalizeDigits(new Intl.DateTimeFormat(latinLocale(sfmFinalIsEnglish() ? "en-US" : "ar-KW"), {
+  const localTime = normalizeDigits(new Intl.DateTimeFormat(latinLocale(sfmFinalIsEnglish() ? "en-US" : "ar-KW-u-nu-latn"), {
     numberingSystem: "latn",
     timeZone: session.zone,
     hour: "2-digit",
@@ -8949,16 +8950,55 @@ function updateMarketOverviewBubbles(all = []) {
   let sfmFinalDrawerInitialized = false;
   let sfmFinalDrawerSymbol = null;
   let sfmFinalRecommendationsInited = false;
+  let sfmFinalSelectedRow = null;
+  let sfmFinalBackground = [];
+  const sfmFinalDetailStore = createSymbolDetailStore({ ttlMs: 120000, maxEntries: 24, onChange(key) {
+    if (sfmFinalSelectedRow?.symbol !== key) return;
+    const entry = sfmFinalDetailStore.read(key);
+    if (entry.status === "success") {
+      const row = sfmFinalNormalizeRecommendationRows([entry.value])[0];
+      if (row) sfmFinalRenderRecommendationDetail(row);
+    }
+    sfmFinalUpdateDrawerStatus();
+  } });
+
+  function sfmFinalUpdateDrawerStatus() {
+    if (!sfmFinalSelectedRow || !sfmFinalDrawer) return;
+    const entry = sfmFinalDetailStore.read(sfmFinalSelectedRow.symbol);
+    const loading = entry.status === "loading";
+    const failed = entry.status === "error";
+    const message = loading ? sfmFinalL("جاري جلب بيانات الرمز…", "Loading symbol data…")
+      : failed ? sfmFinalL("تعذر تحديث بيانات الرمز. البيانات المعروضة لم تُحدّث؛ أعد المحاولة.", "Could not update symbol data. Displayed data was not refreshed; retry.")
+        : sfmFinalL("راجع مصدر البيانات ووقتها أدناه؛ الأسعار قد تكون متأخرة.", "Check the data source and observation time below; prices may be delayed.");
+    sfmFinalDrawer.querySelector("[data-symbol-load-message]").textContent = message;
+    sfmFinalDrawerContent.setAttribute("aria-busy", String(loading));
+    const retry = sfmFinalDrawer.querySelector("[data-symbol-retry]");
+    retry.disabled = loading;
+    retry.textContent = failed ? sfmFinalL("أعد المحاولة", "Retry") : sfmFinalL("تحديث", "Refresh");
+    sfmFinalDrawer.querySelector("[data-symbol-full]").href = `/detail.html?symbol=${encodeURIComponent(sfmFinalSelectedRow.symbol)}`;
+  }
+
+  function sfmFinalLoadDrawerDetail(force = false) {
+    const symbol = sfmFinalSelectedRow?.symbol;
+    if (!symbol) return;
+    sfmFinalDetailStore.load(symbol, async signal => {
+      const payload = await fetchJsonWithPolicy(`/api/asset?symbol=${encodeURIComponent(symbol)}`, { signal, timeoutMs: 12000, retries: 0 });
+      return validateSymbolDetail(payload, symbol);
+    }, { force }).then(entry => {
+      // A cached successful request needs rendering too. Never reopen a closed or switched drawer.
+      if (sfmFinalSelectedRow?.symbol !== symbol || entry.status !== "success") return;
+      const row = sfmFinalNormalizeRecommendationRows([entry.value])[0];
+      if (row) sfmFinalRenderRecommendationDetail(row);
+    });
+    sfmFinalUpdateDrawerStatus();
+  }
+
 
   function sfmFinalL(arText, enText) {
     return sfmFinalIsEnglish() ? enText : arText;
   }
 
-  function sfmFinalSafeNumber(value) {
-    if (!["number", "string"].includes(typeof value) || String(value).trim() === "") return null;
-    const number = Number(value);
-    return Number.isFinite(number) ? number : null;
-  }
+  function sfmFinalSafeNumber(value) { return nullableNumber(value); }
 
   function sfmFinalNormalizeCurrency(currency) {
     const code = String(currency || "").trim().toUpperCase();
@@ -8972,13 +9012,8 @@ function updateMarketOverviewBubbles(all = []) {
   }
 
   function sfmFinalCleanSource(value) {
-    const raw = String(value || "").trim();
-    if (!raw) return sfmFinalL("مصدر غير متاح", "Source unavailable");
-    const normalized = raw.toLowerCase();
-    if (/(fallback|yf|fmp|finnhub|yahoo|provider|diagnostic|debug|error|N\/A|غير متاح|بدون مزود)/i.test(normalized)) {
-      return sfmFinalL("مصدر الأسعار", "Price source");
-    }
-    return raw;
+    const raw = typeof value === "string" ? value.trim() : String(value?.provider || value?.active || "").trim();
+    return raw || sfmFinalL("مصدر غير متاح", "Source unavailable");
   }
 
   function sfmFinalPercentStyle(value) {
@@ -9014,7 +9049,7 @@ function updateMarketOverviewBubbles(all = []) {
   function sfmFinalFormatPrice(value, currency) {
     const number = sfmFinalSafeNumber(value);
     if (number === null || number <= 0) return sfmFinalRecommendationDash;
-    const locale = sfmFinalIsEnglish() ? "en-US" : "ar-KW";
+    const locale = sfmFinalIsEnglish() ? "en-US" : "ar-KW-u-nu-latn";
     const abs = Math.abs(number);
     const maxDigits = abs < 1 ? 4 : abs < 10 ? 3 : 2;
     const result = new Intl.NumberFormat(locale, {
@@ -9033,7 +9068,7 @@ function updateMarketOverviewBubbles(all = []) {
     const prefix = rounded > 0 ? "+" : "";
     const normalized = sfmFinalClampPercent(rounded);
     if (normalized === null) return sfmFinalRecommendationDash;
-    const locale = sfmFinalIsEnglish() ? "en-US" : "ar-KW";
+    const locale = sfmFinalIsEnglish() ? "en-US" : "ar-KW-u-nu-latn";
     const formatted = new Intl.NumberFormat(locale, {
       minimumFractionDigits: Math.abs(normalized) < 1 ? 2 : 2,
       maximumFractionDigits: 2,
@@ -9072,6 +9107,7 @@ function updateMarketOverviewBubbles(all = []) {
       return { label: sfmFinalL("منخفض", "Low"), className: "is-low" };
     }
 
+    // A directional analysis score is not a risk rating.
     return { label: sfmFinalRecommendationDash, className: "is-na" };
   }
 
@@ -9081,21 +9117,18 @@ function updateMarketOverviewBubbles(all = []) {
     return items
       .map((item, index) => {
         if (!item || typeof item !== "object") return null;
-        const currentPrice = sfmFinalSafeNumber(item.currentPrice);
-        const expectedPrice = sfmFinalSafeNumber(item.expectedPrice);
-        const expectedMove = sfmFinalSafeNumber(item.expectedMovePct);
+        item = guardRecommendationForDisplay(item);
+        const evidence = normalizeSymbolEvidence(item);
         const metrics = getAnalysisMetrics(item, { english: sfmFinalIsEnglish(), localize: localizeUiText });
-        const confidence = metrics.confidence;
-        const percent =
-          expectedMove !== null
-            ? sfmFinalClampPercent(expectedMove)
-            : sfmFinalBuildPercent(currentPrice, expectedPrice);
+        const currentPrice = evidence.currentPrice;
+        const expectedPrice = evidence.ready ? sfmFinalSafeNumber(item.expectedPrice) : null;
+        const confidence = evidence.confidence;
+        const percent = evidence.changePercent;
         const hasCorePrice = currentPrice !== null;
-        const hasChange = percent !== null;
         const hasConfidence = confidence !== null;
-        const hasCriticalPrice = hasCorePrice && hasChange && hasConfidence;
+        const hasCriticalPrice = evidence.ready;
         const action = sfmFinalNormalizeRecommendationAction(item, percent, hasCriticalPrice);
-        const risk = sfmFinalNormalizeRisk(item);
+        const risk = evidence.ready ? sfmFinalNormalizeRisk(item) : { label: sfmFinalRecommendationDash, className: "is-na" };
 
         return {
           index,
@@ -9105,26 +9138,26 @@ function updateMarketOverviewBubbles(all = []) {
           currency: sfmFinalNormalizeCurrency(item.currency || item.isoCurrency || item.dataCurrency),
           currentPrice,
           expectedPrice,
-          expectedMovePct: percent,
+          changePercent: percent,
           confidence,
           action,
-          duration: metrics.duration,
-          confidenceText: metrics.confidenceText,
-          scoreText: metrics.scoreText,
-          target: metrics.target,
-          targetText: metrics.target === null ? metrics.unavailable : sfmFinalFormatPrice(metrics.target, item.currency),
+          duration: evidence.ready ? sfmFinalSafeText(item.duration) : sfmFinalRecommendationDash,
+          target: evidence.target === null ? sfmFinalRecommendationDash : sfmFinalFormatPrice(evidence.target, item.currency),
+          confidenceText: evidence.ready ? metrics.confidenceText : metrics.unavailable,
+          scoreText: evidence.ready ? metrics.scoreText : metrics.unavailable,
+          targetText: evidence.target === null ? metrics.unavailable : sfmFinalFormatPrice(evidence.target, item.currency),
           risk,
-          score: metrics.score,
-          updatedAt: item.updatedAt || item.generatedAt || item.analyzedAt || "",
-          dataProvider: item.dataProvider || item.source || item.provider || item.priceSource,
-          reasons: Array.isArray(item.reasons) ? item.reasons : [],
-          decision: item.decision || null,
-          aiScore: metrics.score,
+          score: evidence.ready ? metrics.score : null,
+          updatedAt: evidence.observedAt,
+          dataProvider: evidence.source,
+          reasons: evidence.ready && Array.isArray(item.reasons) ? item.reasons : [],
+          decision: evidence.ready ? item.decision || null : null,
+          aiScore: evidence.ready ? metrics.score : null,
           hasCriticalPrice,
           hasCorePrice,
           hasConfidence,
-          hasTarget: metrics.target !== null,
-          explanation: item.decision?.message || item.decision?.title || item.decisionTitle || item.comment || ""
+          hasTarget: evidence.target !== null,
+          explanation: evidence.ready ? item.decision?.message || item.decision?.title || item.decisionTitle || item.comment || "" : sfmFinalL("الأدلة غير كافية لتوصية أو هدف موثوق. لا يتم تعويض البيانات الناقصة بقيم افتراضية.", "Evidence is insufficient for a supported recommendation or target. Missing data is not replaced with defaults.")
         };
       })
       .filter(Boolean);
@@ -9200,10 +9233,10 @@ function updateMarketOverviewBubbles(all = []) {
     const rowPrice = row.hasCorePrice
       ? sfmFinalFormatPrice(row.currentPrice, row.currency)
       : sfmFinalRecommendationMissingText;
-    const changeText = row.hasCorePrice && row.hasConfidence && sfmFinalSafeNumber(row.expectedMovePct) !== null
-      ? sfmFinalFormatPercent(row.expectedMovePct)
+    const changeText = row.hasCorePrice && sfmFinalSafeNumber(row.changePercent) !== null
+      ? sfmFinalFormatPercent(row.changePercent)
       : sfmFinalRecommendationDash;
-    const safeChangeClass = sfmFinalPercentStyle(sfmFinalSafeNumber(row.expectedMovePct));
+    const safeChangeClass = sfmFinalPercentStyle(sfmFinalSafeNumber(row.changePercent));
     const confidenceText = row.confidenceText;
     const recommendation = row.action || { key: "pending", label: sfmFinalRecommendationPendingText, className: "is-pending" };
     const riskText = row.risk?.label || sfmFinalRecommendationDash;
@@ -9238,10 +9271,10 @@ function updateMarketOverviewBubbles(all = []) {
       : sfmFinalRecommendationMissingText;
     const recommendation = row.action || { key: "pending", label: sfmFinalRecommendationPendingText, className: "is-pending" };
     const confidenceText = row.confidenceText;
-    const changeText = row.hasCorePrice && row.hasConfidence
-      ? sfmFinalFormatPercent(row.expectedMovePct)
+    const changeText = row.hasCorePrice
+      ? sfmFinalFormatPercent(row.changePercent)
       : sfmFinalRecommendationDash;
-    const safeChangeClass = sfmFinalPercentStyle(sfmFinalSafeNumber(row.expectedMovePct));
+    const safeChangeClass = sfmFinalPercentStyle(sfmFinalSafeNumber(row.changePercent));
 
     return `
       <article class="recommendation-mobile-card" data-recommendation-index="${row.index}">
@@ -9325,10 +9358,10 @@ function updateMarketOverviewBubbles(all = []) {
 
     cards.innerHTML = `
       <div class="recommendation-state-head">
-        <strong>${sfmFinalL("آخر تحديث", "Last update")}: ${escapeHtml(now)}</strong>
+        <strong>${sfmFinalL("تحديث العرض", "View updated")}: ${escapeHtml(now)}</strong>
       </div>
       <div class="recommendation-table-scroll">
-        <table class="recommendation-table" role="table" aria-label="${sfmFinalL("جدول توصيات السوق", "Market recommendations table")}" dir="rtl">
+        <table class="recommendation-table" role="table" aria-label="${sfmFinalL("جدول توصيات السوق", "Market recommendations table")}" dir="${sfmFinalIsEnglish() ? "ltr" : "rtl"}">
           <thead>
             <tr>
               <th scope="col">${sfmFinalL("الأصل", "Asset")}</th>
@@ -9378,7 +9411,7 @@ function updateMarketOverviewBubbles(all = []) {
     if (!value) return sfmFinalL("غير متاح", "Unavailable");
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return sfmFinalL("غير متاح", "Unavailable");
-    return new Intl.DateTimeFormat(sfmFinalIsEnglish() ? "en-US" : "ar-KW", {
+    return new Intl.DateTimeFormat(sfmFinalIsEnglish() ? "en-US" : "ar-KW-u-nu-latn", {
       dateStyle: "medium",
       timeStyle: "short"
     }).format(parsed);
@@ -9387,10 +9420,11 @@ function updateMarketOverviewBubbles(all = []) {
   function sfmFinalRenderRecommendationDetail(row, open = true) {
     if (!sfmFinalDrawer || !sfmFinalDrawerContent || !row) return;
     sfmFinalDrawerSymbol = row.symbol;
+    const scrollTop = sfmFinalDrawerContent.scrollTop;
 
     const recommendation = row.action || { key: "pending", label: sfmFinalRecommendationPendingText, className: "is-pending" };
     const targetText = row.targetText;
-    const explanation = sfmFinalSafeText(row.explanation)
+    const explanation = String(row.explanation || "").trim()
       || (Array.isArray(row.reasons) && row.reasons.length
         ? row.reasons.slice(0, 5).join("، ")
         : sfmFinalL("لا يوجد شرح.", "No explanation."));
@@ -9440,7 +9474,7 @@ function updateMarketOverviewBubbles(all = []) {
           <strong data-metric-value="confidence" dir="ltr">${escapeHtml(row.confidenceText)}</strong>
         </div>
         <div class="recommendation-detail-row">
-          <span>${sfmFinalL("آخر تحديث", "Last updated")}</span>
+          <span>${sfmFinalL("وقت بيانات المصدر", "Source observation time")}</span>
           <strong>${escapeHtml(sfmFinalFormatTimestamp(row.updatedAt))}</strong>
         </div>
       </div>
@@ -9450,7 +9484,9 @@ function updateMarketOverviewBubbles(all = []) {
       </div>
     `;
 
+    sfmFinalDrawerContent.scrollTop = scrollTop;
     if (open) sfmFinalOpenRecommendationDrawer();
+    sfmFinalUpdateDrawerStatus();
   }
 
   document.addEventListener("sfm:integrity-updated", () => {
@@ -9462,21 +9498,33 @@ function updateMarketOverviewBubbles(all = []) {
 
   function sfmFinalOpenRecommendationDrawer() {
     if (!sfmFinalDrawer) return;
-    sfmFinalDrawer.returnFocusTo = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (sfmFinalDrawer.classList.contains("is-open")) return;
+    sfmFinalDrawer.returnFocusTo ??= document.activeElement instanceof HTMLElement ? document.activeElement : null;
     sfmFinalDrawer.classList.add("is-open");
     sfmFinalDrawer.setAttribute("aria-hidden", "false");
     sfmFinalDrawer.inert = false;
     document.body.classList.add("recommendation-drawer-open");
+    sfmFinalBackground = Array.from(document.body.children).filter(element => element !== sfmFinalDrawer && element instanceof HTMLElement)
+      .map(element => ({ element, inert: element.inert }));
+    sfmFinalBackground.forEach(({ element }) => { element.inert = true; });
     sfmFinalDrawer.querySelector("button[data-recommendation-close]")?.focus();
   }
 
   function sfmFinalCloseRecommendationDrawer() {
-    if (!sfmFinalDrawer) return;
+    if (!sfmFinalDrawer?.classList.contains("is-open")) return;
+    sfmFinalDetailStore.cancelPending();
+    sfmFinalSelectedRow = null;
+    sfmFinalBackground.forEach(({ element, inert }) => { element.inert = inert; });
+    sfmFinalBackground = [];
     sfmFinalDrawer.classList.remove("is-open");
     sfmFinalDrawer.setAttribute("aria-hidden", "true");
     sfmFinalDrawer.inert = true;
     document.body.classList.remove("recommendation-drawer-open");
-    sfmFinalDrawer.returnFocusTo?.focus?.();
+    // Resolve visibility after removing inert and the drawer scroll lock.
+    const returnFocusTo = sfmFinalDrawer.returnFocusTo;
+    if (returnFocusTo?.isConnected && !returnFocusTo.closest("[inert]") && returnFocusTo.getClientRects().length) {
+      returnFocusTo.focus({ preventScroll: true });
+    }
     sfmFinalDrawer.returnFocusTo = null;
   }
 
@@ -9484,6 +9532,19 @@ function updateMarketOverviewBubbles(all = []) {
     if (sfmFinalDrawerInitialized) return;
     sfmFinalDrawerInitialized = true;
     if (!sfmFinalDrawer) return;
+    // Escape transformed/scrolling dashboard ancestors and isolate the modal.
+    document.body.appendChild(sfmFinalDrawer);
+    const panel = sfmFinalDrawer.querySelector(".recommendation-drawer-panel");
+    const status = document.createElement("div");
+    status.className = "symbol-detail-status";
+    status.setAttribute("role", "status");
+    status.innerHTML = '<span data-symbol-load-message></span>';
+    panel.insertBefore(status, sfmFinalDrawerContent);
+    const footer = document.createElement("footer");
+    footer.className = "symbol-detail-actions";
+    footer.innerHTML = `<button type="button" data-symbol-retry>${sfmFinalL("تحديث", "Refresh")}</button><a data-symbol-full>${sfmFinalL("التحليل الكامل", "Full analysis")}</a>`;
+    panel.appendChild(footer);
+    footer.querySelector("[data-symbol-retry]").addEventListener("click", () => sfmFinalLoadDrawerDetail(true));
 
     sfmFinalDrawerButtons().forEach((button) => {
       button.addEventListener("click", sfmFinalCloseRecommendationDrawer);
@@ -9497,10 +9558,14 @@ function updateMarketOverviewBubbles(all = []) {
 
     document.addEventListener("keydown", (event) => {
       if (!sfmFinalDrawer.classList.contains("is-open")) return;
-      if (event.key === "Escape") sfmFinalCloseRecommendationDrawer();
+      if (event.key === "Escape") {
+      event.preventDefault();
+      sfmFinalCloseRecommendationDrawer();
+      return;
+    }
       if (event.key !== "Tab") return;
       const focusable = Array.from(sfmFinalDrawer.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])"))
-        .filter((element) => !element.hidden && !element.hasAttribute("disabled"));
+        .filter((element) => element.getClientRects().length > 0 && !element.hasAttribute("disabled"));
       if (!focusable.length) return;
       const first = focusable[0];
       const last = focusable.at(-1);
@@ -9522,7 +9587,13 @@ function updateMarketOverviewBubbles(all = []) {
         const index = Number(target.getAttribute("data-recommendation-index"));
         const row = sfmFinalRecommendationRowsData.find((item) => item.index === index);
         if (!row) return;
+        sfmFinalDetailStore.cancelPending();
+        sfmFinalSelectedRow = row;
+        // Safari pointer activation need not focus the clicked button.
+        sfmFinalDrawer.returnFocusTo = target;
+        sfmFinalDrawerContent.scrollTop = 0;
         sfmFinalRenderRecommendationDetail(row);
+        sfmFinalLoadDrawerDetail();
       });
     });
   }

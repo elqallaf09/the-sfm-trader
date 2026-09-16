@@ -65,6 +65,7 @@ const syntaxFiles = [
   "public/modules/marketBackground.js",
   "public/modules/boundedMemoryCache.js",
   "public/modules/requestPolicy.js",
+  "public/modules/symbolDetailData.js",
   "public/modules/assetBranding.js",
   "public/modules/homeDashboard.js",
   "public/modules/instrumentSearch.js",

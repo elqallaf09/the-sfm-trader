@@ -80,7 +80,7 @@ body[data-app-view="home"] .v3-opportunity-card.hold header > b { color: var(--s
   body .app-shell .detail-analysis-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   body .app-shell :is(.signal-analysis-summary, .detail-analysis-summary) > [data-analysis-metric="duration"] { grid-column: 1 / -1; grid-row: 2; }
   body .app-shell .analysis-summary > [data-analysis-metric] { padding: 9px 10px; min-height: 60px; }
-  body .app-shell .analysis-summary [data-metric-value] { font-size: 17px; 
+  body .app-shell .analysis-summary [data-metric-value] { font-size: 17px;
   color: var(--ui-text) !important;
 
   -webkit-text-fill-color: currentColor !important;
@@ -97,7 +97,7 @@ body .recommendation-table td { color: var(--ui-text) !important; }
 body .recommendation-table td[data-analysis-metric] { padding-block: 14px; }
 body .recommendation-table [data-metric-value],
 body [data-recommendation-drawer] [data-metric-value],
-body .recommendation-mobile-card [data-metric-value] { display: block; font-weight: 800; font-size: 15px; -webkit-text-fill-color: currentColor !important; 
+body .recommendation-mobile-card [data-metric-value] { display: block; font-weight: 800; font-size: 15px; -webkit-text-fill-color: currentColor !important;
   color: var(--ui-text) !important;
 }
 body .recommendation-table td[data-analysis-metric="duration"] { min-width: 145px; max-width: 230px; white-space: normal !important; }

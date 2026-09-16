@@ -1,4 +1,4 @@
-const CACHE_NAME = "the-sfm-trader-v20260914-async-selection-2";
+const CACHE_NAME = "the-sfm-trader-v20260916-symbol-data";
 const STATIC_ASSETS = [
   "/modules/tradeObservation.js?v=20260914-lifecycle-1",
   "/modules/priceFormat.js?v=20260914-lifecycle-1",
@@ -13,7 +13,7 @@ const STATIC_ASSETS = [
   "/cinema.css?v=20260914-audit-repair-1",
   "/layout-stability.css?v=20260804-home-v3-layout-fix-1",
   "/dashboard-v2.css?v=20260914-view-routing-1",
-  "/app.js?v=20260914-async-selection-2",
+  "/app.js?v=20260916-symbol-data",
   "/detail.js?v=20260914-lifecycle-1",
   "/modules/apiClient.js?v=20260914-audit-repair-1",
   "/modules/polling.js?v=20260914-lifecycle-1",
@@ -39,6 +39,8 @@ const STATIC_ASSETS = [
   "/analysis-metrics.css?v=20260914-audit-repair-1",
   "/instrument-search.css?v=20260914-audit-repair-1",
   "/detail-brand.css?v=20260914-detail-navigation-1",
+  "/modules/symbolDetailData.js",
+  "/symbol-detail-mobile.css?v=20260916-symbol-data",
   "/manifest.webmanifest",
   "/assets/sfm-trader-logo.svg",
   "/the-sfm-trader-icon-256.png",
