@@ -1,0 +1,62 @@
+name: Mobile repair verification
+on:
+  push:
+    branches: [fix/mobile-symbol-data-20260916]
+    paths: [.github/workflows/mobile-repair-verify.yml]
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Pin required browser harness dependency
+        run: |
+          npm install --save-dev --save-exact playwright@1.63.0
+          git rm .github/workflows/mobile-repair-verify.yml
+          git add package.json package-lock.json
+          git -c user.name='SFM repair' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m 'test: pin browser dependency for reproducible mobile verification'
+          git push origin HEAD:fix/mobile-symbol-data-20260916
+      - name: Audit diagnostic
+        run: |
+          mkdir -p .artifacts
+          npm audit --json > .artifacts/npm-audit.json || true
+      - run: npm run verify
+      - name: Install both browsers
+        if: success() || failure()
+        run: npx playwright install --with-deps chromium webkit
+      - name: Chromium home
+        if: success() || failure()
+        run: node tools/capture-home-v3.mjs
+      - name: Chromium drawer
+        if: success() || failure()
+        run: node tools/capture-deep-audit.mjs
+      - name: WebKit home
+        if: success() || failure()
+        env:
+          MOBILE_TEST_BROWSER: webkit
+        run: node tools/capture-home-v3.mjs
+      - name: WebKit drawer
+        if: success() || failure()
+        env:
+          MOBILE_TEST_BROWSER: webkit
+        run: node tools/capture-deep-audit.mjs
+      - name: Archive exact source
+        if: always()
+        run: |
+          mkdir -p .artifacts/source
+          git rev-parse HEAD > .artifacts/source/head.txt
+          git archive --format=tar.gz HEAD > .artifacts/source/trader-tested.tar.gz
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-repair-browser-verification
+          path: .artifacts/
+          include-hidden-files: true
+          retention-days: 3
