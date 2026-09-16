@@ -1,5 +1,5 @@
 .recommendation-detail-drawer.is-open { z-index: 10000; }
-.recommendation-detail-drawer .recommendation-drawer-panel { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; height: 100dvh; min-height: 0; max-height: 100dvh; overflow: hidden; width: min(460px, 100%); }
+.recommendation-detail-drawer .recommendation-drawer-panel { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; height: 100vh; height: 100dvh; min-height: 0; max-height: 100vh; max-height: 100dvh; overflow: hidden; width: min(460px, 100%); }
 .recommendation-detail-drawer .recommendation-drawer-head { padding: 10px 14px; gap: 10px; }
 .recommendation-detail-drawer .recommendation-drawer-head h3 { margin: 0; font-size: 18px; }
 .recommendation-detail-drawer button, .recommendation-detail-drawer a { min-width: 44px; min-height: 44px; }
@@ -12,8 +12,9 @@
 .recommendation-detail-drawer .symbol-detail-actions :is(button, a) { display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 10px; font: inherit; font-size: 13px; text-decoration: none; }
 .recommendation-detail-drawer :is(button, a):focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 .recommendation-drawer-open { overflow: hidden; }
-@media (max-width: 760px) {
-  .recommendation-detail-drawer .recommendation-drawer-panel { inset: 0; width: 100%; max-width: 100%; border-radius: 0; padding-top: env(safe-area-inset-top); }
+/* A landscape phone is wider than the portrait breakpoint but still needs a full-height sheet. */
+@media (max-width: 760px), (max-width: 950px) and (max-height: 500px) {
+  .recommendation-detail-drawer .recommendation-drawer-panel { inset: 0; width: 100%; max-width: 100%; border-radius: 0; box-sizing: border-box; padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
 }
 
 /* Leave focus/scroll targets above the fixed mobile navigation. */
@@ -23,5 +24,5 @@
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto !important; }
-  .recommendation-detail-drawer, .recommendation-detail-drawer * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+  .recommendation-detail-drawer, .recommendation-detail-drawer * { transition: none !important; animation: none !important; }
 }
