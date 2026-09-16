@@ -14,6 +14,8 @@ time must not be replaced by browser retrieval time.
 The drawer has a compact mobile header, an independently scrollable body, refresh
 and full-analysis actions, background isolation, Escape and focus restoration.
 Service-worker assets are versioned so old clients can receive the repair.
+Home V3 remains the final stylesheet. Mobile focus targets retain clearance above
+the fixed tab bar, and reduced-motion preferences disable animated root scrolling.
 
 ## Verification
 
@@ -26,6 +28,14 @@ Service-worker assets are versioned so old clients can receive the repair.
   of animation-frame scheduling; the state assertions remain unchanged.
 - Existing `capture-home-v3.mjs` and `capture-deep-audit.mjs` remain intact and
   exercise the separate broader UI audit suites against the test server.
+
+Run 35074492664 verified source `984bf99bf430b3cb5473cc9f329c978afed8d766`:
+`npm run verify` passed, including all unit checks and integration against an
+isolated Postgres test service. This source includes the concurrent main-branch
+changes from `70828beb2092804abde214c9e65ae7121bc0cde8` without replacing their
+integrity guards or existing browser audit tools. Consult that run's browser
+steps and artifacts for their final status; unit success alone is not browser
+acceptance. Regular PR CI separately checks the final branch.
 
 Fixture data is only for tests and is not production market data. These tests do
 not verify live provider subscription entitlements, current security prices,
